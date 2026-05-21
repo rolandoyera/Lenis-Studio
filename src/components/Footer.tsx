@@ -1,9 +1,17 @@
+"use client";
 import Link from "next/link";
 import Image from "next/image";
 import Button from "./ui/Button";
 import Container from "./ui/Container";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/studio")) {
+    return null;
+  }
+
   return (
     <footer className="bg-footer w-full mt-60 relative">
       {/* Newsletter Section */}

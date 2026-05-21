@@ -33,6 +33,7 @@ export default defineType({
           { title: "Residential", value: "residential" },
           { title: "Commercial", value: "commercial" },
           { title: "Hospitality", value: "hospitality" },
+          { title: "Non-Profit", value: "nonprofit" },
           { title: "Other", value: "other" },
         ],
       },

@@ -5,11 +5,18 @@ import { useTheme } from "next-themes";
 import { Sun, Moon, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Container from "./ui/Container";
+import { usePathname } from "next/navigation";
 
 export default function Navbar() {
+  const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Return null if on studio route to avoid layout overlap in Sanity CMS
+  if (pathname?.startsWith("/studio")) {
+    return null;
+  }
 
   // Use a dedicated id for the mobile dropdown (not the nav itself)
   const mobileMenuId = "mobile-menu";

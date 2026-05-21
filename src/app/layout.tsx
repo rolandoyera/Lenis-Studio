@@ -7,14 +7,8 @@ import Navbar from "@/components/Navbar";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
-  weight: ["200", "300", "500", "600", "700"],
+  weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-montserrat",
-});
-
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-instrument-serif",
 });
 
 export const metadata: Metadata = {
@@ -35,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${montserrat.variable} ${instrumentSerif.variable} font-sans antialiased bg-background text-foreground`}>
+        className={`${montserrat.variable} font-sans antialiased bg-background text-foreground`}>
         <Providers>
           <Navbar />
           {children}

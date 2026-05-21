@@ -4,6 +4,7 @@ import { TfiArrowCircleLeft, TfiArrowCircleRight } from "react-icons/tfi";
 import Button from "./ui/Button";
 import Link from "next/link";
 import Image from "next/image";
+import H2 from "./ui/H2";
 
 interface CarouselItem {
   id: string | number;
@@ -73,9 +74,8 @@ const Carousel: React.FC<CarouselProps> = ({
                 priority={idx === 0}
                 sizes="100vw"
                 className={`object-cover transition-transform duration-3000 ease-out
-          ${
-            idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
-          }`}
+          ${idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
+                  }`}
                 style={{ willChange: "transform" }}
               />
 
@@ -83,9 +83,7 @@ const Carousel: React.FC<CarouselProps> = ({
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 p-6">
                   <div className="text-center">
                     {item.title && (
-                      <h3 className="text-white text-3xl lg:text-8xl mb-2 font-light font-serif tracking-wide">
-                        {item.title}
-                      </h3>
+                      <H2 className="mb-2">{item.title}</H2>
                     )}
                     {item.description && (
                       <p className="text-white/90 text-base lg:text-xl mb-4">
