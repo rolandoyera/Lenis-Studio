@@ -5,6 +5,7 @@ import Button from "./ui/Button";
 import Link from "next/link";
 import Image from "next/image";
 import H2 from "./ui/H2";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 interface CarouselItem {
   id: string | number;
@@ -30,6 +31,15 @@ const Carousel: React.FC<CarouselProps> = ({
   className = "",
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prevIndex) =>
@@ -48,7 +58,7 @@ const Carousel: React.FC<CarouselProps> = ({
 
     const interval = setInterval(nextSlide, autoPlayInterval);
     return () => clearInterval(interval);
-  }, [nextSlide, autoPlayInterval, items.length]);
+  }, [nextSlide, autoPlayInterval, items.length, currentIndex]);
 
   if (items.length === 0) {
     return (
@@ -66,22 +76,38 @@ const Carousel: React.FC<CarouselProps> = ({
           className="flex transition-transform duration-500 ease-in-out h-full"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
           {items.map((item, idx) => (
-            <div key={item.id} className="min-w-full h-full relative">
-              <Image
-                src={item.image}
-                alt={item.title || "Interior Design Carousel Item"}
-                fill
-                priority={idx === 0}
-                sizes="100vw"
-                className={`object-cover transition-transform duration-3000 ease-out
-          ${idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
-                  }`}
-                style={{ willChange: "transform" }}
-              />
+            <div key={item.id} className="min-w-full h-full relative overflow-hidden">
+              {/* Parallax container for background image */}
+              <div
+                className="absolute w-full h-[130%] top-[-15%] left-0"
+                style={{
+                  transform: `translateY(${scrollY * 0.3}px)`,
+                  willChange: "transform",
+                }}
+              >
+                <Image
+                  src={item.image}
+                  alt={item.title || "Interior Design Carousel Item"}
+                  fill
+                  priority={idx === 0}
+                  sizes="100vw"
+                  className={`object-cover transition-transform duration-3000 ease-out
+            ${idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
+                    }`}
+                  style={{ willChange: "transform" }}
+                />
+              </div>
 
               {(item.title || item.description) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 p-6">
-                  <div className="text-center">
+                  {/* Floating parallax text element */}
+                  <div
+                    className="text-center"
+                    style={{
+                      transform: `translateY(${scrollY * 0.15}px)`,
+                      willChange: "transform",
+                    }}
+                  >
                     {item.title && (
                       <H2 className="text-white">{item.title}</H2>
                     )}
@@ -107,15 +133,15 @@ const Carousel: React.FC<CarouselProps> = ({
           <>
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer rounded-full border-2 border-white"
               aria-label="Previous slide">
-              <TfiArrowCircleLeft size={60} />
+              <ArrowLeft size={40} />
             </button>
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer rounded-full border-2 border-white"
               aria-label="Next slide">
-              <TfiArrowCircleRight size={60} />
+              <ArrowRight size={40} />
             </button>
           </>
         )}

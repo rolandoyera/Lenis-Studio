@@ -60,7 +60,7 @@ export default async function ProjectsPage() {
               />
               {/* Hover overlay */}
               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-info/55 text-white backdrop-blur-md">
-                <H2>{p.title}</H2>
+                <H2 className="text-white">{p.title}</H2>
                 <p className="text-lg mt-1">{p.location}</p>
               </div>
             </div>
