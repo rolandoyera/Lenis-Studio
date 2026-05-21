@@ -83,7 +83,7 @@ const Carousel: React.FC<CarouselProps> = ({
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 p-6">
                   <div className="text-center">
                     {item.title && (
-                      <H2 className="mb-2">{item.title}</H2>
+                      <H2 className="text-white">{item.title}</H2>
                     )}
                     {item.description && (
                       <p className="text-white/90 text-base lg:text-xl mb-4">
@@ -92,7 +92,7 @@ const Carousel: React.FC<CarouselProps> = ({
                     )}
                     {item.buttonText && item.buttonLink && (
                       <Link href={item.buttonLink}>
-                        <Button className="mt-4">{item.buttonText}</Button>
+                        <Button className="mt-6">{item.buttonText}</Button>
                       </Link>
                     )}
                   </div>

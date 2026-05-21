@@ -98,14 +98,13 @@ const OurApproachSection: React.FC<AccordionProps> = ({
           return (
             <div
               key={index}
-              className={`transition-all duration-[${PANEL_MS}ms] ease-in-out overflow-hidden flex mr-2 rounded border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/5 ${
-                isActive ? "flex-1" : "w-16"
-              }`}>
+              className={`transition-all duration-[${PANEL_MS}ms] ease-in-out overflow-hidden flex mr-2 rounded border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/5 ${isActive ? "flex-1" : "w-16"
+                }`}>
               {/* Vertical tab */}
               <button
                 onClick={() => togglePanel(index)}
                 disabled={locked}
-                className="w-16 h-full bg-banner focus:outline-none transition-colors duration-200 flex items-center justify-center text-white cursor-pointer border-0 flex-shrink-0 tracking-wider relative disabled:cursor-not-allowed"
+                className="w-16 h-full bg-banner focus:outline-none transition-colors duration-200 flex items-center justify-center text-white cursor-pointer border-0 shrink-0 tracking-wider relative disabled:cursor-not-allowed"
                 aria-expanded={isActive}
                 aria-controls={`panel-desktop-${index}`}>
                 <span className="font-medium text-white -rotate-90 whitespace-nowrap text-lg tracking-wider">
@@ -119,19 +118,17 @@ const OurApproachSection: React.FC<AccordionProps> = ({
               {/* Content */}
               <div
                 id={`panel-desktop-${index}`}
-                className={`flex-1 text-foreground flex flex-col items-center px-6 py-6 overflow-hidden transition-all duration-[${PANEL_MS}ms] ease-in-out ${
-                  showContent
+                className={`flex-1 text-foreground flex flex-col items-center px-6 py-6 overflow-hidden transition-all duration-[${PANEL_MS}ms] ease-in-out ${showContent
+                  ? "opacity-100"
+                  : isClosingThis
                     ? "opacity-100"
-                    : isClosingThis
-                      ? "opacity-100"
-                      : "opacity-0 w-0 px-0"
-                }`}>
-                <div
-                  className={`transition-all ease-out ${
-                    showContent
-                      ? "opacity-100 translate-y-0 duration-700 delay-300"
-                      : "opacity-0 -translate-y-8 duration-200"
+                    : "opacity-0 w-0 px-0"
                   }`}>
+                <div
+                  className={`transition-all ease-out ${showContent
+                    ? "opacity-100 translate-y-0 duration-700 delay-300"
+                    : "opacity-0 -translate-y-8 duration-200"
+                    }`}>
                   <Image
                     src={panel.image}
                     alt={panel.title}
@@ -140,11 +137,10 @@ const OurApproachSection: React.FC<AccordionProps> = ({
                   />
                 </div>
                 <div
-                  className={`text-left mt-auto transition-all ease-out ${
-                    showContent
-                      ? "opacity-100 translate-y-0 duration-700 delay-300"
-                      : "opacity-0 translate-y-8 duration-200"
-                  }`}>
+                  className={`text-left mt-auto transition-all ease-out ${showContent
+                    ? "opacity-100 translate-y-0 duration-700 delay-300"
+                    : "opacity-0 translate-y-8 duration-200"
+                    }`}>
                   <p className="text-foreground leading-relaxed">
                     {panel.content}
                   </p>
@@ -189,12 +185,11 @@ const OurApproachSection: React.FC<AccordionProps> = ({
                 <div className="overflow-hidden px-4 py-3">
                   {/* Content fade/slide */}
                   <div
-                    className={`transition-all ease-out ${
-                      showContent
-                        ? "opacity-100 translate-y-0 duration-700 delay-150"
-                        : "opacity-0 translate-y-2 duration-200"
-                    }`}>
-                    <div className="relative w-full aspect-[16/9] mb-3">
+                    className={`transition-all ease-out ${showContent
+                      ? "opacity-100 translate-y-0 duration-700 delay-150"
+                      : "opacity-0 translate-y-2 duration-200"
+                      }`}>
+                    <div className="relative w-full aspect-video mb-3">
                       <Image
                         src={panel.image}
                         alt={panel.title}

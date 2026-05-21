@@ -117,44 +117,56 @@ body {
 :root {
   color-scheme: light dark;
 }
+
 html.dark {
   color-scheme: dark;
   --logo-filter: invert(1) brightness(1.2);
 }
+
 html.light {
   color-scheme: light;
 }
+
 .richtext p {
   margin: 1rem 0;
   line-height: 1.7;
 }
+
 .richtext p:first-child {
   margin-top: 0;
 }
+
 .richtext p:last-child {
   margin-bottom: 0;
 }
+
 @layer base {
   h1 {
     @apply font-light leading-h1 font-serif text-2xl lg:text-7xl;
   }
+
   h2 {
     @apply text-h2 font-semibold leading-h2;
   }
+
   h3 {
     @apply text-h3 font-semibold leading-h3;
   }
+
   h4 {
     @apply text-h4 font-medium leading-snug;
   }
+
   h5 {
     @apply text-h5 font-medium leading-snug;
   }
+
   h6 {
     @apply text-h6 font-medium leading-snug;
   }
+
   p {
-    @apply text-[17px] font-extralight;
+    @apply text-[17px] font-light;
   }
 }
 
@@ -196,6 +208,7 @@ html.light {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -205,6 +218,7 @@ html.light {
   from {
     clip-path: inset(0 0 100% 0);
   }
+
   to {
     clip-path: inset(0 0 0 0);
   }
@@ -219,6 +233,7 @@ html.light {
 @media (prefers-reduced-motion: reduce) {
   .img-reveal {
     animation: none;
+
     .slide-up {
       animation: none;
       opacity: 1;
@@ -226,11 +241,13 @@ html.light {
     }
   }
 }
+
 @keyframes slideUp {
   from {
     transform: translateY(200px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -241,6 +258,7 @@ html.light {
   animation: slideUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   will-change: transform, opacity;
 }
+
 html {
   scroll-behavior: smooth;
 }
