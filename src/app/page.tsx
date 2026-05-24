@@ -1,4 +1,3 @@
-import OurApproachSection from "@/components/Approach";
 import Carousel from "@/components/Carousel";
 import Connect from "@/components/Connect";
 import TopSection from "@/components/TopSection";

@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { TfiArrowCircleLeft, TfiArrowCircleRight } from "react-icons/tfi";
 import Button from "./ui/Button";
 import Link from "next/link";
 import Image from "next/image";

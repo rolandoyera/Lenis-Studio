@@ -13,7 +13,7 @@ import Button from "./ui/Button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, MoveRight } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import Input from "./ui/Input";
 
 type Ctx = {
@@ -156,7 +156,6 @@ function ContactModal({ onClose }: { onClose: () => void }) {
       <div
         className="relative mx-4 w-full md:max-w-[600px] rounded-lg bg-transparent shadow-2xl transition-all duration-200 animate-in fade-in zoom-in-95 flex flex-col overflow-hidden p-0"
         onClick={(e) => e.stopPropagation()}>
-
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -167,11 +166,15 @@ function ContactModal({ onClose }: { onClose: () => void }) {
 
         {/* HEADER SECTION */}
         <div className="border-b border-border/20 px-8 pt-8 pb-5 bg-card rounded-t-lg">
-          <h3 id="contact-title" className="text-[28px] font-semibold tracking-[-0.012em] text-foreground">
+          <h3
+            id="contact-title"
+            className="text-[28px] font-semibold tracking-[-0.012em] text-foreground">
             {sent ? "Message Sent" : "Let’s talk about your project"}
           </h3>
           <p className="text-[18px] text-foreground/75 mt-1 font-light">
-            {sent ? "Thank you for reaching out." : "Share a few details and we’ll reach out shortly."}
+            {sent
+              ? "Thank you for reaching out."
+              : "Share a few details and we’ll reach out shortly."}
           </p>
         </div>
 
@@ -184,7 +187,8 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                 We’ll reach out shortly
               </h2>
               <p className="mt-2 text-[16px] text-foreground/80 max-w-sm mx-auto font-light leading-relaxed">
-                Thanks—your message is on its way. We’ll contact you soon to discuss your vision.
+                Thanks—your message is on its way. We’ll contact you soon to
+                discuss your vision.
               </p>
               <Button onClick={onClose} className="mt-8 w-full md:w-48 mx-auto">
                 Close now
@@ -232,9 +236,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div>
-                <label
-                  htmlFor="phone"
-                  className="sr-only">
+                <label htmlFor="phone" className="sr-only">
                   Phone
                 </label>
                 <Input
@@ -256,9 +258,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <div>
-                <label
-                  htmlFor="email"
-                  className="sr-only">
+                <label htmlFor="email" className="sr-only">
                   Email
                 </label>
                 <Input
@@ -289,15 +289,16 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                 disabled={isSubmitting}
                 className="mt-8 w-full md:w-80 disabled:opacity-60 mx-auto">
                 {isSubmitting ? "Sending…" : "Submit"}
-
               </Button>
             </form>
           )}
         </div>
 
         {/* FOOTER SECTION */}
-        <div className="border-t border-border/20 bg-(--ink-900) py-4 px-8 text-center rounded-b-lg">
-          <p className="text-[16px] font-semibold tracking-wider text-muted">Sarvian Design Group</p>
+        <div className="border-t border-border/20 bg-ink-900 py-4 px-8 text-center rounded-b-lg">
+          <p className="text-[16px] font-semibold tracking-wider text-muted">
+            Sarvian Design Group
+          </p>
           <p>
             <a
               href="tel:+19544444803"
