@@ -14,7 +14,7 @@ export default function ContactButton({
   return (
     <Button
       onClick={open}
-      className={`shadow-md transition hover:opacity-90 ${className}`}>
+      className={`rounded-full px-8 uppercase ${className}`}>
       {children}
     </Button>
   );

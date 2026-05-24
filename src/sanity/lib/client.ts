@@ -10,5 +10,5 @@ export const client = createClient({
   projectId,
   dataset,
   apiVersion,
-  useCdn: true, // fast, cached public reads
+  useCdn: process.env.NODE_ENV === "production", // Live data in dev, cached reads in prod
 });

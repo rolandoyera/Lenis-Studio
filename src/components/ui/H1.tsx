@@ -6,7 +6,7 @@ interface H2Props extends React.HTMLAttributes<HTMLHeadingElement> {
 
 export default function H2({ children, className, ...props }: H2Props) {
     return (
-        <h1 {...props} className={cn("text-4xl lg:text-6xl font-normal text-balance leading-snug tracking-tighter", className)}>
+        <h1 {...props} className={cn("text-4xl lg:text-7xl font-normal text-balance tracking-tight", className)}>
             {children}
         </h1>
     );

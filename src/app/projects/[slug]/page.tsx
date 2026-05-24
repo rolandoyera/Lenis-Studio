@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { PortableText } from "@portabletext/react";
 import type { PortableTextBlock } from "@portabletext/types";
 import ContactButton from "@/components/ui/ContactButton";
+import NextProject from "@/components/NextProject";
 
 /* -------------------- Types -------------------- */
 
@@ -48,6 +49,11 @@ const PROJECT_BY_SLUG = groq`*[_type=="project" && slug.current == $slug][0]{
 
 const ALL_SLUGS = groq`*[_type=="project" && defined(slug.current)]{ "slug": slug.current }`;
 
+const ALL_PROJECTS_SORTED = groq`*[_type=="project" && defined(slug.current)]{
+  title,
+  "slug": slug.current
+} | order(coalesce(year, 0) desc, _createdAt desc)`;
+
 /* -------------------- ISR -------------------- */
 
 export const revalidate = 60;
@@ -65,8 +71,25 @@ export default async function ProjectPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const data = await client.fetch<Project | null>(PROJECT_BY_SLUG, { slug });
+
+  const [data, allProjects] = await Promise.all([
+    client.fetch<Project | null>(PROJECT_BY_SLUG, { slug }),
+    client.fetch<{ title: string; slug: string }[]>(ALL_PROJECTS_SORTED),
+  ]);
+
   if (!data) return notFound();
+
+  const currentIndex = allProjects.findIndex((p) => p.slug === slug);
+  const prevProject =
+    currentIndex !== -1 && allProjects.length > 1
+      ? allProjects[
+          (currentIndex - 1 + allProjects.length) % allProjects.length
+        ]
+      : null;
+  const nextProject =
+    currentIndex !== -1 && allProjects.length > 1
+      ? allProjects[(currentIndex + 1) % allProjects.length]
+      : null;
 
   const hero = data.heroImage || data.mainImage;
   const rich = data.description ?? data.body;
@@ -90,12 +113,13 @@ export default async function ProjectPage({
       <div className="mx-auto">
         {/* 1) Full-bleed banner */}
         {hero && (
-          <section className="relative h-[70vh] overflow-hidden">
+          <section className="relative h-dvh overflow-hidden">
             <Image
-              src={urlFor(hero).width(2400).height(1400).auto("format").url()}
+              src={urlFor(hero).width(2880).height(1620).auto("format").url()}
               alt={hero.alt || data.title}
               fill
               priority
+              quality={90}
               loading="eager"
               fetchPriority="high"
               sizes="100vw"
@@ -108,36 +132,49 @@ export default async function ProjectPage({
         <section className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:p-6">
           {/* LEFT: Project info */}
           <aside className="lg:col-span-4">
-            <div className="lg:sticky lg:top-24">
-              <div className="bg-card text-white p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16">
-                <h1 className="text-3xl font-semibold">{data.title}</h1>
+            <div className="lg:sticky lg:top-20">
+              <div className="bg-card p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16 rounded-md shadow">
+                <h1 className="text-[38px] tracking-[-0.012em] font-semibold">
+                  {data.title}
+                </h1>
                 {data.location && (
-                  <p className="text-sm text-white/80">{data.location}</p>
+                  <p className="text-[16px] font-mono">{data.location}</p>
                 )}
-
-                <dl className="mt-10 space-y-2 text-sm">
-                  <div className="flex justify-between border-b border-white/15 pb-2">
-                    <dt className="text-white/80">
-                      <h2 className="text-h5">Firm</h2>
+                <dl className="mt-10 space-y-2">
+                  <div className="flex justify-between pb-2 relative">
+                    <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
+                    <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
+                    <dt>
+                      <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
+                        Firm
+                      </h2>
                     </dt>
-                    <dd className="text-white">Sarvian Design Group</dd>
+                    <dd className="text-[16px]">Sarvian Design Group</dd>
                   </div>
 
                   {data.type && (
-                    <div className="flex justify-between border-b border-white/15 pb-2">
-                      <dt className="text-white/80">
-                        <h2 className="text-h5">Type</h2>
+                    <div className="flex justify-between pb-2 relative">
+                      <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
+                      <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
+                      <dt>
+                        <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
+                          Type
+                        </h2>
                       </dt>
-                      <dd className="text-white capitalize">{data.type}</dd>
+                      <dd className="text-[16px]">{data.type}</dd>
                     </div>
                   )}
 
                   {data.size && (
-                    <div className="flex justify-between border-b border-white/15 pb-2">
-                      <dt className="text-white/80">
-                        <h2 className="text-h5">Size</h2>
+                    <div className="flex justify-between pb-2 relative">
+                      <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
+                      <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
+                      <dt>
+                        <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
+                          Size
+                        </h2>
                       </dt>
-                      <dd className="text-white">
+                      <dd className="text-[16px]">
                         {typeof data.size === "number"
                           ? `${data.size.toLocaleString()} Sq Ft`
                           : data.size}
@@ -147,10 +184,12 @@ export default async function ProjectPage({
 
                   {typeof data.year === "number" && (
                     <div className="flex justify-between">
-                      <dt className="text-white/80">
-                        <h2 className="text-h5">Year</h2>
+                      <dt>
+                        <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
+                          Year
+                        </h2>
                       </dt>
-                      <dd className="text-white">{data.year}</dd>
+                      <dd className="text-[16px]">{data.year}</dd>
                     </div>
                   )}
                 </dl>
@@ -176,10 +215,10 @@ export default async function ProjectPage({
             </div>
           </aside>
 
-          {/* RIGHT: Image grid (2 columns, natural aspect, NO rounding) */}
+          {/* RIGHT: Image stack (single column, natural aspect, NO rounding) */}
           <div className="lg:col-span-8">
             {sortedGallery.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-6">
                 {sortedGallery.map((img, i) => {
                   const dims = img.asset.metadata?.dimensions;
                   const ar = dims?.aspectRatio ?? 4 / 3;
@@ -193,10 +232,11 @@ export default async function ProjectPage({
                       alt={img.alt || `Project image ${i + 1}`}
                       width={width}
                       height={height}
+                      quality={90}
                       loading="lazy"
                       decoding="async"
-                      sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
-                      className="w-full h-auto"
+                      sizes="(min-width:1024px) 66vw, 100vw"
+                      className="w-full h-auto rounded-md shadow"
                     />
                   );
                 })}
@@ -205,6 +245,7 @@ export default async function ProjectPage({
           </div>
         </section>
       </div>
+      <NextProject prevProject={prevProject} nextProject={nextProject} />
     </main>
   );
 }

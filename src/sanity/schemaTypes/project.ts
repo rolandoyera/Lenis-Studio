@@ -107,6 +107,38 @@ export default defineType({
     }),
   ],
 
+  orderings: [
+    {
+      title: "Newest Completed First (Year)",
+      name: "yearDesc",
+      by: [
+        { field: "year", direction: "desc" },
+        { field: "_createdAt", direction: "desc" }
+      ]
+    },
+    {
+      title: "Newest Created First",
+      name: "createdAtDesc",
+      by: [
+        { field: "_createdAt", direction: "desc" }
+      ]
+    },
+    {
+      title: "Oldest Created First",
+      name: "createdAtAsc",
+      by: [
+        { field: "_createdAt", direction: "asc" }
+      ]
+    },
+    {
+      title: "Title (A-Z)",
+      name: "titleAsc",
+      by: [
+        { field: "title", direction: "asc" }
+      ]
+    }
+  ],
+
   preview: {
     select: {
       title: "title",

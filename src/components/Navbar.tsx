@@ -1,16 +1,26 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useTheme } from "next-themes";
-import { Sun, Moon, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Container from "./ui/Container";
 import { usePathname } from "next/navigation";
 
+const BASE_DESKTOP_CLASS = "relative p-2 tracking-tight uppercase after:absolute after:h-[2px] after:bottom-[4px] after:left-2 after:right-2 after:w-[calc(100%-16px)] after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-200 hover:after:scale-x-100 text-xl";
+
+const LEFT_LINKS = [
+  { name: "Projects", href: "/projects" },
+  { name: "Publications", href: "/publications" },
+];
+
+const RIGHT_LINKS = [
+  { name: "About", href: "/about" },
+  { name: "Services", href: "/services" },
+  { name: "Contact", href: "/contact" },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Return null if on studio route to avoid layout overlap in Sanity CMS
@@ -22,7 +32,6 @@ export default function Navbar() {
   const mobileMenuId = "mobile-menu";
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => setMounted(true), []);
 
   // Toggle `inert` so links aren’t focusable when the menu is closed
   useEffect(() => {
@@ -40,10 +49,10 @@ export default function Navbar() {
   }, [mobileOpen]);
 
   return (
-    <nav aria-label="Primary" className="bg-nav text-foreground">
+    <nav aria-label="Primary" className="absolute top-0 left-0 w-full z-50 text-white font-medium bg-black/20 backdrop-blur-xs shadow">
       <Container className="relative">
         {/* Equal-side layout keeps center logo truly centered */}
-        <div className="relative flex items-center py-2">
+        <div className="relative flex items-center">
           {/* LEFT CLUSTER */}
           <div className="flex-1 flex items-center gap-2">
             {/* Mobile: menu on the left */}
@@ -66,30 +75,30 @@ export default function Navbar() {
 
             {/* Desktop: left links */}
             <div className="hidden md:flex gap-4">
-              <Link href="/projects" className="p-2 tracking-[0.5px] uppercase">
-                Projects
-              </Link>
-              <Link
-                href="/publications"
-                className="p-2 tracking-[0.5px] uppercase">
-                Publications
-              </Link>
+              {LEFT_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={BASE_DESKTOP_CLASS}>
+                  {link.name}
+                </Link>
+              ))}
             </div>
           </div>
 
           {/* CENTER LOGO */}
-
-          <Link href="/" className="text-lg font-semibold">
+          <Link href="/">
             <Image
-              src="/assets/logo_sdg.png"
+              src="/assets/logo_sdg-black.svg"
               alt="Sarvian Design Group"
+              loading="eager"
               width={0}
               height={0}
               sizes="130px"
+              className="brightness-0 invert"
               style={{
                 width: "130px",
                 height: "auto",
-                filter: "var(--logo-filter)",
               }}
               priority
             />
@@ -99,40 +108,15 @@ export default function Navbar() {
           <div className="flex-1 flex items-center justify-end gap-2">
             {/* Desktop: right links */}
             <div className="hidden md:flex items-center gap-4">
-              <Link href="/about" className="p-2 tracking-[0.5px] uppercase">
-                About
-              </Link>
-              <Link href="/services" className="p-2 tracking-[0.5px] uppercase">
-                Services
-              </Link>
-              <Link href="/contact" className="p-2 tracking-[0.5px] uppercase">
-                Contact
-              </Link>
+              {RIGHT_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={BASE_DESKTOP_CLASS}>
+                  {link.name}
+                </Link>
+              ))}
             </div>
-
-            {/* Theme toggle */}
-            <button
-              type="button"
-              aria-label={
-                mounted && resolvedTheme === "dark"
-                  ? "Switch to light mode"
-                  : "Switch to dark mode"
-              }
-              onClick={() =>
-                mounted && setTheme(resolvedTheme === "dark" ? "light" : "dark")
-              }
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full
-                         bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-colors cursor-pointer">
-              {mounted ? (
-                resolvedTheme === "dark" ? (
-                  <Sun size={18} />
-                ) : (
-                  <Moon size={18} />
-                )
-              ) : (
-                <span className="block h-4 w-4" />
-              )}
-            </button>
           </div>
         </div>
 
@@ -140,26 +124,18 @@ export default function Navbar() {
         <div
           id={mobileMenuId}
           ref={menuRef}
-          className={`md:hidden grid transition-[grid-template-rows] duration-300 ease-out ${
-            mobileOpen ? "grid-rows-[1fr] mt-2" : "grid-rows-[0fr] mt-2"
-          }`}>
+          className={`md:hidden grid transition-[grid-template-rows] duration-300 ease-out ${mobileOpen ? "grid-rows-[1fr] mt-2" : "grid-rows-[0fr] mt-2"
+            }`}>
           <div className="overflow-hidden">
             <nav className="flex flex-col gap-2 pb-4 border-t border-white/20">
-              <Link href="/projects" className="text-sm p-2">
-                Projects
-              </Link>
-              <Link href="/publications" className="text-sm p-2">
-                Publications
-              </Link>
-              <Link href="/about" className="text-sm p-2">
-                About
-              </Link>
-              <Link href="/services" className="text-sm p-2">
-                Services
-              </Link>
-              <Link href="/contact" className="text-sm p-2">
-                Contact
-              </Link>
+              {[...LEFT_LINKS, ...RIGHT_LINKS].map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="text-sm p-2 hover:text-accent transition-colors duration-200">
+                  {link.name}
+                </Link>
+              ))}
             </nav>
           </div>
         </div>

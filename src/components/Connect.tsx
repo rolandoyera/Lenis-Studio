@@ -6,8 +6,8 @@ export default function Connect() {
     <div className="bg-card">
       <Container
         className={`flex flex-col items-center justify-between gap-6 py-12 text-center md:text-left`}>
-        <h3 className="text-3xl text-white">Ready To Start?</h3>
-        <ContactButton>Connect With Us</ContactButton>
+        <h3 className="text-foreground text-4xl lg:text-6xl">Ready To Start?</h3>
+        <ContactButton>Let's Talk</ContactButton>
       </Container>
     </div>
   );

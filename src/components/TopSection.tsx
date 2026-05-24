@@ -59,6 +59,7 @@ export default function TopSection() {
               alt="Home image"
               width={900}
               height={400}
+              quality={90}
               className="w-full h-auto object-cover"
             />
           </div>

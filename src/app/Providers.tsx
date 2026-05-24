@@ -1,14 +1,22 @@
 "use client";
 import ContactModalProvider from "@/components/ContactModalProvider";
-import { ThemeProvider } from "next-themes";
 import { ReactLenis } from "lenis/react";
+import { usePathname } from "next/navigation";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isStudio = pathname?.startsWith("/studio");
+
+  const content = <ContactModalProvider>{children}</ContactModalProvider>;
+
+  if (isStudio) {
+    return content;
+  }
+
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <ReactLenis root options={{ lerp: 0.1, duration: 1.5, syncTouch: true }}>
-        <ContactModalProvider>{children}</ContactModalProvider>
-      </ReactLenis>
-    </ThemeProvider>
+    <ReactLenis root options={{ lerp: 0.1, duration: 1.2, syncTouch: true }}>
+      {content}
+    </ReactLenis>
   );
 }
+

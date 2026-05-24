@@ -13,7 +13,8 @@ import Button from "./ui/Button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, MoveRight } from "lucide-react";
+import Input from "./ui/Input";
 
 type Ctx = {
   open: () => void;
@@ -153,44 +154,47 @@ function ContactModal({ onClose }: { onClose: () => void }) {
 
       {/* Panel */}
       <div
-        className="relative mx-4 w-full md:max-w-[600px] rounded-2xl bg-pop p-8 shadow-2xl transition-all duration-200 animate-in fade-in zoom-in-95"
+        className="relative mx-4 w-full md:max-w-[600px] rounded-lg bg-transparent shadow-2xl transition-all duration-200 animate-in fade-in zoom-in-95 flex flex-col overflow-hidden p-0"
         onClick={(e) => e.stopPropagation()}>
+
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full px-2 py-1 text-sm text-gray-500 hover:bg-gray-100 cursor-pointer"
+          className="absolute right-4 top-4 rounded-full px-2 py-1 text-sm text-gray-500 hover:bg-accent hover:text-white cursor-pointer z-10 transition-colors duration-200"
           aria-label="Close">
           ✕
         </button>
 
-        {/* SUCCESS VIEW */}
-        {sent ? (
-          <div className="py-8 text-center" aria-live="assertive">
-            <CheckCircle2 className="mx-auto text-white h-12 w-12" />
-            <h2 className="mt-4 text-xl font-semibold text-white!">
-              Message sent
-            </h2>
-            <p className="mt-2 text-sm text-white/80">
-              Thanks—your message is on its way. We’ll reach out shortly.
-            </p>
-            <Button onClick={onClose} className="mt-6 w-full">
-              Close now
-            </Button>
-          </div>
-        ) : (
-          <>
-            <h2
-              id="contact-title"
-              className="mb-1 text-2xl font-semibold text-white">
-              Let’s talk about your project
-            </h2>
-            <p className="mb-10 text-white">
-              Share a few details and we’ll reach out shortly.
-            </p>
+        {/* HEADER SECTION */}
+        <div className="border-b border-border/20 px-8 pt-8 pb-5 bg-card rounded-t-lg">
+          <h3 id="contact-title" className="text-[28px] font-semibold tracking-[-0.012em] text-foreground">
+            {sent ? "Message Sent" : "Let’s talk about your project"}
+          </h3>
+          <p className="text-[18px] text-foreground/75 mt-1 font-light">
+            {sent ? "Thank you for reaching out." : "Share a few details and we’ll reach out shortly."}
+          </p>
+        </div>
 
+        {/* MIDDLE CONTENT SECTION */}
+        <div className="px-8 py-8 overflow-y-auto max-h-[60vh] flex-1 bg-card">
+          {sent ? (
+            <div className="py-8 text-center" aria-live="assertive">
+              <CheckCircle2 className="mx-auto h-16 w-16 text-brand stroke-[1.5]" />
+              <h2 className="mt-6 text-[22px] font-medium tracking-tight text-foreground">
+                We’ll reach out shortly
+              </h2>
+              <p className="mt-2 text-[16px] text-foreground/80 max-w-sm mx-auto font-light leading-relaxed">
+                Thanks—your message is on its way. We’ll contact you soon to discuss your vision.
+              </p>
+              <Button onClick={onClose} className="mt-8 w-full md:w-48 mx-auto">
+                Close now
+              </Button>
+            </div>
+          ) : (
             <form
               onSubmit={handleSubmit(onSubmit)}
               noValidate
-              className="space-y-6">
+              className="space-y-8">
               <input
                 type="text"
                 tabIndex={-1}
@@ -208,20 +212,20 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               />
 
               <div>
-                <label htmlFor="name" className="mb-1 block text-sm text-white">
+                <label htmlFor="name" className="sr-only">
                   Name
                 </label>
-                <input
+                <Input
                   id="name"
                   autoComplete="name"
                   placeholder="Your Name"
                   aria-invalid={!!errors.name || undefined}
                   aria-describedby={errors.name ? "name-error" : undefined}
-                  className="w-full border border-gray-800 px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 text-white"
+                  className="w-full"
                   {...register("name")}
                 />
                 {errors.name && (
-                  <p id="name-error" className="mt-1 text-sm text-brand">
+                  <p id="name-error" className="mt-1 text-sm text-destructive">
                     {errors.name.message}
                   </p>
                 )}
@@ -230,10 +234,10 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               <div>
                 <label
                   htmlFor="phone"
-                  className="mb-1 block text-sm text-white">
+                  className="sr-only">
                   Phone
                 </label>
-                <input
+                <Input
                   id="phone"
                   type="tel"
                   inputMode="tel"
@@ -241,11 +245,11 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                   aria-invalid={!!errors.phone || undefined}
                   aria-describedby={errors.phone ? "phone-error" : undefined}
                   placeholder="Contact number"
-                  className="w-full border border-gray-800 px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 text-white"
+                  className="w-full"
                   {...register("phone")}
                 />
                 {errors.phone && (
-                  <p id="phone-error" className="mt-1 text-sm text-brand">
+                  <p id="phone-error" className="mt-1 text-sm text-destructive">
                     {errors.phone.message}
                   </p>
                 )}
@@ -254,21 +258,21 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               <div>
                 <label
                   htmlFor="email"
-                  className="mb-1 block text-sm text-white">
+                  className="sr-only">
                   Email
                 </label>
-                <input
+                <Input
                   id="email"
                   type="email"
                   autoComplete="email"
                   aria-invalid={!!errors.email || undefined}
                   aria-describedby={errors.email ? "email-error" : undefined}
                   placeholder="Your Email"
-                  className="w-full border border-gray-800 px-3 py-2 outline-none focus:ring-2 focus:ring-black/10 text-white"
+                  className="w-full"
                   {...register("email")}
                 />
                 {errors.email && (
-                  <p id="email-error" className="mt-1 text-sm text-brand">
+                  <p id="email-error" className="mt-1 text-sm text-destructive">
                     {errors.email.message}
                   </p>
                 )}
@@ -283,20 +287,21 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="mt-2 w-full px-4 py-2 text-white shadow-md transition hover:opacity-90 disabled:opacity-60">
+                className="mt-8 w-full md:w-80 disabled:opacity-60 mx-auto">
                 {isSubmitting ? "Sending…" : "Submit"}
+
               </Button>
             </form>
-          </>
-        )}
+          )}
+        </div>
 
-        <div className="mt-8 text-center text-gray-500">
-          <p>Sarvian Design Group</p>
+        {/* FOOTER SECTION */}
+        <div className="border-t border-border/20 bg-(--ink-900) py-4 px-8 text-center rounded-b-lg">
+          <p className="text-[16px] font-semibold tracking-wider text-muted">Sarvian Design Group</p>
           <p>
-            {" "}
             <a
               href="tel:+19544444803"
-              className="underline-offset-4 hover:underline hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm"
+              className="underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-sm font-mono text-[16px] text-accent"
               aria-label="Call Sarvian Design Group at 954-444-4803">
               954-444-4803
             </a>

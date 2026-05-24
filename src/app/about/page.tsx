@@ -17,6 +17,7 @@ export default function AboutPage() {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
               priority
+              quality={90}
               className="object-cover img-reveal"
             />
           </div>
@@ -28,6 +29,7 @@ export default function AboutPage() {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
               priority
+              quality={90}
               className="object-cover img-reveal"
             />
           </div>
@@ -39,6 +41,7 @@ export default function AboutPage() {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
               priority
+              quality={90}
               className="object-cover img-reveal"
             />
           </div>
@@ -50,6 +53,7 @@ export default function AboutPage() {
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
               priority
+              quality={90}
               className="object-cover img-reveal"
             />
           </div>

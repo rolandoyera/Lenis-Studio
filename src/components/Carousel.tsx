@@ -90,6 +90,7 @@ const Carousel: React.FC<CarouselProps> = ({
                   alt={item.title || "Interior Design Carousel Item"}
                   fill
                   priority={idx === 0}
+                  quality={90}
                   sizes="100vw"
                   className={`object-cover transition-transform duration-3000 ease-out
             ${idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
@@ -117,9 +118,11 @@ const Carousel: React.FC<CarouselProps> = ({
                       </p>
                     )}
                     {item.buttonText && item.buttonLink && (
-                      <Link href={item.buttonLink}>
-                        <Button className="mt-6">{item.buttonText}</Button>
-                      </Link>
+                      <div className="flex justify-center mt-6">
+                        <Link href={item.buttonLink}>
+                          <Button>{item.buttonText}</Button>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -133,13 +136,13 @@ const Carousel: React.FC<CarouselProps> = ({
           <>
             <button
               onClick={prevSlide}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer rounded-full border-2 border-white"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer rounded-full "
               aria-label="Previous slide">
               <ArrowLeft size={40} />
             </button>
             <button
               onClick={nextSlide}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer rounded-full border-2 border-white"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white p-2 transition-all duration-200 hover:scale-110 cursor-pointer rounded-full"
               aria-label="Next slide">
               <ArrowRight size={40} />
             </button>

@@ -6,11 +6,14 @@ import type {
   ReactNode,
 } from "react";
 import Link from "next/link";
-import clsx from "clsx";
+import { cn } from "@/lib/utils";
+import { MoveRight } from "lucide-react";
+
 
 type ButtonBaseProps = {
   children: ReactNode;
   className?: string;
+  icon?: ReactNode;
 };
 
 type ButtonAsButton = DetailedHTMLProps<
@@ -33,10 +36,11 @@ export default function Button({
   children,
   className,
   href,
+  icon,
   ...props
 }: ButtonProps) {
-  const baseClasses = clsx(
-    "inline-block border-0 cursor-pointer py-3 px-4 rounded-sm bg-brand text-white duration-100 ease-out active:translate-y-px text-[16px] focus-visible:ring-2 focus-visible:ring-[#c9b49a] focus-visible:ring-offset-2 focus-visible:ring-offset-white hover:scale-105 transition-transform",
+  const baseClasses = cn(
+    "group flex gap-2 items-center justify-center border-0 cursor-pointer py-3 px-4 rounded-sm bg-brand text-white font-medium duration-200 active:translate-y-px text-[18px] focus-visible:ring-2 focus-visible:ring-[#c9b49a] focus-visible:ring-offset-2 focus-visible:ring-offset-white transition-all hover:shadow hover:shadow-black/50",
     className,
   );
 
@@ -45,7 +49,10 @@ export default function Button({
     const { href: _, ...linkProps } = props as ButtonAsLink;
     return (
       <Link href={href} className={baseClasses} {...linkProps}>
-        {children}
+        <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">
+          {children}
+        </span>
+        <MoveRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
       </Link>
     );
   }
@@ -54,7 +61,10 @@ export default function Button({
   const buttonProps = props as ButtonAsButton;
   return (
     <button className={baseClasses} {...buttonProps}>
-      {children}
+      <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">
+        {children}
+      </span>
+      <MoveRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1 mt-0.5" />
     </button>
   );
 }

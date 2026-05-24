@@ -98,7 +98,7 @@ const OurApproachSection: React.FC<AccordionProps> = ({
           return (
             <div
               key={index}
-              className={`transition-all duration-[${PANEL_MS}ms] ease-in-out overflow-hidden flex mr-2 rounded border border-black/10 dark:border-white/10 bg-white/60 dark:bg-white/5 ${isActive ? "flex-1" : "w-16"
+              className={`transition-all duration-[${PANEL_MS}ms] ease-in-out overflow-hidden flex mr-2 rounded border border-black/10 bg-white/60 ${isActive ? "flex-1" : "w-16"
                 }`}>
               {/* Vertical tab */}
               <button
@@ -134,6 +134,7 @@ const OurApproachSection: React.FC<AccordionProps> = ({
                     alt={panel.title}
                     width={600}
                     height={280}
+                    quality={90}
                   />
                 </div>
                 <div
@@ -164,7 +165,7 @@ const OurApproachSection: React.FC<AccordionProps> = ({
           return (
             <div
               key={index}
-              className="rounded border border-black/10 dark:border-white/10 overflow-hidden bg-white/60 dark:bg-white/5">
+              className="rounded border border-black/10 overflow-hidden bg-white/60">
               <button
                 onClick={() => togglePanel(index)}
                 disabled={locked}
@@ -194,6 +195,7 @@ const OurApproachSection: React.FC<AccordionProps> = ({
                         src={panel.image}
                         alt={panel.title}
                         fill
+                        quality={90}
                         className="object-cover rounded"
                       />
                     </div>
