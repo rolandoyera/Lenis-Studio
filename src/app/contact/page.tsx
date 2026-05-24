@@ -6,7 +6,6 @@ import styles from "./contact.module.css";
 import Container from "@/components/ui/Container";
 
 import Main from "@/components/ui/Main";
-import H1 from "@/components/ui/H1";
 import Display from "@/components/ui/Display";
 type Scope = "Residential" | "Hospitality" | "Cultural" | "Furniture" | "Other";
 
