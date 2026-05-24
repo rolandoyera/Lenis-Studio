@@ -129,12 +129,12 @@ export default async function ProjectPage({
         )}
 
         {/* 2) Content row: left = info (sticky), right = gallery */}
-        <section className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:p-6">
+        <section className="mt-6 grid grid-cols-1 xl:grid-cols-12 gap-8 px-6 xl:p-6">
           {/* LEFT: Project info */}
-          <aside className="lg:col-span-4">
-            <div className="lg:sticky lg:top-20">
+          <aside className="xl:col-span-4">
+            <div className="xl:sticky xl:top-20">
               <div className="bg-card p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16 rounded-md shadow">
-                <h1 className="text-[38px] tracking-[-0.012em] font-semibold">
+                <h1 className="text-[38px]/[1.1] tracking-[-0.012em] font-semibold">
                   {data.title}
                 </h1>
                 {data.location && (
@@ -216,7 +216,7 @@ export default async function ProjectPage({
           </aside>
 
           {/* RIGHT: Image stack (single column, natural aspect, NO rounding) */}
-          <div className="lg:col-span-8">
+          <div className="xl:col-span-8">
             {sortedGallery.length > 0 && (
               <div className="flex flex-col gap-6">
                 {sortedGallery.map((img, i) => {
@@ -235,7 +235,7 @@ export default async function ProjectPage({
                       quality={90}
                       loading="lazy"
                       decoding="async"
-                      sizes="(min-width:1024px) 66vw, 100vw"
+                      sizes="(min-width:1280px) 66vw, 100vw"
                       className="w-full h-auto rounded-md shadow"
                     />
                   );
