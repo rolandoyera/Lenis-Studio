@@ -1,7 +1,7 @@
 "use client";
 
 import { useContactModal } from "../ContactModalProvider";
-import Button from "./Button";
+import ArrowButton from "./ArrowButton";
 
 export default function ContactButton({
   children = "Contact",
@@ -12,10 +12,8 @@ export default function ContactButton({
 }) {
   const { open } = useContactModal();
   return (
-    <Button
-      onClick={open}
-      className={`rounded-full px-8 uppercase ${className}`}>
+    <ArrowButton onClick={open} className={`${className}`}>
       {children}
-    </Button>
+    </ArrowButton>
   );
 }

@@ -20,6 +20,7 @@ const QUERY = groq`
 `;
 
 import TransitionLink from "@/components/ui/TransitionLink";
+import P from "@/components/ui/P";
 
 export default async function ProjectsPage() {
   let projects: {
@@ -41,11 +42,11 @@ export default async function ProjectsPage() {
     <Main className="px-8 mb-20 mt-24">
       <div className="w-full flex flex-col items-center justify-center py-20">
         <H1>Latest Projects</H1>
-        <p className="mt-4 text-lg text-muted-foreground max-w-2xl text-center">
+        <P className="mt-4 max-w-4xl text-center">
           We had the privilege of collaborating with clients across South
           Florida, including Miami, Fort Lauderdale, Coral Gables, Weston, Boca
           Raton, and Palm Beach.
-        </p>
+        </P>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -54,7 +55,9 @@ export default async function ProjectsPage() {
             key={p._id}
             href={`/projects/${p.slug}`}
             className="group relative overflow-hidden block project-card-animate"
-            style={{ animationDelay: `${index * 0.12}s` } as React.CSSProperties}
+            style={
+              { animationDelay: `${index * 0.12}s` } as React.CSSProperties
+            }
             aria-label={`${p.title} — ${p.location}`}>
             <div className="relative w-full aspect-4/3">
               <Image
@@ -64,16 +67,20 @@ export default async function ProjectsPage() {
                 fill
                 quality={90}
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
-                style={{ viewTransitionName: `hero-${p.slug}` } as React.CSSProperties}
+                style={
+                  {
+                    viewTransitionName: `hero-${p.slug}`,
+                  } as React.CSSProperties
+                }
               />
               {/* Hover overlay */}
               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[hsl(35,15,10)]/55 text-white backdrop-blur-xs">
                 <H2 className="text-white transition-all duration-300 ease-out translate-y-[-16px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100">
                   {p.title}
                 </H2>
-                <p className="text-lg mt-1 transition-all duration-300 ease-out translate-y-[16px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 delay-75">
+                <P className="text-lg mt-1 transition-all duration-300 ease-out translate-y-[16px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 delay-75">
                   {p.location}
-                </p>
+                </P>
               </div>
             </div>
           </TransitionLink>

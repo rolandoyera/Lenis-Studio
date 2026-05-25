@@ -147,28 +147,26 @@ export default async function ProjectPage({
                 {data.location && (
                   <p className="text-[16px] font-mono">{data.location}</p>
                 )}
-                <dl className="mt-10 space-y-2">
+                <div className="mt-10 space-y-2">
                   <div className="flex justify-between pb-2 relative">
                     <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
                     <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
-                    <dt>
-                      <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
-                        Firm
-                      </h2>
-                    </dt>
-                    <dd className="text-[16px]">Sarvian Design Group</dd>
+                    <span className="text-[16px] font-medium font-mono">
+                      Firm
+                    </span>
+                    <span className="text-[16px] font-mono">
+                      Sarvian Design Group
+                    </span>
                   </div>
 
                   {data.type && (
                     <div className="flex justify-between pb-2 relative">
                       <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
                       <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
-                      <dt>
-                        <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
-                          Type
-                        </h2>
-                      </dt>
-                      <dd className="text-[16px]">{data.type}</dd>
+                      <span className="text-[16px] font-medium font-mono">
+                        Type
+                      </span>
+                      <span className="text-[16px] font-mono">{data.type}</span>
                     </div>
                   )}
 
@@ -176,30 +174,26 @@ export default async function ProjectPage({
                     <div className="flex justify-between pb-2 relative">
                       <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
                       <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
-                      <dt>
-                        <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
-                          Size
-                        </h2>
-                      </dt>
-                      <dd className="text-[16px]">
+                      <span className="text-[16px] font-medium font-mono">
+                        Size
+                      </span>
+                      <span className="text-[16px] font-mono">
                         {typeof data.size === "number"
                           ? `${data.size.toLocaleString()} Sq Ft`
                           : data.size}
-                      </dd>
+                      </span>
                     </div>
                   )}
 
                   {typeof data.year === "number" && (
                     <div className="flex justify-between">
-                      <dt>
-                        <h2 className="text-[16px] tracking-[-0.012em] font-medium font-mono">
-                          Year
-                        </h2>
-                      </dt>
-                      <dd className="text-[16px]">{data.year}</dd>
+                      <span className="text-[16px] font-medium font-mono">
+                        Year
+                      </span>
+                      <span className="text-[16px] font-mono">{data.year}</span>
                     </div>
                   )}
-                </dl>
+                </div>
 
                 {data.intro && (
                   <p className="mt-16 text-sm leading-6 text-white/85">
@@ -213,10 +207,8 @@ export default async function ProjectPage({
                   </div>
                 )}
 
-                <div className="w-full mt-16 flex">
-                  <ContactButton className="w-full flex items-center justify-center">
-                    Start a Similar Project
-                  </ContactButton>
+                <div className="w-fit mt-16 ml-auto">
+                  <ContactButton>Start a Similar Project</ContactButton>
                 </div>
               </div>
             </div>

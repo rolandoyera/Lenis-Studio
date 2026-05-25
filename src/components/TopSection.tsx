@@ -1,8 +1,8 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import Button from "./ui/Button";
 import H1 from "./ui/H1";
+import ArrowButton from "./ui/ArrowButton";
 
 export default function TopSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -31,10 +31,11 @@ export default function TopSection() {
       className="min-h-dvh flex items-center justify-center max-w-[1800px] mx-auto overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-12 items-center mx-auto w-full">
         <div
-          className={`space-y-6 transition-all duration-1000 ease-out lg:col-span-2 ${isVisible
+          className={`space-y-6 transition-all duration-1000 ease-out lg:col-span-2 ${
+            isVisible
               ? "translate-x-0 opacity-100"
               : "-translate-x-full opacity-0"
-            }`}>
+          }`}>
           <H1>Architectural & Interior Design Firm</H1>
           <p>
             Sarvian Design is an award-winning architecture and interior design
@@ -45,14 +46,17 @@ export default function TopSection() {
             experience.
           </p>
           <div className="flex gap-4 pl-4 mt-12">
-            <Button href="/projects">View Our Projects</Button>
+            <ArrowButton href="/projects" className="bg-taupe-700">
+              View Our Projects
+            </ArrowButton>
           </div>
         </div>
         <div
-          className={`relative transition-all duration-1000 ease-out delay-300 lg:col-span-3 ${isVisible
+          className={`relative transition-all duration-1000 ease-out delay-300 lg:col-span-3 ${
+            isVisible
               ? "translate-x-0 opacity-100"
               : "translate-x-full opacity-0"
-            }`}>
+          }`}>
           <div className="p-[20px]">
             <Image
               src="/assets/about-us-top.jpg"

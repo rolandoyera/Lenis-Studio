@@ -4,7 +4,7 @@
 :root {
   /* Light theme variables */
   --color-nav: var(--cream-100);
-  --color-footer: var(--ink-900);
+  --color-footer: var(--taupe-900);
   --color-brand: #816540;
   --color-banner: oklch(21% 0.034 264.665);
 
@@ -17,7 +17,7 @@
   --color-link: hsl(34, 34%, 48%);
 
   --background: var(--cream-100);
-  --foreground: var(--taupe-800);
+  --foreground: var(--taupe-700);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --muted: oklch(0.97 0 0);
@@ -32,28 +32,27 @@
 
 /* Tailwind theme integration */
 @theme inline {
-  --cream-100: hsl(32 13% 96%);
-  --cream-200: hsl(32 20% 92%);
-  --sand-300: #d9cfc0;
+  --cream-100: hsl(40 60% 97%);
+  --cream-200: hsl(40 40% 90%);
+  --cream-300: hsl(40 30% 85%);
   --sand-400: #a8987f;
-  --taupe-500: #6b6256;
-  --taupe-600: hsl(32 13% 26%);
-  --taupe-800: hsl(32 13% 20%);
 
-  --ink-800: #2a2620;
-  --ink-900: #1a1816;
+  --taupe-600: hsl(32 13% 26%);
+  --taupe-700: hsl(32 16% 20%);
+  --taupe-800: hsl(32 18% 15%);
+  --taupe-900: hsl(32 15% 10%);
   --black: #0e0c0a;
 
   /* Color utilities (text-*, bg-*, border-*) */
   --color-cream-100: var(--cream-100);
   --color-cream-200: var(--cream-200);
-  --color-sand-300: var(--sand-300);
+  --color-cream-300: var(--cream-300);
   --color-sand-400: var(--sand-400);
-  --color-taupe-500: var(--taupe-500);
+
   --color-taupe-600: var(--taupe-600);
+  --color-taupe-700: var(--taupe-700);
   --color-taupe-800: var(--taupe-800);
-  --color-ink-800: var(--ink-800);
-  --color-ink-900: var(--ink-900);
+  --color-taupe-900: var(--taupe-900);
   --color-black: var(--black);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -143,10 +142,6 @@ input:-webkit-autofill:active {
 
 .richtext p:last-child {
   margin-bottom: 0;
-}
-
-p {
-  line-height: 1.55;
 }
 
 @layer base {

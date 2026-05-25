@@ -12,8 +12,8 @@ export default function WatermarkLogo({
   className = "",
   size = 300,
   opacity = 0.5,
-  gradientFrom = "var(--taupe-800)",
-  gradientTo = "var(--ink-900)",
+  gradientFrom = "var(--taupe-700)",
+  gradientTo = "var(--taupe-900)",
   maskUrl = "/assets/logo_sdg-S-only.svg",
   rotation = 0,
 }: WatermarkLogoProps) {

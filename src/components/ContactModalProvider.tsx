@@ -295,7 +295,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* FOOTER SECTION */}
-        <div className="border-t border-border/20 bg-ink-900 py-4 px-8 text-center rounded-b-lg">
+        <div className="border-t border-border/20 bg-taupe-900 py-4 px-8 text-center rounded-b-lg">
           <p className="text-[16px] font-semibold tracking-wider text-muted">
             Sarvian Design Group
           </p>

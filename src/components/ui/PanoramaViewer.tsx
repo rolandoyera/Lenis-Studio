@@ -72,7 +72,7 @@ export default function PanoramaViewer({
           observer.disconnect();
         }
       },
-      { rootMargin: "300px" } // Start loading 300px before scrolling into view
+      { rootMargin: "300px" }, // Start loading 300px before scrolling into view
     );
 
     observer.observe(container);
@@ -439,7 +439,6 @@ export default function PanoramaViewer({
       <canvas
         ref={canvasRef}
         className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
-        title={alt}
       />
 
       {/* Loading Overlay */}
@@ -477,9 +476,6 @@ export default function PanoramaViewer({
           <div className="bg-black/40 backdrop-blur-xs px-6 py-4 rounded-xl flex flex-col items-center gap-2 max-w-xs text-center border border-white/5 shadow-2xl scale-95 group-hover/pano:scale-100 transition-transform duration-300">
             <Move className="w-8 h-8 opacity-75 animate-bounce" />
             <p className="text-sm font-semibold">Drag to Explore Room</p>
-            <p className="text-xs opacity-60">
-              Swipe or click & drag to rotate in full 360°
-            </p>
           </div>
         </div>
       )}
