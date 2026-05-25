@@ -59,7 +59,7 @@ export default function Navbar2() {
             </ul>
             <ArrowButton
               onClick={() => console.log("clicked")}
-              className="bg-white text-foreground">
+              className="bg-white text-foreground hover:bg-accent hover:text-white">
               Let's Talk
             </ArrowButton>
           </div>

@@ -9,6 +9,7 @@ import type { PortableTextBlock } from "@portabletext/types";
 import ContactButton from "@/components/ui/ContactButton";
 import NextProject from "@/components/NextProject";
 import PanoramaViewer from "@/components/ui/PanoramaViewer";
+import P from "@/components/ui/P";
 
 /* -------------------- Types -------------------- */
 
@@ -145,9 +146,9 @@ export default async function ProjectPage({
                   {data.title}
                 </h1>
                 {data.location && (
-                  <p className="text-[16px] font-mono">{data.location}</p>
+                  <P className="text-[16px]">{data.location}</P>
                 )}
-                <div className="mt-10 space-y-2">
+                <div className="my-10 lg:my-16 space-y-2">
                   <div className="flex justify-between pb-2 relative">
                     <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
                     <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />

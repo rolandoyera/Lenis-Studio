@@ -1,10 +1,10 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import Button from "./ui/Button";
 import TransitionLink from "@/components/ui/TransitionLink";
 import Image from "next/image";
 import H2 from "./ui/H2";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import ArrowButton from "./ui/ArrowButton";
 
 interface CarouselItem {
   id: string | number;
@@ -70,25 +70,30 @@ const Carousel: React.FC<CarouselProps> = ({
   return (
     <div className={`relative w-full overflow-hidden ${className}`}>
       {/* Main carousel container */}
-      <div className="relative h-[calc(100vh-100px)] overflow-hidden">
+      <div className="relative h-svh overflow-hidden">
         <div
           className="flex transition-transform duration-500 ease-in-out h-full"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
           {items.map((item, idx) => {
-            const isProjectLink = item.buttonLink && item.buttonLink.startsWith("/projects/");
-            const slug = isProjectLink && item.buttonLink ? item.buttonLink.replace("/projects/", "") : "";
+            const isProjectLink =
+              item.buttonLink && item.buttonLink.startsWith("/projects/");
+            const slug =
+              isProjectLink && item.buttonLink
+                ? item.buttonLink.replace("/projects/", "")
+                : "";
             const transitionName = slug ? `hero-${slug}` : undefined;
 
             return (
-              <div key={item.id} className="min-w-full h-full relative overflow-hidden">
+              <div
+                key={item.id}
+                className="min-w-full h-full relative overflow-hidden">
                 {/* Parallax container for background image */}
                 <div
                   className="absolute w-full h-[130%] top-[-15%] left-0"
                   style={{
                     transform: `translateY(${scrollY * 0.3}px)`,
                     willChange: "transform",
-                  }}
-                >
+                  }}>
                   <Image
                     src={item.image}
                     alt={item.title || "Interior Design Carousel Item"}
@@ -97,12 +102,19 @@ const Carousel: React.FC<CarouselProps> = ({
                     quality={90}
                     sizes="100vw"
                     className={`object-cover transition-transform duration-3000 ease-out
-              ${idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
-                      }`}
-                    style={{
-                      willChange: "transform",
-                      ...(transitionName ? { viewTransitionName: transitionName } : {}),
-                    } as React.CSSProperties}
+              ${
+                idx === currentIndex
+                  ? "scale-103 delay-500"
+                  : "scale-100 delay-0"
+              }`}
+                    style={
+                      {
+                        willChange: "transform",
+                        ...(transitionName
+                          ? { viewTransitionName: transitionName }
+                          : {}),
+                      } as React.CSSProperties
+                    }
                   />
                 </div>
 
@@ -114,8 +126,7 @@ const Carousel: React.FC<CarouselProps> = ({
                       style={{
                         transform: `translateY(${scrollY * 0.15}px)`,
                         willChange: "transform",
-                      }}
-                    >
+                      }}>
                       {item.title && (
                         <H2 className="text-white">{item.title}</H2>
                       )}
@@ -127,7 +138,7 @@ const Carousel: React.FC<CarouselProps> = ({
                       {item.buttonText && item.buttonLink && (
                         <div className="flex justify-center mt-6">
                           <TransitionLink href={item.buttonLink}>
-                            <Button>{item.buttonText}</Button>
+                            <ArrowButton>{item.buttonText}</ArrowButton>
                           </TransitionLink>
                         </div>
                       )}

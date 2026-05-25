@@ -9,7 +9,7 @@ export default function P({ children, className, ...props }: PProps) {
     <p
       {...props}
       className={cn(
-        "text-base lg:text-[22px] font-light text-balance -mb-4 leading-[1.55]",
+        "text-base lg:text-[22px] font-light text-balance -mb-4 last:mb-0 leading-[1.55]",
         className,
       )}>
       {children}

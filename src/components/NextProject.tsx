@@ -26,7 +26,8 @@ export default function NextProject({
             </h3>
             <ArrowButton
               href={`/projects/${prevProject.slug}`}
-              direction="left">
+              direction="left"
+              variant="secondary">
               Previous
             </ArrowButton>
           </div>
@@ -41,7 +42,9 @@ export default function NextProject({
               {nextProject.title}
             </h3>
 
-            <ArrowButton href={`/projects/${nextProject.slug}`}>
+            <ArrowButton
+              href={`/projects/${nextProject.slug}`}
+              variant="secondary">
               Next
             </ArrowButton>
           </div>

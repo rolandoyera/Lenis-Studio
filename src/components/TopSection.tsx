@@ -46,7 +46,7 @@ export default function TopSection() {
             experience.
           </p>
           <div className="flex gap-4 pl-4 mt-12">
-            <ArrowButton href="/projects" className="bg-taupe-700">
+            <ArrowButton href="/projects" variant="secondary">
               View Our Projects
             </ArrowButton>
           </div>

@@ -16,7 +16,7 @@ export default function Footer() {
   }
 
   return (
-    <footer className="w-full relative bg-[linear-gradient(180deg,var(--taupe-800)_0%,var(--taupe-900)_100%)] h-100 overflow-hidden">
+    <footer className="w-full relative bg-linear-to-b from-taupe-800 to-taupe-900 h-100 overflow-hidden">
       <Container className="relative flex flex-col h-full items-center justify-center max-w-[900px] z-10">
         <div className="flex-1 flex flex-col items-center justify-center">
           <Image

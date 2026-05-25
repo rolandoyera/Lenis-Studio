@@ -79,6 +79,32 @@ export default function PanoramaViewer({
     return () => observer.disconnect();
   }, []);
 
+  // Wheel Zoom Listener (Scroll to zoom, prevent body scroll in fullscreen)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !isInViewport) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // ONLY zoom and block page scrolling if the viewer is actively in full-screen mode!
+      if (!isFullscreen) return;
+
+      // Prevent parent page scrolling while actively zooming the room
+      e.preventDefault();
+      // Block event propagation to prevent custom smooth scroll libraries (like Lenis) from catching it at the window level
+      e.stopPropagation();
+
+      // Standardize scroll delta across browsers and mice
+      const sens = 0.0012;
+
+      // Negative deltaY = scroll up = Zoom In (increase focal length fov)
+      // Positive deltaY = scroll down = Zoom Out (decrease focal length fov)
+      fov.current = Math.max(0.6, Math.min(2.5, fov.current - e.deltaY * sens));
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, [isInViewport, isFullscreen]);
+
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
@@ -486,7 +512,7 @@ export default function PanoramaViewer({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              adjustZoom(-0.15);
+              adjustZoom(0.15);
             }}
             className="p-2 text-white/85 hover:text-white hover:bg-white/10 rounded-md transition cursor-pointer"
             title="Zoom In">
@@ -496,7 +522,7 @@ export default function PanoramaViewer({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              adjustZoom(0.15);
+              adjustZoom(-0.15);
             }}
             className="p-2 text-white/85 hover:text-white hover:bg-white/10 rounded-md transition cursor-pointer"
             title="Zoom Out">
