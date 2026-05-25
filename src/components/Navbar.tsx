@@ -6,11 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import Container from "./ui/Container";
 import { usePathname } from "next/navigation";
 
-const BASE_DESKTOP_CLASS = "relative p-2 tracking-tight uppercase after:absolute after:h-[2px] after:bottom-[4px] after:left-2 after:right-2 after:w-[calc(100%-16px)] after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-200 hover:after:scale-x-100 text-xl";
+const BASE_DESKTOP_CLASS =
+  "relative p-2 tracking-tight uppercase after:absolute after:h-[2px] after:bottom-[4px] after:left-2 after:right-2 after:w-[calc(100%-16px)] after:origin-left after:scale-x-0 after:bg-white after:transition-transform after:duration-200 hover:after:scale-x-100 text-xl";
 
 const LEFT_LINKS = [
   { name: "Projects", href: "/projects" },
-  { name: "Publications", href: "/publications" },
+  { name: "Press", href: "/press" },
 ];
 
 const RIGHT_LINKS = [
@@ -32,7 +33,6 @@ export default function Navbar() {
   const mobileMenuId = "mobile-menu";
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-
   // Toggle `inert` so links aren’t focusable when the menu is closed
   useEffect(() => {
     const el = menuRef.current;
@@ -49,7 +49,9 @@ export default function Navbar() {
   }, [mobileOpen]);
 
   return (
-    <nav aria-label="Primary" className="absolute top-0 left-0 w-full z-50 text-white font-medium bg-black/20 backdrop-blur-xs shadow">
+    <nav
+      aria-label="Primary"
+      className="absolute top-0 left-0 w-full z-50 text-white font-medium bg-black/20 backdrop-blur-xs shadow">
       <Container className="relative">
         {/* Equal-side layout keeps center logo truly centered */}
         <div className="relative flex items-center">
@@ -124,8 +126,9 @@ export default function Navbar() {
         <div
           id={mobileMenuId}
           ref={menuRef}
-          className={`md:hidden grid transition-[grid-template-rows] duration-300 ease-out ${mobileOpen ? "grid-rows-[1fr] mt-2" : "grid-rows-[0fr] mt-2"
-            }`}>
+          className={`md:hidden grid transition-[grid-template-rows] duration-300 ease-out ${
+            mobileOpen ? "grid-rows-[1fr] mt-2" : "grid-rows-[0fr] mt-2"
+          }`}>
           <div className="overflow-hidden">
             <nav className="flex flex-col gap-2 pb-4 border-t border-white/20">
               {[...LEFT_LINKS, ...RIGHT_LINKS].map((link) => (

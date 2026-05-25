@@ -8,6 +8,7 @@ import { PortableText } from "@portabletext/react";
 import type { PortableTextBlock } from "@portabletext/types";
 import ContactButton from "@/components/ui/ContactButton";
 import NextProject from "@/components/NextProject";
+import PanoramaViewer from "@/components/ui/PanoramaViewer";
 
 /* -------------------- Types -------------------- */
 
@@ -23,6 +24,7 @@ type Project = {
   heroImage?: SanityImageWithAlt;
   mainImage?: SanityImageWithAlt;
   gallery?: SanityImageWithAlt[];
+  panorama360?: SanityImageWithAlt;
 
   intro?: string;
   description?: PortableTextBlock[];
@@ -42,6 +44,7 @@ const PROJECT_BY_SLUG = groq`*[_type=="project" && slug.current == $slug][0]{
   heroImage{ ..., alt, asset->{ url, metadata{ dimensions } } },
   mainImage{ ..., alt, asset->{ url, metadata{ dimensions } } },
   gallery[]{ ..., alt, asset->{ url, metadata{ dimensions } } },
+  panorama360{ ..., alt, asset->{ url, metadata{ dimensions } } },
   intro,
   description,
   body
@@ -94,6 +97,7 @@ export default async function ProjectPage({
   const hero = data.heroImage || data.mainImage;
   const rich = data.description ?? data.body;
   const gallery = Array.isArray(data.gallery) ? data.gallery : [];
+  const panorama = data.panorama360;
 
   // Sort: landscapes first, then portraits, then square/unknown (stable within groups)
   const sortedGallery: SanityImageWithAlt[] = gallery
@@ -124,6 +128,9 @@ export default async function ProjectPage({
               fetchPriority="high"
               sizes="100vw"
               className="object-cover"
+              style={
+                { viewTransitionName: `hero-${slug}` } as React.CSSProperties
+              }
             />
           </section>
         )}
@@ -217,29 +224,42 @@ export default async function ProjectPage({
 
           {/* RIGHT: Image stack (single column, natural aspect, NO rounding) */}
           <div className="xl:col-span-8">
-            {sortedGallery.length > 0 && (
-              <div className="flex flex-col gap-6">
-                {sortedGallery.map((img, i) => {
-                  const dims = img.asset.metadata?.dimensions;
-                  const ar = dims?.aspectRatio ?? 4 / 3;
-                  const width = Math.min(dims?.width ?? 1600, 1800);
-                  const height = Math.round(width / ar);
+            {(sortedGallery.length > 0 || panorama) && (
+              <div className="flex flex-col gap-8">
+                {sortedGallery.length > 0 && (
+                  <div className="flex flex-col gap-6">
+                    {sortedGallery.map((img, i) => {
+                      const dims = img.asset.metadata?.dimensions;
+                      const ar = dims?.aspectRatio ?? 4 / 3;
+                      const width = Math.min(dims?.width ?? 1600, 1800);
+                      const height = Math.round(width / ar);
 
-                  return (
-                    <Image
-                      key={i}
-                      src={urlFor(img).width(width).auto("format").url()}
-                      alt={img.alt || `Project image ${i + 1}`}
-                      width={width}
-                      height={height}
-                      quality={90}
-                      loading="lazy"
-                      decoding="async"
-                      sizes="(min-width:1280px) 66vw, 100vw"
-                      className="w-full h-auto rounded-md shadow"
+                      return (
+                        <Image
+                          key={i}
+                          src={urlFor(img).width(width).auto("format").url()}
+                          alt={img.alt || `Project image ${i + 1}`}
+                          width={width}
+                          height={height}
+                          quality={90}
+                          loading="lazy"
+                          decoding="async"
+                          sizes="(min-width:1280px) 66vw, 100vw"
+                          className="w-full h-auto rounded-md shadow"
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
+                {panorama && (
+                  <div className="w-full pt-4 border-t border-border/30">
+                    <PanoramaViewer
+                      imageUrl={panorama.asset.url}
+                      alt={panorama.alt || "360 degree room view"}
                     />
-                  );
-                })}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -238,3 +238,30 @@ html.lenis body {
     -10px -10px 20px #ffffff;
   padding: 30px;
 }
+
+/* Premium Native View Transitions */
+::view-transition-group(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 0.5s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Desktop-only Stagger Reveal for Project Cards */
+@media (min-width: 1024px) {
+  @keyframes projectReveal {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .project-card-animate {
+    opacity: 0;
+    animation: projectReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+}

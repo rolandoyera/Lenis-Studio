@@ -105,6 +105,23 @@ export default defineType({
       validation: (Rule) =>
         Rule.min(1).warning("Add at least one gallery image"),
     }),
+
+    // 8) 360 Degree Image (equirectangular panorama)
+    defineField({
+      name: "panorama360",
+      title: "360° Image",
+      description: "An equirectangular 360-degree panorama image to display as the last item in the gallery.",
+      type: "image",
+      options: { hotspot: false },
+      fields: [
+        {
+          name: "alt",
+          title: "Alt text",
+          type: "string",
+          description: "Descriptive alt text for the 360 view."
+        }
+      ],
+    }),
   ],
 
   orderings: [

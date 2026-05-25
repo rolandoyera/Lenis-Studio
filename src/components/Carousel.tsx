@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import Button from "./ui/Button";
-import Link from "next/link";
+import TransitionLink from "@/components/ui/TransitionLink";
 import Image from "next/image";
 import H2 from "./ui/H2";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -74,60 +74,69 @@ const Carousel: React.FC<CarouselProps> = ({
         <div
           className="flex transition-transform duration-500 ease-in-out h-full"
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
-          {items.map((item, idx) => (
-            <div key={item.id} className="min-w-full h-full relative overflow-hidden">
-              {/* Parallax container for background image */}
-              <div
-                className="absolute w-full h-[130%] top-[-15%] left-0"
-                style={{
-                  transform: `translateY(${scrollY * 0.3}px)`,
-                  willChange: "transform",
-                }}
-              >
-                <Image
-                  src={item.image}
-                  alt={item.title || "Interior Design Carousel Item"}
-                  fill
-                  priority={idx === 0}
-                  quality={90}
-                  sizes="100vw"
-                  className={`object-cover transition-transform duration-3000 ease-out
-            ${idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
-                    }`}
-                  style={{ willChange: "transform" }}
-                />
-              </div>
+          {items.map((item, idx) => {
+            const isProjectLink = item.buttonLink && item.buttonLink.startsWith("/projects/");
+            const slug = isProjectLink && item.buttonLink ? item.buttonLink.replace("/projects/", "") : "";
+            const transitionName = slug ? `hero-${slug}` : undefined;
 
-              {(item.title || item.description) && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 p-6">
-                  {/* Floating parallax text element */}
-                  <div
-                    className="text-center"
+            return (
+              <div key={item.id} className="min-w-full h-full relative overflow-hidden">
+                {/* Parallax container for background image */}
+                <div
+                  className="absolute w-full h-[130%] top-[-15%] left-0"
+                  style={{
+                    transform: `translateY(${scrollY * 0.3}px)`,
+                    willChange: "transform",
+                  }}
+                >
+                  <Image
+                    src={item.image}
+                    alt={item.title || "Interior Design Carousel Item"}
+                    fill
+                    priority={idx === 0}
+                    quality={90}
+                    sizes="100vw"
+                    className={`object-cover transition-transform duration-3000 ease-out
+              ${idx === currentIndex ? "scale-103 delay-500" : "scale-100 delay-0"
+                      }`}
                     style={{
-                      transform: `translateY(${scrollY * 0.15}px)`,
                       willChange: "transform",
-                    }}
-                  >
-                    {item.title && (
-                      <H2 className="text-white">{item.title}</H2>
-                    )}
-                    {item.description && (
-                      <p className="text-white/90 text-base lg:text-xl mb-4">
-                        {item.description}
-                      </p>
-                    )}
-                    {item.buttonText && item.buttonLink && (
-                      <div className="flex justify-center mt-6">
-                        <Link href={item.buttonLink}>
-                          <Button>{item.buttonText}</Button>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
+                      ...(transitionName ? { viewTransitionName: transitionName } : {}),
+                    } as React.CSSProperties}
+                  />
                 </div>
-              )}
-            </div>
-          ))}
+
+                {(item.title || item.description) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 p-6">
+                    {/* Floating parallax text element */}
+                    <div
+                      className="text-center"
+                      style={{
+                        transform: `translateY(${scrollY * 0.15}px)`,
+                        willChange: "transform",
+                      }}
+                    >
+                      {item.title && (
+                        <H2 className="text-white">{item.title}</H2>
+                      )}
+                      {item.description && (
+                        <p className="text-white/90 text-base lg:text-xl mb-4">
+                          {item.description}
+                        </p>
+                      )}
+                      {item.buttonText && item.buttonLink && (
+                        <div className="flex justify-center mt-6">
+                          <TransitionLink href={item.buttonLink}>
+                            <Button>{item.buttonText}</Button>
+                          </TransitionLink>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Navigation arrows */}

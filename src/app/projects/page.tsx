@@ -1,6 +1,5 @@
 // app/projects/page.tsx
 import Image from "next/image";
-import Link from "next/link";
 import { groq } from "next-sanity";
 import { client } from "@/sanity/lib/client";
 import Main from "@/components/ui/Main";
@@ -20,6 +19,8 @@ const QUERY = groq`
   } | order(coalesce(year, 0) desc, _createdAt desc)
 `;
 
+import TransitionLink from "@/components/ui/TransitionLink";
+
 export default async function ProjectsPage() {
   let projects: {
     _id: string;
@@ -37,7 +38,7 @@ export default async function ProjectsPage() {
   }
 
   return (
-    <Main className="px-8 mb-20">
+    <Main className="px-8 mb-20 mt-24">
       <div className="w-full flex flex-col items-center justify-center py-20">
         <H1>Latest Projects</H1>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl text-center">
@@ -49,10 +50,11 @@ export default async function ProjectsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {projects.map((p, index) => (
-          <Link
+          <TransitionLink
             key={p._id}
             href={`/projects/${p.slug}`}
-            className="group relative overflow-hidden block"
+            className="group relative overflow-hidden block project-card-animate"
+            style={{ animationDelay: `${index * 0.12}s` } as React.CSSProperties}
             aria-label={`${p.title} — ${p.location}`}>
             <div className="relative w-full aspect-4/3">
               <Image
@@ -62,6 +64,7 @@ export default async function ProjectsPage() {
                 fill
                 quality={90}
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
+                style={{ viewTransitionName: `hero-${p.slug}` } as React.CSSProperties}
               />
               {/* Hover overlay */}
               <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[hsl(35,15,10)]/55 text-white backdrop-blur-xs">
@@ -73,7 +76,7 @@ export default async function ProjectsPage() {
                 </p>
               </div>
             </div>
-          </Link>
+          </TransitionLink>
         ))}
       </div>
     </Main>

@@ -8,7 +8,7 @@ import ArrowButton from "./ui/ArrowButton";
 const LINKS = [
   { name: "Projects", href: "/projects" },
   { name: "About", href: "/about" },
-  { name: "Services", href: "/services" },
+  { name: "Press", href: "/press" },
   { name: "Contact", href: "/contact" },
 ];
 
@@ -23,7 +23,8 @@ export default function Navbar2() {
   return (
     <nav
       aria-label="Primary"
-      className="absolute top-0 left-0 w-full z-50 text-white font-medium bg-black/20 backdrop-blur-xs shadow h-24">
+      className="absolute top-0 left-0 w-full z-50 text-white font-medium bg-black/20 backdrop-blur-xs shadow h-24"
+      style={{ viewTransitionName: "main-navbar" } as React.CSSProperties}>
       <Container className="relative flex items-center h-24">
         <div className="flex-1 flex items-center justify-between">
           <Link href="/">
@@ -49,7 +50,7 @@ export default function Navbar2() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="relative text-lg font-semibold uppercase group py-1">
+                    className="relative text-lg font-semibold uppercase group py-1 tracking-wide">
                     {link.name}
                     <span className="absolute bottom-0 left-1/2 w-0 h-[1.5px] bg-white transition-all duration-300 -translate-x-1/2 group-hover:w-full" />
                   </Link>
