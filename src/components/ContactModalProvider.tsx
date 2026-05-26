@@ -130,6 +130,14 @@ function ContactModal({ onClose }: { onClose: () => void }) {
       if (!res.ok) throw new Error("Request failed");
       reset();
       setSent(true);
+
+      // Track successful project modal form submission in GA4
+      if (typeof window !== "undefined" && (window as any).gtag) {
+        (window as any).gtag("event", "project_form_submit", {
+          form_type: "modal",
+        });
+      }
+
       closeTimer.current = window.setTimeout(() => {
         setSent(false);
         onClose();
@@ -154,7 +162,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
 
       {/* Panel */}
       <div
-        className="relative mx-4 w-full md:max-w-[600px] rounded-lg bg-transparent shadow-2xl transition-all duration-200 animate-in fade-in zoom-in-95 flex flex-col overflow-hidden p-0"
+        className="relative mx-4 w-full md:max-w-[700px] rounded bg-transparent shadow-2xl transition-all duration-200 animate-in fade-in zoom-in-95 flex flex-col overflow-hidden p-0"
         onClick={(e) => e.stopPropagation()}>
         {/* Close Button */}
         <button
@@ -165,7 +173,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
         </button>
 
         {/* HEADER SECTION */}
-        <div className="border-b border-border/20 px-8 pt-8 pb-5 bg-card rounded-t-lg">
+        <div className="border-b border-border/20 px-8 pt-8 pb-5 bg-card rounded-t">
           <h3
             id="contact-title"
             className="text-[28px] font-semibold tracking-[-0.012em] text-foreground">
@@ -179,7 +187,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* MIDDLE CONTENT SECTION */}
-        <div className="px-8 py-8 overflow-y-auto max-h-[60vh] flex-1 bg-card">
+        <div className="px-8 py-18 overflow-y-auto max-h-[60vh] flex-1 bg-card">
           {sent ? (
             <div className="py-8 text-center" aria-live="assertive">
               <CheckCircle2 className="mx-auto h-16 w-16 text-brand stroke-[1.5]" />
@@ -198,7 +206,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
             <form
               onSubmit={handleSubmit(onSubmit)}
               noValidate
-              className="space-y-8">
+              className="space-y-8 max-w-[500px] mx-auto">
               <input
                 type="text"
                 tabIndex={-1}
@@ -222,7 +230,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                 <Input
                   id="name"
                   autoComplete="name"
-                  placeholder="Your Name"
+                  placeholder="Your Name *"
                   aria-invalid={!!errors.name || undefined}
                   aria-describedby={errors.name ? "name-error" : undefined}
                   className="w-full"
@@ -246,7 +254,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                   autoComplete="tel"
                   aria-invalid={!!errors.phone || undefined}
                   aria-describedby={errors.phone ? "phone-error" : undefined}
-                  placeholder="Contact number"
+                  placeholder="Contact number *"
                   className="w-full"
                   {...register("phone")}
                 />
@@ -267,7 +275,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                   autoComplete="email"
                   aria-invalid={!!errors.email || undefined}
                   aria-describedby={errors.email ? "email-error" : undefined}
-                  placeholder="Your Email"
+                  placeholder="Your Email *"
                   className="w-full"
                   {...register("email")}
                 />
@@ -295,7 +303,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* FOOTER SECTION */}
-        <div className="border-t border-border/20 bg-taupe-900 py-4 px-8 text-center rounded-b-lg">
+        <div className="border-t border-border/20 bg-taupe-900 py-4 px-8 text-center rounded-b">
           <p className="text-[16px] font-semibold tracking-wider text-muted">
             Sarvian Design Group
           </p>

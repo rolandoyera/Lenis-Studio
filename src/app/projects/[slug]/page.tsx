@@ -140,8 +140,8 @@ export default async function ProjectPage({
         <section className="mt-6 grid grid-cols-1 xl:grid-cols-12 gap-8 px-6 xl:p-6">
           {/* LEFT: Project info */}
           <aside className="xl:col-span-4">
-            <div className="xl:sticky xl:top-20">
-              <div className="bg-card p-2 sm:p-4 md:p-8 lg:p-12 xl:p-16 rounded-md shadow">
+            <div className="xl:sticky xl:top-22">
+              <div className="bg-card p-2 sm:p-4 md:p-8 lg:p-12  rounded shadow">
                 <h1 className="text-[38px]/[1.1] tracking-[-0.012em] font-semibold">
                   {data.title}
                 </h1>
@@ -209,7 +209,7 @@ export default async function ProjectPage({
                 )}
 
                 <div className="w-fit mt-16 ml-auto">
-                  <ContactButton>Start a Similar Project</ContactButton>
+                  <ContactButton location="project_detail">Start a Similar Project</ContactButton>
                 </div>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default async function ProjectPage({
                           loading="lazy"
                           decoding="async"
                           sizes="(min-width:1280px) 66vw, 100vw"
-                          className="w-full h-auto rounded-md shadow"
+                          className="w-full h-auto rounded shadow"
                         />
                       );
                     })}

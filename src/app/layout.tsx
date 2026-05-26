@@ -4,6 +4,7 @@ import "./globals.css";
 import { Manrope } from "next/font/google";
 import Providers from "./Providers";
 import Navbar2 from "@/components/Navbar2";
+import Script from "next/script";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -31,6 +32,19 @@ export default function RootLayout({
       <body
         className={`${manrope.variable} font-sans antialiased bg-background text-foreground`}>
         <Providers>
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-K0ZYTV5JSM"
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'G-K0ZYTV5JSM');
+            `}
+          </Script>
           <Navbar2 />
           {children}
           <Footer />

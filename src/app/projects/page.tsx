@@ -39,7 +39,7 @@ export default async function ProjectsPage() {
 
   return (
     <div>
-      <div className="h-24 bg-taupe-800"></div>
+      <div className="h-24 bg-linear-to-b from-taupe-900 to-taupe-800"></div>
       <main className="px-8 mb-20">
         <div className="w-full flex flex-col items-center justify-center py-30">
           <H1>Latest Projects</H1>

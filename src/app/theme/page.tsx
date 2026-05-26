@@ -38,7 +38,7 @@ const COLOR_GROUPS = [
 export default function ThemePage() {
   return (
     <Main className="bg-white pb-60">
-      <div className="h-24 bg-taupe-800"></div>
+      <div className="h-24 bg-linear-to-b from-taupe-900 to-taupe-800"></div>
 
       {/* Typography */}
       <Container className="pt-30 flex flex-col gap-6 max-w-[1800px]">
@@ -128,7 +128,7 @@ export default function ThemePage() {
             {group.swatches.map((swatch) => (
               <div key={swatch.label} className="w-[200px] h-[200px]">
                 <div
-                  className={`${swatch.bgClass} w-full h-full rounded-lg shadow`}></div>
+                  className={`${swatch.bgClass} w-full h-full rounded shadow`}></div>
                 <p className="text-sm font-mono">{swatch.label}</p>
               </div>
             ))}
@@ -148,7 +148,7 @@ export default function ThemePage() {
             <H4>Surfaces</H4>
           </div>
           <div className="w-1/2 h-[400px]">
-            <div className="bg-cream-100 w-full h-full rounded-lg p-2 shadow">
+            <div className="bg-cream-100 w-full h-full rounded p-2 shadow">
               <P className="text-center mb-12">Site Background</P>
               <div className="flex flex-col gap-2 px-6">
                 <H3 className="mb-4">
@@ -166,7 +166,7 @@ export default function ThemePage() {
             <p className="text-sm font-mono">Cream 100</p>
           </div>
           <div className="w-1/2 h-[400px]">
-            <div className="bg-cream-200 w-full h-full rounded-lg p-2 shadow">
+            <div className="bg-cream-200 w-full h-full rounded p-2 shadow">
               <P className="text-center mb-12">Cards</P>
               <div className="flex flex-col gap-2 px-6">
                 <H3 className="-mb-2">The Shul- Bal Harbour</H3>
@@ -202,74 +202,31 @@ export default function ThemePage() {
           <div className="w-40 shrink-0">
             <H4>Backgrounds</H4>
           </div>
-          <div className="w-1/2 h-[400px]">
-            <div className="bg-cream-100 w-full h-full rounded-lg p-2 shadow">
-              <P className="text-center mb-12">Navbar 1</P>
-              <div className="flex flex-col gap-2 px-6">
-                <H3 className="mb-4">
-                  Architectural & <br />
-                  Interior Design Firm
-                </H3>
 
-                <P>
-                  We shape spaces where life unfolds. Blending architecture,
-                  interiors, and landscape, we craft environments that reflect
-                  purpose, enhance well-being, and inspire connection.
-                </P>
-              </div>
-            </div>
-            <p className="text-sm font-mono">Cream 100</p>
-          </div>
-          <div className="w-1/2 h-[400px]">
-            <div className="bg-linear-to-b from-taupe-800/95 to-taupe-900 w-full h-full rounded-lg p-2 shadow">
-              <P className="text-center mb-12 text-cream-300">Footer</P>
+          <div className="w-1/2 h-[200px]">
+            <div className="bg-linear-to-b from-taupe-900 to-taupe-800 w-full h-full rounded p-2 shadow">
+              <P className="text-center mb-12 text-cream-300">Navbar</P>
               <div className="flex flex-col gap-2 px-6">
                 <Image
-                  className="mx-auto brightness-0 invert"
-                  src="/logo.png"
+                  src="/assets/logo_sdg-horizontal.svg"
                   alt="Sarvian Design Group"
+                  loading="eager"
                   width={0}
                   height={0}
                   sizes="200px"
-                  quality={90}
-                  style={{ width: "200px", height: "auto" }}
+                  className="brightness-0 invert"
+                  style={{
+                    width: "200px",
+                    height: "auto",
+                  }}
+                  priority
                 />
-                <p className="mt-3 text-sm text-cream-300 text-center">
-                  Architecture and interior design firm.
-                </p>
-
-                <div className="flex justify-center items-center gap-10 mt-4">
-                  <a
-                    href="https://www.instagram.com/sarviandesigngroup/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram (opens in a new tab)"
-                    className="text-cream-300 flex items-center justify-center w-[30px] h-[30px]">
-                    <InstagramIcon size={30} color="currentColor" />
-                  </a>
-                  <a
-                    href="mailto:osh@sarviandg.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Send email to osh@sarviandg.com (opens in a new tab)"
-                    className="text-cream-300 flex items-center justify-center w-[32px] h-[32px]">
-                    <MailIcon size={32} color="currentColor" />
-                  </a>
-                  <a
-                    href="https://wa.me/16466394147"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Chat on WhatsApp with +1 (646) 639-4147 (opens in a new tab)"
-                    className="text-cream-300 flex items-center justify-center w-[30px] h-[30px]">
-                    <WhatsAppIcon size={26} color="currentColor" />
-                  </a>
-                </div>
               </div>
             </div>
-            <p className="text-sm font-mono">Gradient Taupe 800 to 900</p>
+            <p className="text-sm font-mono">Gradient Taupe 900 to 800</p>
           </div>
           <div className="w-1/2 h-[400px]">
-            <div className="bg-linear-to-b from-taupe-800/95 to-taupe-900 w-full h-full rounded-lg p-2 shadow">
+            <div className="bg-linear-to-b from-taupe-800/95 to-taupe-900 w-full h-full rounded p-2 shadow">
               <P className="text-center mb-12 text-cream-300">Footer</P>
               <div className="flex flex-col gap-2 px-6">
                 <Image
@@ -339,6 +296,22 @@ export default function ThemePage() {
             </ArrowButton>
             <p className="text-sm font-mono">Secondary Button • Taupe 800</p>
           </div>
+        </div>
+
+        <div className="h-px bg-border/60 w-full my-40 max-w-[1800px] mx-auto"></div>
+
+        <div className="flex flex-col items-center justify-center gap-4 pb-20">
+          <H3 className="text-center">Design System Documentation</H3>
+          <P className="text-center text-taupe-600 max-w-2xl">
+            View the complete design reference manual, code tokens,
+            copy-to-clipboard swatches, and development checklist guidelines.
+          </P>
+          <ArrowButton
+            href="/theme/guidelines"
+            variant="primary"
+            className="px-12 mt-4">
+            View Interactive Guidelines
+          </ArrowButton>
         </div>
       </Container>
     </Main>

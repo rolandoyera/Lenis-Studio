@@ -61,7 +61,7 @@ const Carousel: React.FC<CarouselProps> = ({
 
   if (items.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gray-200 rounded-lg">
+      <div className="flex items-center justify-center h-64 bg-gray-200 rounded">
         <p className="text-gray-500">No items to display</p>
       </div>
     );
@@ -128,10 +128,12 @@ const Carousel: React.FC<CarouselProps> = ({
                         willChange: "transform",
                       }}>
                       {item.title && (
-                        <H2 className="text-white">{item.title}</H2>
+                        <H2 className="text-white text-4xl lg:text-6xl mb-2">
+                          {item.title}
+                        </H2>
                       )}
                       {item.description && (
-                        <p className="text-white/90 text-base lg:text-xl mb-4">
+                        <p className="text-white/90 text-base lg:text-xl mb-8">
                           {item.description}
                         </p>
                       )}

@@ -508,7 +508,7 @@ export default function PanoramaViewer({
 
       {/* Glassmorphic Controls Bar */}
       {!loading && !error && (
-        <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/45 backdrop-blur-md p-1.5 rounded-lg border border-white/10 shadow-xl transition-opacity duration-300 opacity-60 group-hover/pano:opacity-100 z-10">
+        <div className="absolute bottom-4 right-4 flex items-center gap-1.5 bg-black/45 backdrop-blur-md p-1.5 rounded border border-white/10 shadow-xl transition-opacity duration-300 opacity-60 group-hover/pano:opacity-100 z-10">
           <button
             onClick={(e) => {
               e.stopPropagation();

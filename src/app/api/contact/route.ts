@@ -38,14 +38,14 @@ export async function POST(req: Request) {
         "api-key": process.env.BREVO_API_KEY!,
       },
       body: JSON.stringify({
-        sender: { email: "hello@sarviandg.com", name: "Website Contact Form" }, // Update this if you have a different verified sender email in Brevo
+        sender: { email: "hello@sarviandg.com", name: "Website Project Form" }, // Update this if you have a different verified sender email in Brevo
         to: [{ email: "rolysemail@gmail.com" }, { email: "osh@sarviandg.com" }],
         replyTo: { email: "osh@sarviandg.com", name: "Oshrat Rothschild" },
-        subject: "New Website Inquiry — Sarvian Design",
-        textContent: `You've received a lead from SDG website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone ?? ""}`,
+        subject: "New Project Inquiry — Sarvian Design",
+        textContent: `You've received a project lead from SDG website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone ?? ""}`,
         htmlContent: `
           <p style="font-family:Arial,sans-serif;font-size:16px;margin-bottom:20px;">
-            <strong>You've received a lead from SDG website</strong>
+            <strong>You've received a project lead from SDG website</strong>
           </p>
           <table cellpadding="6" style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6">
             <tr><td><strong>Name:</strong></td><td>${name}</td></tr>

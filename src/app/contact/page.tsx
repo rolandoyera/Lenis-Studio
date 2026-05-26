@@ -92,6 +92,14 @@ export default function ContactPage() {
       // e.g. await submitBrief(form);
       await new Promise((r) => setTimeout(r, 600)); // simulate latency
       setSent(true);
+
+      // Track successful contact brief page submission in GA4
+      if (typeof window !== "undefined" && (window as any).gtag) {
+        (window as any).gtag("event", "contact_form_submit", {
+          form_type: "contact_page",
+          project_scope: form.scope,
+        });
+      }
     } finally {
       setPending(false);
     }

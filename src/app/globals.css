@@ -37,10 +37,10 @@
   --cream-300: hsl(40 30% 85%);
   --sand-400: #a8987f;
 
-  --taupe-600: hsl(32 13% 26%);
-  --taupe-700: hsl(32 16% 20%);
-  --taupe-800: hsl(32 18% 15%);
-  --taupe-900: hsl(32 15% 10%);
+  --taupe-600: hsl(36 13% 26%);
+  --taupe-700: hsl(36 16% 20%);
+  --taupe-800: hsl(36 18% 15%);
+  --taupe-900: hsl(36 15% 10%);
   --black: #0e0c0a;
 
   /* Color utilities (text-*, bg-*, border-*) */
@@ -92,6 +92,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
+  --radius: 5px;
 }
 
 /* Base styles */
@@ -259,4 +260,24 @@ html.lenis body {
     opacity: 0;
     animation: projectReveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
+}
+
+/* Prevent fixed elements from shifting when Radix Scroll Lock is active */
+body[data-scroll-locked] .fixed,
+html[data-scroll-locked] .fixed,
+[data-scroll-locked] nav[data-fixed] {
+  padding-right: var(--removed-body-scroll-bar-size, 0px) !important;
+}
+
+/* Prevent transitions on padding/margin to avoid "bounce" layout jumps when locking scrollbar */
+nav[data-fixed] {
+  transition-property:
+    height, box-shadow, background-color, transform, opacity !important;
+}
+
+/* Custom Drawer transition duration override */
+[vaul-drawer],
+[data-slot="drawer-content"] {
+  transition-duration: var(--drawer-transition-duration, 500ms) !important;
+  animation-duration: var(--drawer-transition-duration, 500ms) !important;
 }
