@@ -55,7 +55,7 @@ export default async function ProjectsPage() {
             <TransitionLink
               key={p._id}
               href={`/projects/${p.slug}`}
-              className="group relative overflow-hidden block project-card-animate"
+              className="group relative overflow-hidden block project-card-animate rounded shadow"
               style={
                 { animationDelay: `${index * 0.12}s` } as React.CSSProperties
               }

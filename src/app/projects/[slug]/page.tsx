@@ -6,7 +6,7 @@ import { urlFor, type SanityImageWithAlt } from "@/sanity/lib/image";
 import { notFound } from "next/navigation";
 import { PortableText } from "@portabletext/react";
 import type { PortableTextBlock } from "@portabletext/types";
-import ContactButton from "@/components/ui/ContactButton";
+import ProjectButton from "@/components/ui/ProjectButton";
 import NextProject from "@/components/NextProject";
 import PanoramaViewer from "@/components/ui/PanoramaViewer";
 import P from "@/components/ui/P";
@@ -141,8 +141,8 @@ export default async function ProjectPage({
           {/* LEFT: Project info */}
           <aside className="xl:col-span-4">
             <div className="xl:sticky xl:top-22">
-              <div className="bg-card p-2 sm:p-4 md:p-8 lg:p-12  rounded shadow">
-                <h1 className="text-[38px]/[1.1] tracking-[-0.012em] font-semibold">
+              <div className="bg-card p-2 sm:p-4 md:p-8 lg:p-12 rounded shadow">
+                <h1 className="text-[38px]/[1.1] tracking-[-0.012em]">
                   {data.title}
                 </h1>
                 {data.location && (
@@ -209,7 +209,9 @@ export default async function ProjectPage({
                 )}
 
                 <div className="w-fit mt-16 ml-auto">
-                  <ContactButton location="project_detail">Start a Similar Project</ContactButton>
+                  <ProjectButton location="project_detail">
+                    Start a Similar Project
+                  </ProjectButton>
                 </div>
               </div>
             </div>

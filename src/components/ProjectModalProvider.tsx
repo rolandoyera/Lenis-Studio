@@ -24,10 +24,10 @@ type Ctx = {
 
 const ContactModalContext = createContext<Ctx | null>(null);
 
-export const useContactModal = () => {
+export const useProjectModal = () => {
   const ctx = useContext(ContactModalContext);
   if (!ctx)
-    throw new Error("useContactModal must be used within ContactModalProvider");
+    throw new Error("useProjectModal must be used within ContactModalProvider");
   return ctx;
 };
 
@@ -125,7 +125,10 @@ function ContactModal({ onClose }: { onClose: () => void }) {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          source: "project",
+        }),
       });
       if (!res.ok) throw new Error("Request failed");
       reset();

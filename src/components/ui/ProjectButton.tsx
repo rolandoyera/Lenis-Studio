@@ -1,6 +1,6 @@
 "use client";
 
-import { useContactModal } from "../ContactModalProvider";
+import { useProjectModal } from "../ProjectModalProvider";
 import ArrowButton from "./ArrowButton";
 
 declare global {
@@ -8,12 +8,12 @@ declare global {
     gtag?: (
       command: "event",
       eventName: string,
-      eventParams?: Record<string, any>
+      eventParams?: Record<string, any>,
     ) => void;
   }
 }
 
-export default function ContactButton({
+export default function ProjectButton({
   children = "Contact",
   className = "",
   location = "general",
@@ -22,7 +22,7 @@ export default function ContactButton({
   className?: string;
   location?: string;
 }) {
-  const { open } = useContactModal();
+  const { open } = useProjectModal();
 
   const handleClick = () => {
     open();

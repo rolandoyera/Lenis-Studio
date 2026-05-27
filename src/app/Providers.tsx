@@ -1,5 +1,5 @@
 "use client";
-import ContactModalProvider from "@/components/ContactModalProvider";
+import ContactModalProvider from "@/components/ProjectModalProvider";
 import { ReactLenis } from "lenis/react";
 import { usePathname } from "next/navigation";
 
@@ -19,4 +19,3 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     </ReactLenis>
   );
 }
-

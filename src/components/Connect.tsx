@@ -1,5 +1,5 @@
 import Container from "./ui/Container";
-import ContactButton from "@/components/ui/ContactButton";
+import ProjectButton from "@/components/ui/ProjectButton";
 
 export default function Connect() {
   return (
@@ -9,7 +9,7 @@ export default function Connect() {
         <h3 className="text-foreground text-3xl lg:text-5xl uppercase font-normal">
           Ready To Start?
         </h3>
-        <ContactButton location="ready_to_start">Let's Talk</ContactButton>
+        <ProjectButton location="ready_to_start">Let's Talk</ProjectButton>
       </Container>
     </div>
   );
