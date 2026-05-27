@@ -139,7 +139,7 @@ export default function AboutPage() {
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center pt-32 border-t border-border/20">
           {/* Left Column: Portrait */}
           <div className="lg:col-span-5">
-            <ScrollReveal className="relative w-full aspect-video md:aspect-4/5 lg:aspect-3/4 overflow-hidden rounded shadow-2xl group border border-border/10">
+            <ScrollReveal className="relative w-full aspect-3/4 overflow-hidden rounded shadow-2xl group border border-border/10">
               <Image
                 src="/about/sarvian-design-group-oshrat-rothschild.jpg"
                 alt="Oshrat Rothschild - Principal Designer of Sarvian Design Group"
@@ -183,7 +183,7 @@ export default function AboutPage() {
                 honesty. By treating lighting, materials, and custom cabinetry
                 as structural elements of design, she tailors every project in
                 Fort Lauderdale and Miami to reflect the distinct lifestyle and
-                aspirations of South Florida.
+                aspirations of South Floridians.
               </P>
             </ScrollReveal>
           </div>
