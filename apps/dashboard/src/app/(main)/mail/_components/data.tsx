@@ -1,9 +1,19 @@
-import { Archive, CircleHelp, File, Inbox, Keyboard, type LucideIcon, Send, Star, Trash2 } from "lucide-react";
+import {
+  Archive,
+  CircleHelp,
+  File,
+  Inbox,
+  Keyboard,
+  type LucideIcon,
+  Send,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { siFigma, siGoogledocs, siGooglephotos } from "simple-icons";
 
 const arhamKhan = {
-  name: "Arham Khan",
-  email: "hello@arhamkhnz.com",
+  name: "Rolando Yera",
+  email: "hello@roly.com",
 };
 
 const weblabsStudio = {
@@ -11,7 +21,8 @@ const weblabsStudio = {
   email: "contact@weblabs.studio",
 };
 
-const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+const minutesAgo = (minutes: number) =>
+  new Date(Date.now() - minutes * 60_000).toISOString();
 const hoursAgo = (hours: number) => minutesAgo(hours * 60);
 const daysAgo = (days: number) => hoursAgo(days * 24);
 
@@ -470,8 +481,8 @@ export const mailNavigation: MailNavigation = {
 export const accounts = [
   {
     id: 1,
-    label: "Arham Khan",
-    email: "hello@arhamkhnz.com",
+    label: "Rolando Yera",
+    email: "hello@roly.com",
   },
   {
     id: 2,

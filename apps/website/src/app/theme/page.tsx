@@ -102,7 +102,7 @@ export default function ThemePage() {
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex gap-8 mb-16">
           <div className="w-40 shrink-0"></div>
           <div className="flex flex-col gap-4 mt-1">
             <p className="font-mono text-sm mb-1!">
@@ -111,6 +111,23 @@ export default function ThemePage() {
             <H3 className="w-[70%]">
               We design houses for people that live in them.
             </H3>
+          </div>
+        </div>
+
+        <div className="flex gap-8 mb-16">
+          <div className="w-40 shrink-0">
+            <H4>Data</H4>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <p className="font-mono text-sm mb-1!">
+              Font:IBM Plex Mono • Color:Taupe 700
+            </p>
+            <P className="uppercase font-mono font-normal">
+              ABCDEFGHIJKLMNOPQRSTUVWXYZ
+            </P>
+            <P className="font-mono font-normal">abcdefghijklmnopqrstuvwxyz</P>
+            <P className="font-mono font-normal">1234567890</P>
           </div>
         </div>
       </Container>

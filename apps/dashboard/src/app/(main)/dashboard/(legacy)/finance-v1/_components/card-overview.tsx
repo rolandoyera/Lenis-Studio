@@ -6,7 +6,13 @@ import { siApple, siMastercard } from "simple-icons";
 
 import { SimpleIcon } from "@/components/simple-icon";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/utils";
 
@@ -48,14 +54,20 @@ export function CardOverview() {
     <Card className="shadow-xs">
       <CardHeader className="items-center">
         <CardTitle>My Card</CardTitle>
-        <CardDescription>1 of 4 cards added · Overview of your primary card and upcoming payments</CardDescription>
+        <CardDescription>
+          1 of 4 cards added · Overview of your primary card and upcoming
+          payments
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           <div className="grid w-full place-items-center">
             <div className="relative flex aspect-8/5 w-full max-w-100 flex-col justify-between overflow-hidden rounded-xl bg-primary p-6">
               <div className="flex items-start justify-between">
-                <SimpleIcon icon={siApple} className="size-5 fill-primary-foreground sm:size-8" />
+                <SimpleIcon
+                  icon={siApple}
+                  className="size-5 fill-primary-foreground sm:size-8"
+                />
               </div>
 
               <div className="space-y-1">
@@ -67,20 +79,31 @@ export function CardOverview() {
               <div className="flex items-end justify-between">
                 <div className="space-y-2">
                   <p className="font-medium font-mono text-primary-foreground text-sm uppercase tracking-wide">
-                    Arham Khan
+                    Rolando Yera
                   </p>
                   <div className="flex gap-6">
                     <div>
-                      <p className="text-[10px] text-primary-foreground/80 uppercase tracking-wider">Valid Thru</p>
-                      <p className="font-mono text-primary-foreground/80 text-xs">06/30</p>
+                      <p className="text-[10px] text-primary-foreground/80 uppercase tracking-wider">
+                        Valid Thru
+                      </p>
+                      <p className="font-mono text-primary-foreground/80 text-xs">
+                        06/30
+                      </p>
                     </div>
                     <div>
-                      <p className="text-[10px] text-primary-foreground/80 uppercase tracking-wider">CVV</p>
-                      <p className="font-mono text-primary-foreground/80 text-xs">•••</p>
+                      <p className="text-[10px] text-primary-foreground/80 uppercase tracking-wider">
+                        CVV
+                      </p>
+                      <p className="font-mono text-primary-foreground/80 text-xs">
+                        •••
+                      </p>
                     </div>
                   </div>
                 </div>
-                <SimpleIcon icon={siMastercard} className="size-7 fill-primary-foreground/80 sm:size-10" />
+                <SimpleIcon
+                  icon={siMastercard}
+                  className="size-7 fill-primary-foreground/80 sm:size-10"
+                />
               </div>
             </div>
           </div>
@@ -116,7 +139,9 @@ export function CardOverview() {
           <Separator />
 
           <div className="space-y-4">
-            <h6 className="text-muted-foreground text-sm uppercase">Upcoming Payments</h6>
+            <h6 className="text-muted-foreground text-sm uppercase">
+              Upcoming Payments
+            </h6>
 
             <div className="space-y-4">
               {upcomingPayments.map((transaction) => (
@@ -127,7 +152,9 @@ export function CardOverview() {
                   <div className="flex w-full items-end justify-between">
                     <div>
                       <p className="font-medium text-sm">{transaction.title}</p>
-                      <p className="text-muted-foreground text-xs">{transaction.date}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {transaction.date}
+                      </p>
                     </div>
                     <div>
                       <span className="font-medium text-destructive text-sm tabular-nums leading-none">

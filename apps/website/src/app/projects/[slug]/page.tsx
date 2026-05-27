@@ -152,10 +152,10 @@ export default async function ProjectPage({
                   <div className="flex justify-between pb-2 relative">
                     <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
                     <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
-                    <span className="text-[16px] font-medium font-mono">
+                    <span className="text-[16px] font-mono font-medium">
                       Firm
                     </span>
-                    <span className="text-[16px] font-mono">
+                    <span className="text-[16px] font-mono font-medium">
                       Sarvian Design Group
                     </span>
                   </div>
@@ -164,10 +164,12 @@ export default async function ProjectPage({
                     <div className="flex justify-between pb-2 relative">
                       <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
                       <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
-                      <span className="text-[16px] font-medium font-mono">
+                      <span className="text-[16px] font-mono font-medium">
                         Type
                       </span>
-                      <span className="text-[16px] font-mono">{data.type}</span>
+                      <span className="text-[16px] font-mono font-medium">
+                        {data.type}
+                      </span>
                     </div>
                   )}
 
@@ -175,10 +177,10 @@ export default async function ProjectPage({
                     <div className="flex justify-between pb-2 relative">
                       <div className="absolute left-0 right-0 bottom-0 h-px bg-border/30" />
                       <div className="absolute left-0 right-0 -bottom-px h-px bg-white" />
-                      <span className="text-[16px] font-medium font-mono">
+                      <span className="text-[16px] font-mono font-medium">
                         Size
                       </span>
-                      <span className="text-[16px] font-mono">
+                      <span className="text-[16px] font-mono font-medium">
                         {typeof data.size === "number"
                           ? `${data.size.toLocaleString()} Sq Ft`
                           : data.size}
@@ -188,10 +190,12 @@ export default async function ProjectPage({
 
                   {typeof data.year === "number" && (
                     <div className="flex justify-between">
-                      <span className="text-[16px] font-medium font-mono">
+                      <span className="text-[16px] font-mono font-medium">
                         Year
                       </span>
-                      <span className="text-[16px] font-mono">{data.year}</span>
+                      <span className="text-[16px] font-mono font-medium">
+                        {data.year}
+                      </span>
                     </div>
                   )}
                 </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Footer from "@/components/Footer";
 import "./globals.css";
-import { Manrope } from "next/font/google";
+import { Manrope, IBM_Plex_Mono } from "next/font/google";
 import Providers from "./Providers";
 import Navbar2 from "@/components/Navbar2";
 import Script from "next/script";
@@ -10,6 +10,12 @@ const manrope = Manrope({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800"],
   variable: "--font-manrope",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-ibm-plex-mono",
 });
 
 export const metadata: Metadata = {
@@ -30,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${manrope.variable} font-sans antialiased bg-background text-foreground`}>
+        className={`${manrope.variable} ${ibmPlexMono.variable} font-sans antialiased bg-background text-foreground`}>
         <Providers>
           <Script
             src="https://www.googletagmanager.com/gtag/js?id=G-K0ZYTV5JSM"

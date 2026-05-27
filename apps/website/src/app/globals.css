@@ -74,7 +74,7 @@
   --color-gray-900: light-dark(#111827, #f9fafb);
 
   --font-sans: var(--font-manrope), system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
 
   /* Optional line-height tokens */
   --leading-h1: 1.1;
