@@ -5,7 +5,7 @@
   /* Light theme variables */
   --color-nav: var(--cream-100);
   --color-footer: var(--taupe-900);
-  --color-brand: #816540;
+  --color-brand: hsl(34, 34%, 40%);
   --color-banner: oklch(21% 0.034 264.665);
 
   --logo-filter: none;
@@ -74,7 +74,8 @@
   --color-gray-900: light-dark(#111827, #f9fafb);
 
   --font-sans: var(--font-manrope), system-ui, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --font-mono:
+    var(--font-ibm-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
 
   /* Optional line-height tokens */
   --leading-h1: 1.1;

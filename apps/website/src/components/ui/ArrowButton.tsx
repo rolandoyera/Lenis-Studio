@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, MouseEvent } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -6,7 +6,7 @@ interface ArrowButtonProps {
   children: ReactNode;
   className?: string;
   href?: string;
-  onClick?: () => void;
+  onClick?: (e: MouseEvent<any>) => void;
   type?: "button" | "submit" | "reset";
   direction?: "left" | "right";
   variant?: "primary" | "secondary";
@@ -25,7 +25,7 @@ export default function ArrowButton({
   const classes = cn(
     "group inline-flex h-12 items-center gap-2.5 rounded text-cream-100",
     variant === "primary"
-      ? "bg-accent hover:bg-taupe-800"
+      ? "bg-brand hover:bg-taupe-800"
       : "bg-taupe-800 hover:bg-accent",
     direction === "right" ? "pl-[22px] pr-[18px]" : "pl-[18px] pr-[22px]",
     "text-lg font-medium uppercase",
@@ -66,7 +66,7 @@ export default function ArrowButton({
 
   if (href) {
     return (
-      <Link href={href} className={classes} {...(props as any)}>
+      <Link href={href} onClick={onClick} className={classes} {...(props as any)}>
         {inner}
       </Link>
     );

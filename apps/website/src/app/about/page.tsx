@@ -114,14 +114,6 @@ export default function AboutPage() {
             </ScrollReveal>
           </div>
           <div className="lg:col-span-7 space-y-8">
-            <ScrollReveal delay={150}>
-              <P>
-                At Sarvian Design Group, we believe that high-end spaces should
-                not only capture visual excellence but should flow effortlessly,
-                enhancing the way you live. We design for individuals who
-                appreciate scale, harmony, and timeless sophistication.
-              </P>
-            </ScrollReveal>
             <ScrollReveal delay={300}>
               <P>
                 From our design studio in South Florida, our team brings decades

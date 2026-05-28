@@ -1,0 +1,3 @@
+# Google OAuth / service account credentials
+client_secret_*.json
+ga4-key.json

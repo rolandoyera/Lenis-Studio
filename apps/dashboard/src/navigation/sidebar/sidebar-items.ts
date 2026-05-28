@@ -15,7 +15,6 @@ import {
   MessageSquare,
   ReceiptText,
   ShoppingBag,
-  SquareArrowUpRight,
   Users,
 } from "lucide-react";
 
@@ -162,18 +161,6 @@ export const sidebarItems: NavGroup[] = [
           { title: "Finance V1", url: "/dashboard/finance-v1" },
           { title: "Analytics V1", url: "/dashboard/analytics-v1" },
         ],
-      },
-    ],
-  },
-  {
-    id: 4,
-    label: "Misc",
-    items: [
-      {
-        title: "Others",
-        url: "/dashboard/coming-soon",
-        icon: SquareArrowUpRight,
-        comingSoon: true,
       },
     ],
   },

@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { PortableText } from "@portabletext/react";
 import type { PortableTextBlock } from "@portabletext/types";
 import ProjectButton from "@/components/ui/ProjectButton";
-import NextProject from "@/components/NextProject";
+import NextPrevious from "@/components/NextPrevious";
 import PanoramaViewer from "@/components/ui/PanoramaViewer";
 import P from "@/components/ui/P";
 
@@ -55,7 +55,8 @@ const ALL_SLUGS = groq`*[_type=="project" && defined(slug.current)]{ "slug": slu
 
 const ALL_PROJECTS_SORTED = groq`*[_type=="project" && defined(slug.current)]{
   title,
-  "slug": slug.current
+  "slug": slug.current,
+  mainImage{ ..., alt, asset->{ url, metadata{ dimensions } } }
 } | order(coalesce(year, 0) desc, _createdAt desc)`;
 
 /* -------------------- ISR -------------------- */
@@ -264,7 +265,7 @@ export default async function ProjectPage({
           </div>
         </section>
       </div>
-      <NextProject prevProject={prevProject} nextProject={nextProject} />
+      <NextPrevious prevProject={prevProject} nextProject={nextProject} />
     </main>
   );
 }

@@ -38,19 +38,24 @@ export default function RootLayout({
       <body
         className={`${manrope.variable} ${ibmPlexMono.variable} font-sans antialiased bg-background text-foreground`}>
         <Providers>
-          <Script
-            src="https://www.googletagmanager.com/gtag/js?id=G-K0ZYTV5JSM"
-            strategy="afterInteractive"
-          />
-          <Script id="google-analytics" strategy="afterInteractive">
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
+          {process.env.NODE_ENV === "production" && (
+            <>
+              <Script
+                src="https://www.googletagmanager.com/gtag/js?id=G-K0ZYTV5JSM"
+                strategy="afterInteractive"
+              />
 
-              gtag('config', 'G-K0ZYTV5JSM');
-            `}
-          </Script>
+              <Script id="google-analytics" strategy="afterInteractive">
+                {`
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-K0ZYTV5JSM');
+      `}
+              </Script>
+            </>
+          )}
           <Navbar2 />
           {children}
           <Footer />

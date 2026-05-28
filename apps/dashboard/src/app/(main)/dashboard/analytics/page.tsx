@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { AnalyticsKpiStrip } from "./_components/analytics-kpi-strip";
 import { AnalyticsToolbar } from "./_components/analytics-toolbar";
+import { GA4ConnectionChecker } from "./_components/ga4-connection-checker";
 import { RealtimeVisitors } from "./_components/realtime-visitors";
 import { TopPages } from "./_components/top-pages";
 import { TopTrafficSources } from "./_components/top-traffic-sources";
@@ -10,7 +11,14 @@ import { TrafficQuality } from "./_components/traffic-quality";
 // Import this stylesheet in any page or component that renders country flag classes.
 import "@/styles/flag-icons/flags.css";
 
-export default function Page() {
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export default async function Page({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
+  const range = (resolvedSearchParams.range as string) || "last-4-weeks";
+
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-1">
@@ -19,6 +27,8 @@ export default function Page() {
           Monitor traffic, engagement, and conversion performance in one view.
         </p>
       </div>
+
+      <GA4ConnectionChecker />
 
       <Tabs defaultValue="overview" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -34,7 +44,7 @@ export default function Page() {
         </div>
 
         <TabsContent value="overview" className="flex flex-col gap-4">
-          <AnalyticsKpiStrip />
+          <AnalyticsKpiStrip range={range} />
 
           <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12">
             <div className="xl:col-span-7">
@@ -46,10 +56,10 @@ export default function Page() {
           </div>
 
           <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-12">
-            <div className="xl:col-span-7">
-              <TopPages />
+            <div className="xl:col-span-6">
+              <TopPages range={range} />
             </div>
-            <div className="xl:col-span-5 xl:col-start-8">
+            <div className="xl:col-span-6">
               <TopTrafficSources />
             </div>
           </div>
