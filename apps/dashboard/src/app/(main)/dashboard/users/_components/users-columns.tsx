@@ -3,37 +3,28 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { parse } from "date-fns";
-import { Check, Clock, MoreHorizontal, X } from "lucide-react";
+import { Check, Clock, X } from "lucide-react";
+import Link from "next/link";
 
-import { Avatar, AvatarBadge, AvatarFallback, AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
+import { Avatar, AvatarBadge, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn, getInitials } from "@/lib/utils";
 
 import { statusMeta, type UserRow } from "./data";
 
-function RoleCell({ role, team }: { role: string; team: string }) {
-  return (
-    <div className="grid gap-0.5">
-      <span className="whitespace-nowrap">{role}</span>
-      <span className="text-muted-foreground text-xs">{team}</span>
-    </div>
-  );
+function RoleCell({ role }: { role: string }) {
+  return <span className="whitespace-nowrap font-medium text-sm">{role}</span>;
 }
 
 function StatusBadge({ status }: { status: UserRow["status"] }) {
   const meta = statusMeta[status];
 
   return (
-    <Badge className={cn("gap-1.5 border px-2 py-1 font-medium", meta.badgeClass)} variant="outline">
+    <Badge
+      className={cn("gap-1.5 border px-2 py-1 font-medium", meta.badgeClass)}
+      variant="outline">
       <span className={cn("size-1.5 rounded-full", meta.dotClass)} />
       {status}
     </Badge>
@@ -85,33 +76,23 @@ function getLastActiveBadge(lastActive: number) {
   };
 }
 
-function AvatarCell({ lastActive, name }: { lastActive: number; name: string }) {
+function AvatarCell({
+  lastActive,
+  name,
+}: {
+  lastActive: number;
+  name: string;
+}) {
   const badge = getLastActiveBadge(lastActive);
   const BadgeIcon = badge.icon;
 
   return (
     <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
       <AvatarFallback>{getInitials(name)}</AvatarFallback>
-      <AvatarBadge className={badge.className}>{BadgeIcon ? <BadgeIcon /> : null}</AvatarBadge>
+      <AvatarBadge className={badge.className}>
+        {BadgeIcon ? <BadgeIcon /> : null}
+      </AvatarBadge>
     </Avatar>
-  );
-}
-
-function WorkspaceCell({ workspaces }: { workspaces: string[] }) {
-  const [firstWorkspace, ...remainingWorkspaces] = workspaces;
-  const remainingCount = remainingWorkspaces.length;
-
-  return (
-    <AvatarGroup className="*:data-[slot=avatar]:ring-0">
-      {firstWorkspace ? (
-        <Avatar className="after:rounded-sm">
-          <AvatarFallback className="rounded-sm ring-0">{getInitials(firstWorkspace)}</AvatarFallback>
-        </Avatar>
-      ) : null}
-      {remainingCount > 0 ? (
-        <AvatarGroupCount className="rounded-sm border ring-card">+{remainingCount}</AvatarGroupCount>
-      ) : null}
-    </AvatarGroup>
   );
 }
 
@@ -122,7 +103,10 @@ export const usersColumns: ColumnDef<UserRow>[] = [
       <div className="flex items-center justify-center">
         <Checkbox
           aria-label="Select all users"
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         />
       </div>
@@ -150,31 +134,28 @@ export const usersColumns: ColumnDef<UserRow>[] = [
     header: "User",
     cell: ({ row }) => (
       <div className="flex items-center gap-3">
-        <AvatarCell name={row.original.name} lastActive={row.original.lastActive} />
+        <AvatarCell
+          name={row.original.name}
+          lastActive={row.original.lastActive}
+        />
         <div className="min-w-0">
-          <div className="truncate font-medium text-foreground text-sm">{row.original.name}</div>
-          <div className="truncate text-muted-foreground text-sm">{row.original.email}</div>
+          <div className="truncate font-medium text-foreground text-sm">
+            {row.original.name}
+          </div>
+          <div className="truncate text-muted-foreground text-sm">
+            {row.original.email}
+          </div>
         </div>
       </div>
     ),
   },
   {
     accessorKey: "role",
-    header: "Role / Team",
+    header: "Role",
     filterFn: "equalsString",
-    cell: ({ row }) => <RoleCell role={row.original.role} team={row.original.team} />,
-  },
-  {
-    accessorKey: "team",
-    header: "Team",
-    filterFn: "equalsString",
-    cell: ({ row }) => <div className="text-sm">{row.original.team}</div>,
-  },
-  {
-    accessorKey: "workspace",
-    header: "Workspace",
-    filterFn: "arrIncludes",
-    cell: ({ row }) => <WorkspaceCell workspaces={row.original.workspace} />,
+    cell: ({ row }) => (
+      <RoleCell role={row.original.role} />
+    ),
   },
   {
     accessorKey: "status",
@@ -184,35 +165,23 @@ export const usersColumns: ColumnDef<UserRow>[] = [
   },
   {
     id: "joinedDate",
-    accessorFn: (row) => parse(row.joinedDate, "dd MMM yyyy, h:mm a", new Date()).getTime(),
+    accessorFn: (row) =>
+      parse(row.joinedDate, "dd MMM yyyy, h:mm a", new Date()).getTime(),
     header: "Joined date",
-    cell: ({ row }) => <div className="text-foreground text-sm">{row.original.joinedDate}</div>,
+    cell: ({ row }) => (
+      <div className="text-foreground text-sm">{row.original.joinedDate}</div>
+    ),
   },
   {
     id: "actions",
     header: () => <div className="text-right">Actions</div>,
     cell: ({ row }) => (
       <div className="text-right">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              aria-label={`Open actions for ${row.original.name}`}
-              className="size-8 rounded-md text-muted-foreground hover:bg-muted/50"
-              size="icon-sm"
-              variant="ghost"
-            >
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>View profile</DropdownMenuItem>
-            <DropdownMenuItem>Edit user</DropdownMenuItem>
-            <DropdownMenuItem>Manage team</DropdownMenuItem>
-            <DropdownMenuItem>Resend invite</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">Deactivate user</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/dashboard/profile?uid=${row.original.uid || ""}`}>
+            View Profile
+          </Link>
+        </Button>
       </div>
     ),
     enableHiding: false,

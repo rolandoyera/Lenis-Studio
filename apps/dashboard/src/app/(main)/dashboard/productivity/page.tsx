@@ -7,6 +7,7 @@ import { RecentNotesCard } from "./_components/recent-notes-card";
 import { SummaryCards } from "./_components/summary-cards";
 import { TasksSection } from "./_components/tasks-section";
 import { WeeklySummaryCard } from "./_components/weekly-summary-card";
+import { UserGreeting } from "../_components/user-greeting";
 
 export default function Page() {
   return (
@@ -15,7 +16,7 @@ export default function Page() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl text-foreground leading-none tracking-tight">
-              Good morning, Roly.
+              <UserGreeting prefix="Good morning" />.
             </h1>
             <p className="text-lg text-muted-foreground leading-none">
               Let&apos;s make today productive and meaningful.
