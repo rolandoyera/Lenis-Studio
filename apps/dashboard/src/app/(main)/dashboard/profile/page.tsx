@@ -41,6 +41,7 @@ import { getInitials } from "@/lib/utils";
 
 interface FirestoreProfile {
   fullName: string;
+  displayName?: string;
   role: string;
   phone: string;
   location: string;
@@ -137,7 +138,7 @@ function ProfileContent() {
             setRole(data.role || "Contributor");
             setPhone(formatPhoneNumber(data.phone || ""));
             setLocation(data.location || "");
-            setDisplayName(data.fullName || "");
+            setDisplayName(data.displayName || user.displayName || "");
             setEmail(data.email || "");
           } else {
             // Default fallback if no doc exists yet
@@ -186,6 +187,7 @@ function ProfileContent() {
         userDocRef,
         {
           fullName,
+          displayName,
           role,
           phone,
           location,

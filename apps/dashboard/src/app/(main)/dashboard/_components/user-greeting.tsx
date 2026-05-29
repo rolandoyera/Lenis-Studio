@@ -17,7 +17,7 @@ export function UserGreeting({ prefix = "Hello" }: { prefix?: string }) {
           const userDocSnap = await getDoc(userDocRef);
           if (userDocSnap.exists()) {
             const data = userDocSnap.data();
-            setName(user.displayName || data.fullName || user.email?.split("@")[0] || "User");
+            setName(data.displayName || user.displayName || data.fullName || user.email?.split("@")[0] || "User");
           } else {
             setName(user.displayName || user.email?.split("@")[0] || "User");
           }

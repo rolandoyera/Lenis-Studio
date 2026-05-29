@@ -12,8 +12,21 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase for SSR / Client-side safely
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const hasValidConfig = typeof window !== "undefined" || !!firebaseConfig.apiKey;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+let app: any = null;
+let auth: any = {} as any;
+let db: any = {} as any;
+
+if (hasValidConfig) {
+  try {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+  }
+}
+
+export { auth, db };
 export default app;
