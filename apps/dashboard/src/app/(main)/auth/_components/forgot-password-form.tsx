@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
+
 import Link from "next/link";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { sendPasswordResetEmail } from "firebase/auth";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { auth } from "@/lib/firebase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),

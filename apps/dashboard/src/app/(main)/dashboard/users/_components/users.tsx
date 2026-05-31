@@ -3,6 +3,9 @@
 
 import * as React from "react";
 
+import { useRouter } from "next/navigation";
+
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type ColumnFiltersState,
   getCoreRowModel,
@@ -14,7 +17,20 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { onAuthStateChanged } from "firebase/auth";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  setDoc,
+} from "firebase/firestore";
 import { Grid, Plus, Rows3, Search } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +41,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   InputGroup,
   InputGroupAddon,
@@ -39,35 +67,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-
-import {
-  collection,
-  onSnapshot,
-  doc,
-  getDoc,
-  setDoc,
-  addDoc,
-} from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { format } from "date-fns";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { auth, db } from "@/lib/firebase";
 
 import { filters, type UserRow } from "./data";
 import { usersColumns } from "./users-columns";
@@ -140,12 +140,12 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
         await addDoc(collection(db, "mail"), {
           to: trimmedEmail,
           message: {
-            subject: "You've been added to Weblabs Studio Dashboard!",
+            subject: "You've been invited!",
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
                 <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${trimmedName}!</h2>
                 <p style="color: #334155; font-size: 16px; line-height: 1.5;">
-                  You have been added to the organization dashboard as an <strong>${data.role}</strong>.
+                  You have been invited to join Sarvian Design Group CRM.
                 </p>
                 <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
                   Click the button below to sign in and activate your account:
@@ -155,7 +155,7 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
                 </a>
                 <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
                 <p style="color: #64748b; font-size: 12px; text-align: center;">
-                  Weblabs Studio Dashboard invitation. If you did not expect this, please ignore this email.
+                  Sarvian Design Group CRM invitation. If you did not expect this, please ignore this email.
                 </p>
               </div>
             `,
@@ -189,15 +189,15 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
             const role = userDocSnap.data().role;
             if (role !== "Admin") {
               toast.error("Access denied. Administrator privileges required.");
-              router.push("/dashboard/default");
+              router.push("/dashboard/home");
             }
           } else {
             toast.error("Access denied. Administrator privileges required.");
-            router.push("/dashboard/default");
+            router.push("/dashboard/home");
           }
         } catch (e) {
           console.error("Auth protection verify error:", e);
-          router.push("/dashboard/default");
+          router.push("/dashboard/home");
         }
       } else {
         router.push("/auth/login");

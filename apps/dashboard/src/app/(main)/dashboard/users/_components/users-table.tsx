@@ -163,6 +163,32 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
           </PaginationContent>
         </Pagination>
       </div>
+
+      {/* Premium Status Color Key Legend */}
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t pt-4 px-4 text-xs text-muted-foreground">
+        <span className="font-semibold uppercase tracking-wider text-[10px] text-muted-foreground/80">
+          Activity Key:
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="relative flex size-2.5 items-center justify-center">
+            <span className="absolute size-1.5 rounded-full bg-emerald-500" />
+            <span className="absolute size-full rounded-full bg-emerald-500 opacity-75 animate-pulse" />
+          </span>
+          <span>Active Now</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="size-1.5 rounded-full bg-amber-500" />
+          <span>Away (30-60 mins)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="size-1.5 rounded-full bg-rose-500" />
+          <span>Account Paused / Locked</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="size-1.5 rounded-full bg-muted-foreground/20 ring-1 ring-muted-foreground/30" />
+          <span>Offline</span>
+        </div>
+      </div>
     </div>
   );
 }

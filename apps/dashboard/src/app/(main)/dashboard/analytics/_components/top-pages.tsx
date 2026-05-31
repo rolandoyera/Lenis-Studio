@@ -3,6 +3,7 @@ import { Ellipsis } from "lucide-react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchTopPagesData } from "@/server/analytics-actions";
+
 import { AnalyticsErrorToast } from "./analytics-error-toast";
 
 export async function TopPages({ range }: { range?: string }) {

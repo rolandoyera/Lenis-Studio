@@ -1,10 +1,11 @@
 "use client";
 "use no memo";
 
+import Link from "next/link";
+
 import type { ColumnDef } from "@tanstack/react-table";
 import { parse } from "date-fns";
-import { Check, Clock, X } from "lucide-react";
-import Link from "next/link";
+import { ArrowUpDown } from "lucide-react";
 
 import { Avatar, AvatarBadge, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -22,9 +23,7 @@ function StatusBadge({ status }: { status: UserRow["status"] }) {
   const meta = statusMeta[status];
 
   return (
-    <Badge
-      className={cn("gap-1.5 border px-2 py-1 font-medium", meta.badgeClass)}
-      variant="outline">
+    <Badge className={cn("gap-1.5 border px-2 py-1 font-medium", meta.badgeClass)} variant="outline">
       <span className={cn("size-1.5 rounded-full", meta.dotClass)} />
       {status}
     </Badge>
@@ -48,49 +47,62 @@ function getAvatarTone(name: string) {
   return tones[name.length % tones.length];
 }
 
-function getLastActiveBadge(lastActive: number) {
-  if (lastActive < 1) {
-    return {
-      className: "bg-green-600 text-green-950 [&>svg]:text-white",
-      icon: Check,
-    };
+function AvatarCell({ lastActive, name, status }: { lastActive: number; name: string; status: string }) {
+  // 1. If administratively Suspended, Locked, or Deactivated, show a solid red dot
+  const isPaused = status === "Suspended" || status === "Locked" || status === "Deactivated";
+
+  if (isPaused) {
+    return (
+      <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
+        <AvatarFallback>{getInitials(name)}</AvatarFallback>
+        <AvatarBadge className="bg-rose-500 size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+          <span className="size-1.5 rounded-full bg-rose-500" />
+        </AvatarBadge>
+      </Avatar>
+    );
   }
 
-  if (lastActive < 4 * 60) {
-    return {
-      className: "bg-amber-500 text-amber-950",
-      icon: Clock,
-    };
+  // 2. Otherwise check active timelines
+  const now = Date.now();
+  const elapsedMs = lastActive > 0 ? now - lastActive : Infinity;
+
+  // Online if active within the last 30 minutes (handles local clock drift)
+  const isOnline = lastActive > 0 && Math.abs(elapsedMs) < 30 * 60 * 1000;
+
+  // Idle if active within the last 1 hour
+  const isIdle = lastActive > 0 && !isOnline && Math.abs(elapsedMs) < 60 * 60 * 1000;
+
+  if (isOnline) {
+    return (
+      <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
+        <AvatarFallback>{getInitials(name)}</AvatarFallback>
+        <AvatarBadge className="bg-emerald-500 size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+          {/* Core dot */}
+          <span className="absolute size-1.5 rounded-full bg-emerald-500" />
+          {/* Breathing ping layer */}
+          <span className="absolute size-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
+        </AvatarBadge>
+      </Avatar>
+    );
   }
 
-  if (lastActive < 7 * 24 * 60) {
-    return {
-      className: "bg-destructive",
-      icon: null,
-    };
+  if (isIdle) {
+    return (
+      <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
+        <AvatarFallback>{getInitials(name)}</AvatarFallback>
+        <AvatarBadge className="bg-amber-500 size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+          <span className="size-1.5 rounded-full bg-amber-500" />
+        </AvatarBadge>
+      </Avatar>
+    );
   }
 
-  return {
-    className: "bg-muted-foreground text-muted",
-    icon: X,
-  };
-}
-
-function AvatarCell({
-  lastActive,
-  name,
-}: {
-  lastActive: number;
-  name: string;
-}) {
-  const badge = getLastActiveBadge(lastActive);
-  const BadgeIcon = badge.icon;
-
+  // 3. Fully offline / pending
   return (
     <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
       <AvatarFallback>{getInitials(name)}</AvatarFallback>
-      <AvatarBadge className={badge.className}>
-        {BadgeIcon ? <BadgeIcon /> : null}
+      <AvatarBadge className="bg-background size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+        <span className="size-1.5 rounded-full bg-muted-foreground/20 ring-1 ring-muted-foreground/30" />
       </AvatarBadge>
     </Avatar>
   );
@@ -103,10 +115,7 @@ export const usersColumns: ColumnDef<UserRow>[] = [
       <div className="flex items-center justify-center">
         <Checkbox
           aria-label="Select all users"
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         />
       </div>
@@ -131,31 +140,40 @@ export const usersColumns: ColumnDef<UserRow>[] = [
   },
   {
     accessorKey: "name",
-    header: "User",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="-ml-3 hover:bg-transparent font-normal flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        User
+        <ArrowUpDown className="size-3.5" />
+      </Button>
+    ),
     cell: ({ row }) => (
       <div className="flex items-center gap-3">
-        <AvatarCell
-          name={row.original.name}
-          lastActive={row.original.lastActive}
-        />
+        <AvatarCell name={row.original.name} lastActive={row.original.lastActive} status={row.original.status} />
         <div className="min-w-0">
-          <div className="truncate font-medium text-foreground text-sm">
-            {row.original.name}
-          </div>
-          <div className="truncate text-muted-foreground text-sm">
-            {row.original.email}
-          </div>
+          <div className="truncate font-medium text-foreground text-sm">{row.original.name}</div>
+          <div className="truncate text-muted-foreground text-sm">{row.original.email}</div>
         </div>
       </div>
     ),
   },
   {
     accessorKey: "role",
-    header: "Role",
-    filterFn: "equalsString",
-    cell: ({ row }) => (
-      <RoleCell role={row.original.role} />
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        className="-ml-3 hover:bg-transparent font-normal flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Role
+        <ArrowUpDown className="size-3.5" />
+      </Button>
     ),
+    filterFn: "equalsString",
+    cell: ({ row }) => <RoleCell role={row.original.role} />,
   },
   {
     accessorKey: "status",
@@ -165,12 +183,9 @@ export const usersColumns: ColumnDef<UserRow>[] = [
   },
   {
     id: "joinedDate",
-    accessorFn: (row) =>
-      parse(row.joinedDate, "dd MMM yyyy, h:mm a", new Date()).getTime(),
+    accessorFn: (row) => parse(row.joinedDate, "dd MMM yyyy, h:mm a", new Date()).getTime(),
     header: "Joined date",
-    cell: ({ row }) => (
-      <div className="text-foreground text-sm">{row.original.joinedDate}</div>
-    ),
+    cell: ({ row }) => <div className="text-foreground text-sm">{row.original.joinedDate}</div>,
   },
   {
     id: "actions",
@@ -178,9 +193,7 @@ export const usersColumns: ColumnDef<UserRow>[] = [
     cell: ({ row }) => (
       <div className="text-right">
         <Button asChild size="sm" variant="outline">
-          <Link href={`/dashboard/profile?uid=${row.original.uid || ""}`}>
-            View Profile
-          </Link>
+          <Link href={`/dashboard/profile?uid=${row.original.uid || ""}`}>View Profile</Link>
         </Button>
       </div>
     ),

@@ -1,0 +1,894 @@
+"use client";
+
+import { useState } from "react";
+
+import { Controller } from "react-hook-form";
+
+import { Loader2 as LoaderIcon, Plus, Sparkles, Upload } from "lucide-react";
+
+import LunaMoon from "@/components/LunaMoon";
+import { Button } from "@/components/ui/button";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
+import { Field, FieldError } from "@/components/ui/field";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import type { Vendor } from "@/lib/types";
+import { cn, formatCurrency } from "@/lib/utils";
+
+import {
+  CATEGORIES,
+  COST_TYPES,
+  formatPriceInput,
+  UNIT_TYPES,
+} from "./library-constants";
+import type { LibraryItemFormApi } from "./use-library-item-form";
+
+const LABEL_CLASS =
+  "text-xs tracking-wider uppercase text-muted-foreground h-5 flex items-center";
+
+interface LibraryItemFormDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  submitLabel: string;
+  submitting: boolean;
+  onSubmit: () => void | Promise<void>;
+  form: LibraryItemFormApi;
+  vendors: Vendor[];
+  onQuickAddVendor: () => void;
+  /** Unique id for the hidden file input (must differ if two forms ever mount together). */
+  uploaderId?: string;
+}
+
+/**
+ * Shared dual-pane Add/Edit modal for a library item: specifications on the
+ * left, financials + visual gallery on the right. Stateless apart from the
+ * `form` hook it is handed — hosts own submission and the calculator/vendor dialogs.
+ */
+export function LibraryItemFormDialog({
+  open,
+  onOpenChange,
+  title,
+  submitLabel,
+  submitting,
+  onSubmit,
+  form,
+  vendors,
+  onQuickAddVendor,
+  uploaderId = "library-image-uploader",
+}: LibraryItemFormDialogProps) {
+  const [comboboxContainer, setComboboxContainer] =
+    useState<HTMLDivElement | null>(null);
+  const { formData, setFormData, uploadingImage } = form;
+  const imageUrls = formData.imageUrls ?? [];
+
+  const isLowConfidence = (field: string) => {
+    const confidence = formData.aiMetadata?.confidence?.[field];
+    return confidence !== undefined && confidence < 0.8;
+  };
+
+  const getFieldStyle = (field: string) => {
+    if (isLowConfidence(field)) {
+      return "border-amber-500/60 focus-visible:ring-amber-500/30 bg-amber-500/5 transition-colors duration-200";
+    }
+    return "";
+  };
+
+  const renderConfidenceBadge = (field: string) => {
+    const confidence = formData.aiMetadata?.confidence?.[field];
+    if (confidence === undefined) return null;
+
+    const score = Math.round(confidence * 100);
+    const isLow = confidence < 0.8;
+
+    if (isLow) {
+      return (
+        <span className="ml-1.5 flex animate-pulse items-center gap-0.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-medium text-[10px] text-amber-600">
+          ⚠️ AI: {score}% (Review)
+        </span>
+      );
+    }
+
+    return (
+      <span className="ml-1.5 flex items-center gap-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 font-medium text-[10px] text-emerald-600">
+        ✨ AI: {score}%
+      </span>
+    );
+  };
+
+  // Shared formatted/raw price field bound to the form's focus bridge.
+  const priceInput = (
+    field: string,
+    value: number,
+    onValue: (n: number) => void,
+  ) => (
+    <Input
+      type="text"
+      placeholder="0.00"
+      value={
+        form.focusedField === field
+          ? form.tempTextValue
+          : formatPriceInput(value)
+      }
+      onFocus={() => {
+        form.setFocusedField(field);
+        form.setTempTextValue(value ? String(value) : "");
+      }}
+      onBlur={() => {
+        form.setFocusedField(null);
+        form.setTempTextValue("");
+      }}
+      onChange={(e) => {
+        const raw = e.target.value.replace(/[^0-9.]/g, "");
+        form.setTempTextValue(raw);
+        onValue(raw === "" || raw === "." ? 0 : Number(raw));
+
+        // Clear AI confidence on edit
+        const updatedConfidence = { ...formData.aiMetadata?.confidence };
+        if (updatedConfidence[field]) {
+          delete updatedConfidence[field];
+          setFormData((prev) => ({
+            ...prev,
+            aiMetadata: prev.aiMetadata
+              ? { ...prev.aiMetadata, confidence: updatedConfidence }
+              : undefined,
+          }));
+        }
+      }}
+      className={`font-mono ${getFieldStyle(field)}`}
+    />
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[90vh] max-h-[90vh] flex-col overflow-hidden bg-popover/97 p-0 backdrop-blur-lg sm:max-w-6xl">
+        <div ref={setComboboxContainer} />
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex h-full w-full flex-col overflow-hidden">
+          <DialogHeader className="shrink-0 border-b p-6">
+            <DialogTitle className="flex items-center gap-2 font-heading font-medium text-2xl">
+              <Sparkles className="size-5 text-primary" />
+              {title}
+            </DialogTitle>
+            <DialogDescription>
+              Input sourcing attributes, materials, dimensions, dynamic vendor
+              links, and perform real-time cost calculation logic.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Split Screen Container */}
+          <div className="grid flex-1 grid-cols-1 gap-0 overflow-y-auto overflow-x-hidden lg:grid-cols-12">
+            {/* LEFT PANE: PRIMARY SPECIFICATIONS FORM (7 cols) */}
+            <div className="flex flex-col gap-5 border-border/40 border-b p-6 lg:col-span-7 lg:border-r lg:border-b-0">
+              <h3 className="border-b pb-1.5 font-medium text-muted-foreground/80 text-xs uppercase tracking-wider">
+                Primary Specifications
+              </h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Controller
+                  control={form.control}
+                  name="costType"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      className="flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
+                      <Label className={LABEL_CLASS}>
+                        Cost Type <span className="text-destructive">*</span>
+                      </Label>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}>
+                        <SelectTrigger
+                          className="w-full h-9"
+                          aria-invalid={fieldState.invalid}>
+                          <SelectValue placeholder="Choose Cost Type" />
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          {COST_TYPES.map((ct) => (
+                            <SelectItem key={ct} value={ct}>
+                              {ct}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  control={form.control}
+                  name="category"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      className="flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
+                      <Label className={`${LABEL_CLASS} flex items-center`}>
+                        Category{" "}
+                        <span className="text-destructive ml-0.5">*</span>{" "}
+                        {renderConfidenceBadge("category")}
+                      </Label>
+                      <Select
+                        value={field.value}
+                        onValueChange={(val) => {
+                          field.onChange(val);
+                          const updatedConfidence = {
+                            ...formData.aiMetadata?.confidence,
+                          };
+                          if (updatedConfidence.category)
+                            delete updatedConfidence.category;
+                          setFormData({
+                            ...formData,
+                            category: val,
+                            aiMetadata: formData.aiMetadata
+                              ? {
+                                  ...formData.aiMetadata,
+                                  confidence: updatedConfidence,
+                                }
+                              : undefined,
+                          });
+                        }}>
+                        <SelectTrigger
+                          className={cn(
+                            "w-full h-9",
+                            getFieldStyle("category"),
+                          )}
+                          aria-invalid={fieldState.invalid}>
+                          <SelectValue placeholder="Choose Category" />
+                        </SelectTrigger>
+                        <SelectContent position="popper">
+                          {CATEGORIES.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
+
+              <Controller
+                control={form.control}
+                name="name"
+                render={({ field, fieldState }) => (
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}>
+                    <Label className={`${LABEL_CLASS} flex items-center`}>
+                      Item Name{" "}
+                      <span className="text-destructive ml-0.5">*</span>{" "}
+                      {renderConfidenceBadge("name")}
+                    </Label>
+                    <Input
+                      placeholder="e.g. Calacatta Viola, Honed Slab"
+                      value={field.value}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        const updatedConfidence = {
+                          ...formData.aiMetadata?.confidence,
+                        };
+                        if (updatedConfidence.name)
+                          delete updatedConfidence.name;
+                        setFormData({
+                          ...formData,
+                          name: e.target.value,
+                          aiMetadata: formData.aiMetadata
+                            ? {
+                                ...formData.aiMetadata,
+                                confidence: updatedConfidence,
+                              }
+                            : undefined,
+                        });
+                      }}
+                      className={getFieldStyle("name")}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Controller
+                    control={form.control}
+                    name="vendorId"
+                    render={({ field, fieldState }) => {
+                      const selected =
+                        vendors.find((v) => v.vendorId === field.value) ?? null;
+                      return (
+                        <Field
+                          className="flex flex-col gap-1.5"
+                          data-invalid={fieldState.invalid}>
+                          <Label
+                            className={`${LABEL_CLASS} flex items-center justify-between`}>
+                            <span>
+                              Vendor <span className="text-destructive">*</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={onQuickAddVendor}
+                              className="flex items-center gap-0.5 font-medium text-primary text-xs hover:underline hover:cursor-pointer">
+                              <Plus className="size-3" /> Quick Add
+                            </button>
+                          </Label>
+                          <Combobox
+                            value={selected}
+                            onValueChange={(item) =>
+                              field.onChange(item?.vendorId ?? "")
+                            }
+                            items={[...vendors].sort((a, b) =>
+                              a.name.localeCompare(b.name),
+                            )}
+                            filter={(
+                              item: { vendorId: string; name: string },
+                              inputValue: string,
+                            ) =>
+                              item.name
+                                .toLowerCase()
+                                .includes(inputValue.toLowerCase())
+                            }>
+                            <ComboboxTrigger
+                              render={
+                                <button
+                                  type="button"
+                                  aria-invalid={fieldState.invalid}
+                                  className={cn(
+                                    "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-transparent px-2.5 text-sm whitespace-nowrap transition-colors outline-none",
+                                    "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                                    "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+                                    "dark:bg-input/30",
+                                    !selected && "text-muted-foreground",
+                                  )}>
+                                  {selected ? selected.name : "Choose Vendor"}
+                                </button>
+                              }
+                            />
+                            <ComboboxContent container={comboboxContainer}>
+                              <ComboboxInput
+                                showTrigger={false}
+                                placeholder="Search vendors..."
+                              />
+                              <ComboboxEmpty>No vendor found.</ComboboxEmpty>
+                              <ComboboxList>
+                                {(item) => (
+                                  <ComboboxItem
+                                    key={item.vendorId}
+                                    value={item}>
+                                    {item.name}
+                                  </ComboboxItem>
+                                )}
+                              </ComboboxList>
+                            </ComboboxContent>
+                          </Combobox>
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      );
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className={`${LABEL_CLASS} flex items-center`}>
+                    SKU / Inventory Ref {renderConfidenceBadge("sku")}
+                  </Label>
+                  <Input
+                    placeholder="e.g. SL-CV-04"
+                    value={formData.sku || ""}
+                    onChange={(e) => {
+                      const updatedConfidence = {
+                        ...formData.aiMetadata?.confidence,
+                      };
+                      if (updatedConfidence.sku) delete updatedConfidence.sku;
+                      setFormData({
+                        ...formData,
+                        sku: e.target.value,
+                        aiMetadata: formData.aiMetadata
+                          ? {
+                              ...formData.aiMetadata,
+                              confidence: updatedConfidence,
+                            }
+                          : undefined,
+                      });
+                    }}
+                    className={getFieldStyle("sku")}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className={`${LABEL_CLASS} flex items-center`}>
+                  Public Sourcing Notes {renderConfidenceBadge("description")}
+                </Label>
+                <Textarea
+                  placeholder="Item details, descriptions, or other specifics. Clients will see this."
+                  value={formData.description || ""}
+                  onChange={(e) => {
+                    const updatedConfidence = {
+                      ...formData.aiMetadata?.confidence,
+                    };
+                    if (updatedConfidence.description)
+                      delete updatedConfidence.description;
+                    setFormData({
+                      ...formData,
+                      description: e.target.value,
+                      aiMetadata: formData.aiMetadata
+                        ? {
+                            ...formData.aiMetadata,
+                            confidence: updatedConfidence,
+                          }
+                        : undefined,
+                    });
+                  }}
+                  className={`min-h-[80px] ${getFieldStyle("description")}`}
+                />
+              </div>
+
+              <h3 className="mt-2 border-b pb-1.5 font-medium text-muted-foreground/80 text-xs uppercase tracking-wider">
+                Physical Specifications
+              </h3>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Controller
+                    control={form.control}
+                    name="unitType"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        className="flex flex-col gap-1.5"
+                        data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>
+                          Unit Type <span className="text-destructive">*</span>
+                        </Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}>
+                          <SelectTrigger
+                            className="w-full h-9"
+                            aria-invalid={fieldState.invalid}>
+                            <SelectValue placeholder="Choose Unit Type" />
+                          </SelectTrigger>
+                          <SelectContent position="popper">
+                            {UNIT_TYPES.map((ut) => (
+                              <SelectItem key={ut} value={ut}>
+                                {ut}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className={`${LABEL_CLASS} flex items-center`}>
+                    Finish / Color {renderConfidenceBadge("finishColor")}
+                  </Label>
+                  <Input
+                    placeholder="e.g. Honed Natural"
+                    value={formData.finishColor || ""}
+                    onChange={(e) => {
+                      const updatedConfidence = {
+                        ...formData.aiMetadata?.confidence,
+                      };
+                      if (updatedConfidence.finishColor)
+                        delete updatedConfidence.finishColor;
+                      setFormData({
+                        ...formData,
+                        finishColor: e.target.value,
+                        aiMetadata: formData.aiMetadata
+                          ? {
+                              ...formData.aiMetadata,
+                              confidence: updatedConfidence,
+                            }
+                          : undefined,
+                      });
+                    }}
+                    className={getFieldStyle("finishColor")}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className={`${LABEL_CLASS} flex items-center`}>
+                    Manufacturer {renderConfidenceBadge("manufacturer")}
+                  </Label>
+                  <Input
+                    placeholder="e.g. Carrara Quarries"
+                    value={formData.manufacturer || ""}
+                    onChange={(e) => {
+                      const updatedConfidence = {
+                        ...formData.aiMetadata?.confidence,
+                      };
+                      if (updatedConfidence.manufacturer)
+                        delete updatedConfidence.manufacturer;
+                      setFormData({
+                        ...formData,
+                        manufacturer: e.target.value,
+                        aiMetadata: formData.aiMetadata
+                          ? {
+                              ...formData.aiMetadata,
+                              confidence: updatedConfidence,
+                            }
+                          : undefined,
+                      });
+                    }}
+                    className={getFieldStyle("manufacturer")}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <Label className={`${LABEL_CLASS} flex items-center`}>
+                    Materials {renderConfidenceBadge("materials")}
+                  </Label>
+                  <Input
+                    placeholder="e.g. Calacatta Viola Marble"
+                    value={formData.materials || ""}
+                    onChange={(e) => {
+                      const updatedConfidence = {
+                        ...formData.aiMetadata?.confidence,
+                      };
+                      if (updatedConfidence.materials)
+                        delete updatedConfidence.materials;
+                      setFormData({
+                        ...formData,
+                        materials: e.target.value,
+                        aiMetadata: formData.aiMetadata
+                          ? {
+                              ...formData.aiMetadata,
+                              confidence: updatedConfidence,
+                            }
+                          : undefined,
+                      });
+                    }}
+                    className={getFieldStyle("materials")}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className={`${LABEL_CLASS} flex items-center`}>
+                    Dimensions {renderConfidenceBadge("dimensions")}
+                  </Label>
+                  <Input
+                    placeholder='e.g. 112" L x 68" W x 2cm'
+                    value={formData.dimensions || ""}
+                    onChange={(e) => {
+                      const updatedConfidence = {
+                        ...formData.aiMetadata?.confidence,
+                      };
+                      if (updatedConfidence.dimensions)
+                        delete updatedConfidence.dimensions;
+                      setFormData({
+                        ...formData,
+                        dimensions: e.target.value,
+                        aiMetadata: formData.aiMetadata
+                          ? {
+                              ...formData.aiMetadata,
+                              confidence: updatedConfidence,
+                            }
+                          : undefined,
+                      });
+                    }}
+                    className={getFieldStyle("dimensions")}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className={LABEL_CLASS}>Product Web Link</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="e.g. vendor.com/product-url"
+                    value={formData.sourcingLink || ""}
+                    onChange={(e) => {
+                      const updatedConfidence = {
+                        ...formData.aiMetadata?.confidence,
+                      };
+                      if (updatedConfidence.sourcingLink)
+                        delete updatedConfidence.sourcingLink;
+                      setFormData({
+                        ...formData,
+                        sourcingLink: e.target.value,
+                        aiMetadata: formData.aiMetadata
+                          ? {
+                              ...formData.aiMetadata,
+                              confidence: updatedConfidence,
+                            }
+                          : undefined,
+                      });
+                    }}
+                    className="h-9 flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={form.autofillWithAi}
+                    disabled={form.aiLoading || !formData.sourcingLink}
+                    className="group relative shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-white shadow-md shadow-violet-500/20 transition-all duration-300 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100">
+                    {/* Shimmer overlay — animates only while loading */}
+                    {form.aiLoading && (
+                      <span className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/20 to-transparent" />
+                    )}
+                    <span className="relative flex items-center gap-1.5">
+                      <LunaMoon
+                        variant="phase"
+                        thinking={form.aiLoading}
+                        size={22}
+                      />
+                      <span>
+                        {form.aiLoading ? "AI Sourcing…" : "Fill with Luna"}
+                      </span>
+                    </span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label className={LABEL_CLASS}>Private Sourcing Notes</Label>
+                <Textarea
+                  placeholder="Private notes, sourcing secrets, or anything else. Only you see this."
+                  value={formData.internalNote}
+                  onChange={(e) =>
+                    setFormData({ ...formData, internalNote: e.target.value })
+                  }
+                  className="min-h-[70px]"
+                />
+              </div>
+            </div>
+
+            {/* RIGHT PANE: FINANCIALS, CALCULATOR & MULTI-MEDIA UPLOADS (5 cols) */}
+            <div className="flex flex-col gap-6 bg-muted/20 p-6 lg:col-span-5">
+              {/* FINANCIAL MATRIX SECTION */}
+              <div>
+                <h3 className="mb-4 border-b pb-1.5 font-medium text-muted-foreground/80 text-xs uppercase tracking-wider">
+                  Financials & Margin Matrix
+                </h3>
+
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label className={LABEL_CLASS}>
+                      Unit Wholesale Cost ($)
+                    </Label>
+                    {priceInput("unitCost", formData.unitCost, (n) =>
+                      form.updatePricing(
+                        n,
+                        formData.markup,
+                        formData.msrp ?? 0,
+                      ),
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className={LABEL_CLASS}>Markup %</Label>
+                      <Input
+                        type="number"
+                        placeholder="15"
+                        value={formData.markup || ""}
+                        onChange={(e) =>
+                          form.updatePricing(
+                            formData.unitCost,
+                            Number(e.target.value),
+                            formData.msrp ?? 0,
+                          )
+                        }
+                        className="font-mono"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className={`${LABEL_CLASS} flex items-center`}>
+                        Suggested MSRP ($) {renderConfidenceBadge("msrp")}
+                      </Label>
+                      {priceInput("msrp", formData.msrp ?? 0, (n) =>
+                        form.updatePricing(
+                          formData.unitCost,
+                          formData.markup,
+                          n,
+                        ),
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label className={LABEL_CLASS}>
+                      Client Selling Price ($)
+                    </Label>
+                    {priceInput(
+                      "sellingPrice",
+                      formData.sellingPrice,
+                      form.setSellingPrice,
+                    )}
+                  </div>
+
+                  {/* Live Margin Calculation Cards */}
+                  <div className="mt-1 grid grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1 rounded-lg border border-emerald-500/10 bg-emerald-500/5 p-3 text-emerald-600">
+                      <span className="font-medium text-emerald-600/70 text-xs uppercase tracking-wider">
+                        Your Profit
+                      </span>
+                      <span className="font-medium font-mono text-base">
+                        +
+                        {formatCurrency(
+                          formData.sellingPrice - formData.unitCost,
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 rounded-lg border border-primary/10 bg-primary/5 p-3 text-primary">
+                      <span className="font-medium text-primary/70 text-xs uppercase tracking-wider">
+                        Client Savings
+                      </span>
+                      <span className="font-medium font-mono text-base">
+                        {(formData.msrp ?? 0) > formData.sellingPrice
+                          ? formatCurrency(
+                              (formData.msrp ?? 0) - formData.sellingPrice,
+                            )
+                          : "$0.00"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* VISUAL IMAGE LIBRARY SLOTS */}
+              <div>
+                <h3 className="mb-4 border-b pb-1.5 font-medium text-muted-foreground/80 text-xs uppercase tracking-wider">
+                  Sourcing Visual Gallery (Max 4)
+                </h3>
+
+                {/* Hidden file uploader for Firebase Storage */}
+                <input
+                  type="file"
+                  id={uploaderId}
+                  accept="image/*"
+                  onChange={form.handleImageUpload}
+                  className="hidden"
+                  disabled={uploadingImage || imageUrls.length >= 4}
+                />
+
+                <div className="flex flex-col gap-4">
+                  {/* Primary Cover Image Preview Box */}
+                  <div className="group/cover relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-border/80 bg-background">
+                    {uploadingImage && imageUrls.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center text-primary">
+                        <LoaderIcon className="size-8 animate-spin" />
+                        <p className="text-xs">Uploading visual...</p>
+                      </div>
+                    ) : formData.coverImageUrl ? (
+                      <>
+                        <img
+                          src={formData.coverImageUrl}
+                          alt="Primary Preview"
+                          className="absolute inset-0 size-full object-contain p-4"
+                        />
+                        <span className="absolute bottom-2.5 left-2.5 rounded-full bg-black/60 px-2 py-0.5 font-medium text-[9px] text-white uppercase tracking-wider backdrop-blur-xs">
+                          Active Cover
+                        </span>
+                      </>
+                    ) : (
+                      <Label
+                        htmlFor={uploaderId}
+                        className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground">
+                        <Upload className="size-8 text-muted-foreground/40" />
+                        <p className="text-xs">Click to upload image</p>
+                        <p className="text-muted-foreground/50 text-xs">
+                          Supports JPG, PNG, WEBP (Max 5MB)
+                        </p>
+                      </Label>
+                    )}
+                  </div>
+
+                  {/* Secondary Gallery Grid of up to 4 thumbnail slots */}
+                  <div className="grid grid-cols-4 gap-3">
+                    {imageUrls.map((url, i) => (
+                      <div
+                        key={url}
+                        className={`relative aspect-square overflow-hidden rounded-md border bg-background transition-all hover:scale-102 ${
+                          formData.coverImageUrl === url
+                            ? "scale-102 border-primary ring-2 ring-primary/20"
+                            : "border-border hover:border-primary/50"
+                        }`}>
+                        <button
+                          type="button"
+                          onClick={() => form.setAsCover(url)}
+                          aria-label={`Set thumbnail ${i + 1} as cover`}
+                          className="block size-full cursor-pointer">
+                          <img
+                            src={url}
+                            alt={`Thumbnail ${i + 1}`}
+                            className="size-full object-cover"
+                          />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => form.removeImageUrl(url)}
+                          aria-label={`Remove thumbnail ${i + 1}`}
+                          className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-black/70 text-sm text-white hover:bg-black">
+                          ×
+                        </button>
+                      </div>
+                    ))}
+
+                    {/* Empty slots placeholders */}
+                    {Array.from({
+                      length: Math.max(0, 4 - imageUrls.length),
+                    }).map((_, idx) => {
+                      if (idx === 0 && uploadingImage) {
+                        return (
+                          <div
+                            key={idx}
+                            className="flex aspect-square items-center justify-center rounded-md border border-primary/50 border-dashed bg-primary/5 text-primary">
+                            <LoaderIcon className="size-4 animate-spin" />
+                          </div>
+                        );
+                      }
+                      return (
+                        <Label
+                          key={idx}
+                          htmlFor={uploaderId}
+                          className="flex aspect-square cursor-pointer items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground/40 hover:border-primary/50 hover:bg-primary/5">
+                          <Plus className="size-4" />
+                        </Label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="border-t bg-muted/30 pr-8 pb-8">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-2">
+              {submitting && <LoaderIcon className="size-4 animate-spin" />}
+              {submitLabel}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

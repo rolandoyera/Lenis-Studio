@@ -16,11 +16,11 @@ export async function testGA4Connection(): Promise<GA4ConnectionResult> {
   const refreshToken = process.env.GA_REFRESH_TOKEN;
 
   if (
-    !propertyId || 
-    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" || 
-    !clientId || 
-    !clientSecret || 
-    !refreshToken || 
+    !propertyId ||
+    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
+    !clientId ||
+    !clientSecret ||
+    !refreshToken ||
     refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
   ) {
     return {
@@ -74,18 +74,20 @@ export interface TopPageItem {
   bounce: string;
 }
 
-export async function fetchTopPagesData(range?: string): Promise<{ success: boolean; data: TopPageItem[]; error?: string }> {
+export async function fetchTopPagesData(
+  range?: string,
+): Promise<{ success: boolean; data: TopPageItem[]; error?: string }> {
   const propertyId = process.env.GA_PROPERTY_ID;
   const clientId = process.env.GA_CLIENT_ID;
   const clientSecret = process.env.GA_CLIENT_SECRET;
   const refreshToken = process.env.GA_REFRESH_TOKEN;
 
   if (
-    !propertyId || 
-    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" || 
-    !clientId || 
-    !clientSecret || 
-    !refreshToken || 
+    !propertyId ||
+    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
+    !clientId ||
+    !clientSecret ||
+    !refreshToken ||
     refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
   ) {
     return { success: false, data: [], error: "Config missing" };
@@ -147,7 +149,7 @@ export async function fetchTopPagesData(range?: string): Promise<{ success: bool
       const durationNum = parseFloat(durationVal);
       const usersNum = parseInt(usersVal, 10) || 1;
       const avgSecsTotal = durationNum / usersNum;
-      
+
       const mins = Math.floor(avgSecsTotal / 60);
       const secs = Math.round(avgSecsTotal % 60);
       const timeFormatted = mins > 0 ? `${mins}m ${secs.toString().padStart(2, "0")}s` : `${secs}s`;
@@ -204,105 +206,6 @@ export interface FetchKpiResult {
   label: string;
 }
 
-function getMockKpis(range: string): AnalyticsKpis {
-  let scale = 1.0;
-  
-  if (range === "last-24-hours") {
-    scale = 0.035;
-  } else if (range === "last-7-days") {
-    scale = 0.25;
-  } else if (range === "last-3-months") {
-    scale = 3.0;
-  } else if (range === "year-to-date") {
-    scale = 12.0;
-  }
-
-  const formatMockVal = (val: number, isPercent = false) => {
-    if (isPercent) return `${val.toFixed(1)}%`;
-    if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-    if (val >= 1000) return `${(val / 1000).toFixed(1)}k`;
-    return val.toString();
-  };
-
-  const baseVisitors = 213100;
-  const baseSessions = 248600;
-  const basePageviews = 547900;
-  const baseEngagement = 61.4;
-  const baseConversion = 8.4;
-
-  const visitors = baseVisitors * scale;
-  const sessions = baseSessions * scale;
-  const pageviews = basePageviews * scale;
-
-  const getChange = (card: string) => {
-    let change = 2.8;
-    let isPositive = true;
-    if (card === "visitors") {
-      change = range === "last-24-hours" ? 7.0 : range === "last-7-days" ? 2.7 : range === "last-3-months" ? 3.3 : range === "year-to-date" ? 5.2 : 2.8;
-      isPositive = true;
-    } else if (card === "sessions") {
-      change = range === "last-24-hours" ? 4.8 : range === "last-7-days" ? 2.0 : range === "last-3-months" ? 2.6 : range === "year-to-date" ? 4.4 : 2.1;
-      isPositive = true;
-    } else if (card === "pageviews") {
-      change = range === "last-24-hours" ? 4.3 : range === "last-7-days" ? 3.3 : range === "last-3-months" ? 2.9 : range === "year-to-date" ? 2.0 : 3.3;
-      isPositive = range === "last-24-hours";
-    } else if (card === "engagement") {
-      change = range === "last-24-hours" ? 2.6 : range === "last-7-days" ? 4.4 : range === "last-3-months" ? 4.3 : range === "year-to-date" ? 4.2 : 4.2;
-      isPositive = true;
-    } else if (card === "conversion") {
-      change = range === "last-24-hours" ? 2.5 : range === "last-7-days" ? 4.6 : range === "last-3-months" ? 3.4 : range === "year-to-date" ? 3.4 : 5.6;
-      isPositive = range === "last-24-hours";
-    }
-    return { change: `${change.toFixed(1)}%`, isPositive };
-  };
-
-  const vChange = getChange("visitors");
-  const sChange = getChange("sessions");
-  const pChange = getChange("pageviews");
-  const eChange = getChange("engagement");
-  const cChange = getChange("conversion");
-
-  const prevVisitors = vChange.isPositive ? visitors / (1 + parseFloat(vChange.change) / 100) : visitors / (1 - parseFloat(vChange.change) / 100);
-  const prevSessions = sChange.isPositive ? sessions / (1 + parseFloat(sChange.change) / 100) : sessions / (1 - parseFloat(sChange.change) / 100);
-  const prevPageviews = pChange.isPositive ? pageviews / (1 + parseFloat(pChange.change) / 100) : pageviews / (1 - parseFloat(pChange.change) / 100);
-
-  const prevEngagement = eChange.isPositive ? baseEngagement / (1 + parseFloat(eChange.change) / 100) : baseEngagement / (1 - parseFloat(eChange.change) / 100);
-  const prevConversion = cChange.isPositive ? baseConversion / (1 + parseFloat(cChange.change) / 100) : baseConversion / (1 - parseFloat(cChange.change) / 100);
-
-  return {
-    uniqueVisitors: {
-      value: formatMockVal(visitors),
-      previousValue: formatMockVal(prevVisitors),
-      change: vChange.change,
-      isPositive: vChange.isPositive,
-    },
-    visitors: {
-      value: formatMockVal(sessions),
-      previousValue: formatMockVal(prevSessions),
-      change: sChange.change,
-      isPositive: sChange.isPositive,
-    },
-    pageviews: {
-      value: formatMockVal(pageviews),
-      previousValue: formatMockVal(prevPageviews),
-      change: pChange.change,
-      isPositive: pChange.isPositive,
-    },
-    engagementRate: {
-      value: formatMockVal(baseEngagement, true),
-      previousValue: formatMockVal(prevEngagement, true),
-      change: eChange.change,
-      isPositive: eChange.isPositive,
-    },
-    conversionRate: {
-      value: formatMockVal(baseConversion, true),
-      previousValue: formatMockVal(prevConversion, true),
-      change: cChange.change,
-      isPositive: cChange.isPositive,
-    },
-  };
-}
-
 function getDateRangesForRange(range: string): {
   current: { startDate: string; endDate: string };
   previous: { startDate: string; endDate: string };
@@ -336,7 +239,7 @@ function getDateRangesForRange(range: string): {
   if (range === "year-to-date") {
     const currentStartStr = `${today.getFullYear()}-01-01`;
     const currentEndStr = formatDate(today);
-    
+
     const prevStartStr = `${today.getFullYear() - 1}-01-01`;
     const prevYearDate = new Date(today);
     prevYearDate.setFullYear(today.getFullYear() - 1);
@@ -381,11 +284,11 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
   const refreshToken = process.env.GA_REFRESH_TOKEN;
 
   if (
-    !propertyId || 
-    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" || 
-    !clientId || 
-    !clientSecret || 
-    !refreshToken || 
+    !propertyId ||
+    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
+    !clientId ||
+    !clientSecret ||
+    !refreshToken ||
     refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
   ) {
     return {

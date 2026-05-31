@@ -7,7 +7,6 @@ import { RealtimeVisitors } from "./_components/realtime-visitors";
 import { TopPages } from "./_components/top-pages";
 import { TopTrafficSources } from "./_components/top-traffic-sources";
 import { TrafficQuality } from "./_components/traffic-quality";
-import { UserGreeting } from "../_components/user-greeting";
 
 // Import this stylesheet in any page or component that renders country flag classes.
 import "@/styles/flag-icons/flags.css";
@@ -18,14 +17,12 @@ interface PageProps {
 
 export default async function Page({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
-  const range = (resolvedSearchParams.range as string) || "last-4-weeks";
+  const range = (resolvedSearchParams.range as string) || "last-24-hours";
 
   return (
     <div className="flex flex-col gap-4">
       <div className="space-y-1">
-        <h1 className="text-3xl tracking-tight">
-          <UserGreeting prefix="Hello" />
-        </h1>
+        <h1 className="text-3xl tracking-tight">Analytics</h1>
         <p className="text-muted-foreground text-sm">
           Monitor traffic, engagement, and conversion performance in one view.
         </p>

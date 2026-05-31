@@ -2,6 +2,7 @@ import {
   Banknote,
   Calendar,
   ChartBar,
+  FolderKanban,
   Forklift,
   Gauge,
   GraduationCap,
@@ -9,7 +10,6 @@ import {
   LayoutDashboard,
   ListTodo,
   type LucideIcon,
-  Mail,
   MessageSquare,
   ReceiptText,
   ShoppingBag,
@@ -47,8 +47,8 @@ export const sidebarItems: NavGroup[] = [
     label: "Dashboards",
     items: [
       {
-        title: "Default",
-        url: "/dashboard/default",
+        title: "Home",
+        url: "/dashboard/home",
         icon: LayoutDashboard,
       },
       {
@@ -91,6 +91,37 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 2,
+    label: "Design Studio",
+    items: [
+      {
+        title: "Projects",
+        url: "/dashboard/projects",
+        icon: FolderKanban,
+      },
+      {
+        title: "Library",
+        url: "/dashboard/library",
+        icon: ShoppingBag,
+      },
+      {
+        title: "Clients",
+        url: "/dashboard/clients",
+        icon: Users,
+      },
+      {
+        title: "Vendors",
+        url: "/dashboard/vendors",
+        icon: Forklift,
+      },
+      {
+        title: "Proposals",
+        url: "/dashboard/proposals",
+        icon: ReceiptText,
+      },
+    ],
+  },
+  {
+    id: 3,
     label: "Pages",
     items: [
       {

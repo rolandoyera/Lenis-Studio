@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useShallow } from "zustand/react/shallow";
 import Image from "next/image";
+import Link from "next/link";
+
+import { useShallow } from "zustand/react/shallow";
 
 import {
   Sidebar,
@@ -36,7 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link prefetch={false} href="/dashboard/default">
+              <Link prefetch={false} href="/dashboard/home">
                 <Image
                   src="/logo_sdg-S-only.svg"
                   alt="Logo"

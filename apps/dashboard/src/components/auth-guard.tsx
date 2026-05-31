@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { type ReactNode, useEffect, useState } from "react";
+
+import { usePathname, useRouter } from "next/navigation";
+
 import { format } from "date-fns";
+import { onAuthStateChanged, type User } from "firebase/auth";
+import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+
+import { auth, db } from "@/lib/firebase";
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -14,10 +17,17 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const isAuthRoute = pathname.startsWith("/auth");
+  const isInviteRoute = pathname.startsWith("/auth/invite");
 
   useEffect(() => {
     // Listen to Firebase Auth state changes
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (isInviteRoute) {
+        setUser(firebaseUser);
+        setLoading(false);
+        return;
+      }
+
       if (firebaseUser) {
         try {
           const userDocRef = doc(db, "users", firebaseUser.uid);
@@ -25,7 +35,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
           if (!userDocSnap.exists()) {
             // Document for UID does not exist. Check if we have an invitation pending under the user's email.
-            const emailKey = firebaseUser.email?.trim().toLowerCase();
+            const emailKey = firebaseUser.email ? firebaseUser.email.trim().toLowerCase() : "";
             if (emailKey) {
               const pendingDocRef = doc(db, "users", emailKey);
               const pendingDocSnap = await getDoc(pendingDocRef);
@@ -65,7 +75,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
                   status: "Active",
                   lastActive: Date.now(),
                 },
-                { merge: true }
+                { merge: true },
               );
             }
           }
@@ -88,7 +98,21 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [isAuthRoute, router]);
+  }, [isAuthRoute, isInviteRoute, router]);
+
+  // Keep user active in Firestore on page navigation
+  useEffect(() => {
+    if (!user) return;
+    const updateActiveStatus = async () => {
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        await setDoc(userDocRef, { lastActive: Date.now() }, { merge: true });
+      } catch (error) {
+        console.error("Error updating active status:", error);
+      }
+    };
+    updateActiveStatus();
+  }, [pathname, user]);
 
   // Render children immediately for auth routes (like login, forgot-password)
   if (isAuthRoute) {
@@ -121,7 +145,5 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   }
 
   // Safe fallback while redirect is executing
-  return (
-    <div className="flex h-screen w-screen items-center justify-center bg-background" />
-  );
+  return <div className="flex h-screen w-screen items-center justify-center bg-background" />;
 }

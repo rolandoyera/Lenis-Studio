@@ -1,3 +1,4 @@
+import { UserGreeting } from "../_components/user-greeting";
 import { CalendarPanel } from "./_components/calendar-panel";
 import { FocusCard } from "./_components/focus-card";
 import { ProjectsSection } from "./_components/projects-section";
@@ -7,7 +8,6 @@ import { RecentNotesCard } from "./_components/recent-notes-card";
 import { SummaryCards } from "./_components/summary-cards";
 import { TasksSection } from "./_components/tasks-section";
 import { WeeklySummaryCard } from "./_components/weekly-summary-card";
-import { UserGreeting } from "../_components/user-greeting";
 
 export default function Page() {
   return (

@@ -1,30 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { auth } from "@/lib/firebase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters." }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
 export function LoginForm() {
@@ -43,7 +37,6 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      toast.success("Successfully logged in!");
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
@@ -64,10 +57,7 @@ export function LoginForm() {
   };
 
   return (
-    <form
-      noValidate
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="flex flex-col gap-4">
+    <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <FieldGroup className="gap-4">
         <Controller
           control={form.control}
@@ -96,7 +86,8 @@ export function LoginForm() {
                 <FieldLabel htmlFor="login-password">Password</FieldLabel>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4">
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+                >
                   Forgot password?
                 </Link>
               </div>

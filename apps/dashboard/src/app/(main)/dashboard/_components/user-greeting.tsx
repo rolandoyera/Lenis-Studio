@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+
 import { Skeleton } from "@/components/ui/skeleton";
+import { auth, db } from "@/lib/firebase";
 
 export function UserGreeting({ prefix = "Hello" }: { prefix?: string }) {
   const [name, setName] = useState<string | null>(null);
@@ -31,5 +33,9 @@ export function UserGreeting({ prefix = "Hello" }: { prefix?: string }) {
   }, []);
 
   if (name === null) return <Skeleton className="h-9 w-48 inline-block" />;
-  return <>{prefix}, {name}</>;
+  return (
+    <>
+      {prefix}, {name}
+    </>
+  );
 }

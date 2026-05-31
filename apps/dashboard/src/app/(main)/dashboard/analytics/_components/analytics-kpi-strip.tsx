@@ -3,13 +3,14 @@ import { ArrowDownRight, ArrowUpRight, Ellipsis } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchKpiData } from "@/server/analytics-actions";
+
 import { AnalyticsErrorToast } from "./analytics-error-toast";
 
 interface AnalyticsKpiStripProps {
   range?: string;
 }
 
-export async function AnalyticsKpiStrip({ range }: AnalyticsKpiStripProps) {
+export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKpiStripProps) {
   const result = await fetchKpiData(range);
 
   if (!result.success || !result.data) {
@@ -41,11 +42,13 @@ export async function AnalyticsKpiStrip({ range }: AnalyticsKpiStripProps) {
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <div className="text-2xl leading-none tracking-tight">{uniqueVisitors.value}</div>
-              <Badge className={
-                uniqueVisitors.isPositive
-                  ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                  : "bg-destructive/10 text-destructive"
-              }>
+              <Badge
+                className={
+                  uniqueVisitors.isPositive
+                    ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                    : "bg-destructive/10 text-destructive"
+                }
+              >
                 {uniqueVisitors.isPositive ? <ArrowUpRight /> : <ArrowDownRight />}
                 {uniqueVisitors.change}
               </Badge>
@@ -72,11 +75,13 @@ export async function AnalyticsKpiStrip({ range }: AnalyticsKpiStripProps) {
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <div className="text-2xl leading-none tracking-tight">{visitors.value}</div>
-              <Badge className={
-                visitors.isPositive
-                  ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                  : "bg-destructive/10 text-destructive"
-              }>
+              <Badge
+                className={
+                  visitors.isPositive
+                    ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                    : "bg-destructive/10 text-destructive"
+                }
+              >
                 {visitors.isPositive ? <ArrowUpRight /> : <ArrowDownRight />}
                 {visitors.change}
               </Badge>
@@ -103,11 +108,13 @@ export async function AnalyticsKpiStrip({ range }: AnalyticsKpiStripProps) {
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <div className="text-2xl leading-none tracking-tight">{pageviews.value}</div>
-              <Badge className={
-                pageviews.isPositive
-                  ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                  : "bg-destructive/10 text-destructive"
-              }>
+              <Badge
+                className={
+                  pageviews.isPositive
+                    ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                    : "bg-destructive/10 text-destructive"
+                }
+              >
                 {pageviews.isPositive ? <ArrowUpRight /> : <ArrowDownRight />}
                 {pageviews.change}
               </Badge>
@@ -134,11 +141,13 @@ export async function AnalyticsKpiStrip({ range }: AnalyticsKpiStripProps) {
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <div className="text-2xl leading-none tracking-tight">{engagementRate.value}</div>
-              <Badge className={
-                engagementRate.isPositive
-                  ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                  : "bg-destructive/10 text-destructive"
-              }>
+              <Badge
+                className={
+                  engagementRate.isPositive
+                    ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                    : "bg-destructive/10 text-destructive"
+                }
+              >
                 {engagementRate.isPositive ? <ArrowUpRight /> : <ArrowDownRight />}
                 {engagementRate.change}
               </Badge>
@@ -165,11 +174,13 @@ export async function AnalyticsKpiStrip({ range }: AnalyticsKpiStripProps) {
           <CardContent className="flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <div className="text-2xl leading-none tracking-tight">{conversionRate.value}</div>
-              <Badge className={
-                conversionRate.isPositive
-                  ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                  : "bg-destructive/10 text-destructive"
-              }>
+              <Badge
+                className={
+                  conversionRate.isPositive
+                    ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                    : "bg-destructive/10 text-destructive"
+                }
+              >
                 {conversionRate.isPositive ? <ArrowUpRight /> : <ArrowDownRight />}
                 {conversionRate.change}
               </Badge>

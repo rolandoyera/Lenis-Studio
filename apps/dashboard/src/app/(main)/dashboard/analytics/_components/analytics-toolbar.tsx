@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Ellipsis, FileDown, FileUp, RefreshCw, Share2 } from "lucide-react";
+
+import { Ellipsis, FileDown, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,21 +14,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function AnalyticsToolbar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const currentRange = searchParams.get("range") || "last-4-weeks";
+  const currentRange = searchParams.get("range") || "last-24-hours";
 
   const handleRangeChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -54,10 +48,7 @@ export function AnalyticsToolbar() {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            size="icon"
-            variant="outline"
-            aria-label="More analytics actions">
+          <Button size="icon" variant="outline" aria-label="More analytics actions">
             <Ellipsis />
           </Button>
         </DropdownMenuTrigger>

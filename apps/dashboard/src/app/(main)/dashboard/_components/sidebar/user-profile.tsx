@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { signOut, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
-import { format } from "date-fns";
+import { useEffect, useState } from "react";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { format } from "date-fns";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { BadgeCheck, LogOut } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,19 +19,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { auth, db } from "@/lib/firebase";
 import { getInitials } from "@/lib/utils";
 
-export function UserProfile({
-  users,
-}: {
-  readonly users: ReadonlyArray<{
-    readonly id: string;
-    readonly name: string;
-    readonly email: string;
-    readonly avatar: string;
-    readonly role: string;
-  }>;
-}) {
+export function UserProfile() {
   const [activeUser, setActiveUser] = useState<any>(null);
   const router = useRouter();
 
@@ -41,8 +32,7 @@ export function UserProfile({
         try {
           const userDocRef = doc(db, "users", fbUser.uid);
           const userDocSnap = await getDoc(userDocRef);
-          let fullName =
-            fbUser.displayName || fbUser.email?.split("@")[0] || "User";
+          let fullName = fbUser.displayName || fbUser.email?.split("@")[0] || "User";
           let role = "Contributor";
 
           if (userDocSnap.exists()) {
@@ -91,6 +81,10 @@ export function UserProfile({
 
   const handleLogout = async () => {
     try {
+      if (activeUser?.id) {
+        const userDocRef = doc(db, "users", activeUser.id);
+        await setDoc(userDocRef, { lastActive: 0 }, { merge: true });
+      }
       await signOut(auth);
       router.push("/auth/login");
     } catch (error) {
@@ -99,27 +93,18 @@ export function UserProfile({
   };
 
   if (!activeUser) {
-    return (
-      <div className="size-8 rounded-lg bg-muted/60 animate-pulse border border-border/20" />
-    );
+    return <div className="size-8 rounded-lg bg-muted/60 animate-pulse border border-border/20" />;
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="hover:cursor-pointer">
         <Avatar className="size-9 rounded-lg">
-          <AvatarImage
-            src={activeUser.avatar || undefined}
-            alt={activeUser.name}
-          />
+          <AvatarImage src={activeUser.avatar || undefined} alt={activeUser.name} />
           <AvatarFallback>{getInitials(activeUser.name)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className="min-w-56 space-y-1 rounded-lg mt-2"
-        side="bottom"
-        align="end"
-        sideOffset={4}>
+      <DropdownMenuContent className="min-w-56 space-y-1 rounded-lg mt-2" side="bottom" align="end" sideOffset={4}>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/profile" className="hover:cursor-pointer">
