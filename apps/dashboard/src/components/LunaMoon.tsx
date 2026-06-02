@@ -17,6 +17,8 @@
 
 import * as React from "react";
 
+import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
+
 type LunaVariant = "phase" | "orbit" | "breathe" | "shimmer" | "constellation";
 
 export interface LunaMoonProps extends React.SVGProps<SVGSVGElement> {
@@ -57,7 +59,7 @@ export default function LunaMoon({
         width={size}
         height={size}
         role="img"
-        aria-label={thinking ? "Luna is thinking" : "Luna"}
+        aria-label={thinking ? `${AI_ASSISTANT_NAME} is thinking` : AI_ASSISTANT_NAME}
         className={`luna luna-${variant}${on}${className ? " " + className : ""}`}
         style={{ overflow: "visible", color: "currentColor" }}
         {...rest}

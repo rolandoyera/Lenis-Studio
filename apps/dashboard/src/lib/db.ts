@@ -4,7 +4,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { mockClients, mockLibraryItems, mockProjects, mockVendors } from "@/data/mock-studio";
 import { db, storage } from "@/lib/firebase";
 
-import type { Client, LibraryItem, Project, Proposal, Vendor } from "./types";
+import type { Client, DiagnosticRun, LibraryItem, Project, Proposal, Vendor } from "./types";
 
 // --- CLIENT HELPER HOOKS & FUNCTIONS ---
 
@@ -289,4 +289,61 @@ export async function uploadLibraryImage(file: File): Promise<string> {
   // Get public CDN download URL
   const downloadURL = await getDownloadURL(snapshot.ref);
   return downloadURL;
+}
+
+/**
+ * Uploads a raw image Blob (e.g. an external product image fetched server-side and
+ * rebuilt on the client) to Firebase Storage and returns its public download URL.
+ * Used when mirroring AI-sourced vendor images so library items self-host their images.
+ */
+export async function uploadLibraryImageBlob(blob: Blob, extension = "jpg"): Promise<string> {
+  const cleanFileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${extension}`;
+  const storageRef = ref(storage, `library/${cleanFileName}`);
+
+  const snapshot = await uploadBytes(storageRef, blob, {
+    contentType: blob.type || `image/${extension}`,
+  });
+  return await getDownloadURL(snapshot.ref);
+}
+
+// --- DIAGNOSTICS HELPER FUNCTIONS ---
+
+export async function saveDiagnosticRun(run: Omit<DiagnosticRun, "runId" | "createdAt">): Promise<DiagnosticRun> {
+  const runId = "run-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
+  // Firestore throws on undefined values. JSON serialization safely strips all undefined keys recursively.
+  const sanitizedRun = JSON.parse(JSON.stringify(run));
+  const newRun: DiagnosticRun = {
+    ...sanitizedRun,
+    runId,
+    createdAt: Date.now(),
+  };
+  await setDoc(doc(db, "code", runId), newRun);
+  return newRun;
+}
+
+export async function getDiagnosticRuns(): Promise<DiagnosticRun[]> {
+  try {
+    const collRef = collection(db, "code");
+    const snapshot = await getDocs(collRef);
+    const runs: DiagnosticRun[] = [];
+    snapshot.forEach((docSnap) => {
+      runs.push(docSnap.data() as DiagnosticRun);
+    });
+    return runs.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error) {
+    console.error("Error fetching diagnostic runs:", error);
+    return [];
+  }
+}
+
+export async function clearDiagnosticRuns(): Promise<void> {
+  try {
+    const collRef = collection(db, "code");
+    const snapshot = await getDocs(collRef);
+    for (const docSnap of snapshot.docs) {
+      await deleteDoc(doc(db, "code", docSnap.id));
+    }
+  } catch (error) {
+    console.error("Error clearing diagnostic runs:", error);
+  }
 }

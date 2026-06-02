@@ -9,6 +9,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme {
+  --breakpoint-3xl: 120rem;
+}
+
 @theme inline {
   --animate-shimmer: shimmer 1.2s ease-in-out infinite;
 

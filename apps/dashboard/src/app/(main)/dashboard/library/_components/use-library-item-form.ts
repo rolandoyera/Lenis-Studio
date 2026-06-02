@@ -6,12 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { startLunaProductAutofillToast } from "@/components/luna-progress-toast";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
+import { runAiActionWithRetry } from "@/lib/ai-retry";
 import { uploadLibraryImage } from "@/lib/db";
 import { autofillProductFromUrl } from "@/server/ai-actions";
 
-import { EMPTY_LIBRARY_ITEM_FORM, type LibraryItemFormData, libraryItemSchema } from "./library-constants";
+import { EMPTY_LIBRARY_ITEM_FORM, type LibraryItemFormData, libraryItemSchema, MAX_IMAGES } from "./library-constants";
 
-const MAX_IMAGES = 4;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export function useLibraryItemForm() {
@@ -43,8 +45,7 @@ export function useLibraryItemForm() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  const reset = (values?: Partial<LibraryItemFormData>) =>
-    rhfForm.reset({ ...EMPTY_LIBRARY_ITEM_FORM, ...values });
+  const reset = (values?: Partial<LibraryItemFormData>) => rhfForm.reset({ ...EMPTY_LIBRARY_ITEM_FORM, ...values });
 
   // Wraps RHF's handleSubmit so the dialog can call form.handleSubmit(onSubmit)
   // where onSubmit is a simple no-arg async function from the page.
@@ -77,27 +78,49 @@ export function useLibraryItemForm() {
     }
 
     setAiLoading(true);
+    const lunaToast = startLunaProductAutofillToast();
     try {
-      const res = await autofillProductFromUrl(url);
+      const res = await runAiActionWithRetry(() => autofillProductFromUrl(url), {
+        toastId: lunaToast.id,
+        onRetry: lunaToast.showRetry,
+      });
       if (!res.success || !res.data) {
-        toast.error(res.error || "Failed to extract product specs from the link.", { duration: 8000 });
+        toast.error(res.error || "Failed to extract product specs from the link.", {
+          id: lunaToast.id,
+          duration: 8000,
+        });
         return;
       }
 
       const ext = res.data;
 
       setFormData((prev) => {
-        const newImages = [...(prev.imageUrls ?? [])];
-        if (ext.imageUrls && ext.imageUrls.length > 0) {
-          for (const img of ext.imageUrls) {
-            if (!newImages.includes(img) && newImages.length < 4) {
-              newImages.push(img);
-            }
-          }
+        // Re-scraping replaces only the AI-sourced images and KEEPS manual uploads.
+        // Manual uploads are tracked in manualImageUrls (always Firebase-hosted, never
+        // changed by mirroring), so they're a stable anchor: we preserve those and swap
+        // out the rest for the freshly scraped set. Appending instead piled up duplicates,
+        // because a saved item's AI images are Firebase-mirrored copies of the very photos
+        // the scraper returns again as raw vendor URLs (same picture, different string).
+        const prevImages = prev.imageUrls ?? [];
+        const manualImages = (prev.manualImageUrls ?? []).filter((u) => prevImages.includes(u));
+
+        const aiImages: string[] = [];
+        const seen = new Set<string>(manualImages);
+        for (const img of ext.imageUrls ?? []) {
+          const url = img.trim();
+          if (!url || seen.has(url) || manualImages.length + aiImages.length >= MAX_IMAGES) continue;
+          seen.add(url);
+          aiImages.push(url);
         }
+
+        // Only swap the AI portion when the scrape actually returned images.
+        const newImages = aiImages.length > 0 ? [...manualImages, ...aiImages] : prevImages;
+        const coverImageUrl =
+          prev.coverImageUrl && newImages.includes(prev.coverImageUrl) ? prev.coverImageUrl : (newImages[0] ?? "");
 
         const updated = {
           ...prev,
+          manualImageUrls: manualImages,
           name: ext.name || prev.name,
           sku: ext.sku || prev.sku,
           category: ext.category || prev.category,
@@ -109,11 +132,11 @@ export function useLibraryItemForm() {
           sourcingLink: prev.sourcingLink || url,
           msrp: ext.msrp !== undefined && ext.msrp > 0 ? ext.msrp : prev.msrp,
           imageUrls: newImages,
-          coverImageUrl: prev.coverImageUrl || newImages[0] || "",
+          coverImageUrl,
           aiMetadata: {
             sourceUrl: url,
             importedAt: Date.now(),
-            model: "gemini-2.5-flash",
+            model: res.modelUsed || "gemini-3.5-flash",
             confidence: ext.confidence,
             rawExtraction: ext.rawExtraction,
           },
@@ -123,11 +146,18 @@ export function useLibraryItemForm() {
         return { ...updated, sellingPrice };
       });
 
-      toast.success("Product specs successfully autofilled with AI (Review before saving)!");
+      toast.success(`Product specs successfully filled with ${AI_ASSISTANT_NAME} (Review before saving)!`, {
+        id: lunaToast.id,
+        duration: 5000,
+      });
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      toast.error(errMsg || "An unexpected error occurred during autofill.", { duration: 8000 });
+      toast.error(errMsg || "An unexpected error occurred during autofill.", {
+        id: lunaToast.id,
+        duration: 8000,
+      });
     } finally {
+      lunaToast.stop();
       setAiLoading(false);
     }
   };
@@ -148,6 +178,8 @@ export function useLibraryItemForm() {
       setFormData((prev) => ({
         ...prev,
         imageUrls: [...(prev.imageUrls ?? []), url].slice(0, MAX_IMAGES),
+        // Record this as a manual upload so AI re-scrapes never remove it.
+        manualImageUrls: [...(prev.manualImageUrls ?? []), url],
         coverImageUrl: prev.coverImageUrl || url,
       }));
       toast.success("Image uploaded successfully!");
@@ -171,6 +203,7 @@ export function useLibraryItemForm() {
       return {
         ...prev,
         imageUrls: filtered,
+        manualImageUrls: (prev.manualImageUrls ?? []).filter((u) => u !== url),
         coverImageUrl: prev.coverImageUrl === url ? filtered[0] || "" : prev.coverImageUrl,
       };
     });

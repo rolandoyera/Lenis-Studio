@@ -5,6 +5,9 @@ import type { LibraryItem } from "@/lib/types";
 export const COST_TYPES = ["Product", "Service", "Labor", "Shipping"] as const;
 export const UNIT_TYPES = ["Each", "SF", "LF", "Yard", "Pieces"] as const;
 
+/** Maximum images allowed on a library item (gallery slots, upload cap, AI fill). */
+export const MAX_IMAGES = 8;
+
 export const libraryItemSchema = z.object({
   name: z.string().min(1, "Item name is required."),
   costType: z.enum(COST_TYPES, { error: "Please choose a cost type." }),
@@ -26,6 +29,7 @@ export const libraryItemSchema = z.object({
   markup: z.number(),
   sellingPrice: z.number(),
   imageUrls: z.array(z.string()).optional(),
+  manualImageUrls: z.array(z.string()).optional(),
   coverImageUrl: z.string().optional(),
   aiMetadata: z.any().optional(),
 });
@@ -71,6 +75,7 @@ export const EMPTY_LIBRARY_ITEM_FORM: LibraryItemFormData = {
   msrp: 0,
   sellingPrice: 0,
   imageUrls: [],
+  manualImageUrls: [],
   coverImageUrl: "",
   aiMetadata: undefined,
 };
@@ -98,6 +103,7 @@ export function libraryItemToForm(item: LibraryItem): LibraryItemFormData {
     msrp: item.msrp ?? 0,
     sellingPrice: item.sellingPrice,
     imageUrls: item.imageUrls ?? [],
+    manualImageUrls: item.manualImageUrls ?? [],
     coverImageUrl: item.coverImageUrl ?? "",
     aiMetadata: item.aiMetadata,
   };

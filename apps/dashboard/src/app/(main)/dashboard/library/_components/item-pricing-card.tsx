@@ -15,7 +15,7 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
   const profitable = profit > 0;
 
   return (
-    <Card className="bg-card/60 backdrop-blur-xs border border-border/40 shadow-xs">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg font-medium font-heading flex items-center gap-2">
           <Calculator className="size-4.5 text-primary/80" />

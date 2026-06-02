@@ -28,9 +28,14 @@ export interface Vendor {
   vendorId: string;
   name: string;
   category?: string;
+  description?: string;
   website?: string;
   accountNumber?: string;
-  address?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  logoUrl?: string;
+  heroImageUrl?: string;
   repName?: string;
   repEmail?: string;
   repPhone?: string;
@@ -61,6 +66,8 @@ export interface LibraryItem {
   markup: number; // percentage (e.g. 15 for 15%)
   sellingPrice: number;
   imageUrls?: string[];
+  /** Subset of imageUrls that the user uploaded manually (always Firebase-hosted). Preserved across AI re-scrapes. */
+  manualImageUrls?: string[];
   coverImageUrl?: string;
   updatedAt: number;
   aiMetadata?: AiMetadata;
@@ -105,5 +112,16 @@ export interface Proposal {
   taxRate: number; // e.g. 8.25 for 8.25%
   taxTotal: number;
   grandTotal: number;
+  createdAt: number;
+}
+
+export interface DiagnosticRun {
+  runId: string;
+  type: "product" | "vendor";
+  url: string;
+  scrapedMarkdown: string;
+  prompt: string;
+  rawResponse: string;
+  parsedData: any;
   createdAt: number;
 }

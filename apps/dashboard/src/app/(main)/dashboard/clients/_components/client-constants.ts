@@ -1,15 +1,21 @@
-export type ClientFormData = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  company: string;
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  notes: string;
-};
+import { z } from "zod";
+
+import { isValidUsPhone } from "@/lib/utils";
+
+export const clientSchema = z.object({
+  firstName: z.string().min(1, "First name is required."),
+  lastName: z.string().min(1, "Last name is required."),
+  email: z.union([z.string().email("Please enter a valid email address."), z.literal("")]),
+  phone: z.string().refine(isValidUsPhone, "Enter a valid 10-digit US phone number."),
+  company: z.string(),
+  street: z.string(),
+  city: z.string(),
+  state: z.string(),
+  zip: z.string(),
+  notes: z.string(),
+});
+
+export type ClientFormData = z.infer<typeof clientSchema>;
 
 export const EMPTY_CLIENT_FORM: ClientFormData = {
   firstName: "",
@@ -23,17 +29,3 @@ export const EMPTY_CLIENT_FORM: ClientFormData = {
   zip: "",
   notes: "",
 };
-
-export function formatPhoneNumber(value: string): string {
-  if (!value) return "";
-  const cleaned = value.replace(/\D/g, "");
-  if (cleaned.length === 0) return "";
-
-  if (cleaned.length <= 3) return `(${cleaned}`;
-  if (cleaned.length <= 6) return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-  if (cleaned.length <= 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  }
-  const tail = cleaned.length - 10;
-  return `+${cleaned.slice(0, tail)} (${cleaned.slice(tail, tail + 3)}) ${cleaned.slice(tail + 3, tail + 6)}-${cleaned.slice(tail + 6)}`;
-}

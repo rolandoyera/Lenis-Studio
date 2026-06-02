@@ -9,8 +9,7 @@ export default function Page() {
       <div className="space-y-1">
         <h2 className="text-3xl tracking-tight">Pipeline Overview</h2>
         <p className="text-muted-foreground text-sm">
-          Keep tabs on lead quality, open opportunities, and conversion rates
-          across the current sales cycle.
+          Keep tabs on lead quality, open opportunities, and conversion rates across the current sales cycle.
         </p>
       </div>
       <OpportunitiesSection />

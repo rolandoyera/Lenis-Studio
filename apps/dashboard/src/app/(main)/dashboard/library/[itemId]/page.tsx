@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteLibraryItem, getLibraryItem, getVendors, updateLibraryItem } from "@/lib/db";
+import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
 
 import { DeleteItemDialog } from "../_components/delete-item-dialog";
@@ -77,10 +78,13 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
     if (!item) return;
     setUpdatingCatalog(true);
     try {
-      await updateLibraryItem(item.itemId, form.formData);
-      setItem({ ...item, ...form.formData });
+      // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
+      const { imageUrls, coverImageUrl } = await mirrorExternalImagesToFirebase(form.formData);
+      const updated = { ...form.formData, imageUrls, coverImageUrl };
+      await updateLibraryItem(item.itemId, updated);
+      setItem({ ...item, ...updated });
       setIsEditOpen(false);
-      setActivePreviewImage(form.formData.coverImageUrl || form.formData.imageUrls?.[0] || "");
+      setActivePreviewImage(coverImageUrl || imageUrls[0] || "");
       toast.success("Catalog item updated successfully!");
     } catch (error) {
       console.error(error);

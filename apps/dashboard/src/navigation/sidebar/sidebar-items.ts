@@ -1,4 +1,5 @@
 import {
+  Activity,
   Banknote,
   Calendar,
   ChartBar,
@@ -117,6 +118,11 @@ export const sidebarItems: NavGroup[] = [
         title: "Proposals",
         url: "/dashboard/proposals",
         icon: ReceiptText,
+      },
+      {
+        title: "AI Diagnostics",
+        url: "/dashboard/diagnostics",
+        icon: Activity,
       },
     ],
   },

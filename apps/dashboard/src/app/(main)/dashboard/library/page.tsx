@@ -9,11 +9,13 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { H1 } from "@/components/ui/typography";
 import { addLibraryItem, getLibraryItems, getVendors } from "@/lib/db";
+import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -73,7 +75,9 @@ export default function LibraryPage() {
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const created = await addLibraryItem(form.formData);
+      // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
+      const { imageUrls, coverImageUrl } = await mirrorExternalImagesToFirebase(form.formData);
+      const created = await addLibraryItem({ ...form.formData, imageUrls, coverImageUrl });
       setItems((prev) => [created, ...prev]);
       toast.success("New product successfully added to Global Library!");
       setIsModalOpen(false);
@@ -106,7 +110,7 @@ export default function LibraryPage() {
       {/* Header section with Premium typography & Action trigger */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-heading">Product & Material Library</h1>
+          <H1>Product Library</H1>
           <p className="text-muted-foreground text-sm mt-1">
             Global catalog of furniture, fabric swatches, stone slabs, lighting structures, and bespoke services.
           </p>
@@ -171,7 +175,7 @@ export default function LibraryPage() {
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-8 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 3xl:grid-cols-8 gap-5">
           {filteredItems.map((item) => {
             const parentVendor = vendors.find((v) => v.vendorId === item.vendorId);
             const vendorName = parentVendor?.name || "Unknown Vendor";
@@ -221,7 +225,6 @@ export default function LibraryPage() {
 
                     {/* Vendor Name - Clicking on the vendor name filters the vendor profile in directory */}
                     <div className="mt-1 text-[12px] text-muted-foreground flex items-center gap-1 min-w-0">
-                      <span className="shrink-0">Vendor:</span>
                       {item.vendorId ? (
                         parentVendor?.website ? (
                           <a
@@ -235,7 +238,7 @@ export default function LibraryPage() {
                             className="font-medium text-foreground/80 hover:text-primary hover:underline truncate flex items-center gap-0.5"
                           >
                             {vendorName}
-                            <ExternalLink className="size-2.5 inline-block shrink-0 opacity-60" />
+                            <ExternalLink className="size-2.5 shrink-0 ml-1" />
                           </a>
                         ) : (
                           <Link
@@ -243,7 +246,7 @@ export default function LibraryPage() {
                             className="font-medium text-foreground/80 hover:text-primary hover:underline truncate flex items-center gap-0.5"
                           >
                             {vendorName}
-                            <ExternalLink className="size-2.5 inline-block shrink-0 opacity-60" />
+                            <ExternalLink className="size-2.5 shrink-0" />
                           </Link>
                         )
                       ) : (
@@ -257,9 +260,9 @@ export default function LibraryPage() {
                         href={item.sourcingLink.startsWith("http") ? item.sourcingLink : `https://${item.sourcingLink}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-2 text-[12px] font-medium text-primary hover:underline transition-colors pr-2 py-0.5 max-w-full"
+                        className="inline-flex items-center gap-1.5 mt-1 text-[12px] font-medium text-primary hover:underline transition-colors py-0.5 max-w-full"
                       >
-                        <span className="truncate">Item Webpage</span>
+                        <span className="truncate">Origin Link</span>
                         <ExternalLink className="size-2.5 shrink-0" />
                       </a>
                     ) : (
@@ -268,20 +271,17 @@ export default function LibraryPage() {
                       </span>
                     )}
                   </div>
-
+                </CardContent>
+                <CardFooter className="flex flex-col">
                   {/* Pricing Matrix summary */}
-                  <div className="flex items-center justify-between border-t border-border/40 pt-3">
+                  <div className="flex items-center justify-between w-full">
                     <div className="flex flex-col">
                       <Label className="mb-1">Cost</Label>
-                      <span className="text-sm font-semibold text-foreground/75 font-mono">
-                        {formatCurrency(item.unitCost)}
-                      </span>
+                      <span className="text-sm font-semibold text-foreground/75">{formatCurrency(item.unitCost)}</span>
                     </div>
                     <div className="flex flex-col text-right">
                       <Label className="mb-1 ml-auto">Selling Price</Label>
-                      <span className="text-sm font-bold text-primary font-mono">
-                        {formatCurrency(item.sellingPrice)}
-                      </span>
+                      <span className="text-sm font-bold text-primary">{formatCurrency(item.sellingPrice)}</span>
                     </div>
                   </div>
 
@@ -289,14 +289,14 @@ export default function LibraryPage() {
                   {(() => {
                     const profitable = item.sellingPrice > item.unitCost;
                     return (
-                      <Badge variant={profitable ? "profit" : "warning"} className="ml-auto gap-1">
+                      <Badge variant={profitable ? "profit" : "warning"} className="mx-auto gap-1 mt-3 -mb-1">
                         {profitable ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                         <span className="font-semibold">{Math.round(item.markup)}%</span>
                         <span>markup</span>
                       </Badge>
                     );
                   })()}
-                </CardContent>
+                </CardFooter>
               </Card>
             );
           })}

@@ -1,10 +1,100 @@
 "use server";
 
-import { withProtocol } from "../app/(main)/dashboard/library/_components/library-constants";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
+import { saveDiagnosticRun } from "@/lib/db";
+
+import { MAX_IMAGES, withProtocol } from "../app/(main)/dashboard/library/_components/library-constants";
+
+/**
+ * Classifies a non-OK Gemini HTTP status. Transient overload (503/500) and rate-limit (429)
+ * responses are marked retryable with a user-friendly message so the client can retry; all
+ * other statuses return `message: null` so callers fall back to their own context-specific text.
+ */
+function classifyGeminiError(status: number): {
+  retryable: boolean;
+  message: string | null;
+} {
+  if (status === 503 || status === 500) {
+    return {
+      retryable: true,
+      message: `${AI_ASSISTANT_NAME} is experiencing high demand right now. Please try again in a few minutes.`,
+    };
+  }
+  if (status === 429) {
+    return {
+      retryable: true,
+      message: `${AI_ASSISTANT_NAME} has hit a snag. Please wait a bit and try again.`,
+    };
+  }
+  return { retryable: false, message: null };
+}
+
+interface GeminiFetchResult {
+  response: Response;
+  modelUsed: string;
+}
+
+/**
+ * Executes a Gemini API request with an automatic transparent fallback from gemini-3.5-flash
+ * to gemini-2.5-flash if the primary model returns a rate limit (429), service unavailable (503),
+ * or times out.
+ */
+async function fetchGeminiWithFallback(apiKey: string, body: string, signal: AbortSignal): Promise<GeminiFetchResult> {
+  const primaryModel = "gemini-3.5-flash";
+  const fallbackModel = "gemini-2.5-flash";
+
+  console.log(`[AI Fallback] Sending request to primary model: ${primaryModel}`);
+  const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/${primaryModel}:generateContent?key=${apiKey}`;
+
+  let res: Response | null = null;
+  let primaryFailed = false;
+
+  try {
+    res = await fetch(primaryUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal,
+    });
+    if (res.status === 429 || res.status === 503) {
+      primaryFailed = true;
+      console.warn(
+        `[AI Fallback] Primary model ${primaryModel} failed with status ${res.status}. Falling back to ${fallbackModel}...`,
+      );
+    }
+  } catch (err) {
+    primaryFailed = true;
+    console.error(`[AI Fallback] Primary model ${primaryModel} fetch error or timeout:`, err);
+  }
+
+  // Fall back if primary failed
+  if (primaryFailed) {
+    const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/${fallbackModel}:generateContent?key=${apiKey}`;
+    try {
+      const fallbackRes = await fetch(fallbackUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        signal,
+      });
+      console.log(`[AI Fallback] Fallback model ${fallbackModel} completed with status ${fallbackRes.status}`);
+      return { response: fallbackRes, modelUsed: fallbackModel };
+    } catch (fallbackErr) {
+      console.error(`[AI Fallback] Fallback model ${fallbackModel} fetch error:`, fallbackErr);
+      if (res) return { response: res, modelUsed: primaryModel };
+      throw fallbackErr;
+    }
+  }
+
+  return { response: res!, modelUsed: primaryModel };
+}
 
 export interface AutofillResult {
   success: boolean;
   error?: string;
+  /** True when the failure is transient (Gemini overload/rate-limit/timeout) and a retry may succeed. */
+  retryable?: boolean;
+  modelUsed?: string;
   data?: {
     name: string;
     sku?: string;
@@ -22,14 +112,133 @@ export interface AutofillResult {
 }
 
 /**
+ * Normalizes an image URL into a dedup key: drops the query string and common
+ * size suffixes (e.g. `_300x300`, `-1200x1200`) so the same photo served at
+ * different resolutions collapses to a single candidate.
+ */
+function imageDedupKey(url: string): string {
+  const path = url.split("?")[0].split("#")[0];
+  return path.replace(/[_-]\d{2,4}x\d{2,4}(?=\.[a-z]+$)/i, "").toLowerCase();
+}
+
+/** Picks the URL with the largest width (`w`) or pixel-density (`x`) descriptor in a srcset value. */
+function largestFromSrcset(srcset: string): string | undefined {
+  let best: { url: string; score: number } | null = null;
+  for (const part of srcset.split(",")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const [url, descriptor] = trimmed.split(/\s+/, 2);
+    if (!url) continue;
+    let score = 1;
+    if (descriptor) {
+      const w = /^(\d+)w$/i.exec(descriptor);
+      const x = /^([\d.]+)x$/i.exec(descriptor);
+      if (w) score = Number(w[1]);
+      else if (x) score = Number(x[1]) * 1000; // density descriptors rank above bare entries
+    }
+    if (!best || score > best.score) best = { url, score };
+  }
+  return best?.url;
+}
+
+/** Recursively pulls `image` values out of a parsed JSON-LD node (string | string[] | ImageObject | @graph). */
+function collectJsonLdImages(node: unknown, out: string[]): void {
+  if (!node) return;
+  if (Array.isArray(node)) {
+    for (const n of node) collectJsonLdImages(n, out);
+    return;
+  }
+  if (typeof node === "object") {
+    const obj = node as Record<string, unknown>;
+    const img = obj.image;
+    if (typeof img === "string") {
+      out.push(img);
+    } else if (Array.isArray(img)) {
+      for (const i of img) {
+        if (typeof i === "string") out.push(i);
+        else if (i && typeof i === "object" && typeof (i as Record<string, unknown>).url === "string") {
+          out.push((i as Record<string, string>).url);
+        }
+      }
+    } else if (img && typeof img === "object" && typeof (img as Record<string, unknown>).url === "string") {
+      out.push((img as Record<string, string>).url);
+    }
+    if (Array.isArray(obj["@graph"])) collectJsonLdImages(obj["@graph"], out);
+  }
+}
+
+/**
+ * Extracts product image candidates from raw page HTML using web standards rather
+ * than CDN-specific guesswork: Open Graph `og:image` (canonical hero), JSON-LD
+ * `Product.image`, and the largest variant declared in each `srcset`. Returns
+ * absolute URLs ordered best-first (hero → schema images → srcset gallery → plain <img>).
+ */
+function extractProductImagesFromHtml(html: string, base: string): string[] {
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+
+  const add = (raw?: string) => {
+    if (!raw) return;
+    const abs = resolveAbsoluteUrl(raw.trim(), base);
+    if (!abs.startsWith("http")) return; // skips data: URIs and unresolved relatives
+    const key = imageDedupKey(abs);
+    if (seen.has(key)) return;
+    seen.add(key);
+    ordered.push(abs);
+  };
+
+  // 1. og:image / twitter:image — canonical hero (highest priority)
+  const ogImage =
+    /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)["']/i.exec(html)?.[1] ??
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(html)?.[1] ??
+    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i.exec(html)?.[1];
+  add(ogImage);
+
+  // 2. JSON-LD Product.image
+  const ldRe = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let ld = ldRe.exec(html);
+  while (ld !== null) {
+    try {
+      const images: string[] = [];
+      collectJsonLdImages(JSON.parse(ld[1].trim()), images);
+      for (const img of images) add(img);
+    } catch {
+      /* skip malformed JSON-LD */
+    }
+    ld = ldRe.exec(html);
+  }
+
+  // 3. srcset / <picture><source> — largest declared variant per set
+  const srcsetRe = /srcset=["']([^"']+)["']/gi;
+  let ss = srcsetRe.exec(html);
+  while (ss !== null) {
+    add(largestFromSrcset(ss[1]));
+    ss = srcsetRe.exec(html);
+  }
+
+  // 4. Plain <img src> as a final fallback
+  const imgRe = /<img\s+[^>]*\bsrc=["'](https?:\/\/[^"']+)["']/gi;
+  let im = imgRe.exec(html);
+  while (im !== null) {
+    add(im[1]);
+    im = imgRe.exec(html);
+  }
+
+  return ordered;
+}
+
+/**
  * Server Action: Scrapes a product webpage via Jina Reader and passes the cleaned
- * markdown to Gemini 2.5 Flash-Lite. Returns structured, verified JSON content
+ * markdown to Gemini 2.5 Flash. Returns structured, verified JSON content
  * alongside confidence ratings and a raw snapshot of the page contents.
  */
 export async function autofillProductFromUrl(url: string): Promise<AutofillResult> {
   try {
     if (!url || url.trim() === "") {
-      return { success: false, error: "Please enter a valid product web link." };
+      return {
+        success: false,
+        error: "Please enter a valid product web link.",
+      };
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -49,6 +258,17 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       jinaHeaders.Authorization = `Bearer ${process.env.JINA_API_KEY}`;
     }
 
+    // Kick off a best-effort raw HTML fetch in parallel: Jina markdown drives the spec
+    // extraction, but the raw HTML is where the high-quality image signals live
+    // (og:image, JSON-LD, srcset). Failures here are non-fatal — images simply fall
+    // back to whatever the markdown yields.
+    const rawHtmlPromise = fetch(normalizedUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; CRM-Enricher/1.0)" },
+      signal: AbortSignal.timeout(12000),
+    })
+      .then((r) => (r.ok ? r.text() : ""))
+      .catch(() => "");
+
     const jinaRes = await fetch(`https://r.jina.ai/${normalizedUrl}`, {
       headers: jinaHeaders,
       next: { revalidate: 0 }, // Prevent Next.js from caching pages so it grabs fresh pricing
@@ -63,10 +283,22 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       };
     }
 
-    const markdownText = await jinaRes.text();
-    if (!markdownText || markdownText.trim() === "") {
+    const rawMarkdownText = await jinaRes.text();
+    if (!rawMarkdownText || rawMarkdownText.trim() === "") {
       console.error(`[AI Autofill] Jina Reader returned empty markdown`);
-      return { success: false, error: "The scraper was unable to read any content from that webpage." };
+      return {
+        success: false,
+        error: "The scraper was unable to read any content from that webpage.",
+      };
+    }
+
+    const markdownText = cleanScrapedMarkdown(rawMarkdownText);
+    if (markdownText.trim() === "") {
+      console.error(`[AI Autofill] Cleaned markdown is empty`);
+      return {
+        success: false,
+        error: "The scraper was unable to extract readable content from that webpage.",
+      };
     }
 
     // Intercept Jina Reader upstream block/HTTP errors hidden in successful text responses
@@ -143,30 +375,41 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       match = rawUrlRegex.exec(markdownText);
     }
 
-    // Backend Image Filtering: exclude obvious junk, tracker pixels, and icons
+    // Strategy E: Standards-based extraction from raw HTML (og:image, JSON-LD, srcset).
+    // These are canonical, high-resolution sources, so they lead the candidate list.
+    const rawHtml = await rawHtmlPromise;
+    const htmlImages = rawHtml ? extractProductImagesFromHtml(rawHtml, normalizedUrl) : [];
+    console.log(`[AI Autofill] HTML-derived image candidates: ${htmlImages.length}`);
+
+    // Merge HTML-derived (priority) ahead of markdown candidates, collapsing size
+    // variants of the same photo so the largest/canonical version wins each slot.
     const junkPatterns =
       /logo|icon|avatar|sprite|banner|pixel|social|facebook|instagram|pinterest|twitter|linkedin|tracker|nav|footer|header|loading|\.svg|\.gif|analytics|checkout|cart/i;
-    const filteredImages = candidateImages.filter((src) => !junkPatterns.test(src)).slice(0, 15);
+    const mergedImages: string[] = [];
+    const seenImageKeys = new Set<string>();
+    for (const src of [...htmlImages, ...candidateImages]) {
+      const trimmed = src.trim();
+      if (!trimmed.startsWith("http") || junkPatterns.test(trimmed)) continue;
+      const key = imageDedupKey(trimmed);
+      if (seenImageKeys.has(key)) continue;
+      seenImageKeys.add(key);
+      mergedImages.push(trimmed);
+    }
+    const filteredImages = mergedImages.slice(0, 15);
     console.log(`[AI Autofill] Filtered image candidates count: ${filteredImages.length}`, filteredImages);
 
-    // Limit markdown length to 80,000 characters to ensure we capture price blocks and images at the bottom of long pages
     const optimizedMarkdown = markdownText.substring(0, 80000);
 
-    // 3. Formulate Query to Gemini 2.5 Flash with Strict JSON Response Schema
-    console.log(`[AI Autofill] Sending optimized markdown to Gemini 2.5 Flash...`);
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const geminiRes = await fetch(geminiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `You are an expert product data extractor. Parse the product page details below, which is a Markdown snapshot of an e-commerce website. Extract the exact product specifications to populate a library item form.
+    // 3. Formulate Query to Gemini 3.5 Flash with fallback
+    console.log(`[AI Autofill] Sending optimized markdown to Gemini...`);
+
+    const requestBody = JSON.stringify({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `You are an expert product data extractor. Parse the product page details below, which is a Markdown snapshot of an e-commerce website. Extract the exact product specifications to populate a library item form.
 
 URL: ${normalizedUrl}
 Page Content:
@@ -186,75 +429,99 @@ Specifically:
 - dimensions: The dimensions (e.g. "32" W x 34" D x 30" H").
 - msrp: The retail price/selling price listed on the page. Parse as a clean float number (e.g. 1299.00). Do not include currency symbols.
 - sku: The model number, article number, model name, or inventory SKU of the product if listed (e.g. "42801140").
-- imageUrls: Select the top 1 to 4 highest-quality direct product image URLs strictly from the provided 'Candidate Images' array. If the candidate list is empty, you may extract valid absolute product image URLs directly from the page content. CRITICAL: You must NEVER under any circumstances return base64-encoded image data URLs (e.g. data:image/jpeg;base64,...). Only return absolute HTTP or HTTPS URLs.
+- imageUrls: The 'Candidate Images' array below is already pre-ranked best-first — the earliest entries are the canonical, highest-resolution images extracted from the page's metadata (og:image, structured data, and responsive srcset). Select the top 1 to ${MAX_IMAGES} direct product image URLs strictly from that array, strongly preferring the earliest (highest-priority) entries and keeping the very first suitable product image as the primary cover. If the candidate list is empty, you may extract valid absolute product image URLs directly from the page content. CRITICAL: You must NEVER under any circumstances return base64-encoded image data URLs (e.g. data:image/jpeg;base64,...). Only return absolute HTTP or HTTPS URLs.
 - confidence: An object with keys matching each of the parsed text/numeric fields above (name, sku, category, description, finishColor, manufacturer, materials, dimensions, msrp, imageUrls). For each field, return a float confidence value between 0.0 (completely uncertain) and 1.0 (absolutely certain) based on how clearly and unambiguously the information was stated in the page content.
 
 CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines or raw unescaped double quotes inside your string properties. All double quotes inside text properties must be escaped as \\" and all literal linebreaks must be escaped as \\n.`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              name: { type: "STRING" },
-              sku: { type: "STRING" },
-              category: { type: "STRING" },
-              description: { type: "STRING" },
-              finishColor: { type: "STRING" },
-              manufacturer: { type: "STRING" },
-              materials: { type: "STRING" },
-              dimensions: { type: "STRING" },
-              msrp: { type: "NUMBER" },
-              imageUrls: {
-                type: "ARRAY",
-                items: { type: "STRING" },
-              },
-              confidence: {
-                type: "OBJECT",
-                properties: {
-                  name: { type: "NUMBER" },
-                  sku: { type: "NUMBER" },
-                  category: { type: "NUMBER" },
-                  description: { type: "NUMBER" },
-                  finishColor: { type: "NUMBER" },
-                  manufacturer: { type: "NUMBER" },
-                  materials: { type: "NUMBER" },
-                  dimensions: { type: "NUMBER" },
-                  msrp: { type: "NUMBER" },
-                  imageUrls: { type: "NUMBER" },
-                },
-                required: ["name"],
-              },
             },
-            required: ["name", "confidence"],
-          },
+          ],
         },
-      }),
-      signal: AbortSignal.timeout(45000), // 45 seconds timeout to prevent infinite hanging under load
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            name: { type: "STRING" },
+            sku: { type: "STRING" },
+            category: { type: "STRING" },
+            description: { type: "STRING" },
+            finishColor: { type: "STRING" },
+            manufacturer: { type: "STRING" },
+            materials: { type: "STRING" },
+            dimensions: { type: "STRING" },
+            msrp: { type: "NUMBER" },
+            imageUrls: {
+              type: "ARRAY",
+              items: { type: "STRING" },
+            },
+            confidence: {
+              type: "OBJECT",
+              properties: {
+                name: { type: "NUMBER" },
+                sku: { type: "NUMBER" },
+                category: { type: "NUMBER" },
+                description: { type: "NUMBER" },
+                finishColor: { type: "NUMBER" },
+                manufacturer: { type: "NUMBER" },
+                materials: { type: "NUMBER" },
+                dimensions: { type: "NUMBER" },
+                msrp: { type: "NUMBER" },
+                imageUrls: { type: "NUMBER" },
+              },
+              required: ["name"],
+            },
+          },
+          required: ["name", "confidence"],
+        },
+      },
     });
+
+    const { response: geminiRes, modelUsed } = await fetchGeminiWithFallback(
+      apiKey,
+      requestBody,
+      AbortSignal.timeout(45000),
+    );
     console.log(`[AI Autofill] Gemini response received with status: ${geminiRes.status}`);
 
     if (!geminiRes.ok) {
       const errorText = await geminiRes.text();
       console.error("Gemini API Error:", errorText);
-      return { success: false, error: "The Gemini AI model failed to extract product data from the scraped webpage." };
+      const { retryable, message } = classifyGeminiError(geminiRes.status);
+      return {
+        success: false,
+        retryable,
+        error: message ?? "The Gemini AI model failed to extract product data from the scraped webpage.",
+      };
     }
 
     const geminiJson = await geminiRes.json();
     const parsedText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!parsedText) {
-      return { success: false, error: "The AI model returned an empty response. Product could not be parsed." };
+      return {
+        success: false,
+        error: "The AI model returned an empty response. Product could not be parsed.",
+      };
     }
 
     const data = parseGeminiJson(parsedText);
     console.log(`[AI Autofill] Gemini response successfully parsed! Data:`, data);
 
+    // Save diagnostic run in Firestore background (non-blocking)
+    void saveDiagnosticRun({
+      type: "product",
+      url: normalizedUrl,
+      scrapedMarkdown: markdownText,
+      prompt:
+        typeof requestBody === "string" ? JSON.parse(requestBody).contents?.[0]?.parts?.[0]?.text || requestBody : "",
+      rawResponse: parsedText,
+      parsedData: data,
+    });
+
     // Append the raw Markdown snapshot of Jina Reader for tracing and debugging purposes
     return {
       success: true,
+      modelUsed,
       data: {
         ...data,
         rawExtraction: optimizedMarkdown,
@@ -265,13 +532,491 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
     if (error instanceof Error && error.name === "TimeoutError") {
       return {
         success: false,
+        retryable: true,
         error: "AI scraping timed out. The website is taking too long to respond. Please try again.",
       };
     }
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return { success: false, error: errorMessage || "An unexpected error occurred during AI autofill." };
+    return {
+      success: false,
+      error: errorMessage || "An unexpected error occurred during AI autofill.",
+    };
   }
 }
+
+// ─── Image Mirroring ────────────────────────────────────────────────────────────
+
+export interface FetchedImage {
+  success: boolean;
+  /** Base64-encoded image bytes (no data: prefix). */
+  base64?: string;
+  /** MIME type reported by the source server (e.g. "image/jpeg"). */
+  contentType?: string;
+  error?: string;
+}
+
+/** Maximum image size we are willing to mirror into Firebase Storage (12 MB). */
+const MAX_MIRROR_BYTES = 12 * 1024 * 1024;
+
+/**
+ * Server Action: fetches an external image server-side (bypassing browser CORS) and
+ * returns its bytes as base64. The client then re-uploads these bytes to Firebase
+ * Storage via the authenticated client SDK — there is no firebase-admin in this app,
+ * so the download must happen on the server and the upload on the client.
+ */
+export async function fetchImageBytes(url: string): Promise<FetchedImage> {
+  try {
+    if (!url || !/^https?:\/\//i.test(url)) {
+      return { success: false, error: "Invalid image URL." };
+    }
+
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; CRM-Enricher/1.0)" },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      return {
+        success: false,
+        error: `Image fetch failed (status ${res.status}).`,
+      };
+    }
+
+    const contentType = res.headers.get("content-type") ?? "image/jpeg";
+    if (!contentType.startsWith("image/")) {
+      return { success: false, error: "That URL did not return an image." };
+    }
+
+    const buffer = Buffer.from(await res.arrayBuffer());
+    if (buffer.byteLength === 0) {
+      return { success: false, error: "The image was empty." };
+    }
+    if (buffer.byteLength > MAX_MIRROR_BYTES) {
+      return { success: false, error: "The image is too large to mirror." };
+    }
+
+    return { success: true, base64: buffer.toString("base64"), contentType };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unexpected error fetching the image.",
+    };
+  }
+}
+
+// ─── Vendor Autofill ──────────────────────────────────────────────────────────
+
+export interface VendorAutofillResult {
+  success: boolean;
+  error?: string;
+  /** True when the failure is transient (Gemini overload/rate-limit/timeout) and a retry may succeed. */
+  retryable?: boolean;
+  modelUsed?: string;
+  data?: {
+    name?: string;
+    category?: string;
+    description?: string;
+    street?: string;
+    city?: string;
+    state?: string;
+    repPhone?: string;
+    repEmail?: string;
+    logoUrl?: string;
+    heroImageUrl?: string;
+    logoCandidates?: string[];
+    imageCandidates?: string[];
+    showImagePicker?: boolean;
+    confidence?: Record<string, number>;
+  };
+}
+
+function normalizeToHomepage(url: string): string {
+  const withProto = withProtocol(url.trim());
+  try {
+    const { protocol, hostname } = new URL(withProto);
+    return `${protocol}//${hostname}`;
+  } catch {
+    return withProto;
+  }
+}
+
+function resolveAbsoluteUrl(href: string, base: string): string {
+  if (href.startsWith("http")) return href;
+  if (href.startsWith("//")) return `https:${href}`;
+  if (href.startsWith("/")) {
+    try {
+      const { protocol, hostname } = new URL(base);
+      return `${protocol}//${hostname}${href}`;
+    } catch {
+      return href;
+    }
+  }
+  return href;
+}
+
+interface OgMeta {
+  ogImage?: string;
+  ogDescription?: string;
+  ogSiteName?: string;
+  faviconUrl?: string;
+  schemaLogo?: string;
+}
+
+function extractOgMeta(html: string, base: string): OgMeta {
+  const head = html.substring(0, 25000);
+
+  function firstMatch(patterns: RegExp[]): string | undefined {
+    for (const p of patterns) {
+      const m = p.exec(head);
+      if (m?.[1]?.trim()) return m[1].trim();
+    }
+    return undefined;
+  }
+
+  const ogImage = firstMatch([
+    /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i,
+  ]);
+
+  const ogDescription = firstMatch([
+    /<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i,
+    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i,
+  ]);
+
+  const ogSiteName = firstMatch([
+    /<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:site_name["']/i,
+  ]);
+
+  const rawFavicon = firstMatch([
+    /<link[^>]+rel=["']apple-touch-icon["'][^>]+href=["']([^"']+)["']/i,
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']apple-touch-icon["']/i,
+    /<link[^>]+rel=["']shortcut icon["'][^>]+href=["']([^"']+)["']/i,
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']shortcut icon["']/i,
+    /<link[^>]+rel=["']icon["'][^>]+type=["']image\/(?:png|svg[^"']*)["'][^>]+href=["']([^"']+)["']/i,
+    /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']icon["']/i,
+  ]);
+  const faviconUrl = rawFavicon ? resolveAbsoluteUrl(rawFavicon, base) : undefined;
+
+  let schemaLogo: string | undefined;
+  const jsonLdRe = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let ldMatch = jsonLdRe.exec(head);
+  while (ldMatch !== null) {
+    try {
+      const ld = JSON.parse(ldMatch[1]) as Record<string, unknown>;
+      const candidates = [
+        (ld?.logo as Record<string, string>)?.url,
+        typeof ld?.logo === "string" ? ld.logo : undefined,
+        (ld?.image as Record<string, string>)?.url,
+        typeof ld?.image === "string" ? ld.image : undefined,
+      ].filter((v): v is string => typeof v === "string" && v.startsWith("http"));
+      if (candidates[0]) {
+        schemaLogo = candidates[0];
+        break;
+      }
+    } catch {
+      /* skip */
+    }
+    ldMatch = jsonLdRe.exec(head);
+  }
+
+  return {
+    ogImage: ogImage ? resolveAbsoluteUrl(ogImage, base) : undefined,
+    ogDescription,
+    ogSiteName,
+    faviconUrl,
+    schemaLogo,
+  };
+}
+
+function extractVendorImageCandidates(markdown: string): {
+  logoCandidates: string[];
+  imageCandidates: string[];
+} {
+  const all: string[] = [];
+
+  const mdImgRe = /!\[.*?\]\((https?:\/\/[^)\s]+)\)/gi;
+  let m = mdImgRe.exec(markdown);
+  while (m !== null) {
+    const src = m[1].trim();
+    if (src && !all.includes(src)) all.push(src);
+    m = mdImgRe.exec(markdown);
+  }
+
+  const htmlImgRe = /<img\s+[^>]*src=["'](https?:\/\/[^"']+)["']/gi;
+  m = htmlImgRe.exec(markdown);
+  while (m !== null) {
+    const src = m[1].trim();
+    if (src && !all.includes(src)) all.push(src);
+    m = htmlImgRe.exec(markdown);
+  }
+
+  const rawUrlRe = /(https?:\/\/[^\s"'<>()]+?\.(?:jpg|jpeg|png|webp|gif|svg)(?:\?[^\s"'<>()]*)?)/gi;
+  m = rawUrlRe.exec(markdown);
+  while (m !== null) {
+    const src = m[1].trim();
+    if (src && !all.includes(src)) all.push(src);
+    m = rawUrlRe.exec(markdown);
+  }
+
+  const junkRe = /pixel|tracker|analytics|data:|base64|cart|checkout|spinner|loading|1x1/i;
+  const logoKeyRe = /logo|brand|icon/i;
+
+  const logoCandidates: string[] = [];
+  const imageCandidates: string[] = [];
+
+  for (const src of all) {
+    if (junkRe.test(src)) continue;
+    if (logoKeyRe.test(src)) {
+      if (logoCandidates.length < 6) logoCandidates.push(src);
+    } else {
+      if (imageCandidates.length < 6) imageCandidates.push(src);
+    }
+  }
+
+  return { logoCandidates, imageCandidates };
+}
+
+const VENDOR_CATS_FOR_PROMPT = [
+  "Furniture",
+  "Fabric & Textiles",
+  "Lighting",
+  "Stone & Tile",
+  "Hardware & Plumbing",
+  "Art & Accessories",
+  "Flooring",
+  "Window Treatments",
+  "Custom Millwork",
+  "Outdoor & Landscape",
+  "Other",
+];
+
+export async function autofillVendorFromUrl(url: string): Promise<VendorAutofillResult> {
+  try {
+    if (!url?.trim()) {
+      return { success: false, error: "Please enter a vendor website URL." };
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return { success: false, error: "GEMINI_API_KEY is not configured." };
+    }
+
+    const homepageUrl = normalizeToHomepage(url);
+    console.log(`[Vendor Autofill] Fetching homepage: ${homepageUrl}`);
+
+    const jinaHeaders: Record<string, string> = {};
+    if (process.env.JINA_API_KEY) jinaHeaders.Authorization = `Bearer ${process.env.JINA_API_KEY}`;
+
+    const [htmlSettled, jinaSettled] = await Promise.allSettled([
+      fetch(homepageUrl, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; CRM-Enricher/1.0)" },
+        signal: AbortSignal.timeout(10000),
+      }).then((r) => r.text()),
+      fetch(`https://r.jina.ai/${homepageUrl}`, {
+        headers: jinaHeaders,
+        next: { revalidate: 0 },
+        signal: AbortSignal.timeout(20000),
+      }).then((r) => (r.ok ? r.text() : Promise.reject(`Jina ${r.status}`))),
+    ]);
+
+    const rawHtml = htmlSettled.status === "fulfilled" ? htmlSettled.value : "";
+    const rawMarkdownText = jinaSettled.status === "fulfilled" ? jinaSettled.value : "";
+    const markdownText = cleanScrapedMarkdown(rawMarkdownText);
+
+    if (!markdownText && !rawHtml) {
+      return {
+        success: false,
+        error: "Could not reach the vendor website. Please try again or fill manually.",
+      };
+    }
+
+    const ogMeta = rawHtml ? extractOgMeta(rawHtml, homepageUrl) : {};
+    const { logoCandidates, imageCandidates } = extractVendorImageCandidates(markdownText);
+
+    console.log(`[Vendor Autofill] OG:`, ogMeta);
+    console.log(
+      `[Vendor Autofill] Logo candidates: ${logoCandidates.length}, Image candidates: ${imageCandidates.length}`,
+    );
+
+    const logoSourceLines = [
+      ogMeta.schemaLogo ? `Schema.org logo (highest priority): ${ogMeta.schemaLogo}` : null,
+      ogMeta.faviconUrl ? `Apple touch icon / favicon: ${ogMeta.faviconUrl}` : null,
+      logoCandidates.length > 0 ? `Logo URL candidates from page: ${JSON.stringify(logoCandidates)}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const heroSourceLines = [
+      ogMeta.ogImage ? `og:image (highest priority): ${ogMeta.ogImage}` : null,
+      imageCandidates.length > 0 ? `Hero image candidates from page: ${JSON.stringify(imageCandidates)}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const optimizedMarkdown = markdownText.substring(0, 50000);
+
+    const prompt = `You are an expert business data extractor for an interior design CRM. Parse the vendor/supplier website content below and extract structured contact and brand information.
+
+Homepage URL: ${homepageUrl}
+og:site_name: ${ogMeta.ogSiteName ?? "not found"}
+Meta description: ${ogMeta.ogDescription ?? "not found"}
+
+Logo Sources (use in priority order listed):
+${logoSourceLines || "none found"}
+
+Hero Image Sources (use in priority order listed):
+${heroSourceLines || "none found"}
+
+Page Content (Markdown):
+${optimizedMarkdown}
+
+Extract the following and return as JSON:
+- name: The company's official brand/trade name. Prefer og:site_name over page title.
+- category: Match to ONE of these exact categories: ${VENDOR_CATS_FOR_PROMPT.join(", ")}. Leave empty if unsure.
+- description: A clean 1–3 sentence company description or tagline. About the company, not a product.
+- street: Full street address from footer, contact page, or about section. Empty if not found.
+- city: City from the business address. Empty if not found.
+- state: US state abbreviation (e.g. "TX") from address. Empty if not found.
+- repPhone: Primary business phone number. Empty if not found.
+- repEmail: Primary business contact email (not newsletter/unsubscribe). Empty if not found.
+- logoUrl: The single best logo URL from the Logo Sources above. Use priority order. Only absolute HTTPS URLs. Return empty string if nothing suitable.
+- heroImageUrl: The single best brand/lifestyle image URL from Hero Image Sources above. Must be a product showcase or brand image — not a tracker pixel, ad banner, or UI element. Only absolute HTTPS URLs. Return empty string if nothing suitable.
+- confidence: Float 0.0–1.0 for each field. Use 0.95 for og:image or Schema.org logo, 0.75 for apple-touch-icon, lower for guessed candidates.
+
+CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty string "" for fields not found.`;
+
+    const requestBody = JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            name: { type: "STRING" },
+            category: { type: "STRING" },
+            description: { type: "STRING" },
+            street: { type: "STRING" },
+            city: { type: "STRING" },
+            state: { type: "STRING" },
+            repPhone: { type: "STRING" },
+            repEmail: { type: "STRING" },
+            logoUrl: { type: "STRING" },
+            heroImageUrl: { type: "STRING" },
+            confidence: {
+              type: "OBJECT",
+              properties: {
+                name: { type: "NUMBER" },
+                category: { type: "NUMBER" },
+                description: { type: "NUMBER" },
+                street: { type: "NUMBER" },
+                city: { type: "NUMBER" },
+                state: { type: "NUMBER" },
+                repPhone: { type: "NUMBER" },
+                repEmail: { type: "NUMBER" },
+                logoUrl: { type: "NUMBER" },
+                heroImageUrl: { type: "NUMBER" },
+              },
+              required: ["name"],
+            },
+          },
+          required: ["name", "confidence"],
+        },
+      },
+    });
+
+    const { response: geminiRes, modelUsed } = await fetchGeminiWithFallback(
+      apiKey,
+      requestBody,
+      AbortSignal.timeout(45000),
+    );
+
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("[Vendor Autofill] Gemini error:", errText);
+      const { retryable, message } = classifyGeminiError(geminiRes.status);
+      return {
+        success: false,
+        retryable,
+        error: message ?? "AI model failed to extract vendor data.",
+      };
+    }
+
+    const geminiJson = await geminiRes.json();
+    const parsedText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+    if (!parsedText) {
+      return { success: false, error: "AI returned an empty response." };
+    }
+
+    const extracted = parseGeminiJson(parsedText) as Record<string, unknown>;
+    const conf = (extracted.confidence ?? {}) as Record<string, number>;
+
+    const logoConfident = (conf.logoUrl ?? 0) >= 0.75;
+    const heroConfident = (conf.heroImageUrl ?? 0) >= 0.75;
+    const needLogoPicker = !logoConfident && logoCandidates.length > 1;
+    const needHeroPicker = !heroConfident && imageCandidates.length > 1;
+    const showImagePicker = needLogoPicker || needHeroPicker;
+
+    const logoUrl = needLogoPicker ? "" : (extracted.logoUrl as string) || "";
+    const heroImageUrl = needHeroPicker ? "" : (extracted.heroImageUrl as string) || "";
+
+    const pickerLogoCandidates = needLogoPicker
+      ? [...new Set([extracted.logoUrl as string, ...logoCandidates].filter(Boolean))]
+      : undefined;
+    const pickerImageCandidates = needHeroPicker
+      ? [...new Set([extracted.heroImageUrl as string, ...imageCandidates].filter(Boolean))]
+      : undefined;
+
+    const returnedData = {
+      name: (extracted.name as string) || undefined,
+      category: (extracted.category as string) || undefined,
+      description: (extracted.description as string) || undefined,
+      street: (extracted.street as string) || undefined,
+      city: (extracted.city as string) || undefined,
+      state: (extracted.state as string) || undefined,
+      repPhone: (extracted.repPhone as string) || undefined,
+      repEmail: (extracted.repEmail as string) || undefined,
+      logoUrl: logoUrl || undefined,
+      heroImageUrl: heroImageUrl || undefined,
+      logoCandidates: pickerLogoCandidates,
+      imageCandidates: pickerImageCandidates,
+      showImagePicker,
+      confidence: conf,
+    };
+
+    // Save diagnostic run in Firestore background (non-blocking)
+    void saveDiagnosticRun({
+      type: "vendor",
+      url: homepageUrl,
+      scrapedMarkdown: markdownText,
+      prompt: prompt || "",
+      rawResponse: parsedText || "",
+      parsedData: returnedData,
+    });
+
+    return {
+      success: true,
+      modelUsed,
+      data: returnedData,
+    };
+  } catch (error: unknown) {
+    console.error("[Vendor Autofill] Error:", error);
+    if (error instanceof Error && error.name === "TimeoutError") {
+      return {
+        success: false,
+        retryable: true,
+        error: "Request timed out. The website may be slow or blocking scrapers.",
+      };
+    }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred.",
+    };
+  }
+}
+
+// ─── Shared Utilities ──────────────────────────────────────────────────────────
 
 /**
  * Resilient, self-healing JSON parser that strips markdown wrappers,
@@ -307,4 +1052,36 @@ function parseGeminiJson(rawText: string): any {
       throw new Error("The AI returned formatted data that could not be parsed as clean JSON. Please try again.");
     }
   }
+}
+
+/**
+ * Resiliently strips cookie policies, GDPR consent banners, and massive list details
+ * of third-party tracker cookies from Jina's scraped markdown, reducing context bloat
+ * in the LLM query payload.
+ */
+function cleanScrapedMarkdown(text: string): string {
+  let cleaned = text;
+
+  // 1. Strip Pandectes/GDPR consent preferences block (e.g. Strictly necessary cookies -> Save preferences)
+  cleaned = cleaned.replace(
+    /(?:Strictly necessary cookies|We use cookies to optimize|This website uses cookies)[\s\S]*?(?:Save preferences|Powered by Pandectes|Manage consent preferences|Deny all Accept all)/gi,
+    "",
+  );
+
+  // 2. Strip standard popup/banner cookie statements (e.g. This website uses cookies -> Decline/Accept/Preferences)
+  cleaned = cleaned.replace(
+    /This website uses cookies to improve[\s\S]*?(?:Accept|Decline|Preferences|Close|Save settings)/gi,
+    "",
+  );
+
+  // 3. Clean up loose bulleted cookie details tables (Name, Provider, Domain, Path, Retention, Purpose)
+  cleaned = cleaned.replace(/\*\s+Name\s+[a-zA-Z0-9_*.-]+\s+Provider[\s\S]*?(?=\n\n|\n[^\s*]|$)/gi, "");
+
+  // 4. Clean up any left-over consent button/decline list details
+  cleaned = cleaned.replace(/(?:Preferences Decline Accept|Manage consent preferences|Deny all Accept all)/gi, "");
+
+  // 5. Remove consecutive empty line spaces left behind by stripped chunks
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n");
+
+  return cleaned.trim();
 }

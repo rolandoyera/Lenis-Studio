@@ -2,8 +2,9 @@ import { Briefcase, Mail, MapPin, Phone, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Client } from "@/lib/types";
 import { Label } from "@/components/ui/label";
+import type { Client } from "@/lib/types";
+import { formatPhone, normalizePhone } from "@/lib/utils";
 
 interface ClientContactCardProps {
   client: Client;
@@ -26,11 +27,10 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
               <Label className="uppercase mb-1">Email Address</Label>
               <a
                 href={`mailto:${client.email}`}
-                className="text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group">
+                className="text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group"
+              >
                 <Mail className="size-4 text-primary/70 shrink-0" />
-                <span className="truncate group-hover:underline">
-                  {client.email}
-                </span>
+                <span className="truncate group-hover:underline">{client.email}</span>
               </a>
             </div>
           )}
@@ -39,10 +39,11 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
             <div className="flex flex-col gap-1">
               <Label className="uppercase mb-1">Phone Number</Label>
               <a
-                href={`tel:${client.phone}`}
-                className="text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group">
+                href={`tel:${normalizePhone(client.phone)}`}
+                className="text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group"
+              >
                 <Phone className="size-4 text-primary/70 shrink-0" />
-                <span className="group-hover:underline">{client.phone}</span>
+                <span className="group-hover:underline">{formatPhone(client.phone)}</span>
               </a>
             </div>
           )}
@@ -66,12 +67,7 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                   {client.street && <span>{client.street}</span>}
                   {(client.city || client.state || client.zip) && (
                     <span className="mt-0.5">
-                      {[
-                        client.city,
-                        [client.state, client.zip].filter(Boolean).join(" "),
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
+                      {[client.city, [client.state, client.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
                     </span>
                   )}
                 </div>
@@ -84,25 +80,24 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
           <a href={`mailto:${client.email}`} className="w-full">
             <Button
               variant="outline"
-              className="w-full text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+              className="w-full text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            >
               <Mail className="size-3.5" />
               Send Email
             </Button>
           </a>
           {client.phone ? (
-            <a href={`tel:${client.phone}`} className="w-full">
+            <a href={`tel:${normalizePhone(client.phone)}`} className="w-full">
               <Button
                 variant="outline"
-                className="w-full text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                className="w-full text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              >
                 <Phone className="size-3.5" />
                 Call
               </Button>
             </a>
           ) : (
-            <Button
-              variant="outline"
-              disabled
-              className="w-full text-xs flex items-center justify-center gap-1.5">
+            <Button variant="outline" disabled className="w-full text-xs flex items-center justify-center gap-1.5">
               <Phone className="size-3.5" />
               Call
             </Button>

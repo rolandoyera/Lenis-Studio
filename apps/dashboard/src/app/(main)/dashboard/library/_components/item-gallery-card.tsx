@@ -15,7 +15,7 @@ interface ItemGalleryCardProps {
 /** Sourcing gallery: large active preview plus a clickable thumbnail strip. */
 export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGalleryCardProps) {
   return (
-    <Card className="overflow-hidden border border-border/40 bg-card/60 pt-0 shadow-xs backdrop-blur-xs">
+    <Card className="overflow-hidden pt-0 shadow-xs backdrop-blur-xs">
       <div className="relative flex aspect-square w-full items-center justify-center border-border/30 border-b bg-muted/40">
         {activeImage ? (
           <img src={activeImage} alt={item.name} className="absolute inset-0 size-full object-contain p-4" />

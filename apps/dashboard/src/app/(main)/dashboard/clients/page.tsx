@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { H1 } from "@/components/ui/typography";
 import { addClient, getClients, getProjects } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
+import { formatPhone } from "@/lib/utils";
 
 import type { ClientFormData } from "./_components/client-constants";
 import { ClientFormDialog } from "./_components/client-form-dialog";
@@ -111,7 +113,7 @@ export default function ClientsPage() {
     <div className="flex flex-col gap-6 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-heading">Client Directory</h1>
+          <H1>Client Directory</H1>
           <p className="text-muted-foreground text-sm mt-1">
             Manage your design clients, corporate account brief contracts, and multi-project relationships.
           </p>
@@ -217,7 +219,7 @@ export default function ClientsPage() {
                       {client.phone && (
                         <div className="flex items-center gap-2 truncate">
                           <Phone className="size-3.5 shrink-0" />
-                          {client.phone}
+                          {formatPhone(client.phone)}
                         </div>
                       )}
                       {(client.city || client.state) && (

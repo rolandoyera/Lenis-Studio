@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { deleteClient, getClient, getProjects, updateClient } from "@/lib/db";
+import { addProject, deleteClient, getClient, getProjects, updateClient } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 
-import { AddProjectDialog } from "../_components/add-project-dialog";
-import { formatPhoneNumber } from "../_components/client-constants";
+import type { ProjectFormData } from "../../projects/_components/project-constants";
+import { ProjectFormDialog } from "../../projects/_components/project-form-dialog";
 import { ClientContactCard } from "../_components/client-contact-card";
 import { ClientDetailHeader } from "../_components/client-detail-header";
 import { ClientFormDialog } from "../_components/client-form-dialog";
@@ -36,6 +36,7 @@ export default function ClientProfilePage({ params }: PageProps) {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deletingProfile, setDeletingProfile] = useState(false);
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
+  const [addingProject, setAddingProject] = useState(false);
 
   useEffect(() => {
     async function loadClientData() {
@@ -89,6 +90,21 @@ export default function ClientProfilePage({ params }: PageProps) {
       toast.error("Failed to update client details.");
     } finally {
       setUpdatingProfile(false);
+    }
+  };
+
+  const handleAddProject = async (data: ProjectFormData) => {
+    setAddingProject(true);
+    try {
+      const created = await addProject(data);
+      setProjects((prev) => [created, ...prev]);
+      setIsAddProjectOpen(false);
+      toast.success("New design project successfully mapped to this client!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to initialize design project space.");
+    } finally {
+      setAddingProject(false);
     }
   };
 
@@ -172,7 +188,7 @@ export default function ClientProfilePage({ params }: PageProps) {
           firstName,
           lastName,
           email: client.email || "",
-          phone: formatPhoneNumber(client.phone ?? ""),
+          phone: client.phone ?? "",
           company: client.company ?? "",
           street: client.street ?? "",
           city: client.city ?? "",
@@ -183,12 +199,14 @@ export default function ClientProfilePage({ params }: PageProps) {
         onSubmit={handleEditSubmit}
       />
 
-      <AddProjectDialog
+      <ProjectFormDialog
         open={isAddProjectOpen}
         onOpenChange={setIsAddProjectOpen}
-        clientId={client.uid}
+        mode="add"
+        submitting={addingProject}
+        lockedClientId={client.uid}
         clientName={clientName}
-        onCreated={(project) => setProjects((prev) => [project, ...prev])}
+        onSubmit={handleAddProject}
       />
 
       <DeleteClientDialog

@@ -2,11 +2,9 @@
 
 import { use, useEffect, useState } from "react";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import {
-  ArrowLeft,
   Building2,
   Edit3,
   ExternalLink,
@@ -37,9 +35,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { deleteVendor, getVendor, updateVendor } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
-import { getInitials } from "@/lib/utils";
+import { formatPhone, getInitials, normalizePhone } from "@/lib/utils";
 
-import { VendorFormDialog, vendorToForm, type VendorFormData } from "../_components/vendor-form-dialog";
+import HeaderBackLink from "../../_components/HeaderBackLink";
+import { type VendorFormData, VendorFormDialog, vendorToForm } from "../_components/vendor-form-dialog";
 
 interface PageProps {
   params: Promise<{ vendorId: string }>;
@@ -115,9 +114,7 @@ export default function VendorDetailPage({ params }: PageProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
-          Loading Vendor Profile
-        </p>
+        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">Loading Vendor Profile</p>
       </div>
     );
   }
@@ -134,26 +131,35 @@ export default function VendorDetailPage({ params }: PageProps) {
     : null;
 
   return (
-    <div className="flex flex-col gap-6 w-full">
-      {/* Back nav */}
-      <div>
-        <Button variant="ghost" size="sm" asChild className="-ml-2 text-muted-foreground hover:text-foreground gap-1.5">
-          <Link href="/dashboard/vendors">
-            <ArrowLeft className="size-3.5" />
-            Vendor Directory
-          </Link>
-        </Button>
-      </div>
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+      <HeaderBackLink page="Vendor Directory" href="/dashboard/vendors" />
 
       {/* Hero header card */}
-      <Card className="overflow-hidden border-border/60 shadow-sm">
-        {/* Gradient banner */}
-        <div className={`relative h-32 w-full bg-linear-to-br ${gradient} flex items-end`}>
-          <div className="absolute bottom-0 left-6 translate-y-1/2">
-            <div className="flex size-20 items-center justify-center rounded-2xl bg-background border-2 border-border shadow-md">
-              <span className="text-2xl font-bold font-heading text-foreground/80 select-none">
-                {initials.slice(0, 2)}
-              </span>
+      <Card className="overflow-hidden pt-0">
+        {/* Banner: hero image → gradient fallback */}
+        <div className="relative h-62 w-full overflow-hidden flex items-end">
+          {vendor.heroImageUrl ? (
+            <img src={vendor.heroImageUrl} alt="Vendor Image" className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
+          )}
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute bottom-0 left-6 translate-y-1/2 z-10">
+            <div className="flex size-20 items-center justify-center rounded-2xl bg-background border-2 border-border shadow-md overflow-hidden">
+              {vendor.logoUrl ? (
+                <img
+                  src={vendor.logoUrl}
+                  alt={vendor.name}
+                  className="w-full h-full object-contain p-2"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <span className="text-2xl font-bold font-heading text-foreground/80 select-none">
+                  {initials.slice(0, 2)}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -186,12 +192,7 @@ export default function VendorDetailPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditOpen(true)}
-              className="gap-1.5"
-            >
+            <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)} className="gap-1.5">
               <Edit3 className="size-3.5" />
               Edit
             </Button>
@@ -219,6 +220,12 @@ export default function VendorDetailPage({ params }: PageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4 text-sm">
+            {vendor.description ? (
+              <div className="flex flex-col gap-1">
+                <span className={DETAIL_LABEL}>About</span>
+                <p className="text-foreground/80 leading-relaxed">{vendor.description}</p>
+              </div>
+            ) : null}
             {vendor.accountNumber ? (
               <div className="flex flex-col gap-1">
                 <span className={DETAIL_LABEL}>Account Number</span>
@@ -237,18 +244,28 @@ export default function VendorDetailPage({ params }: PageProps) {
                 </span>
               </div>
             ) : null}
-            {vendor.address ? (
+            {vendor.street || vendor.city || vendor.state ? (
               <div className="flex flex-col gap-1">
                 <span className={DETAIL_LABEL}>Address</span>
                 <span className="flex items-start gap-2 text-foreground/80">
                   <MapPin className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                  {vendor.address}
+                  <span>
+                    {vendor.street && <span className="block">{vendor.street}</span>}
+                    {(vendor.city || vendor.state) && (
+                      <span className="block">{[vendor.city, vendor.state].filter(Boolean).join(", ")}</span>
+                    )}
+                  </span>
                 </span>
               </div>
             ) : null}
-            {!vendor.accountNumber && !vendor.category && !vendor.address && (
-              <p className="text-sm text-muted-foreground/50 italic">No account information on file.</p>
-            )}
+            {!vendor.description &&
+              !vendor.accountNumber &&
+              !vendor.category &&
+              !vendor.street &&
+              !vendor.city &&
+              !vendor.state && (
+                <p className="text-sm text-muted-foreground/50 italic">No account information on file.</p>
+              )}
           </CardContent>
         </Card>
 
@@ -283,11 +300,11 @@ export default function VendorDetailPage({ params }: PageProps) {
               <div className="flex flex-col gap-1">
                 <span className={DETAIL_LABEL}>Phone</span>
                 <a
-                  href={`tel:${vendor.repPhone}`}
+                  href={`tel:${normalizePhone(vendor.repPhone)}`}
                   className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors"
                 >
                   <Phone className="size-3.5 text-muted-foreground" />
-                  {vendor.repPhone}
+                  {formatPhone(vendor.repPhone)}
                 </a>
               </div>
             ) : null}
@@ -335,12 +352,7 @@ export default function VendorDetailPage({ params }: PageProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="gap-2"
-            >
+            <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={deleting} className="gap-2">
               {deleting && <Loader2 className="size-4 animate-spin" />}
               Delete Vendor
             </AlertDialogAction>

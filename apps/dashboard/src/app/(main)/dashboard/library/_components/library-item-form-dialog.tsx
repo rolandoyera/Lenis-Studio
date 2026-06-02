@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 
-import { Controller } from "react-hook-form";
-
 import { Loader2 as LoaderIcon, Plus, Sparkles, Upload } from "lucide-react";
+import { Controller } from "react-hook-form";
 
 import LunaMoon from "@/components/LunaMoon";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,6 @@ import {
   ComboboxList,
   ComboboxTrigger,
 } from "@/components/ui/combobox";
-import { Field, FieldError } from "@/components/ui/field";
 import {
   Dialog,
   DialogContent,
@@ -26,29 +24,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import type { Vendor } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
-import {
-  CATEGORIES,
-  COST_TYPES,
-  formatPriceInput,
-  UNIT_TYPES,
-} from "./library-constants";
+import { CATEGORIES, COST_TYPES, formatPriceInput, MAX_IMAGES, UNIT_TYPES } from "./library-constants";
 import type { LibraryItemFormApi } from "./use-library-item-form";
 
-const LABEL_CLASS =
-  "text-xs tracking-wider uppercase text-muted-foreground h-5 flex items-center";
+const LABEL_CLASS = "h-5 flex items-center";
 
 interface LibraryItemFormDialogProps {
   open: boolean;
@@ -81,8 +69,7 @@ export function LibraryItemFormDialog({
   onQuickAddVendor,
   uploaderId = "library-image-uploader",
 }: LibraryItemFormDialogProps) {
-  const [comboboxContainer, setComboboxContainer] =
-    useState<HTMLDivElement | null>(null);
+  const [comboboxContainer, setComboboxContainer] = useState<HTMLDivElement | null>(null);
   const { formData, setFormData, uploadingImage } = form;
   const imageUrls = formData.imageUrls ?? [];
 
@@ -102,38 +89,29 @@ export function LibraryItemFormDialog({
     const confidence = formData.aiMetadata?.confidence?.[field];
     if (confidence === undefined) return null;
 
-    const score = Math.round(confidence * 100);
     const isLow = confidence < 0.8;
 
     if (isLow) {
       return (
         <span className="ml-1.5 flex animate-pulse items-center gap-0.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 font-medium text-[10px] text-amber-600">
-          ⚠️ AI: {score}% (Review)
+          Review
         </span>
       );
     }
 
     return (
       <span className="ml-1.5 flex items-center gap-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0.5 font-medium text-[10px] text-emerald-600">
-        ✨ AI: {score}%
+        <LunaMoon variant="phase" size={11} /> Confident
       </span>
     );
   };
 
   // Shared formatted/raw price field bound to the form's focus bridge.
-  const priceInput = (
-    field: string,
-    value: number,
-    onValue: (n: number) => void,
-  ) => (
+  const priceInput = (field: string, value: number, onValue: (n: number) => void) => (
     <Input
       type="text"
       placeholder="0.00"
-      value={
-        form.focusedField === field
-          ? form.tempTextValue
-          : formatPriceInput(value)
-      }
+      value={form.focusedField === field ? form.tempTextValue : formatPriceInput(value)}
       onFocus={() => {
         form.setFocusedField(field);
         form.setTempTextValue(value ? String(value) : "");
@@ -153,9 +131,7 @@ export function LibraryItemFormDialog({
           delete updatedConfidence[field];
           setFormData((prev) => ({
             ...prev,
-            aiMetadata: prev.aiMetadata
-              ? { ...prev.aiMetadata, confidence: updatedConfidence }
-              : undefined,
+            aiMetadata: prev.aiMetadata ? { ...prev.aiMetadata, confidence: updatedConfidence } : undefined,
           }));
         }
       }}
@@ -167,17 +143,15 @@ export function LibraryItemFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[90vh] max-h-[90vh] flex-col overflow-hidden bg-popover/97 p-0 backdrop-blur-lg sm:max-w-6xl">
         <div ref={setComboboxContainer} />
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex h-full w-full flex-col overflow-hidden">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full w-full flex-col overflow-hidden">
           <DialogHeader className="shrink-0 border-b p-6">
             <DialogTitle className="flex items-center gap-2 font-heading font-medium text-2xl">
               <Sparkles className="size-5 text-primary" />
               {title}
             </DialogTitle>
             <DialogDescription>
-              Input sourcing attributes, materials, dimensions, dynamic vendor
-              links, and perform real-time cost calculation logic.
+              Input sourcing attributes, materials, dimensions, dynamic vendor links, and perform real-time cost
+              calculation logic.
             </DialogDescription>
           </DialogHeader>
 
@@ -194,18 +168,12 @@ export function LibraryItemFormDialog({
                   control={form.control}
                   name="costType"
                   render={({ field, fieldState }) => (
-                    <Field
-                      className="flex flex-col gap-1.5"
-                      data-invalid={fieldState.invalid}>
+                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>
                         Cost Type <span className="text-destructive">*</span>
                       </Label>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}>
-                        <SelectTrigger
-                          className="w-full h-9"
-                          aria-invalid={fieldState.invalid}>
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full h-9" aria-invalid={fieldState.invalid}>
                           <SelectValue placeholder="Choose Cost Type" />
                         </SelectTrigger>
                         <SelectContent position="popper">
@@ -216,9 +184,7 @@ export function LibraryItemFormDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
                 />
@@ -226,13 +192,9 @@ export function LibraryItemFormDialog({
                   control={form.control}
                   name="category"
                   render={({ field, fieldState }) => (
-                    <Field
-                      className="flex flex-col gap-1.5"
-                      data-invalid={fieldState.invalid}>
+                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={`${LABEL_CLASS} flex items-center`}>
-                        Category{" "}
-                        <span className="text-destructive ml-0.5">*</span>{" "}
-                        {renderConfidenceBadge("category")}
+                        Category <span className="text-destructive ml-0.5">*</span> {renderConfidenceBadge("category")}
                       </Label>
                       <Select
                         value={field.value}
@@ -241,8 +203,7 @@ export function LibraryItemFormDialog({
                           const updatedConfidence = {
                             ...formData.aiMetadata?.confidence,
                           };
-                          if (updatedConfidence.category)
-                            delete updatedConfidence.category;
+                          if (updatedConfidence.category) delete updatedConfidence.category;
                           setFormData({
                             ...formData,
                             category: val,
@@ -253,13 +214,12 @@ export function LibraryItemFormDialog({
                                 }
                               : undefined,
                           });
-                        }}>
+                        }}
+                      >
                         <SelectTrigger
-                          className={cn(
-                            "w-full h-9",
-                            getFieldStyle("category"),
-                          )}
-                          aria-invalid={fieldState.invalid}>
+                          className={cn("w-full h-9", getFieldStyle("category"))}
+                          aria-invalid={fieldState.invalid}
+                        >
                           <SelectValue placeholder="Choose Category" />
                         </SelectTrigger>
                         <SelectContent position="popper">
@@ -270,9 +230,7 @@ export function LibraryItemFormDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
                 />
@@ -282,13 +240,9 @@ export function LibraryItemFormDialog({
                 control={form.control}
                 name="name"
                 render={({ field, fieldState }) => (
-                  <Field
-                    className="flex flex-col gap-1.5"
-                    data-invalid={fieldState.invalid}>
+                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={`${LABEL_CLASS} flex items-center`}>
-                      Item Name{" "}
-                      <span className="text-destructive ml-0.5">*</span>{" "}
-                      {renderConfidenceBadge("name")}
+                      Item Name <span className="text-destructive ml-0.5">*</span> {renderConfidenceBadge("name")}
                     </Label>
                     <Input
                       placeholder="e.g. Calacatta Viola, Honed Slab"
@@ -298,8 +252,7 @@ export function LibraryItemFormDialog({
                         const updatedConfidence = {
                           ...formData.aiMetadata?.confidence,
                         };
-                        if (updatedConfidence.name)
-                          delete updatedConfidence.name;
+                        if (updatedConfidence.name) delete updatedConfidence.name;
                         setFormData({
                           ...formData,
                           name: e.target.value,
@@ -314,9 +267,7 @@ export function LibraryItemFormDialog({
                       className={getFieldStyle("name")}
                       aria-invalid={fieldState.invalid}
                     />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
@@ -327,40 +278,29 @@ export function LibraryItemFormDialog({
                     control={form.control}
                     name="vendorId"
                     render={({ field, fieldState }) => {
-                      const selected =
-                        vendors.find((v) => v.vendorId === field.value) ?? null;
+                      const selected = vendors.find((v) => v.vendorId === field.value) ?? null;
                       return (
-                        <Field
-                          className="flex flex-col gap-1.5"
-                          data-invalid={fieldState.invalid}>
-                          <Label
-                            className={`${LABEL_CLASS} flex items-center justify-between`}>
+                        <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                          <Label className={`${LABEL_CLASS} flex items-center justify-between`}>
                             <span>
                               Vendor <span className="text-destructive">*</span>
                             </span>
                             <button
                               type="button"
                               onClick={onQuickAddVendor}
-                              className="flex items-center gap-0.5 font-medium text-primary text-xs hover:underline hover:cursor-pointer">
+                              className="flex items-center gap-0.5 font-medium text-primary text-xs hover:underline hover:cursor-pointer"
+                            >
                               <Plus className="size-3" /> Quick Add
                             </button>
                           </Label>
                           <Combobox
                             value={selected}
-                            onValueChange={(item) =>
-                              field.onChange(item?.vendorId ?? "")
+                            onValueChange={(item) => field.onChange(item?.vendorId ?? "")}
+                            items={[...vendors].sort((a, b) => a.name.localeCompare(b.name))}
+                            filter={(item: { vendorId: string; name: string }, inputValue: string) =>
+                              item.name.toLowerCase().includes(inputValue.toLowerCase())
                             }
-                            items={[...vendors].sort((a, b) =>
-                              a.name.localeCompare(b.name),
-                            )}
-                            filter={(
-                              item: { vendorId: string; name: string },
-                              inputValue: string,
-                            ) =>
-                              item.name
-                                .toLowerCase()
-                                .includes(inputValue.toLowerCase())
-                            }>
+                          >
                             <ComboboxTrigger
                               render={
                                 <button
@@ -372,31 +312,25 @@ export function LibraryItemFormDialog({
                                     "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
                                     "dark:bg-input/30",
                                     !selected && "text-muted-foreground",
-                                  )}>
+                                  )}
+                                >
                                   {selected ? selected.name : "Choose Vendor"}
                                 </button>
                               }
                             />
                             <ComboboxContent container={comboboxContainer}>
-                              <ComboboxInput
-                                showTrigger={false}
-                                placeholder="Search vendors..."
-                              />
+                              <ComboboxInput showTrigger={false} placeholder="Search vendors..." />
                               <ComboboxEmpty>No vendor found.</ComboboxEmpty>
                               <ComboboxList>
                                 {(item) => (
-                                  <ComboboxItem
-                                    key={item.vendorId}
-                                    value={item}>
+                                  <ComboboxItem key={item.vendorId} value={item}>
                                     {item.name}
                                   </ComboboxItem>
                                 )}
                               </ComboboxList>
                             </ComboboxContent>
                           </Combobox>
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
-                          )}
+                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                         </Field>
                       );
                     }}
@@ -441,8 +375,7 @@ export function LibraryItemFormDialog({
                     const updatedConfidence = {
                       ...formData.aiMetadata?.confidence,
                     };
-                    if (updatedConfidence.description)
-                      delete updatedConfidence.description;
+                    if (updatedConfidence.description) delete updatedConfidence.description;
                     setFormData({
                       ...formData,
                       description: e.target.value,
@@ -468,18 +401,12 @@ export function LibraryItemFormDialog({
                     control={form.control}
                     name="unitType"
                     render={({ field, fieldState }) => (
-                      <Field
-                        className="flex flex-col gap-1.5"
-                        data-invalid={fieldState.invalid}>
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>
                           Unit Type <span className="text-destructive">*</span>
                         </Label>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}>
-                          <SelectTrigger
-                            className="w-full h-9"
-                            aria-invalid={fieldState.invalid}>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className="w-full h-9" aria-invalid={fieldState.invalid}>
                             <SelectValue placeholder="Choose Unit Type" />
                           </SelectTrigger>
                           <SelectContent position="popper">
@@ -490,9 +417,7 @@ export function LibraryItemFormDialog({
                             ))}
                           </SelectContent>
                         </Select>
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>
                     )}
                   />
@@ -508,8 +433,7 @@ export function LibraryItemFormDialog({
                       const updatedConfidence = {
                         ...formData.aiMetadata?.confidence,
                       };
-                      if (updatedConfidence.finishColor)
-                        delete updatedConfidence.finishColor;
+                      if (updatedConfidence.finishColor) delete updatedConfidence.finishColor;
                       setFormData({
                         ...formData,
                         finishColor: e.target.value,
@@ -535,8 +459,7 @@ export function LibraryItemFormDialog({
                       const updatedConfidence = {
                         ...formData.aiMetadata?.confidence,
                       };
-                      if (updatedConfidence.manufacturer)
-                        delete updatedConfidence.manufacturer;
+                      if (updatedConfidence.manufacturer) delete updatedConfidence.manufacturer;
                       setFormData({
                         ...formData,
                         manufacturer: e.target.value,
@@ -565,8 +488,7 @@ export function LibraryItemFormDialog({
                       const updatedConfidence = {
                         ...formData.aiMetadata?.confidence,
                       };
-                      if (updatedConfidence.materials)
-                        delete updatedConfidence.materials;
+                      if (updatedConfidence.materials) delete updatedConfidence.materials;
                       setFormData({
                         ...formData,
                         materials: e.target.value,
@@ -592,8 +514,7 @@ export function LibraryItemFormDialog({
                       const updatedConfidence = {
                         ...formData.aiMetadata?.confidence,
                       };
-                      if (updatedConfidence.dimensions)
-                        delete updatedConfidence.dimensions;
+                      if (updatedConfidence.dimensions) delete updatedConfidence.dimensions;
                       setFormData({
                         ...formData,
                         dimensions: e.target.value,
@@ -620,8 +541,7 @@ export function LibraryItemFormDialog({
                       const updatedConfidence = {
                         ...formData.aiMetadata?.confidence,
                       };
-                      if (updatedConfidence.sourcingLink)
-                        delete updatedConfidence.sourcingLink;
+                      if (updatedConfidence.sourcingLink) delete updatedConfidence.sourcingLink;
                       setFormData({
                         ...formData,
                         sourcingLink: e.target.value,
@@ -639,20 +559,15 @@ export function LibraryItemFormDialog({
                     type="button"
                     onClick={form.autofillWithAi}
                     disabled={form.aiLoading || !formData.sourcingLink}
-                    className="group relative shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-white shadow-md shadow-violet-500/20 transition-all duration-300 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100">
+                    className="group relative shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-white shadow-md shadow-violet-500/20 transition-all duration-300 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100"
+                  >
                     {/* Shimmer overlay — animates only while loading */}
                     {form.aiLoading && (
                       <span className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/20 to-transparent" />
                     )}
                     <span className="relative flex items-center gap-1.5">
-                      <LunaMoon
-                        variant="phase"
-                        thinking={form.aiLoading}
-                        size={22}
-                      />
-                      <span>
-                        {form.aiLoading ? "AI Sourcing…" : "Fill with Luna"}
-                      </span>
+                      <LunaMoon variant="phase" thinking={form.aiLoading} size={22} />
+                      <span>{form.aiLoading ? "Analyzing…" : `Fill with ${AI_ASSISTANT_NAME}`}</span>
                     </span>
                   </Button>
                 </div>
@@ -663,9 +578,7 @@ export function LibraryItemFormDialog({
                 <Textarea
                   placeholder="Private notes, sourcing secrets, or anything else. Only you see this."
                   value={formData.internalNote}
-                  onChange={(e) =>
-                    setFormData({ ...formData, internalNote: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, internalNote: e.target.value })}
                   className="min-h-[70px]"
                 />
               </div>
@@ -681,15 +594,9 @@ export function LibraryItemFormDialog({
 
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <Label className={LABEL_CLASS}>
-                      Unit Wholesale Cost ($)
-                    </Label>
+                    <Label className={LABEL_CLASS}>Unit Wholesale Cost ($)</Label>
                     {priceInput("unitCost", formData.unitCost, (n) =>
-                      form.updatePricing(
-                        n,
-                        formData.markup,
-                        formData.msrp ?? 0,
-                      ),
+                      form.updatePricing(n, formData.markup, formData.msrp ?? 0),
                     )}
                   </div>
 
@@ -701,11 +608,7 @@ export function LibraryItemFormDialog({
                         placeholder="15"
                         value={formData.markup || ""}
                         onChange={(e) =>
-                          form.updatePricing(
-                            formData.unitCost,
-                            Number(e.target.value),
-                            formData.msrp ?? 0,
-                          )
+                          form.updatePricing(formData.unitCost, Number(e.target.value), formData.msrp ?? 0)
                         }
                         className="font-mono"
                       />
@@ -715,24 +618,14 @@ export function LibraryItemFormDialog({
                         Suggested MSRP ($) {renderConfidenceBadge("msrp")}
                       </Label>
                       {priceInput("msrp", formData.msrp ?? 0, (n) =>
-                        form.updatePricing(
-                          formData.unitCost,
-                          formData.markup,
-                          n,
-                        ),
+                        form.updatePricing(formData.unitCost, formData.markup, n),
                       )}
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <Label className={LABEL_CLASS}>
-                      Client Selling Price ($)
-                    </Label>
-                    {priceInput(
-                      "sellingPrice",
-                      formData.sellingPrice,
-                      form.setSellingPrice,
-                    )}
+                    <Label className={LABEL_CLASS}>Client Selling Price ($)</Label>
+                    {priceInput("sellingPrice", formData.sellingPrice, form.setSellingPrice)}
                   </div>
 
                   {/* Live Margin Calculation Cards */}
@@ -742,10 +635,7 @@ export function LibraryItemFormDialog({
                         Your Profit
                       </span>
                       <span className="font-medium font-mono text-base">
-                        +
-                        {formatCurrency(
-                          formData.sellingPrice - formData.unitCost,
-                        )}
+                        +{formatCurrency(formData.sellingPrice - formData.unitCost)}
                       </span>
                     </div>
                     <div className="flex flex-col gap-1 rounded-lg border border-primary/10 bg-primary/5 p-3 text-primary">
@@ -754,9 +644,7 @@ export function LibraryItemFormDialog({
                       </span>
                       <span className="font-medium font-mono text-base">
                         {(formData.msrp ?? 0) > formData.sellingPrice
-                          ? formatCurrency(
-                              (formData.msrp ?? 0) - formData.sellingPrice,
-                            )
+                          ? formatCurrency((formData.msrp ?? 0) - formData.sellingPrice)
                           : "$0.00"}
                       </span>
                     </div>
@@ -767,7 +655,7 @@ export function LibraryItemFormDialog({
               {/* VISUAL IMAGE LIBRARY SLOTS */}
               <div>
                 <h3 className="mb-4 border-b pb-1.5 font-medium text-muted-foreground/80 text-xs uppercase tracking-wider">
-                  Sourcing Visual Gallery (Max 4)
+                  Sourcing Visual Gallery (Max {MAX_IMAGES})
                 </h3>
 
                 {/* Hidden file uploader for Firebase Storage */}
@@ -777,7 +665,7 @@ export function LibraryItemFormDialog({
                   accept="image/*"
                   onChange={form.handleImageUpload}
                   className="hidden"
-                  disabled={uploadingImage || imageUrls.length >= 4}
+                  disabled={uploadingImage || imageUrls.length >= MAX_IMAGES}
                 />
 
                 <div className="flex flex-col gap-4">
@@ -802,12 +690,11 @@ export function LibraryItemFormDialog({
                     ) : (
                       <Label
                         htmlFor={uploaderId}
-                        className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground">
+                        className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
+                      >
                         <Upload className="size-8 text-muted-foreground/40" />
                         <p className="text-xs">Click to upload image</p>
-                        <p className="text-muted-foreground/50 text-xs">
-                          Supports JPG, PNG, WEBP (Max 5MB)
-                        </p>
+                        <p className="text-muted-foreground/50 text-xs">Supports JPG, PNG, WEBP (Max 5MB)</p>
                       </Label>
                     )}
                   </div>
@@ -821,23 +708,22 @@ export function LibraryItemFormDialog({
                           formData.coverImageUrl === url
                             ? "scale-102 border-primary ring-2 ring-primary/20"
                             : "border-border hover:border-primary/50"
-                        }`}>
+                        }`}
+                      >
                         <button
                           type="button"
                           onClick={() => form.setAsCover(url)}
                           aria-label={`Set thumbnail ${i + 1} as cover`}
-                          className="block size-full cursor-pointer">
-                          <img
-                            src={url}
-                            alt={`Thumbnail ${i + 1}`}
-                            className="size-full object-cover"
-                          />
+                          className="block size-full cursor-pointer"
+                        >
+                          <img src={url} alt={`Thumbnail ${i + 1}`} className="size-full object-cover" />
                         </button>
                         <button
                           type="button"
                           onClick={() => form.removeImageUrl(url)}
                           aria-label={`Remove thumbnail ${i + 1}`}
-                          className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-black/70 text-sm text-white hover:bg-black">
+                          className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-black/70 text-sm text-white hover:bg-black"
+                        >
                           ×
                         </button>
                       </div>
@@ -845,13 +731,14 @@ export function LibraryItemFormDialog({
 
                     {/* Empty slots placeholders */}
                     {Array.from({
-                      length: Math.max(0, 4 - imageUrls.length),
+                      length: Math.max(0, MAX_IMAGES - imageUrls.length),
                     }).map((_, idx) => {
                       if (idx === 0 && uploadingImage) {
                         return (
                           <div
                             key={idx}
-                            className="flex aspect-square items-center justify-center rounded-md border border-primary/50 border-dashed bg-primary/5 text-primary">
+                            className="flex aspect-square items-center justify-center rounded-md border border-primary/50 border-dashed bg-primary/5 text-primary"
+                          >
                             <LoaderIcon className="size-4 animate-spin" />
                           </div>
                         );
@@ -860,7 +747,8 @@ export function LibraryItemFormDialog({
                         <Label
                           key={idx}
                           htmlFor={uploaderId}
-                          className="flex aspect-square cursor-pointer items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground/40 hover:border-primary/50 hover:bg-primary/5">
+                          className="flex aspect-square cursor-pointer items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground/40 hover:border-primary/50 hover:bg-primary/5"
+                        >
                           <Plus className="size-4" />
                         </Label>
                       );
@@ -872,17 +760,10 @@ export function LibraryItemFormDialog({
           </div>
 
           <DialogFooter className="border-t bg-muted/30 pr-8 pb-8">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={submitting}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="flex items-center gap-2">
+            <Button type="submit" disabled={submitting} className="flex items-center gap-2">
               {submitting && <LoaderIcon className="size-4 animate-spin" />}
               {submitLabel}
             </Button>

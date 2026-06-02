@@ -29,7 +29,7 @@ interface ItemSpecMatrixProps {
 /** Spec grid plus assigned vendor and direct product link. */
 export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
   return (
-    <Card className="bg-card/60 backdrop-blur-xs border border-border/40 shadow-xs">
+    <Card>
       <CardHeader>
         <CardTitle className="text-lg font-medium font-heading flex items-center gap-2">
           <Tag className="size-4.5 text-primary" />

@@ -38,16 +38,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link prefetch={false} href="/dashboard/home">
-                <Image
-                  src="/logo_sdg-S-only.svg"
-                  alt="Logo"
-                  width={24}
-                  height={24}
-                  className="dark:invert"
-                />
-                <span className="font-semibold text-base">
-                  {APP_CONFIG.name}
-                </span>
+                <Image src="/logo_sdg-S-only.svg" alt="Logo" width={24} height={24} className="dark:invert" />
+                <span className="font-semibold text-base">{APP_CONFIG.name}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

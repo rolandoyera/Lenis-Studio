@@ -1,15 +1,6 @@
 "use client";
 
-import Link from "next/link";
-
-import {
-  ArrowLeft,
-  Briefcase,
-  Calendar,
-  Edit3,
-  MoreVertical,
-  Trash2,
-} from "lucide-react";
+import { Briefcase, Calendar, Edit3, MoreVertical, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { H1 } from "@/components/ui/typography";
 import type { Client } from "@/lib/types";
+
+import HeaderBackLink from "../../_components/HeaderBackLink";
 
 interface ClientDetailHeaderProps {
   client: Client;
@@ -28,11 +22,7 @@ interface ClientDetailHeaderProps {
 }
 
 /** Back link, initials avatar, client name + meta, and the edit/delete actions menu. */
-export function ClientDetailHeader({
-  client,
-  onEdit,
-  onRequestDelete,
-}: ClientDetailHeaderProps) {
+export function ClientDetailHeader({ client, onEdit, onRequestDelete }: ClientDetailHeaderProps) {
   let firstName = "";
   if (typeof client.firstName === "string" && client.firstName.trim()) {
     firstName = client.firstName.trim();
@@ -40,8 +30,7 @@ export function ClientDetailHeader({
     typeof (client as { fullName?: string }).fullName === "string" &&
     (client as { fullName?: string }).fullName!.trim()
   ) {
-    firstName =
-      (client as { fullName?: string }).fullName!.trim().split(" ")[0] || "";
+    firstName = (client as { fullName?: string }).fullName!.trim().split(" ")[0] || "";
   }
 
   let lastName = "";
@@ -51,27 +40,14 @@ export function ClientDetailHeader({
     typeof (client as { fullName?: string }).fullName === "string" &&
     (client as { fullName?: string }).fullName!.trim()
   ) {
-    lastName =
-      (client as { fullName?: string })
-        .fullName!.trim()
-        .split(" ")
-        .slice(1)
-        .join(" ") || "";
+    lastName = (client as { fullName?: string }).fullName!.trim().split(" ").slice(1).join(" ") || "";
   }
 
-  const initials =
-    ((firstName[0] || "") + (lastName[0] || "")).toUpperCase() || "?";
+  const initials = ((firstName[0] || "") + (lastName[0] || "")).toUpperCase() || "?";
 
   return (
     <>
-      <div>
-        <Link href="/dashboard/clients" prefetch={false}>
-          <Button className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1.5 bg-transparent hover:bg-transparent cursor-pointer">
-            <ArrowLeft className="size-3.5" />
-            Back to Client Roster
-          </Button>
-        </Link>
-      </div>
+      <HeaderBackLink page="Client Directory" href="/dashboard/clients" />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-6">
         <div className="flex items-center gap-4">
@@ -79,9 +55,9 @@ export function ClientDetailHeader({
             {initials.toUpperCase()}
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight font-heading">
+            <H1>
               {firstName} {lastName}
-            </h1>
+            </H1>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mt-1 text-muted-foreground font-medium">
               {client.company ? (
                 <span className="flex items-center gap-1">
@@ -89,9 +65,7 @@ export function ClientDetailHeader({
                   {client.company}
                 </span>
               ) : (
-                <span className="italic text-muted-foreground/60">
-                  Private Residence
-                </span>
+                <span className="italic text-muted-foreground/60">Private Residence</span>
               )}
               <span className="text-muted-foreground/30">•</span>
               <span className="flex items-center gap-1">
@@ -115,19 +89,16 @@ export function ClientDetailHeader({
                 <span className="sr-only">Actions Menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-44 bg-popover/95 backdrop-blur-md">
-              <DropdownMenuItem
-                onClick={onEdit}
-                className="text-sm cursor-pointer flex items-center gap-2">
+            <DropdownMenuContent align="end" className="w-44 bg-popover/95 backdrop-blur-md">
+              <DropdownMenuItem onClick={onEdit} className="text-sm cursor-pointer flex items-center gap-2">
                 <Edit3 className="size-4 text-muted-foreground" />
                 Edit Profile
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={onRequestDelete}
-                className="text-sm text-destructive cursor-pointer flex items-center gap-2 focus:text-destructive focus:bg-destructive/10">
+                className="text-sm text-destructive cursor-pointer flex items-center gap-2 focus:text-destructive focus:bg-destructive/10"
+              >
                 <Trash2 className="size-4" />
                 Delete Profile
               </DropdownMenuItem>

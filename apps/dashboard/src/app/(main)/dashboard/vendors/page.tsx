@@ -4,18 +4,40 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { Building2, ExternalLink, Globe, Loader2, Mail, MapPin, Phone, Plus, Search } from "lucide-react";
+import {
+  Building2,
+  ExternalLink,
+  Globe,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { H1 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
-import { getInitials } from "@/lib/utils";
+import { formatPhone, getInitials } from "@/lib/utils";
 
-import { EMPTY_VENDOR_FORM, VendorFormDialog, type VendorFormData } from "./_components/vendor-form-dialog";
+import {
+  EMPTY_VENDOR_FORM,
+  type VendorFormData,
+  VendorFormDialog,
+} from "./_components/vendor-form-dialog";
+import {
+  FacebookIcon,
+  GlobeIcon,
+  InstagramIcon,
+  PinterestIcon,
+  YoutubeIcon,
+} from "@/components/icons/icons";
 
 // Cycle through accent gradients by first character for visual variety
 const CARD_GRADIENTS = [
@@ -27,7 +49,6 @@ const CARD_GRADIENTS = [
   "from-indigo-500/20 via-indigo-500/8 to-transparent",
   "from-teal-500/20 via-teal-500/8 to-transparent",
 ];
-
 
 function vendorGradient(name: string) {
   const idx = name.charCodeAt(0) % CARD_GRADIENTS.length;
@@ -82,9 +103,9 @@ export default function VendorsPage() {
       const term = searchQuery.toLowerCase();
       return (
         v.name.toLowerCase().includes(term) ||
-        (v.repName?.toLowerCase().includes(term)) ||
-        (v.category?.toLowerCase().includes(term)) ||
-        (v.notes?.toLowerCase().includes(term))
+        v.repName?.toLowerCase().includes(term) ||
+        v.category?.toLowerCase().includes(term) ||
+        v.notes?.toLowerCase().includes(term)
       );
     })
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -94,15 +115,14 @@ export default function VendorsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-heading">Vendors Sourcing Directory</h1>
+          <H1>Vendor Directory</H1>
           <p className="text-muted-foreground text-sm mt-1">
-            Manage trade vendors, stone yards, suppliers, and client procurement representatives.
+            Manage trade vendors and client procurement representatives.
           </p>
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="sm:self-start bg-primary text-primary-foreground hover:bg-primary/95 flex items-center gap-2"
-        >
+          className="sm:self-start bg-primary text-primary-foreground hover:bg-primary/95 flex items-center gap-2">
           <Plus className="size-4" />
           Add Vendor
         </Button>
@@ -137,14 +157,16 @@ export default function VendorsPage() {
               : "Get started by adding your first vendor contact."}
           </p>
           {!searchQuery && (
-            <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
+            <Button
+              onClick={handleOpenAdd}
+              className="mt-4 flex items-center gap-2">
               <Plus className="size-4" />
               Add Vendor
             </Button>
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 3xl:grid-cols-6 gap-5">
           {filteredVendors.map((vendor) => (
             <VendorCard key={vendor.vendorId} vendor={vendor} />
           ))}
@@ -167,20 +189,46 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
   const gradient = vendorGradient(vendor.name);
 
   return (
-    <Link href={`/dashboard/vendors/${vendor.vendorId}`} className="group block">
-      <Card className="relative overflow-hidden flex flex-col h-full transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-primary/30 bg-card/70 backdrop-blur-xs cursor-pointer">
-        {/* Monogram hero area */}
-        <div className={`relative flex items-center justify-center h-36 w-full bg-linear-to-br ${gradient}`}>
-          <div className="flex size-20 items-center justify-center rounded-2xl bg-background/60 backdrop-blur-sm border border-white/20 shadow-sm">
-            <span className="text-2xl font-bold font-heading text-foreground/80 select-none">
-              {initials.slice(0, 2)}
-            </span>
+    <Link
+      href={`/dashboard/vendors/${vendor.vendorId}`}
+      className="group block">
+      <Card className="relative overflow-hidden flex flex-col h-full transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 cursor-pointer pt-0">
+        {/* Hero area: real image → gradient fallback */}
+        <div className="relative flex items-center justify-center h-56 w-full overflow-hidden">
+          {vendor.heroImageUrl ? (
+            <img
+              src={vendor.heroImageUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
+          )}
+          {/* Subtle scrim so monogram stays legible over photos */}
+          <div className="absolute inset-0 bg-black/20" />
+
+          {/* Logo or initials monogram */}
+          <div className="relative flex size-12 items-center justify-center overflow-hidden">
+            {vendor.logoUrl ? (
+              <img
+                src={vendor.logoUrl}
+                alt={vendor.name}
+                className="w-full h-full object-contain p-1"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <span className="text-2xl font-bold font-heading text-foreground/80 select-none">
+                {initials.slice(0, 2)}
+              </span>
+            )}
           </div>
+
           {vendor.category && (
             <Badge
               variant="secondary"
-              className="absolute top-3 right-3 text-[10px] font-semibold tracking-wide bg-background/70 backdrop-blur-sm border-0 text-foreground/70"
-            >
+              className="absolute top-3 left-3 text-[10px] font-semibold tracking-wide bg-black/20 backdrop-blur-sm border-0 text-white">
               {vendor.category}
             </Badge>
           )}
@@ -195,19 +243,25 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
             {vendor.website ? (
               <span className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
                 <Globe className="size-3 shrink-0" />
-                <span className="truncate">{vendor.website.replace(/(^\w+:|^)\/\//, "")}</span>
+                <span className="truncate">
+                  {vendor.website.replace(/(^\w+:|^)\/\//, "")}
+                </span>
                 <ExternalLink className="size-2.5 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" />
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground/50 italic mt-0.5 block">No website</span>
+              <span className="text-xs text-muted-foreground/50 italic mt-0.5 block">
+                No website
+              </span>
             )}
           </div>
 
           {/* Rep contact */}
-          {(vendor.repName || vendor.repEmail || vendor.repPhone) ? (
+          {vendor.repName || vendor.repEmail || vendor.repPhone ? (
             <div className="flex flex-col gap-1.5 rounded-lg bg-muted/40 border border-muted/60 px-3 py-2.5">
               {vendor.repName && (
-                <p className="text-xs font-medium text-foreground/80 truncate">{vendor.repName}</p>
+                <p className="text-xs font-medium text-foreground/80 truncate">
+                  {vendor.repName}
+                </p>
               )}
               <div className="flex flex-col gap-1 text-xs text-muted-foreground">
                 {vendor.repEmail && (
@@ -219,7 +273,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 {vendor.repPhone && (
                   <span className="flex items-center gap-1.5">
                     <Phone className="size-3 shrink-0" />
-                    {vendor.repPhone}
+                    {formatPhone(vendor.repPhone)}
                   </span>
                 )}
               </div>
@@ -227,23 +281,41 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
           ) : null}
 
           {/* Address or account number teaser */}
-          {(vendor.address || vendor.accountNumber) && (
+          {(vendor.street ||
+            vendor.city ||
+            vendor.state ||
+            vendor.accountNumber) && (
             <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-auto">
-              {vendor.address && (
+              {(vendor.street || vendor.city || vendor.state) && (
                 <span className="flex items-start gap-1.5">
                   <MapPin className="size-3 shrink-0 mt-0.5" />
-                  <span className="line-clamp-1">{vendor.address}</span>
+                  <span className="line-clamp-1">
+                    {[vendor.street, vendor.city, vendor.state]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
                 </span>
               )}
               {vendor.accountNumber && (
                 <span className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground/60">Acct:</span>
-                  <span className="font-mono text-foreground/70">{vendor.accountNumber}</span>
+                  <span className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground/60">
+                    Acct:
+                  </span>
+                  <span className="font-mono text-foreground/70">
+                    {vendor.accountNumber}
+                  </span>
                 </span>
               )}
             </div>
           )}
         </CardContent>
+        <CardFooter className="bg-card border-t-0 flex items-center gap-3">
+          <GlobeIcon size={24} color="#000000" />
+          <InstagramIcon size={24} color="#000000" />
+          <PinterestIcon size={24} color="#000000" />
+          <FacebookIcon size={24} color="#000000" />
+          <YoutubeIcon size={24} color="#000000" />
+        </CardFooter>
       </Card>
     </Link>
   );

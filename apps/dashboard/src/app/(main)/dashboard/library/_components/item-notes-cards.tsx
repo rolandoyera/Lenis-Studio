@@ -11,7 +11,7 @@ interface ItemNotesCardsProps {
 export function ItemNotesCards({ item }: ItemNotesCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-      <Card className="bg-card/60 backdrop-blur-xs border border-border/40 shadow-xs">
+      <Card>
         <CardHeader className="pb-4 border-b border-border/30">
           <CardTitle className="text-base font-medium font-heading flex items-center gap-2">
             <ShoppingBag className="size-4 text-primary/80" />
@@ -31,7 +31,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
         </CardContent>
       </Card>
 
-      <Card className="bg-card/60 backdrop-blur-xs border border-border/40 shadow-xs">
+      <Card>
         <CardHeader className="pb-4 border-b border-border/30">
           <CardTitle className="text-base font-medium font-heading flex items-center gap-2">
             <FileText className="size-4 text-primary/80" />

@@ -22,18 +22,12 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { addProject, deleteProject, getClients, getProjects, updateProject } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
+
+import { EMPTY_PROJECT_FORM, type ProjectFormData, projectToForm } from "./_components/project-constants";
+import { ProjectFormDialog } from "./_components/project-form-dialog";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -44,14 +38,6 @@ export default function ProjectsPage() {
   // Dialog States
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [formData, setFormData] = useState({
-    clientId: "",
-    name: "",
-    address: "",
-    status: "Active" as "Active" | "Completed" | "Paused",
-    budget: "",
-    notes: "",
-  });
   const [submitting, setSubmitting] = useState(false);
 
   // Fetch projects & clients on mount
@@ -77,27 +63,11 @@ export default function ProjectsPage() {
       return;
     }
     setEditingProject(null);
-    setFormData({
-      clientId: clients[0]?.uid || "",
-      name: "",
-      address: "",
-      status: "Active",
-      budget: "",
-      notes: "",
-    });
     setIsDialogOpen(true);
   };
 
   const handleOpenEdit = (project: Project) => {
     setEditingProject(project);
-    setFormData({
-      clientId: project.clientId,
-      name: project.name,
-      address: project.address || "",
-      status: project.status,
-      budget: project.budget || "",
-      notes: project.notes || "",
-    });
     setIsDialogOpen(true);
   };
 
@@ -114,23 +84,15 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim() || !formData.clientId) {
-      toast.error("Project name and parent client are required.");
-      return;
-    }
-
+  const handleSubmitProject = async (data: ProjectFormData) => {
     setSubmitting(true);
     try {
       if (editingProject) {
-        // Update
-        await updateProject(editingProject.projectId, formData);
-        setProjects((prev) => prev.map((p) => (p.projectId === editingProject.projectId ? { ...p, ...formData } : p)));
+        await updateProject(editingProject.projectId, data);
+        setProjects((prev) => prev.map((p) => (p.projectId === editingProject.projectId ? { ...p, ...data } : p)));
         toast.success("Project specifications updated successfully!");
       } else {
-        // Create
-        const created = await addProject(formData);
+        const created = await addProject(data);
         setProjects((prev) => [created, ...prev]);
         toast.success("New design project space initialized successfully!");
       }
@@ -389,115 +351,17 @@ export default function ProjectsPage() {
       )}
 
       {/* Add / Edit Project Modal */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-md lg:max-w-2xl bg-popover/95 backdrop-blur-md">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <DialogHeader>
-              <DialogTitle className="text-xl">
-                {editingProject ? "Edit Project Specifications" : "Initialize Design Project"}
-              </DialogTitle>
-              <DialogDescription>
-                Assign the project to a client, define budgets, and specify design addresses.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex flex-col gap-8 py-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                  Parent Client <span className="text-destructive">*</span>
-                </label>
-                <select
-                  value={formData.clientId}
-                  onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  required
-                >
-                  {clients.map((client) => (
-                    <option key={client.uid} value={client.uid}>
-                      {client.firstName} {client.lastName} {client.company ? `(${client.company})` : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                  Project Title <span className="text-destructive">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. Penthouse Living Room, Coastal Kitchen"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                    Project Budget Pool
-                  </label>
-                  <Input
-                    placeholder="e.g. $150,000"
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        status: e.target.value as "Active" | "Completed" | "Paused",
-                      })
-                    }
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="Active">Active</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Paused">Paused</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                  Site / Shipping Address
-                </label>
-                <Input
-                  placeholder="e.g. 100 Ocean Drive, Newport, RI"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                  Project Brief & Goals
-                </label>
-                <Textarea
-                  placeholder="Warm organic minimalism, marble accent walls, gold hardware finish accents..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="min-h-[80px]"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="mt-2">
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} disabled={submitting}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting} className="flex items-center gap-2">
-                {submitting && <Loader2 className="size-4 animate-spin" />}
-                {editingProject ? "Save Specifications" : "Initialize Project"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ProjectFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        mode={editingProject ? "edit" : "add"}
+        submitting={submitting}
+        clients={clients}
+        initialData={
+          editingProject ? projectToForm(editingProject) : { ...EMPTY_PROJECT_FORM, clientId: clients[0]?.uid ?? "" }
+        }
+        onSubmit={handleSubmitProject}
+      />
     </div>
   );
 }
