@@ -426,7 +426,7 @@ Specifically:
 - finishColor: The finish, color, or upholstery (e.g. "Honed Natural", "Boucle Cream").
 - manufacturer: The brand or manufacturer (e.g. "Crate & Barrel").
 - materials: The material composition (e.g. "Solid Oak, Boucle Fabric").
-- dimensions: The dimensions (e.g. "32" W x 34" D x 30" H").
+- dimensions: The dimensions of the product. Format the value consistently using abbreviated dimensions with double quotes for inches and capital letters for directions, separated by " x " (e.g., "25.5" W x 25.5" D x 32.25" H"). Never write out the full words (e.g., do not write "Width", "Depth", "Height", "inches", or "in"). If only some dimensions are present, format similarly (e.g., "18" W x 24" H").
 - msrp: The retail price/selling price listed on the page. Parse as a clean float number (e.g. 1299.00). Do not include currency symbols.
 - sku: The model number, article number, model name, or inventory SKU of the product if listed (e.g. "42801140").
 - imageUrls: The 'Candidate Images' array below is already pre-ranked best-first — the earliest entries are the canonical, highest-resolution images extracted from the page's metadata (og:image, structured data, and responsive srcset). Select the top 1 to ${MAX_IMAGES} direct product image URLs strictly from that array, strongly preferring the earliest (highest-priority) entries and keeping the very first suitable product image as the primary cover. If the candidate list is empty, you may extract valid absolute product image URLs directly from the page content. CRITICAL: You must NEVER under any circumstances return base64-encoded image data URLs (e.g. data:image/jpeg;base64,...). Only return absolute HTTP or HTTPS URLs.
