@@ -1,5 +1,6 @@
 "use server";
 
+import { SCRAPER_CONFIG } from "@/config/scraper-config";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { saveDiagnosticRun } from "@/lib/db";
 
@@ -40,8 +41,8 @@ interface GeminiFetchResult {
  * or times out.
  */
 async function fetchGeminiWithFallback(apiKey: string, body: string, signal: AbortSignal): Promise<GeminiFetchResult> {
-  const primaryModel = "gemini-3.5-flash";
-  const fallbackModel = "gemini-2.5-flash";
+  const primaryModel = SCRAPER_CONFIG.primaryModel;
+  const fallbackModel = SCRAPER_CONFIG.fallbackModel;
 
   console.log(`[AI Fallback] Sending request to primary model: ${primaryModel}`);
   const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/${primaryModel}:generateContent?key=${apiKey}`;
@@ -269,7 +270,7 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       .then((r) => (r.ok ? r.text() : ""))
       .catch(() => "");
 
-    const jinaRes = await fetch(`https://r.jina.ai/${normalizedUrl}`, {
+    const jinaRes = await fetch(`${SCRAPER_CONFIG.jinaReaderUrl}${normalizedUrl}`, {
       headers: jinaHeaders,
       next: { revalidate: 0 }, // Prevent Next.js from caching pages so it grabs fresh pricing
       signal: AbortSignal.timeout(20000), // 20 seconds timeout to prevent infinite hanging
@@ -395,10 +396,10 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       seenImageKeys.add(key);
       mergedImages.push(trimmed);
     }
-    const filteredImages = mergedImages.slice(0, 15);
+    const filteredImages = mergedImages.slice(0, SCRAPER_CONFIG.maxImageCandidates);
     console.log(`[AI Autofill] Filtered image candidates count: ${filteredImages.length}`, filteredImages);
 
-    const optimizedMarkdown = markdownText.substring(0, 100000);
+    const optimizedMarkdown = markdownText.substring(0, SCRAPER_CONFIG.maxCharacters);
 
     // 3. Formulate Query to Gemini 3.5 Flash with fallback
     console.log(`[AI Autofill] Sending optimized markdown to Gemini...`);
@@ -820,7 +821,7 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
         headers: { "User-Agent": "Mozilla/5.0 (compatible; CRM-Enricher/1.0)" },
         signal: AbortSignal.timeout(10000),
       }).then((r) => r.text()),
-      fetch(`https://r.jina.ai/${homepageUrl}`, {
+      fetch(`${SCRAPER_CONFIG.jinaReaderUrl}${homepageUrl}`, {
         headers: jinaHeaders,
         next: { revalidate: 0 },
         signal: AbortSignal.timeout(20000),
@@ -861,7 +862,7 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
       .filter(Boolean)
       .join("\n");
 
-    const optimizedMarkdown = markdownText.substring(0, 100000);
+    const optimizedMarkdown = markdownText.substring(0, SCRAPER_CONFIG.maxCharacters);
 
     const prompt = `You are an expert business data extractor for an interior design CRM. Parse the vendor/supplier website content below and extract structured contact and brand information.
 

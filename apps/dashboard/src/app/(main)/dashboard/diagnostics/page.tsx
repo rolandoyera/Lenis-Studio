@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { H1 } from "@/components/ui/typography";
+import { SCRAPER_CONFIG } from "@/config/scraper-config";
 import { clearDiagnosticRuns, getDiagnosticRuns } from "@/lib/db";
 import type { DiagnosticRun } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -589,8 +590,8 @@ export default function DiagnosticsPage() {
                       Cleaned Webpage Readability Snapshot (Markdown)
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      Length: {selectedRun.scrapedMarkdown.length.toLocaleString()} characters. First 50,000 chars are
-                      fed to the model context.
+                      Length: {selectedRun.scrapedMarkdown.length.toLocaleString()} characters. First{" "}
+                      {SCRAPER_CONFIG.maxCharacters.toLocaleString()} chars are fed to the model context.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">

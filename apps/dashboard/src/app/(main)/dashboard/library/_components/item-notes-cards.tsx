@@ -44,9 +44,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
               {item.internalNote}
             </div>
           ) : (
-            <p className="text-sm italic text-muted-foreground/60 py-2">
-              No internal notes logged.
-            </p>
+            <p className="text-sm italic text-muted-foreground/60 py-2">No internal notes logged.</p>
           )}
         </CardContent>
       </Card>

@@ -28,25 +28,19 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
           {/* Sourcing Cost */}
           <div className="flex flex-col justify-center items-center gap-1 p-3.5 bg-linear-to-t from-primary/10 to-card shadow-xs bg-card">
             <Label className="uppercase">Cost</Label>
-            <span className="text-base font-medium text-foreground">
-              {formatCurrency(item.unitCost)}
-            </span>
+            <span className="text-base font-medium text-foreground">{formatCurrency(item.unitCost)}</span>
           </div>
 
           {/* Markup */}
           <div className="flex flex-col justify-center items-center gap-1 p-3.5 bg-linear-to-t from-primary/10 to-card shadow-xs bg-card">
             <Label className="uppercase">Markup</Label>
-            <span className="text-base font-medium text-foreground">
-              {Math.round(item.markup)}%
-            </span>
+            <span className="text-base font-medium text-foreground">{Math.round(item.markup)}%</span>
           </div>
 
           {/* Selling Price */}
           <div className="flex flex-col justify-center items-center gap-1 p-3.5 bg-linear-to-t from-primary/10 to-card shadow-xs bg-card">
             <Label className="uppercase">Selling Price</Label>
-            <span className="text-base font-medium text-foreground">
-              {formatCurrency(item.sellingPrice)}
-            </span>
+            <span className="text-base font-medium text-foreground">{formatCurrency(item.sellingPrice)}</span>
           </div>
 
           {/* Net Profit — emerald when profitable, amber when not */}
@@ -55,26 +49,21 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
               profitable
                 ? "flex flex-col gap-1 p-3.5 bg-linear-to-t from-emerald-600/10 to-card shadow-xs bg-card"
                 : "flex flex-col gap-1 p-3.5 bg-linear-to-t from-red-500/10 to-card shadow-xs bg-card"
-            }>
+            }
+          >
             <span
               className={`flex items-center justify-center gap-1 text-[10px] font-medium tracking-wider uppercase ${
-                profitable
-                  ? "text-emerald-700 dark:text-emerald-400"
-                  : "text-red-700 dark:text-red-400"
-              }`}>
-              {profitable ? (
-                <TrendingUp className="size-3" />
-              ) : (
-                <TrendingDown className="size-3" />
-              )}
+                profitable ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
+              }`}
+            >
+              {profitable ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
               Profit
             </span>
             <span
               className={`text-base font-semibold font-mono ${
-                profitable
-                  ? "text-emerald-700 dark:text-emerald-400"
-                  : "text-red-700 dark:text-red-400"
-              }`}>
+                profitable ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
+              }`}
+            >
               {formatCurrency(profit)}
             </span>
           </div>
@@ -84,9 +73,7 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
         {item.msrp && item.msrp > 0 ? (
           <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-3 border-border/30">
             <span>Suggested Retail (MSRP)</span>
-            <span className="font-medium text-foreground/80 font-mono">
-              {formatCurrency(item.msrp)}
-            </span>
+            <span className="font-medium text-foreground/80 font-mono">{formatCurrency(item.msrp)}</span>
           </div>
         ) : null}
       </CardContent>
