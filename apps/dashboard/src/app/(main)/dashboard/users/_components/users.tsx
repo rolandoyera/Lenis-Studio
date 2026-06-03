@@ -3,6 +3,9 @@
 
 import * as React from "react";
 
+import { useRouter } from "next/navigation";
+
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   type ColumnFiltersState,
   getCoreRowModel,
@@ -14,26 +17,209 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { Cog, Download, Grid, Plus, Rows3, Search, SlidersHorizontal } from "lucide-react";
+import { format } from "date-fns";
+import { onAuthStateChanged } from "firebase/auth";
+import { addDoc, collection, doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
+import { Grid, Plus, Rows3, Search } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Kbd } from "@/components/ui/kbd";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { auth, db } from "@/lib/firebase";
 
 import { filters, type UserRow } from "./data";
 import { usersColumns } from "./users-columns";
 import { UsersTable } from "./users-table";
 
-export function Users({ users }: { users: UserRow[] }) {
+const addUserSchema = z.object({
+  fullName: z.string().min(1, "Please enter a full name.").max(100, "Name is too long."),
+  email: z.string().email("Please enter a valid email address."),
+  role: z.enum(["Admin", "Contributor"]),
+});
+
+type AddUserFormData = z.infer<typeof addUserSchema>;
+
+export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
+  const [dbUsers, setDbUsers] = React.useState<UserRow[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const router = useRouter();
+
+  // Form states for Add User modal
+  const [isAddOpen, setIsAddOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const form = useForm<AddUserFormData>({
+    resolver: zodResolver(addUserSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      role: "Contributor",
+    },
+  });
+
+  // Reset form fields and errors when dialog is closed
+  React.useEffect(() => {
+    if (!isAddOpen) {
+      form.reset();
+    }
+  }, [isAddOpen, form.reset]);
+
+  const handleAddUser = async (data: AddUserFormData) => {
+    if (isSubmitting) return;
+
+    const trimmedName = data.fullName.trim();
+    const trimmedEmail = data.email.trim().toLowerCase();
+
+    const userExists = dbUsers.some((u) => u.email.toLowerCase() === trimmedEmail);
+    if (userExists) {
+      toast.error("A user with this email address already exists.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const userDocRef = doc(db, "users", trimmedEmail);
+      await setDoc(userDocRef, {
+        fullName: trimmedName,
+        email: trimmedEmail,
+        role: data.role,
+        status: "Pending",
+        joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
+        lastActive: 0,
+      });
+
+      // Write a mail document to trigger an invitation email via the Firebase Trigger Email extension
+      try {
+        await addDoc(collection(db, "mail"), {
+          to: trimmedEmail,
+          message: {
+            subject: "You've been invited!",
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${trimmedName}!</h2>
+                <p style="color: #334155; font-size: 16px; line-height: 1.5;">
+                  You have been invited to join Sarvian Design Group CRM.
+                </p>
+                <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
+                  Click the button below to sign in and activate your account:
+                </p>
+                <a href="${window.location.origin}/auth/invite?email=${trimmedEmail}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                  Set Up Account & Get Started
+                </a>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
+                <p style="color: #64748b; font-size: 12px; text-align: center;">
+                  Sarvian Design Group CRM invitation. If you did not expect this, please ignore this email.
+                </p>
+              </div>
+            `,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to write to mail collection for Trigger Email:", emailError);
+      }
+
+      toast.success("User added successfully!");
+      form.reset();
+      setIsAddOpen(false);
+    } catch (error) {
+      console.error("Error adding user to Firestore:", error);
+      toast.error("Failed to add user. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  React.useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        try {
+          const userDocRef = doc(db, "users", fbUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            const role = userDocSnap.data().role;
+            if (role !== "Admin") {
+              toast.error("Access denied. Administrator privileges required.");
+              router.push("/dashboard/home");
+            }
+          } else {
+            toast.error("Access denied. Administrator privileges required.");
+            router.push("/dashboard/home");
+          }
+        } catch (e) {
+          console.error("Auth protection verify error:", e);
+          router.push("/dashboard/home");
+        }
+      } else {
+        router.push("/auth/login");
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [router]);
+
+  React.useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        const list = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          let joinedDateStr = format(new Date(), "dd MMM yyyy, h:mm a");
+          if (data.joinedDate) {
+            joinedDateStr = data.joinedDate;
+          } else if (data.updatedAt) {
+            try {
+              joinedDateStr = format(new Date(data.updatedAt), "dd MMM yyyy, h:mm a");
+            } catch (e) {
+              console.error("Date format error:", e);
+            }
+          }
+
+          return {
+            uid: doc.id,
+            email: data.email || "",
+            name: data.fullName || data.displayName || data.email?.split("@")[0] || "User",
+            role: data.role || "Contributor",
+            status: data.status || "Active",
+            joinedDate: joinedDateStr,
+            lastActive: data.lastActive || 0,
+          } as UserRow;
+        });
+
+        setDbUsers(list);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Firestore onSnapshot error:", error);
+        setDbUsers([]);
+        setIsLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [fallbackUsers]);
+
   const [rowSelection, setRowSelection] = React.useState({});
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "joinedDate", desc: true }]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
     search: false,
-    team: false,
   });
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
@@ -41,7 +227,7 @@ export function Users({ users }: { users: UserRow[] }) {
   });
 
   const table = useReactTable({
-    data: users,
+    data: dbUsers,
     columns: usersColumns,
     state: {
       rowSelection,
@@ -64,11 +250,20 @@ export function Users({ users }: { users: UserRow[] }) {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex h-[60vh] w-full items-center justify-center">
+        <div className="relative size-12">
+          <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   const searchQuery = (table.getColumn("search")?.getFilterValue() as string) ?? "";
   const roleFilter = (table.getColumn("role")?.getFilterValue() as string) ?? filters.role[0];
-  const teamFilter = (table.getColumn("team")?.getFilterValue() as string) ?? filters.team[0];
   const statusFilter = (table.getColumn("status")?.getFilterValue() as string) ?? filters.status[0];
-  const workspaceFilter = (table.getColumn("workspace")?.getFilterValue() as string) ?? filters.workspace[0];
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
   function setColumnSelectFilter(columnId: string, value: string) {
@@ -97,22 +292,90 @@ export function Users({ users }: { users: UserRow[] }) {
                 table.setPageIndex(0);
               }}
             />
-            <InputGroupAddon align="inline-end">
-              <Kbd className="h-4 text-[10px]">⌘K</Kbd>
-            </InputGroupAddon>
           </InputGroup>
-          <Button variant="outline" size="sm">
-            <SlidersHorizontal /> Hide
-          </Button>
-          <Button variant="outline" size="sm">
-            <Cog /> Customize
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download /> Export
-          </Button>
-          <Button size="sm">
-            <Plus /> Add User
-          </Button>
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus /> Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <form onSubmit={form.handleSubmit(handleAddUser)} className="contents">
+                <DialogHeader>
+                  <DialogTitle>Add New User</DialogTitle>
+                  <DialogDescription>
+                    Invite a new member to your organization. They will show as Pending until they log in for the first
+                    time.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  <Controller
+                    control={form.control}
+                    name="fullName"
+                    render={({ field, fieldState }) => (
+                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="add-fullName">Full Name</FieldLabel>
+                        <Input {...field} id="add-fullName" disabled={isSubmitting} aria-invalid={fieldState.invalid} />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+
+                  <Controller
+                    control={form.control}
+                    name="email"
+                    render={({ field, fieldState }) => (
+                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="add-email">Email Address</FieldLabel>
+                        <Input
+                          {...field}
+                          id="add-email"
+                          type="email"
+                          disabled={isSubmitting}
+                          aria-invalid={fieldState.invalid}
+                        />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+
+                  <Controller
+                    control={form.control}
+                    name="role"
+                    render={({ field, fieldState }) => (
+                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="add-role">Role</FieldLabel>
+                        <Select value={field.value} onValueChange={field.onChange} disabled={isSubmitting}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent position="popper">
+                            <SelectGroup>
+                              <SelectItem value="Admin">Admin</SelectItem>
+                              <SelectItem value="Contributor">Contributor</SelectItem>
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                </div>
+
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" disabled={isSubmitting}>
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Adding..." : "Add User"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 px-0">
@@ -126,22 +389,6 @@ export function Users({ users }: { users: UserRow[] }) {
               <SelectContent position="popper" align="start">
                 <SelectGroup>
                   {filters.role.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-
-            <Select value={teamFilter} onValueChange={(value) => setColumnSelectFilter("team", value)}>
-              <SelectTrigger size="sm">
-                <span className="text-muted-foreground">Team:</span>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper" align="start">
-                <SelectGroup>
-                  {filters.team.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
                     </SelectItem>
@@ -166,22 +413,6 @@ export function Users({ users }: { users: UserRow[] }) {
               </SelectContent>
             </Select>
           </div>
-
-          <Select value={workspaceFilter} onValueChange={(value) => setColumnSelectFilter("workspace", value)}>
-            <SelectTrigger size="sm">
-              <span className="text-muted-foreground">Workspace:</span>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent position="popper" align="end">
-              <SelectGroup>
-                {filters.workspace.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="flex items-center justify-between gap-3 px-4">

@@ -1,39 +1,59 @@
 "use client";
 
+import { useState } from "react";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldContent, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { auth } from "@/lib/firebase";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  remember: z.boolean().optional(),
 });
 
 export function LoginForm() {
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       password: "",
-      remember: false,
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    toast("You submitted the following values", {
-      description: (
-        <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    setIsLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      router.push("/dashboard");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      let errorMessage = "Failed to sign in. Please check your credentials.";
+      if (
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/user-not-found"
+      ) {
+        errorMessage = "Invalid email or password.";
+      } else if (error.code === "auth/too-many-requests") {
+        errorMessage = "Too many failed attempts. Please try again later.";
+      }
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,7 +82,15 @@ export function LoginForm() {
           name="password"
           render={({ field, fieldState }) => (
             <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="login-password">Password</FieldLabel>
+              <div className="flex items-center justify-between">
+                <FieldLabel htmlFor="login-password">Password</FieldLabel>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 {...field}
                 id="login-password"
@@ -75,30 +103,9 @@ export function LoginForm() {
             </Field>
           )}
         />
-        <Controller
-          control={form.control}
-          name="remember"
-          render={({ field, fieldState }) => (
-            <Field orientation="horizontal" data-invalid={fieldState.invalid}>
-              <Checkbox
-                id="login-remember"
-                name={field.name}
-                checked={field.value}
-                onCheckedChange={(checked) => field.onChange(Boolean(checked))}
-                aria-invalid={fieldState.invalid}
-              />
-              <FieldContent>
-                <FieldLabel htmlFor="login-remember" className="font-normal">
-                  Remember me for 30 days
-                </FieldLabel>
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-              </FieldContent>
-            </Field>
-          )}
-        />
       </FieldGroup>
-      <Button className="w-full" type="submit">
-        Login
+      <Button className="w-full mt-6" type="submit" disabled={isLoading}>
+        {isLoading ? "Logging in..." : "Login"}
       </Button>
     </form>
   );

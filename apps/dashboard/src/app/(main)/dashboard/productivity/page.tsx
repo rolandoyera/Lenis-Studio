@@ -1,3 +1,4 @@
+import { UserGreeting } from "../_components/user-greeting";
 import { CalendarPanel } from "./_components/calendar-panel";
 import { FocusCard } from "./_components/focus-card";
 import { ProjectsSection } from "./_components/projects-section";
@@ -14,7 +15,9 @@ export default function Page() {
       <section className="lg:col-span-9">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <h1 className="text-3xl text-foreground leading-none tracking-tight">Good morning, Arham.</h1>
+            <h1 className="text-3xl text-foreground leading-none tracking-tight">
+              <UserGreeting prefix="Good morning" />.
+            </h1>
             <p className="text-lg text-muted-foreground leading-none">
               Let&apos;s make today productive and meaningful.
             </p>

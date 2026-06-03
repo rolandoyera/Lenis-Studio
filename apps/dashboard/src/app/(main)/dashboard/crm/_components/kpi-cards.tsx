@@ -6,13 +6,6 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader } from "@/co
 export function KpiCards() {
   return (
     <section className="space-y-5">
-      <div className="space-y-1">
-        <h2 className="text-3xl tracking-tight">Pipeline Overview</h2>
-        <p className="text-muted-foreground text-sm">
-          Keep tabs on lead quality, open opportunities, and conversion rates across the current sales cycle.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader>

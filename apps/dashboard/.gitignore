@@ -35,22 +35,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Google credentials
-**/ga4-key.json
-**/client_secret_*.json
-
-# Local env
-.env
-.env.local
-
-# Next.js
-.next/
-node_modules/
-*.tsbuildinfo
-**/.next/
-**/node_modules/
-**/.env.local
-**/next-env.d.ts
-**/*.tsbuildinfo
-**/BUILD_ID

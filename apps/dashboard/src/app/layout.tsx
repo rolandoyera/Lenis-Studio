@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+
 import type { Metadata } from "next";
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { APP_CONFIG } from "@/config/app-config";
@@ -15,18 +17,9 @@ export const metadata: Metadata = {
   description: APP_CONFIG.meta.description,
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
-  const {
-    theme_mode,
-    theme_preset,
-    content_layout,
-    navbar_style,
-    sidebar_variant,
-    sidebar_collapsible,
-    font,
-  } = PREFERENCE_DEFAULTS;
+export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const { theme_mode, theme_preset, content_layout, navbar_style, sidebar_variant, sidebar_collapsible, font } =
+    PREFERENCE_DEFAULTS;
   return (
     <html
       lang="en"
@@ -37,7 +30,8 @@ export default function RootLayout({
       data-sidebar-variant={sidebar_variant}
       data-sidebar-collapsible={sidebar_collapsible}
       data-font={font}
-      suppressHydrationWarning>
+      suppressHydrationWarning
+    >
       <head>
         {/* Applies theme and layout preferences on load to avoid flicker and unnecessary server rerenders. */}
         <ThemeBootScript />
@@ -49,7 +43,8 @@ export default function RootLayout({
             themePreset={theme_preset}
             contentLayout={content_layout}
             navbarStyle={navbar_style}
-            font={font}>
+            font={font}
+          >
             {children}
             <Toaster />
           </PreferencesStoreProvider>

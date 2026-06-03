@@ -51,6 +51,7 @@
     "rules": {
       "recommended": true,
       "correctness": {
+        "noUnusedVariables": "error",
         "noUndeclaredVariables": "error",
         "noNestedComponentDefinitions": "error",
         "noUndeclaredDependencies": "error"

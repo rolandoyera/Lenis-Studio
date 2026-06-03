@@ -1,0 +1,42 @@
+import { cn } from "@/lib/utils";
+
+interface H1Props {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function H1({ children, className }: H1Props) {
+  return (
+    <h1
+      className={cn(
+        "scroll-m-20 text-3xl font-extrabold tracking-tight text-balance",
+        className,
+      )}>
+      {children}
+    </h1>
+  );
+}
+
+export function H2({ children, className }: H1Props) {
+  return (
+    <h2
+      className={cn(
+        "scroll-m-20 text-2xl font-semibold tracking-tight",
+        className,
+      )}>
+      {children}
+    </h2>
+  );
+}
+
+export function H3({ children, className }: H1Props) {
+  return (
+    <h3
+      className={cn(
+        "scroll-m-20 text-xl font-semibold tracking-tight",
+        className,
+      )}>
+      {children}
+    </h3>
+  );
+}
