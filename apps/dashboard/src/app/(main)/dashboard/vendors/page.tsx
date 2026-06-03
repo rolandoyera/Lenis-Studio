@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import {
-  Building2,
-  Loader2,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  Search,
-} from "lucide-react";
+import { Building2, Loader2, Mail, MapPin, Phone, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import XTwitterIcon, {
@@ -26,16 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { H1 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 import { formatPhone, getInitials } from "@/lib/utils";
 
-import {
-  EMPTY_VENDOR_FORM,
-  type VendorFormData,
-  VendorFormDialog,
-} from "./_components/vendor-form-dialog";
+import { EMPTY_VENDOR_FORM, type VendorFormData, VendorFormDialog } from "./_components/vendor-form-dialog";
 
 // Cycle through accent gradients by first character for visual variety
 const CARD_GRADIENTS = [
@@ -120,7 +109,8 @@ export default function VendorsPage() {
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
+        >
           <Plus className="size-4" />
           Add Vendor
         </Button>
@@ -155,9 +145,7 @@ export default function VendorsPage() {
               : "Get started by adding your first vendor contact."}
           </p>
           {!searchQuery && (
-            <Button
-              onClick={handleOpenAdd}
-              className="mt-4 flex items-center gap-2">
+            <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
               <Plus className="size-4" />
               Add Vendor
             </Button>
@@ -180,6 +168,14 @@ export default function VendorsPage() {
       />
     </div>
   );
+}
+
+function getDisplayUrl(url: string | null): string {
+  if (!url) return "";
+  return url
+    .replace(/(^\w+:|^)\/\//, "") // Remove protocol
+    .replace(/^www\./, "") // Remove www.
+    .replace(/\/$/, ""); // Remove trailing slash
 }
 
 function formatSocialHref(url: string | undefined | null): string | null {
@@ -208,13 +204,10 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
       {/* Hero area: real image → gradient fallback */}
       <Link
         href={`/dashboard/vendors/${vendor.vendorId}`}
-        className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden">
+        className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden"
+      >
         {vendor.heroImageUrl ? (
-          <img
-            src={vendor.heroImageUrl}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <img src={vendor.heroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
         )}
@@ -242,7 +235,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {vendor.category && (
           <Badge
             variant="secondary"
-            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm">
+            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm"
+          >
             {vendor.category}
           </Badge>
         )}
@@ -252,9 +246,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Name */}
         <div>
           <h3 className="line-clamp-1 font-heading font-semibold text-base leading-tight transition-colors group-has-[.detail-link:hover]:text-primary">
-            <Link
-              href={`/dashboard/vendors/${vendor.vendorId}`}
-              className="detail-link cursor-pointer">
+            <Link href={`/dashboard/vendors/${vendor.vendorId}`} className="detail-link cursor-pointer">
               {vendor.name}
             </Link>
           </h3>
@@ -263,11 +255,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Rep contact */}
         {vendor.repName || vendor.repEmail || vendor.repPhone ? (
           <div className="flex flex-col gap-1.5 rounded-lg border border-muted/60 bg-muted/40 px-3 py-2.5">
-            {vendor.repName && (
-              <p className="truncate font-medium text-foreground/80 text-xs">
-                {vendor.repName}
-              </p>
-            )}
+            {vendor.repName && <p className="truncate font-medium text-foreground/80 text-xs">{vendor.repName}</p>}
             <div className="flex flex-col gap-1 text-muted-foreground text-xs">
               {vendor.repEmail && (
                 <span className="flex items-center gap-1.5 truncate">
@@ -286,18 +274,13 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         ) : null}
 
         {/* Address or account number teaser */}
-        {(vendor.street ||
-          vendor.city ||
-          vendor.state ||
-          vendor.accountNumber) && (
+        {(vendor.street || vendor.city || vendor.state || vendor.accountNumber) && (
           <div className="mt-auto flex flex-col gap-1 text-muted-foreground text-xs">
             {(vendor.street || vendor.city || vendor.state) && (
               <span className="flex items-start gap-1.5">
                 <MapPin className="mt-0.5 size-3 shrink-0" />
                 <span className="line-clamp-1">
-                  {[vendor.street, vendor.city, vendor.state]
-                    .filter(Boolean)
-                    .join(", ")}
+                  {[vendor.street, vendor.city, vendor.state].filter(Boolean).join(", ")}
                 </span>
               </span>
             )}
@@ -306,9 +289,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 <span className="font-semibold text-[10px] text-muted-foreground/60 uppercase tracking-wider">
                   Acct:
                 </span>
-                <span className="font-mono text-foreground/70">
-                  {vendor.accountNumber}
-                </span>
+                <span className="font-mono text-foreground/70">{vendor.accountNumber}</span>
               </span>
             )}
           </div>
@@ -316,78 +297,114 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
       </CardContent>
       <CardFooter className="flex items-center gap-3 border-t-0 bg-card text-muted-foreground">
         {websiteHref ? (
-          <a
-            href={websiteHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-            <GlobeIcon />
-          </a>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={websiteHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
+                <GlobeIcon />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>{getDisplayUrl(websiteHref)}</TooltipContent>
+          </Tooltip>
         ) : (
           <span className="cursor-not-allowed text-muted-foreground/20">
             <GlobeIcon />
           </span>
         )}
         {instagramHref ? (
-          <a
-            href={instagramHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-            <InstagramIcon />
-          </a>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={instagramHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
+                <InstagramIcon />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>{getDisplayUrl(instagramHref)}</TooltipContent>
+          </Tooltip>
         ) : (
           <span className="cursor-not-allowed text-muted-foreground/20">
             <InstagramIcon />
           </span>
         )}
         {pinterestHref ? (
-          <a
-            href={pinterestHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-            <PinterestIcon />
-          </a>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={pinterestHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
+                <PinterestIcon />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>{getDisplayUrl(pinterestHref)}</TooltipContent>
+          </Tooltip>
         ) : (
           <span className="cursor-not-allowed text-muted-foreground/20">
             <PinterestIcon />
           </span>
         )}
         {facebookHref ? (
-          <a
-            href={facebookHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-            <FacebookIcon />
-          </a>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={facebookHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
+                <FacebookIcon />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>{getDisplayUrl(facebookHref)}</TooltipContent>
+          </Tooltip>
         ) : (
           <span className="cursor-not-allowed text-muted-foreground/20">
             <FacebookIcon />
           </span>
         )}
         {youtubeHref ? (
-          <a
-            href={youtubeHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-            <YoutubeIcon />
-          </a>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={youtubeHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
+                <YoutubeIcon />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>{getDisplayUrl(youtubeHref)}</TooltipContent>
+          </Tooltip>
         ) : (
           <span className="cursor-not-allowed text-muted-foreground/20">
             <YoutubeIcon />
           </span>
         )}
         {xTwitterHref ? (
-          <a
-            href={xTwitterHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-            <XTwitterIcon />
-          </a>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={xTwitterHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
+                <XTwitterIcon />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent>{getDisplayUrl(xTwitterHref)}</TooltipContent>
+          </Tooltip>
         ) : (
           <span className="cursor-not-allowed text-muted-foreground/20">
             <XTwitterIcon />
