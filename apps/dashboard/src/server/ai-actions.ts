@@ -618,6 +618,7 @@ export interface VendorAutofillResult {
     street?: string;
     city?: string;
     state?: string;
+    zip?: string;
     repPhone?: string;
     repEmail?: string;
     logoUrl?: string;
@@ -884,6 +885,7 @@ Extract the following and return as JSON:
 - street: Full street address from footer, contact page, or about section. Empty if not found.
 - city: City from the business address. Empty if not found.
 - state: US state abbreviation (e.g. "TX") from address. Empty if not found.
+- zip: 5-digit ZIP code (e.g. "12345") from the business address. Empty if not found.
 - repPhone: Primary business phone number. Empty if not found.
 - repEmail: Primary business contact email (not newsletter/unsubscribe). Empty if not found.
 - logoUrl: The single best logo URL from the Logo Sources above. Use priority order. Only absolute HTTPS URLs. Return empty string if nothing suitable.
@@ -910,6 +912,7 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
             street: { type: "STRING" },
             city: { type: "STRING" },
             state: { type: "STRING" },
+            zip: { type: "STRING" },
             repPhone: { type: "STRING" },
             repEmail: { type: "STRING" },
             logoUrl: { type: "STRING" },
@@ -928,6 +931,7 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
                 street: { type: "NUMBER" },
                 city: { type: "NUMBER" },
                 state: { type: "NUMBER" },
+                zip: { type: "NUMBER" },
                 repPhone: { type: "NUMBER" },
                 repEmail: { type: "NUMBER" },
                 logoUrl: { type: "NUMBER" },
@@ -995,6 +999,7 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
       street: (extracted.street as string) || undefined,
       city: (extracted.city as string) || undefined,
       state: (extracted.state as string) || undefined,
+      zip: (extracted.zip as string) || undefined,
       repPhone: (extracted.repPhone as string) || undefined,
       repEmail: (extracted.repEmail as string) || undefined,
       logoUrl: logoUrl || undefined,

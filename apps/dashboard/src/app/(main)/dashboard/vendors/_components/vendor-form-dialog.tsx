@@ -30,6 +30,7 @@ import { formatPhone, formatZip, isValidUsPhone, isValidUsZip } from "@/lib/util
 import { autofillVendorFromUrl } from "@/server/ai-actions";
 
 export const VENDOR_CATEGORIES = [
+  "Appliances",
   "Furniture",
   "Fabric & Textiles",
   "Lighting",
@@ -293,6 +294,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
         if (d.street) setValue("street", d.street);
         if (d.city) setValue("city", d.city);
         if (d.state) setValue("state", d.state);
+        if (d.zip) setValue("zip", d.zip);
         if (d.repPhone) setValue("repPhone", formatPhone(d.repPhone));
         if (d.repEmail) setValue("repEmail", d.repEmail);
         if (d.logoUrl) setValue("logoUrl", d.logoUrl);
@@ -345,7 +347,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto px-0.5 py-2">
+            <div className="-mr-4 flex max-h-[65vh] flex-col gap-4 overflow-y-auto py-2 pr-4 pl-0.5">
               {/* Name + Category */}
               <div className="grid grid-cols-2 gap-4">
                 <Controller

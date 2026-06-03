@@ -47,7 +47,7 @@ export function ClientDetailHeader({ client, onEdit, onRequestDelete }: ClientDe
 
   return (
     <>
-      <HeaderBackLink page="Client Directory" href="/dashboard/clients" />
+      <HeaderBackLink href="/dashboard/clients" />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-6">
         <div className="flex items-center gap-4">

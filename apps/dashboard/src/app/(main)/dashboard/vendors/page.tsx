@@ -18,13 +18,19 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { H1 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 import { formatPhone, getInitials } from "@/lib/utils";
 
-import { EMPTY_VENDOR_FORM, type VendorFormData, VendorFormDialog } from "./_components/vendor-form-dialog";
+import {
+  EMPTY_VENDOR_FORM,
+  VENDOR_CATEGORIES,
+  type VendorFormData,
+  VendorFormDialog,
+} from "./_components/vendor-form-dialog";
 
 // Cycle through accent gradients by first character for visual variety
 const CARD_GRADIENTS = [
@@ -46,6 +52,7 @@ export default function VendorsPage() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const handleOpenAdd = () => setIsAddOpen(true);
@@ -53,9 +60,10 @@ export default function VendorsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("search")) setSearchQuery(params.get("search")!);
+      const searchParam = params.get("search");
+      if (searchParam) setSearchQuery(searchParam);
       if (params.get("add") === "true") {
-        handleOpenAdd();
+        setIsAddOpen(true);
         window.history.replaceState({}, "", window.location.pathname);
       }
     }
@@ -71,7 +79,7 @@ export default function VendorsPage() {
       }
     }
     void loadData();
-  }, [handleOpenAdd]);
+  }, []);
 
   const handleAdd = async (data: VendorFormData) => {
     try {
@@ -88,12 +96,15 @@ export default function VendorsPage() {
   const filteredVendors = vendors
     .filter((v) => {
       const term = searchQuery.toLowerCase();
-      return (
+      const matchesSearch =
         v.name.toLowerCase().includes(term) ||
         v.repName?.toLowerCase().includes(term) ||
         v.category?.toLowerCase().includes(term) ||
-        v.notes?.toLowerCase().includes(term)
-      );
+        v.notes?.toLowerCase().includes(term);
+
+      const matchesCategory = activeCategory === "All" || v.category === activeCategory;
+
+      return matchesSearch && matchesCategory;
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -116,15 +127,32 @@ export default function VendorsPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative w-full max-w-md">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search vendors, representatives or category..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="bg-background/50 pl-9"
-        />
+      {/* Filter and search controls combined into a clean layout */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between border-b pb-4">
+        {/* Category Tabs */}
+        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
+          <TabsList className="flex flex-wrap h-auto! gap-0.5 max-w-full">
+            <TabsTrigger value="All" className="text-[12px] font-semibold px-3 py-1.5 cursor-pointer">
+              All Vendors
+            </TabsTrigger>
+            {VENDOR_CATEGORIES.map((cat) => (
+              <TabsTrigger key={cat} value={cat} className="text-[12px] font-semibold px-3 py-1.5 cursor-pointer">
+                {cat}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
+        {/* Quick Search */}
+        <div className="relative max-w-xs w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+          <Input
+            placeholder="Search vendors, representatives or category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="bg-background/50 pl-9"
+          />
+        </div>
       </div>
 
       {/* Grid */}
@@ -274,13 +302,18 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         ) : null}
 
         {/* Address or account number teaser */}
-        {(vendor.street || vendor.city || vendor.state || vendor.accountNumber) && (
+        {(vendor.street || vendor.city || vendor.state || vendor.zip || vendor.accountNumber) && (
           <div className="mt-auto flex flex-col gap-1 text-muted-foreground text-xs">
-            {(vendor.street || vendor.city || vendor.state) && (
+            {(vendor.street || vendor.city || vendor.state || vendor.zip) && (
               <span className="flex items-start gap-1.5">
                 <MapPin className="mt-0.5 size-3 shrink-0" />
                 <span className="line-clamp-1">
-                  {[vendor.street, vendor.city, vendor.state].filter(Boolean).join(", ")}
+                  {[
+                    vendor.street,
+                    [vendor.city, vendor.state].filter(Boolean).join(", ") + (vendor.zip ? ` ${vendor.zip}` : ""),
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
                 </span>
               </span>
             )}
@@ -303,6 +336,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 href={websiteHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.currentTarget.blur()}
                 className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
               >
                 <GlobeIcon />
@@ -322,6 +356,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 href={instagramHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.currentTarget.blur()}
                 className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
               >
                 <InstagramIcon />
@@ -341,6 +376,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 href={pinterestHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.currentTarget.blur()}
                 className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
               >
                 <PinterestIcon />
@@ -360,6 +396,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 href={facebookHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.currentTarget.blur()}
                 className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
               >
                 <FacebookIcon />
@@ -379,6 +416,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 href={youtubeHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.currentTarget.blur()}
                 className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
               >
                 <YoutubeIcon />
@@ -398,6 +436,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 href={xTwitterHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.currentTarget.blur()}
                 className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
               >
                 <XTwitterIcon />

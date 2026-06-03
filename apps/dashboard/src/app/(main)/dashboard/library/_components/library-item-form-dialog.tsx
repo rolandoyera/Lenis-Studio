@@ -338,7 +338,7 @@ export function LibraryItemFormDialog({
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label className={`${LABEL_CLASS} flex items-center`}>
-                    SKU / Inventory Ref {renderConfidenceBadge("sku")}
+                    SKU / Model # {renderConfidenceBadge("sku")}
                   </Label>
                   <Input
                     placeholder="e.g. SL-CV-04"

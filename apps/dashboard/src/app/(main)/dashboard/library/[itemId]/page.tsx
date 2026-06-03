@@ -127,7 +127,12 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6 w-full">
-      <ItemDetailHeader item={item} onEdit={handleOpenEdit} onRequestDelete={() => setIsDeleteAlertOpen(true)} />
+      <ItemDetailHeader
+        item={item}
+        vendorName={associatedVendor?.name}
+        onEdit={handleOpenEdit}
+        onRequestDelete={() => setIsDeleteAlertOpen(true)}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div className="lg:col-span-4 flex flex-col gap-4">

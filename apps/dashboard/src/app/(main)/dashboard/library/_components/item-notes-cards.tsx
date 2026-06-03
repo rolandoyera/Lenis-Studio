@@ -13,7 +13,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
       <Card>
         <CardHeader className="pb-4 border-b border-border/30">
-          <CardTitle className="text-base font-medium font-heading flex items-center gap-2">
+          <CardTitle>
             <ShoppingBag className="size-4 text-primary/80" />
             Public Description
           </CardTitle>
@@ -33,7 +33,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
 
       <Card>
         <CardHeader className="pb-4 border-b border-border/30">
-          <CardTitle className="text-base font-medium font-heading flex items-center gap-2">
+          <CardTitle>
             <FileText className="size-4 text-primary/80" />
             Internal Notes
           </CardTitle>
@@ -44,7 +44,9 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
               {item.internalNote}
             </div>
           ) : (
-            <p className="text-sm italic text-muted-foreground/60 py-2">No internal notes logged.</p>
+            <p className="text-sm italic text-muted-foreground/60 py-2">
+              No internal notes logged.
+            </p>
           )}
         </CardContent>
       </Card>
