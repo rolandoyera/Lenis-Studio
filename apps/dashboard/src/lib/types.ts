@@ -34,12 +34,18 @@ export interface Vendor {
   street?: string;
   city?: string;
   state?: string;
+  zip?: string;
   logoUrl?: string;
   heroImageUrl?: string;
   repName?: string;
   repEmail?: string;
   repPhone?: string;
   notes?: string;
+  instagram?: string;
+  pinterest?: string;
+  facebook?: string;
+  youtube?: string;
+  xTwitter?: string;
   createdAt: number;
 }
 

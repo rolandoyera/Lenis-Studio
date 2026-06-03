@@ -398,7 +398,7 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     const filteredImages = mergedImages.slice(0, 15);
     console.log(`[AI Autofill] Filtered image candidates count: ${filteredImages.length}`, filteredImages);
 
-    const optimizedMarkdown = markdownText.substring(0, 80000);
+    const optimizedMarkdown = markdownText.substring(0, 100000);
 
     // 3. Formulate Query to Gemini 3.5 Flash with fallback
     console.log(`[AI Autofill] Sending optimized markdown to Gemini...`);
@@ -626,6 +626,11 @@ export interface VendorAutofillResult {
     imageCandidates?: string[];
     showImagePicker?: boolean;
     confidence?: Record<string, number>;
+    instagram?: string;
+    pinterest?: string;
+    facebook?: string;
+    youtube?: string;
+    xTwitter?: string;
   };
 }
 
@@ -855,7 +860,7 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
       .filter(Boolean)
       .join("\n");
 
-    const optimizedMarkdown = markdownText.substring(0, 50000);
+    const optimizedMarkdown = markdownText.substring(0, 100000);
 
     const prompt = `You are an expert business data extractor for an interior design CRM. Parse the vendor/supplier website content below and extract structured contact and brand information.
 
@@ -883,6 +888,11 @@ Extract the following and return as JSON:
 - repEmail: Primary business contact email (not newsletter/unsubscribe). Empty if not found.
 - logoUrl: The single best logo URL from the Logo Sources above. Use priority order. Only absolute HTTPS URLs. Return empty string if nothing suitable.
 - heroImageUrl: The single best brand/lifestyle image URL from Hero Image Sources above. Must be a product showcase or brand image — not a tracker pixel, ad banner, or UI element. Only absolute HTTPS URLs. Return empty string if nothing suitable.
+- instagram: The company's official Instagram profile URL if found (e.g. "https://instagram.com/brandname"). Empty string if not found.
+- pinterest: The company's official Pinterest profile URL if found (e.g. "https://pinterest.com/brandname"). Empty string if not found.
+- facebook: The company's official Facebook page URL if found (e.g. "https://facebook.com/brandname"). Empty string if not found.
+- youtube: The company's official YouTube channel URL if found (e.g. "https://youtube.com/c/brandname"). Empty string if not found.
+- xTwitter: The company's official X / Twitter profile URL if found (e.g. "https://x.com/brandname"). Empty string if not found.
 - confidence: Float 0.0–1.0 for each field. Use 0.95 for og:image or Schema.org logo, 0.75 for apple-touch-icon, lower for guessed candidates.
 
 CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty string "" for fields not found.`;
@@ -904,6 +914,11 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
             repEmail: { type: "STRING" },
             logoUrl: { type: "STRING" },
             heroImageUrl: { type: "STRING" },
+            instagram: { type: "STRING" },
+            pinterest: { type: "STRING" },
+            facebook: { type: "STRING" },
+            youtube: { type: "STRING" },
+            xTwitter: { type: "STRING" },
             confidence: {
               type: "OBJECT",
               properties: {
@@ -917,6 +932,11 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
                 repEmail: { type: "NUMBER" },
                 logoUrl: { type: "NUMBER" },
                 heroImageUrl: { type: "NUMBER" },
+                instagram: { type: "NUMBER" },
+                pinterest: { type: "NUMBER" },
+                facebook: { type: "NUMBER" },
+                youtube: { type: "NUMBER" },
+                xTwitter: { type: "NUMBER" },
               },
               required: ["name"],
             },
@@ -983,6 +1003,11 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
       imageCandidates: pickerImageCandidates,
       showImagePicker,
       confidence: conf,
+      instagram: (extracted.instagram as string) || undefined,
+      pinterest: (extracted.pinterest as string) || undefined,
+      facebook: (extracted.facebook as string) || undefined,
+      youtube: (extracted.youtube as string) || undefined,
+      xTwitter: (extracted.xTwitter as string) || undefined,
     };
 
     // Save diagnostic run in Firestore background (non-blocking)

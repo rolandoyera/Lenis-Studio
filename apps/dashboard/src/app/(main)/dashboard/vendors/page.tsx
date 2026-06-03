@@ -6,8 +6,6 @@ import Link from "next/link";
 
 import {
   Building2,
-  ExternalLink,
-  Globe,
   Loader2,
   Mail,
   MapPin,
@@ -17,6 +15,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import XTwitterIcon, {
+  FacebookIcon,
+  GlobeIcon,
+  InstagramIcon,
+  PinterestIcon,
+  YoutubeIcon,
+} from "@/components/icons/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -31,13 +36,6 @@ import {
   type VendorFormData,
   VendorFormDialog,
 } from "./_components/vendor-form-dialog";
-import {
-  FacebookIcon,
-  GlobeIcon,
-  InstagramIcon,
-  PinterestIcon,
-  YoutubeIcon,
-} from "@/components/icons/icons";
 
 // Cycle through accent gradients by first character for visual variety
 const CARD_GRADIENTS = [
@@ -84,7 +82,7 @@ export default function VendorsPage() {
       }
     }
     void loadData();
-  }, []);
+  }, [handleOpenAdd]);
 
   const handleAdd = async (data: VendorFormData) => {
     try {
@@ -111,47 +109,47 @@ export default function VendorsPage() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex w-full flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <H1>Vendor Directory</H1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="mt-1 text-muted-foreground text-sm">
             Manage trade vendors and client procurement representatives.
           </p>
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="sm:self-start bg-primary text-primary-foreground hover:bg-primary/95 flex items-center gap-2">
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
           <Plus className="size-4" />
           Add Vendor
         </Button>
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+      <div className="relative w-full max-w-md">
+        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search vendors, representatives or category..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 bg-background/50"
+          className="bg-background/50 pl-9"
         />
       </div>
 
       {/* Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[300px] gap-3">
+        <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+          <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
             Loading Sourcing Directory
           </p>
         </div>
       ) : filteredVendors.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center min-h-[300px] border-dashed text-center p-8 bg-background/30">
-          <Building2 className="size-12 text-muted-foreground/40 mb-3" />
+        <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
+          <Building2 className="mb-3 size-12 text-muted-foreground/40" />
           <h3 className="font-semibold text-lg">No vendors found</h3>
-          <p className="text-muted-foreground text-sm max-w-sm mt-1">
+          <p className="mt-1 max-w-sm text-muted-foreground text-sm">
             {searchQuery
               ? "Try broadening your search or clear the filter."
               : "Get started by adding your first vendor contact."}
@@ -166,7 +164,7 @@ export default function VendorsPage() {
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 3xl:grid-cols-6 gap-5">
+        <div className="grid 3xl:grid-cols-6 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {filteredVendors.map((vendor) => (
             <VendorCard key={vendor.vendorId} vendor={vendor} />
           ))}
@@ -184,139 +182,218 @@ export default function VendorsPage() {
   );
 }
 
+function formatSocialHref(url: string | undefined | null): string | null {
+  if (!url?.trim()) return null;
+  const trimmed = url.trim();
+  return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+}
+
 function VendorCard({ vendor }: { vendor: Vendor }) {
   const initials = getInitials(vendor.name);
   const gradient = vendorGradient(vendor.name);
+  const websiteHref = vendor.website
+    ? vendor.website.startsWith("http")
+      ? vendor.website
+      : `https://${vendor.website}`
+    : null;
+
+  const instagramHref = formatSocialHref(vendor.instagram);
+  const pinterestHref = formatSocialHref(vendor.pinterest);
+  const facebookHref = formatSocialHref(vendor.facebook);
+  const youtubeHref = formatSocialHref(vendor.youtube);
+  const xTwitterHref = formatSocialHref(vendor.xTwitter);
 
   return (
-    <Link
-      href={`/dashboard/vendors/${vendor.vendorId}`}
-      className="group block">
-      <Card className="relative overflow-hidden flex flex-col h-full transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-primary/30 cursor-pointer pt-0">
-        {/* Hero area: real image → gradient fallback */}
-        <div className="relative flex items-center justify-center h-56 w-full overflow-hidden">
-          {vendor.heroImageUrl ? (
+    <Card className="group relative flex h-full flex-col overflow-hidden pt-0 shadow-sm transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
+      {/* Hero area: real image → gradient fallback */}
+      <Link
+        href={`/dashboard/vendors/${vendor.vendorId}`}
+        className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden">
+        {vendor.heroImageUrl ? (
+          <img
+            src={vendor.heroImageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
+        )}
+        {/* Subtle scrim so monogram stays legible over photos */}
+        <div className="absolute inset-0 bg-black/20" />
+
+        {/* Logo or initials monogram */}
+        <div className="relative flex size-12 items-center justify-center overflow-hidden">
+          {vendor.logoUrl ? (
             <img
-              src={vendor.heroImageUrl}
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
+              src={vendor.logoUrl}
+              alt={vendor.name}
+              className="h-full w-full object-contain p-1"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
             />
           ) : (
-            <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
-          )}
-          {/* Subtle scrim so monogram stays legible over photos */}
-          <div className="absolute inset-0 bg-black/20" />
-
-          {/* Logo or initials monogram */}
-          <div className="relative flex size-12 items-center justify-center overflow-hidden">
-            {vendor.logoUrl ? (
-              <img
-                src={vendor.logoUrl}
-                alt={vendor.name}
-                className="w-full h-full object-contain p-1"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-              />
-            ) : (
-              <span className="text-2xl font-bold font-heading text-foreground/80 select-none">
-                {initials.slice(0, 2)}
-              </span>
-            )}
-          </div>
-
-          {vendor.category && (
-            <Badge
-              variant="secondary"
-              className="absolute top-3 left-3 text-[10px] font-semibold tracking-wide bg-black/20 backdrop-blur-sm border-0 text-white">
-              {vendor.category}
-            </Badge>
+            <span className="select-none font-bold font-heading text-2xl text-foreground/80">
+              {initials.slice(0, 2)}
+            </span>
           )}
         </div>
 
-        <CardContent className="flex flex-col gap-3 pt-4 flex-1">
-          {/* Name + website */}
-          <div>
-            <h3 className="font-heading font-semibold text-base leading-tight group-hover:text-primary transition-colors line-clamp-1">
+        {vendor.category && (
+          <Badge
+            variant="secondary"
+            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm">
+            {vendor.category}
+          </Badge>
+        )}
+      </Link>
+
+      <CardContent className="flex flex-1 flex-col gap-3 pt-4">
+        {/* Name */}
+        <div>
+          <h3 className="line-clamp-1 font-heading font-semibold text-base leading-tight transition-colors group-has-[.detail-link:hover]:text-primary">
+            <Link
+              href={`/dashboard/vendors/${vendor.vendorId}`}
+              className="detail-link cursor-pointer">
               {vendor.name}
-            </h3>
-            {vendor.website ? (
-              <span className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
-                <Globe className="size-3 shrink-0" />
-                <span className="truncate">
-                  {vendor.website.replace(/(^\w+:|^)\/\//, "")}
+            </Link>
+          </h3>
+        </div>
+
+        {/* Rep contact */}
+        {vendor.repName || vendor.repEmail || vendor.repPhone ? (
+          <div className="flex flex-col gap-1.5 rounded-lg border border-muted/60 bg-muted/40 px-3 py-2.5">
+            {vendor.repName && (
+              <p className="truncate font-medium text-foreground/80 text-xs">
+                {vendor.repName}
+              </p>
+            )}
+            <div className="flex flex-col gap-1 text-muted-foreground text-xs">
+              {vendor.repEmail && (
+                <span className="flex items-center gap-1.5 truncate">
+                  <Mail className="size-3 shrink-0" />
+                  <span className="truncate">{vendor.repEmail}</span>
                 </span>
-                <ExternalLink className="size-2.5 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" />
+              )}
+              {vendor.repPhone && (
+                <span className="flex items-center gap-1.5">
+                  <Phone className="size-3 shrink-0" />
+                  {formatPhone(vendor.repPhone)}
+                </span>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Address or account number teaser */}
+        {(vendor.street ||
+          vendor.city ||
+          vendor.state ||
+          vendor.accountNumber) && (
+          <div className="mt-auto flex flex-col gap-1 text-muted-foreground text-xs">
+            {(vendor.street || vendor.city || vendor.state) && (
+              <span className="flex items-start gap-1.5">
+                <MapPin className="mt-0.5 size-3 shrink-0" />
+                <span className="line-clamp-1">
+                  {[vendor.street, vendor.city, vendor.state]
+                    .filter(Boolean)
+                    .join(", ")}
+                </span>
               </span>
-            ) : (
-              <span className="text-xs text-muted-foreground/50 italic mt-0.5 block">
-                No website
+            )}
+            {vendor.accountNumber && (
+              <span className="flex items-center gap-1.5">
+                <span className="font-semibold text-[10px] text-muted-foreground/60 uppercase tracking-wider">
+                  Acct:
+                </span>
+                <span className="font-mono text-foreground/70">
+                  {vendor.accountNumber}
+                </span>
               </span>
             )}
           </div>
-
-          {/* Rep contact */}
-          {vendor.repName || vendor.repEmail || vendor.repPhone ? (
-            <div className="flex flex-col gap-1.5 rounded-lg bg-muted/40 border border-muted/60 px-3 py-2.5">
-              {vendor.repName && (
-                <p className="text-xs font-medium text-foreground/80 truncate">
-                  {vendor.repName}
-                </p>
-              )}
-              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                {vendor.repEmail && (
-                  <span className="flex items-center gap-1.5 truncate">
-                    <Mail className="size-3 shrink-0" />
-                    <span className="truncate">{vendor.repEmail}</span>
-                  </span>
-                )}
-                {vendor.repPhone && (
-                  <span className="flex items-center gap-1.5">
-                    <Phone className="size-3 shrink-0" />
-                    {formatPhone(vendor.repPhone)}
-                  </span>
-                )}
-              </div>
-            </div>
-          ) : null}
-
-          {/* Address or account number teaser */}
-          {(vendor.street ||
-            vendor.city ||
-            vendor.state ||
-            vendor.accountNumber) && (
-            <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-auto">
-              {(vendor.street || vendor.city || vendor.state) && (
-                <span className="flex items-start gap-1.5">
-                  <MapPin className="size-3 shrink-0 mt-0.5" />
-                  <span className="line-clamp-1">
-                    {[vendor.street, vendor.city, vendor.state]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </span>
-                </span>
-              )}
-              {vendor.accountNumber && (
-                <span className="flex items-center gap-1.5">
-                  <span className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground/60">
-                    Acct:
-                  </span>
-                  <span className="font-mono text-foreground/70">
-                    {vendor.accountNumber}
-                  </span>
-                </span>
-              )}
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="bg-card border-t-0 flex items-center gap-3">
-          <GlobeIcon size={24} color="#000000" />
-          <InstagramIcon size={24} color="#000000" />
-          <PinterestIcon size={24} color="#000000" />
-          <FacebookIcon size={24} color="#000000" />
-          <YoutubeIcon size={24} color="#000000" />
-        </CardFooter>
-      </Card>
-    </Link>
+        )}
+      </CardContent>
+      <CardFooter className="flex items-center gap-3 border-t-0 bg-card text-muted-foreground">
+        {websiteHref ? (
+          <a
+            href={websiteHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+            <GlobeIcon />
+          </a>
+        ) : (
+          <span className="cursor-not-allowed text-muted-foreground/20">
+            <GlobeIcon />
+          </span>
+        )}
+        {instagramHref ? (
+          <a
+            href={instagramHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+            <InstagramIcon />
+          </a>
+        ) : (
+          <span className="cursor-not-allowed text-muted-foreground/20">
+            <InstagramIcon />
+          </span>
+        )}
+        {pinterestHref ? (
+          <a
+            href={pinterestHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+            <PinterestIcon />
+          </a>
+        ) : (
+          <span className="cursor-not-allowed text-muted-foreground/20">
+            <PinterestIcon />
+          </span>
+        )}
+        {facebookHref ? (
+          <a
+            href={facebookHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+            <FacebookIcon />
+          </a>
+        ) : (
+          <span className="cursor-not-allowed text-muted-foreground/20">
+            <FacebookIcon />
+          </span>
+        )}
+        {youtubeHref ? (
+          <a
+            href={youtubeHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+            <YoutubeIcon />
+          </a>
+        ) : (
+          <span className="cursor-not-allowed text-muted-foreground/20">
+            <YoutubeIcon />
+          </span>
+        )}
+        {xTwitterHref ? (
+          <a
+            href={xTwitterHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+            <XTwitterIcon />
+          </a>
+        ) : (
+          <span className="cursor-not-allowed text-muted-foreground/20">
+            <XTwitterIcon />
+          </span>
+        )}
+      </CardFooter>
+    </Card>
   );
 }

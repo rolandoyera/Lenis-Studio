@@ -67,3 +67,14 @@ export function isValidUsPhone(value: string): boolean {
   if (digits.length === 11 && digits.startsWith("1")) return true;
   return digits.length === 10;
 }
+
+/** Strip a ZIP to its USA 5-digit core (digits only, capped at 5). */
+export function formatZip(value: string): string {
+  return (value ?? "").replace(/\D/g, "").slice(0, 5);
+}
+
+/** True when a ZIP field is empty or a complete 5-digit US ZIP code (for Zod `.refine`). */
+export function isValidUsZip(value: string): boolean {
+  const digits = (value ?? "").replace(/\D/g, "");
+  return digits.length === 0 || digits.length === 5;
+}

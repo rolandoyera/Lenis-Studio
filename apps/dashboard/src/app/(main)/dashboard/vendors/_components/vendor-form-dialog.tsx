@@ -26,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { runAiActionWithRetry } from "@/lib/ai-retry";
 import type { Vendor } from "@/lib/types";
-import { formatPhone, isValidUsPhone } from "@/lib/utils";
+import { formatPhone, formatZip, isValidUsPhone, isValidUsZip } from "@/lib/utils";
 import { autofillVendorFromUrl } from "@/server/ai-actions";
 
 export const VENDOR_CATEGORIES = [
@@ -52,12 +52,18 @@ export const vendorSchema = z.object({
   street: z.string(),
   city: z.string(),
   state: z.string(),
+  zip: z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
   logoUrl: z.string(),
   heroImageUrl: z.string(),
   repName: z.string(),
   repEmail: z.union([z.string().email("Please enter a valid email address."), z.literal("")]),
   repPhone: z.string().refine(isValidUsPhone, "Enter a valid 10-digit US phone number."),
   notes: z.string(),
+  instagram: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
+  pinterest: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
+  facebook: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
+  youtube: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
+  xTwitter: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
 });
 
 export type VendorFormData = z.infer<typeof vendorSchema>;
@@ -71,12 +77,18 @@ export const EMPTY_VENDOR_FORM: VendorFormData = {
   street: "",
   city: "",
   state: "",
+  zip: "",
   logoUrl: "",
   heroImageUrl: "",
   repName: "",
   repEmail: "",
   repPhone: "",
   notes: "",
+  instagram: "",
+  pinterest: "",
+  facebook: "",
+  youtube: "",
+  xTwitter: "",
 };
 
 export function vendorToForm(vendor: Vendor): VendorFormData {
@@ -89,12 +101,18 @@ export function vendorToForm(vendor: Vendor): VendorFormData {
     street: vendor.street ?? "",
     city: vendor.city ?? "",
     state: vendor.state ?? "",
+    zip: formatZip(vendor.zip ?? ""),
     logoUrl: vendor.logoUrl ?? "",
     heroImageUrl: vendor.heroImageUrl ?? "",
     repName: vendor.repName ?? "",
     repEmail: vendor.repEmail ?? "",
     repPhone: formatPhone(vendor.repPhone ?? ""),
     notes: vendor.notes ?? "",
+    instagram: vendor.instagram ?? "",
+    pinterest: vendor.pinterest ?? "",
+    facebook: vendor.facebook ?? "",
+    youtube: vendor.youtube ?? "",
+    xTwitter: vendor.xTwitter ?? "",
   };
 }
 
@@ -123,7 +141,7 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl bg-popover/95 backdrop-blur-md">
+      <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-lg">Choose Images</DialogTitle>
           <DialogDescription>
@@ -131,7 +149,7 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-6 py-1 max-h-[60vh] overflow-y-auto px-0.5">
+        <div className="flex max-h-[60vh] flex-col gap-6 overflow-y-auto px-0.5 py-1">
           {logoCandidates.length > 0 && (
             <div className="flex flex-col gap-3">
               <p className={LABEL_CLASS}>Logo</p>
@@ -141,7 +159,7 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
                     key={url}
                     type="button"
                     onClick={() => setSelectedLogo(url === selectedLogo ? null : url)}
-                    className={`relative aspect-square rounded-lg border-2 overflow-hidden bg-muted/30 transition-all ${
+                    className={`relative aspect-square overflow-hidden rounded-lg border-2 bg-muted/30 transition-all ${
                       selectedLogo === url
                         ? "border-primary shadow-md"
                         : "border-border hover:border-muted-foreground/40"
@@ -150,13 +168,13 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
                     <img
                       src={url}
                       alt=""
-                      className="w-full h-full object-contain p-2"
+                      className="h-full w-full object-contain p-2"
                       onError={(e) => {
                         (e.currentTarget.parentElement as HTMLElement).style.display = "none";
                       }}
                     />
                     {selectedLogo === url && (
-                      <div className="absolute top-1 right-1 size-5 rounded-full bg-primary flex items-center justify-center">
+                      <div className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-primary">
                         <Check className="size-3 text-primary-foreground" />
                       </div>
                     )}
@@ -175,7 +193,7 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
                     key={url}
                     type="button"
                     onClick={() => setSelectedHero(url === selectedHero ? null : url)}
-                    className={`relative aspect-video rounded-lg border-2 overflow-hidden bg-muted/30 transition-all ${
+                    className={`relative aspect-video overflow-hidden rounded-lg border-2 bg-muted/30 transition-all ${
                       selectedHero === url
                         ? "border-primary shadow-md"
                         : "border-border hover:border-muted-foreground/40"
@@ -184,13 +202,13 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
                     <img
                       src={url}
                       alt=""
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                       onError={(e) => {
                         (e.currentTarget.parentElement as HTMLElement).style.display = "none";
                       }}
                     />
                     {selectedHero === url && (
-                      <div className="absolute top-1 right-1 size-5 rounded-full bg-primary flex items-center justify-center">
+                      <div className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-primary">
                         <Check className="size-3 text-primary-foreground" />
                       </div>
                     )}
@@ -279,6 +297,11 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
         if (d.repEmail) setValue("repEmail", d.repEmail);
         if (d.logoUrl) setValue("logoUrl", d.logoUrl);
         if (d.heroImageUrl) setValue("heroImageUrl", d.heroImageUrl);
+        if (d.instagram) setValue("instagram", d.instagram);
+        if (d.pinterest) setValue("pinterest", d.pinterest);
+        if (d.facebook) setValue("facebook", d.facebook);
+        if (d.youtube) setValue("youtube", d.youtube);
+        if (d.xTwitter) setValue("xTwitter", d.xTwitter);
 
         if (d.showImagePicker && (d.logoCandidates?.length || d.imageCandidates?.length)) {
           setPickerData({
@@ -313,7 +336,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
           if (!isSubmitting && !aiLoading) onOpenChange(v);
         }}
       >
-        <DialogContent className="sm:max-w-3xl bg-popover/95 backdrop-blur-md">
+        <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-3xl">
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
             <DialogHeader>
               <DialogTitle className="text-xl">{mode === "edit" ? "Edit Vendor" : "Add Vendor"}</DialogTitle>
@@ -322,16 +345,16 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
               </DialogDescription>
             </DialogHeader>
 
-            <div className="flex flex-col gap-4 py-2 max-h-[65vh] overflow-y-auto px-0.5">
+            <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto px-0.5 py-2">
               {/* Name + Category */}
               <div className="grid grid-cols-2 gap-4">
                 <Controller
                   control={control}
                   name="name"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5 col-span-2 sm:col-span-1" data-invalid={fieldState.invalid}>
+                    <Field className="col-span-2 flex flex-col gap-1.5 sm:col-span-1" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>
-                        Name <span className="text-destructive ml-0.5">*</span>
+                        Name <span className="ml-0.5 text-destructive">*</span>
                       </Label>
                       <Input {...field} placeholder="e.g. Arteriors, RH" aria-invalid={fieldState.invalid} />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -342,7 +365,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="category"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5 col-span-2 sm:col-span-1" data-invalid={fieldState.invalid}>
+                    <Field className="col-span-2 flex flex-col gap-1.5 sm:col-span-1" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>Category</Label>
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger aria-invalid={fieldState.invalid}>
@@ -380,7 +403,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         type="button"
                         onClick={handleEnrich}
                         disabled={!field.value || aiLoading || isSubmitting}
-                        className="group relative shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-white shadow-xs shadow-violet-500/20 transition-all duration-200 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100 h-10 text-sm"
+                        className="group relative h-10 shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-sm text-white shadow-violet-500/20 shadow-xs transition-all duration-200 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100"
                       >
                         {aiLoading && (
                           <span className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/20 to-transparent" />
@@ -398,17 +421,17 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
 
               {/* AI Image Previews */}
               {(logoUrlValue || heroImageUrlValue) && (
-                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/30 border border-muted/60">
+                <div className="flex items-center gap-3 rounded-lg border border-muted/60 bg-muted/30 px-3 py-2.5">
                   <LunaMoon variant="phase" size={14} />
-                  <span className="text-xs text-muted-foreground font-medium">AI images:</span>
-                  <div className="flex gap-2 flex-1">
+                  <span className="font-medium text-muted-foreground text-xs">AI images:</span>
+                  <div className="flex flex-1 gap-2">
                     {logoUrlValue && (
                       <div className="relative">
-                        <div className="size-9 rounded border bg-background flex items-center justify-center overflow-hidden">
+                        <div className="flex size-9 items-center justify-center overflow-hidden rounded border bg-background">
                           <img
                             src={logoUrlValue}
                             alt="Logo"
-                            className="w-full h-full object-contain p-1"
+                            className="h-full w-full object-contain p-1"
                             onError={(e) => {
                               (e.currentTarget.parentElement as HTMLElement).style.display = "none";
                             }}
@@ -417,7 +440,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         <button
                           type="button"
                           onClick={() => setValue("logoUrl", "")}
-                          className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                          className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
                           aria-label="Remove logo"
                         >
                           <X className="size-2.5" />
@@ -426,11 +449,11 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                     )}
                     {heroImageUrlValue && (
                       <div className="relative">
-                        <div className="h-9 w-14 rounded border bg-background overflow-hidden">
+                        <div className="h-9 w-14 overflow-hidden rounded border bg-background">
                           <img
                             src={heroImageUrlValue}
                             alt="Hero"
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                             onError={(e) => {
                               (e.currentTarget.parentElement as HTMLElement).style.display = "none";
                             }}
@@ -439,7 +462,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         <button
                           type="button"
                           onClick={() => setValue("heroImageUrl", "")}
-                          className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                          className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
                           aria-label="Remove hero image"
                         >
                           <X className="size-2.5" />
@@ -493,12 +516,12 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   </Field>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <Controller
                   control={control}
                   name="city"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>City</Label>
                       <Input {...field} aria-invalid={fieldState.invalid} />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -511,7 +534,24 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   render={({ field, fieldState }) => (
                     <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>State</Label>
-                      <Input {...field} aria-invalid={fieldState.invalid} />
+                      <Input {...field} maxLength={2} aria-invalid={fieldState.invalid} />
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="zip"
+                  render={({ field, fieldState }) => (
+                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                      <Label className={LABEL_CLASS}>ZIP</Label>
+                      <Input
+                        {...field}
+                        inputMode="numeric"
+                        maxLength={5}
+                        aria-invalid={fieldState.invalid}
+                        onChange={(e) => field.onChange(formatZip(e.target.value))}
+                      />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -524,7 +564,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="repName"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5 col-span-2" data-invalid={fieldState.invalid}>
+                    <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>Representative Name</Label>
                       <Input {...field} placeholder="e.g. Diana Prince" aria-invalid={fieldState.invalid} />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -558,6 +598,94 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                     </Field>
                   )}
                 />
+              </div>
+
+              {/* Social Media Links */}
+              <div className="mt-2 border-muted/60 border-t pt-4">
+                <h4 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                  Social Media Links
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <Controller
+                    control={control}
+                    name="instagram"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <Label className={LABEL_CLASS}>Instagram URL</Label>
+                        <Input
+                          {...field}
+                          placeholder="https://instagram.com/handle"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="pinterest"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <Label className={LABEL_CLASS}>Pinterest URL</Label>
+                        <Input
+                          {...field}
+                          placeholder="https://pinterest.com/handle"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="facebook"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <Label className={LABEL_CLASS}>Facebook URL</Label>
+                        <Input {...field} placeholder="https://facebook.com/handle" aria-invalid={fieldState.invalid} />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="youtube"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <Label className={LABEL_CLASS}>YouTube URL</Label>
+                        <Input
+                          {...field}
+                          placeholder="https://youtube.com/c/handle"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="xTwitter"
+                    render={({ field, fieldState }) => (
+                      <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>X / Twitter URL</Label>
+                        <Input {...field} placeholder="https://x.com/handle" aria-invalid={fieldState.invalid} />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                </div>
               </div>
 
               {/* Notes */}

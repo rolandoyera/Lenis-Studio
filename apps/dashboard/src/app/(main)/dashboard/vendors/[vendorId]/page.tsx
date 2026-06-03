@@ -33,6 +33,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { deleteVendor, getVendor, updateVendor } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 import { formatPhone, getInitials, normalizePhone } from "@/lib/utils";
@@ -57,8 +58,6 @@ const CARD_GRADIENTS = [
 function vendorGradient(name: string) {
   return CARD_GRADIENTS[name.charCodeAt(0) % CARD_GRADIENTS.length];
 }
-
-const DETAIL_LABEL = "text-xs font-semibold tracking-wider uppercase text-muted-foreground";
 
 export default function VendorDetailPage({ params }: PageProps) {
   const { vendorId } = use(params);
@@ -222,13 +221,13 @@ export default function VendorDetailPage({ params }: PageProps) {
           <CardContent className="flex flex-col gap-4 text-sm">
             {vendor.description ? (
               <div className="flex flex-col gap-1">
-                <span className={DETAIL_LABEL}>About</span>
+                <Label>About</Label>
                 <p className="text-foreground/80 leading-relaxed">{vendor.description}</p>
               </div>
             ) : null}
             {vendor.accountNumber ? (
               <div className="flex flex-col gap-1">
-                <span className={DETAIL_LABEL}>Account Number</span>
+                <Label>Account Number</Label>
                 <span className="flex items-center gap-2 font-mono text-foreground/80">
                   <Hash className="size-3.5 text-muted-foreground" />
                   {vendor.accountNumber}
@@ -237,7 +236,7 @@ export default function VendorDetailPage({ params }: PageProps) {
             ) : null}
             {vendor.category ? (
               <div className="flex flex-col gap-1">
-                <span className={DETAIL_LABEL}>Category</span>
+                <Label>Category</Label>
                 <span className="flex items-center gap-2">
                   <Tag className="size-3.5 text-muted-foreground" />
                   {vendor.category}
@@ -246,7 +245,7 @@ export default function VendorDetailPage({ params }: PageProps) {
             ) : null}
             {vendor.street || vendor.city || vendor.state ? (
               <div className="flex flex-col gap-1">
-                <span className={DETAIL_LABEL}>Address</span>
+                <Label>Address</Label>
                 <span className="flex items-start gap-2 text-foreground/80">
                   <MapPin className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <span>
@@ -280,13 +279,13 @@ export default function VendorDetailPage({ params }: PageProps) {
           <CardContent className="flex flex-col gap-4 text-sm">
             {vendor.repName ? (
               <div className="flex flex-col gap-1">
-                <span className={DETAIL_LABEL}>Name</span>
+                <Label>Name</Label>
                 <span className="font-medium">{vendor.repName}</span>
               </div>
             ) : null}
             {vendor.repEmail ? (
               <div className="flex flex-col gap-1">
-                <span className={DETAIL_LABEL}>Email</span>
+                <Label>Email</Label>
                 <a
                   href={`mailto:${vendor.repEmail}`}
                   className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors"
@@ -298,7 +297,7 @@ export default function VendorDetailPage({ params }: PageProps) {
             ) : null}
             {vendor.repPhone ? (
               <div className="flex flex-col gap-1">
-                <span className={DETAIL_LABEL}>Phone</span>
+                <Label>Phone</Label>
                 <a
                   href={`tel:${normalizePhone(vendor.repPhone)}`}
                   className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors"
