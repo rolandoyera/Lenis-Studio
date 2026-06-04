@@ -25,13 +25,13 @@ interface DeleteItemDialogProps {
 export function DeleteItemDialog({ open, onOpenChange, itemName, deleting, onConfirm }: DeleteItemDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="sm:max-w-md bg-popover/95 backdrop-blur-md">
+      <AlertDialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription className="text-sm">
             This action cannot be undone. This will permanently delete the product catalog item{" "}
             <span className="font-medium text-foreground">{itemName}</span> from the global studio library.
-            <span className="block mt-2 font-medium text-amber-600">
+            <span className="mt-2 block font-medium text-amber-600">
               (All proposal listings referencing this global library item will remain intact, but will detach from this
               parent catalog source).
             </span>
@@ -45,7 +45,7 @@ export function DeleteItemDialog({ open, onOpenChange, itemName, deleting, onCon
               onConfirm();
             }}
             disabled={deleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center gap-1.5 cursor-pointer"
+            className="flex cursor-pointer items-center gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {deleting && <Loader2 className="size-4 animate-spin" />}
             Delete Product

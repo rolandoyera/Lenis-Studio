@@ -173,7 +173,7 @@ export function LibraryItemFormDialog({
                         Cost Type <span className="text-destructive">*</span>
                       </Label>
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="w-full h-9" aria-invalid={fieldState.invalid}>
+                        <SelectTrigger className="h-9 w-full" aria-invalid={fieldState.invalid}>
                           <SelectValue placeholder="Choose Cost Type" />
                         </SelectTrigger>
                         <SelectContent position="popper">
@@ -194,7 +194,7 @@ export function LibraryItemFormDialog({
                   render={({ field, fieldState }) => (
                     <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={`${LABEL_CLASS} flex items-center`}>
-                        Category <span className="text-destructive ml-0.5">*</span> {renderConfidenceBadge("category")}
+                        Category <span className="ml-0.5 text-destructive">*</span> {renderConfidenceBadge("category")}
                       </Label>
                       <Select
                         value={field.value}
@@ -217,7 +217,7 @@ export function LibraryItemFormDialog({
                         }}
                       >
                         <SelectTrigger
-                          className={cn("w-full h-9", getFieldStyle("category"))}
+                          className={cn("h-9 w-full", getFieldStyle("category"))}
                           aria-invalid={fieldState.invalid}
                         >
                           <SelectValue placeholder="Choose Category" />
@@ -242,7 +242,7 @@ export function LibraryItemFormDialog({
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={`${LABEL_CLASS} flex items-center`}>
-                      Item Name <span className="text-destructive ml-0.5">*</span> {renderConfidenceBadge("name")}
+                      Item Name <span className="ml-0.5 text-destructive">*</span> {renderConfidenceBadge("name")}
                     </Label>
                     <Input
                       placeholder="e.g. Calacatta Viola, Honed Slab"
@@ -288,7 +288,7 @@ export function LibraryItemFormDialog({
                             <button
                               type="button"
                               onClick={onQuickAddVendor}
-                              className="flex items-center gap-0.5 font-medium text-primary text-xs hover:underline hover:cursor-pointer"
+                              className="flex items-center gap-0.5 font-medium text-primary text-xs hover:cursor-pointer hover:underline"
                             >
                               <Plus className="size-3" /> Quick Add
                             </button>
@@ -307,7 +307,7 @@ export function LibraryItemFormDialog({
                                   type="button"
                                   aria-invalid={fieldState.invalid}
                                   className={cn(
-                                    "flex h-10 w-full items-center justify-between rounded-lg border border-input bg-transparent px-2.5 text-sm whitespace-nowrap transition-colors outline-none",
+                                    "flex h-10 w-full items-center justify-between whitespace-nowrap rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors",
                                     "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
                                     "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
                                     "dark:bg-input/30",
@@ -406,7 +406,7 @@ export function LibraryItemFormDialog({
                           Unit Type <span className="text-destructive">*</span>
                         </Label>
                         <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className="w-full h-9" aria-invalid={fieldState.invalid}>
+                          <SelectTrigger className="h-9 w-full" aria-invalid={fieldState.invalid}>
                             <SelectValue placeholder="Choose Unit Type" />
                           </SelectTrigger>
                           <SelectContent position="popper">

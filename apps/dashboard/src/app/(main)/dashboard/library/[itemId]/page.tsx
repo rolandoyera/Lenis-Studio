@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-context";
 import { deleteLibraryItem, getLibraryItem, getVendors, updateLibraryItem } from "@/lib/db";
 import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
@@ -29,6 +30,7 @@ interface PageProps {
 export default function LibraryItemDetailPage({ params }: PageProps) {
   const { itemId } = use(params);
   const router = useRouter();
+  const { profile, loading: authLoading } = useAuth();
 
   const [item, setItem] = useState<LibraryItem | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -45,11 +47,14 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
 
   // Fetch single catalog item & list of vendors on mount
   useEffect(() => {
+    if (authLoading || !profile) return;
+    const orgId = profile.organizationId;
+
     async function loadData() {
       try {
-        const [itemData, vendorsData] = await Promise.all([getLibraryItem(itemId), getVendors()]);
+        const [itemData, vendorsData] = await Promise.all([getLibraryItem(itemId), getVendors(orgId)]);
 
-        if (!itemData) {
+        if (!itemData || itemData.organizationId !== orgId) {
           toast.error("Product catalog item not found.");
           router.push("/dashboard/library");
           return;
@@ -66,7 +71,7 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       }
     }
     void loadData();
-  }, [itemId, router]);
+  }, [itemId, router, profile, authLoading]);
 
   const handleOpenEdit = () => {
     if (!item) return;
@@ -110,11 +115,11 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
           Fetching Catalog Specifications
         </p>
       </div>
@@ -126,7 +131,7 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
   const associatedVendor = vendors.find((v) => v.vendorId === item.vendorId);
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex w-full flex-col gap-6">
       <ItemDetailHeader
         item={item}
         vendorName={associatedVendor?.name}
@@ -134,12 +139,12 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
         onRequestDelete={() => setIsDeleteAlertOpen(true)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-4 flex flex-col gap-4">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <div className="flex flex-col gap-4 lg:col-span-4">
           <ItemGalleryCard item={item} activeImage={activePreviewImage} onSelectImage={setActivePreviewImage} />
         </div>
 
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:col-span-8">
           <ItemPricingCard item={item} />
           <ItemSpecMatrix item={item} vendor={associatedVendor} />
           <ItemNotesCards item={item} />

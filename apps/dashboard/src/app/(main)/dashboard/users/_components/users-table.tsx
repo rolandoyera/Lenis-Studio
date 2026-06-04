@@ -165,14 +165,14 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
       </div>
 
       {/* Premium Status Color Key Legend */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t pt-4 px-4 text-xs text-muted-foreground">
-        <span className="font-semibold uppercase tracking-wider text-[10px] text-muted-foreground/80">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t px-4 pt-4 text-muted-foreground text-xs">
+        <span className="font-semibold text-[10px] text-muted-foreground/80 uppercase tracking-wider">
           Activity Key:
         </span>
         <div className="flex items-center gap-2">
           <span className="relative flex size-2.5 items-center justify-center">
             <span className="absolute size-1.5 rounded-full bg-emerald-500" />
-            <span className="absolute size-full rounded-full bg-emerald-500 opacity-75 animate-pulse" />
+            <span className="absolute size-full animate-pulse rounded-full bg-emerald-500 opacity-75" />
           </span>
           <span>Active Now</span>
         </div>

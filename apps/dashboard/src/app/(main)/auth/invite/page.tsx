@@ -155,6 +155,7 @@ function InviteContent() {
         displayName: data.displayName.trim(),
         email: emailKey,
         role: pendingData?.role || "Contributor",
+        organizationId: pendingData?.organizationId || "org-demo",
         location: data.location.trim(),
         phone: data.phone.trim(),
         status: "Active",
@@ -185,9 +186,9 @@ function InviteContent() {
         <div className="relative flex flex-col items-center gap-4">
           <div className="relative size-12">
             <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
-          <p className="text-muted-foreground text-xs font-medium tracking-widest uppercase animate-pulse">
+          <p className="animate-pulse font-medium text-muted-foreground text-xs uppercase tracking-widest">
             Verifying Invitation
           </p>
         </div>
@@ -197,8 +198,8 @@ function InviteContent() {
 
   if (!isValid) {
     return (
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px] text-center">
-        <div className="size-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 text-center sm:w-[350px]">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
           <XIcon className="size-8" />
         </div>
         <div className="space-y-2">
@@ -234,7 +235,7 @@ function InviteContent() {
             disabled
             readOnly
             autoComplete="username"
-            className="bg-muted/50 cursor-not-allowed"
+            className="cursor-not-allowed bg-muted/50"
           />
         </Field>
 
@@ -332,12 +333,12 @@ function InviteContent() {
                   autoComplete="new-password"
                   disabled={isSubmitting}
                   aria-invalid={fieldState.invalid}
-                  className="pr-10 w-full"
+                  className="w-full pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer flex items-center justify-center"
+                  className="absolute right-3 flex cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground focus:outline-none"
                   disabled={isSubmitting}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
@@ -364,12 +365,12 @@ function InviteContent() {
                   autoComplete="new-password"
                   disabled={isSubmitting}
                   aria-invalid={fieldState.invalid}
-                  className="pr-10 w-full"
+                  className="w-full pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 text-muted-foreground hover:text-foreground focus:outline-none cursor-pointer flex items-center justify-center"
+                  className="absolute right-3 flex cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground focus:outline-none"
                   disabled={isSubmitting}
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
@@ -381,7 +382,7 @@ function InviteContent() {
           )}
         />
 
-        <Button className="w-full mt-2" type="submit" disabled={isSubmitting}>
+        <Button className="mt-2 w-full" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Creating Account..." : "Create Account & Activate"}
         </Button>
       </form>
@@ -396,7 +397,7 @@ export default function InvitePage() {
         <div className="flex h-[40vh] w-full items-center justify-center">
           <div className="relative size-10">
             <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         </div>
       }

@@ -1,6 +1,6 @@
 const InstagramIcon = ({
   size = 20,
-  color = "#000000",
+  color = "currentColor",
   strokeWidth = 2,
   background = "transparent",
   opacity = 1,
@@ -49,7 +49,7 @@ export { InstagramIcon };
 
 const PinterestIcon = ({
   size = 20,
-  color = "#000000",
+  color = "currentColor",
   strokeWidth = 2,
   background = "transparent",
   opacity = 1,
@@ -98,7 +98,7 @@ export { PinterestIcon };
 
 const YoutubeIcon = ({
   size = 20,
-  color = "#000000",
+  color = "currentColor",
   strokeWidth = 2,
   background = "transparent",
   opacity = 1,
@@ -147,7 +147,7 @@ export { YoutubeIcon };
 
 const FacebookIcon = ({
   size = 20,
-  color = "#000000",
+  color = "currentColor",
   strokeWidth = 1.75,
   background = "transparent",
   opacity = 1,
@@ -200,7 +200,7 @@ export { FacebookIcon };
 
 const GlobeIcon = ({
   size = 20,
-  color = "#000000",
+  color = "currentColor",
   strokeWidth = 2,
   background = "transparent",
   opacity = 1,
@@ -249,7 +249,7 @@ export { GlobeIcon };
 
 const XTwitterIcon = ({
   size = 20,
-  color = "#000000",
+  color = "currentColor",
   strokeWidth = 2,
   background = "transparent",
   opacity = 1,
@@ -298,4 +298,111 @@ const XTwitterIcon = ({
   );
 };
 
-export default XTwitterIcon;
+export { XTwitterIcon };
+
+const EditIcon = ({
+  size = 20,
+  color = "currentColor",
+  strokeWidth = 2,
+  background = "transparent",
+  opacity = 1,
+  rotation = 0,
+  shadow = 0,
+  flipHorizontal = false,
+  flipVertical = false,
+  padding = 0,
+}) => {
+  const transforms = [];
+  if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`);
+  if (flipHorizontal) transforms.push("scaleX(-1)");
+  if (flipVertical) transforms.push("scaleY(-1)");
+
+  const viewBoxSize = 24 + padding * 2;
+  const viewBoxOffset = -padding;
+  const viewBox = `${viewBoxOffset} ${viewBoxOffset} ${viewBoxSize} ${viewBoxSize}`;
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={viewBox}
+      width={size}
+      height={size}
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        opacity,
+        transform: transforms.join(" ") || undefined,
+        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        backgroundColor: background !== "transparent" ? background : undefined,
+      }}
+    >
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+        d="M16.475 5.408l2.117 2.117m-.756-3.982L12.109 9.27a2.1 2.1 0 0 0-.58 1.082L11 13l2.648-.53c.41-.082.786-.283 1.082-.579l5.727-5.727a1.853 1.853 0 1 0-2.621-2.621"
+      />
+      <path d="M19 15v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3" />
+    </svg>
+  );
+};
+
+export { EditIcon };
+
+const TrashIcon = ({
+  size = 20,
+  color = "currentColor",
+  strokeWidth = 2,
+  background = "transparent",
+  opacity = 1,
+  rotation = 0,
+  shadow = 0,
+  flipHorizontal = false,
+  flipVertical = false,
+  padding = 0,
+}) => {
+  const transforms = [];
+  if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`);
+  if (flipHorizontal) transforms.push("scaleX(-1)");
+  if (flipVertical) transforms.push("scaleY(-1)");
+
+  const viewBoxSize = 24 + padding * 2;
+  const viewBoxOffset = -padding;
+  const viewBox = `${viewBoxOffset} ${viewBoxOffset} ${viewBoxSize} ${viewBoxSize}`;
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={viewBox}
+      width={size}
+      height={size}
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        opacity,
+        transform: transforms.join(" ") || undefined,
+        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        backgroundColor: background !== "transparent" ? background : undefined,
+      }}
+    >
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+        d="m14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21q.512.078 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48 48 0 0 0-3.478-.397m-12 .562q.51-.088 1.022-.165m0 0a48 48 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a52 52 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a49 49 0 0 0-7.5 0"
+      />
+    </svg>
+  );
+};
+
+export { TrashIcon };

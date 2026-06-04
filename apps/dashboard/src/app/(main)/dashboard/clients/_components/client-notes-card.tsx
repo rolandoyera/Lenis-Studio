@@ -12,16 +12,16 @@ interface ClientNotesCardProps {
 /** Design brief and internal studio notes for this client. */
 export function ClientNotesCard({ client, onEdit }: ClientNotesCardProps) {
   return (
-    <Card className="bg-card/60 backdrop-blur-xs border border-border/40 shadow-xs">
-      <CardHeader className="pb-4 border-b border-border/30">
-        <CardTitle className="text-lg font-bold font-heading flex items-center gap-2">
+    <Card className="border border-border/40 bg-card/60 shadow-xs backdrop-blur-xs">
+      <CardHeader className="border-border/30 border-b pb-4">
+        <CardTitle className="flex items-center gap-2 font-bold font-heading text-lg">
           <FileText className="size-4.5 text-primary/80" />
           Design Brief & Studio Notes
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
         {client.notes ? (
-          <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap bg-background/25 border border-border/40 p-4 rounded-lg shadow-inner">
+          <div className="whitespace-pre-wrap rounded-lg border border-border/40 bg-background/25 p-4 text-muted-foreground text-sm leading-relaxed shadow-inner">
             {client.notes}
           </div>
         ) : (
@@ -32,7 +32,7 @@ export function ClientNotesCard({ client, onEdit }: ClientNotesCardProps) {
             <Button
               onClick={onEdit}
               variant="outline"
-              className="mt-3 flex items-center gap-1 px-3 py-1.5 h-8 text-xs cursor-pointer"
+              className="mt-3 flex h-8 cursor-pointer items-center gap-1 px-3 py-1.5 text-xs"
             >
               <Edit3 className="size-3" />
               Write Studio Notes

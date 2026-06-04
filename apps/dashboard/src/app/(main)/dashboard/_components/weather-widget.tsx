@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-
+import { useAuth } from "@/components/auth-context";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { auth, db } from "@/lib/firebase";
 import { getWeatherForLocation } from "@/server/weather-actions";
 
 interface WeatherData {
@@ -37,48 +34,41 @@ export function WeatherWidget() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const { profile, loading: authLoading } = useAuth();
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // 1. Fetch user location ZIP from Firestore
-          const userDocRef = doc(db, "users", user.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          let userLocation = "10001"; // Fallback default zip (New York)
+    if (authLoading) return;
 
-          if (userDocSnap.exists()) {
-            const data = userDocSnap.data();
-            if (data.location && data.location.trim() !== "") {
-              userLocation = data.location.trim();
-            }
-          }
-
-          // 2. Query secure Server Action for current weather
-          const res = await getWeatherForLocation(userLocation);
-          if (res.success && res.data) {
-            setWeather(res.data);
-          } else {
-            setErrorMsg(res.error || "Failed to load weather.");
-          }
-        } catch (err: unknown) {
-          console.error("[WeatherWidget] Error loading weather details:", err);
-          setErrorMsg("Could not access weather service.");
-        } finally {
-          setLoading(false);
+    const loadWeather = async () => {
+      try {
+        let userLocation = "10001"; // Fallback default zip (New York)
+        if (profile?.location && profile.location.trim() !== "") {
+          userLocation = profile.location.trim();
         }
-      } else {
+
+        // Query secure Server Action for current weather
+        const res = await getWeatherForLocation(userLocation);
+        if (res.success && res.data) {
+          setWeather(res.data);
+        } else {
+          setErrorMsg(res.error || "Failed to load weather.");
+        }
+      } catch (err: unknown) {
+        console.error("[WeatherWidget] Error loading weather details:", err);
+        setErrorMsg("Could not access weather service.");
+      } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, []);
+    loadWeather();
+  }, [profile, authLoading]);
 
   if (loading) {
     return (
-      <div className="flex h-11 w-44 items-center gap-2.5 rounded-xl border border-border/40 bg-card/45 px-3 py-1.5 backdrop-blur-xs shadow-xs">
-        <Skeleton className="size-7.5 rounded-full shrink-0" />
-        <div className="space-y-1.5 flex-1 min-w-0">
+      <div className="flex h-11 w-44 items-center gap-2.5 rounded-xl border border-border/40 bg-card/45 px-3 py-1.5 shadow-xs backdrop-blur-xs">
+        <Skeleton className="size-7.5 shrink-0 rounded-full" />
+        <div className="min-w-0 flex-1 space-y-1.5">
           <Skeleton className="h-3 w-12" />
           <Skeleton className="h-2 w-20" />
         </div>
@@ -90,7 +80,7 @@ export function WeatherWidget() {
   if (errorMsg || !weather) {
     if (process.env.NODE_ENV === "development" && errorMsg) {
       return (
-        <div className="flex h-11 items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-[10px] text-destructive backdrop-blur-xs shadow-xs max-w-xs shrink-0 select-none">
+        <div className="flex h-11 max-w-xs shrink-0 select-none items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-[10px] text-destructive shadow-xs backdrop-blur-xs">
           <span>Weather API: {errorMsg}</span>
         </div>
       );
@@ -114,22 +104,22 @@ export function WeatherWidget() {
   return (
     <div
       title={`Current weather in ${cityName}: ${conditionText}`}
-      className="flex items-center px-3 py-1 text-sm text-card-foreground shrink-0 select-none font-normal tracking-normal normal-case"
+      className="flex shrink-0 select-none items-center px-3 py-1 font-normal text-card-foreground text-sm normal-case tracking-normal"
     >
       <img
         src={iconUrl}
         alt={conditionText}
-        className="size-14 object-contain drop-shadow-xs shrink-0"
+        className="size-14 shrink-0 object-contain drop-shadow-xs"
         draggable={false}
       />
-      <div className="flex flex-col text-left leading-normal min-w-0">
+      <div className="flex min-w-0 flex-col text-left leading-normal">
         <div className="flex items-baseline gap-1">
           <span className="text-2xl text-foreground leading-none">{temp}°F</span>
-          <span className="text-muted-foreground text-xs max-w-[80px] font-light leading-none truncate">
+          <span className="max-w-[80px] truncate font-light text-muted-foreground text-xs leading-none">
             {conditionText}
           </span>
         </div>
-        <Label className="mt-0.5 tracking-normal text-xs">{cityName}</Label>
+        <Label className="mt-0.5 text-xs tracking-normal">{cityName}</Label>
       </div>
     </div>
   );

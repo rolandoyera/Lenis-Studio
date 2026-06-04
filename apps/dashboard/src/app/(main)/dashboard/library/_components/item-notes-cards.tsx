@@ -10,9 +10,9 @@ interface ItemNotesCardsProps {
 /** Public sourcing description and internal procurement notes, side by side. */
 export function ItemNotesCards({ item }: ItemNotesCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+    <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
       <Card>
-        <CardHeader className="pb-4 border-b border-border/30">
+        <CardHeader className="border-border/30 border-b pb-4">
           <CardTitle>
             <ShoppingBag className="size-4 text-primary/80" />
             Public Description
@@ -20,11 +20,11 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
         </CardHeader>
         <CardContent className="pt-6">
           {item.description ? (
-            <div className="text-sm leading-relaxed text-muted-foreground bg-background/25 border p-3.5 rounded-lg shadow-inner">
+            <div className="rounded-lg border bg-background/25 p-3.5 text-muted-foreground text-sm leading-relaxed shadow-inner">
               {item.description}
             </div>
           ) : (
-            <p className="text-sm italic text-muted-foreground/60 py-2">
+            <p className="py-2 text-muted-foreground/60 text-sm italic">
               No public descriptions draft logged for proposals.
             </p>
           )}
@@ -32,7 +32,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
       </Card>
 
       <Card>
-        <CardHeader className="pb-4 border-b border-border/30">
+        <CardHeader className="border-border/30 border-b pb-4">
           <CardTitle>
             <FileText className="size-4 text-primary/80" />
             Internal Notes
@@ -40,11 +40,11 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
         </CardHeader>
         <CardContent className="pt-6">
           {item.internalNote ? (
-            <div className="text-sm leading-relaxed text-muted-foreground bg-background/25 border p-3.5 rounded-lg shadow-inner">
+            <div className="rounded-lg border bg-background/25 p-3.5 text-muted-foreground text-sm leading-relaxed shadow-inner">
               {item.internalNote}
             </div>
           ) : (
-            <p className="text-sm italic text-muted-foreground/60 py-2">No internal notes logged.</p>
+            <p className="py-2 text-muted-foreground/60 text-sm italic">No internal notes logged.</p>
           )}
         </CardContent>
       </Card>

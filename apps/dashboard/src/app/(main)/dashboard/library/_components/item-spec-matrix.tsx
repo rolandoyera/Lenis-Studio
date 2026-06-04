@@ -14,9 +14,9 @@ const na = (value?: string) => (value ? value : "N/A");
 
 function SpecField({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="bg-background p-4 flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5 bg-background p-4">
       <Label className="uppercase">{label}</Label>
-      <span className="text-sm font-medium text-foreground capitalize">{value}</span>
+      <span className="font-medium text-foreground text-sm capitalize">{value}</span>
     </div>
   );
 }
@@ -37,7 +37,7 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-px border border-border rounded-xl overflow-hidden text-sm bg-border">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border text-sm md:grid-cols-3">
           <SpecField label="Finish / Color" value={na(item.finishColor)} />
           <SpecField label="Materials" value={na(item.materials)} />
           <SpecField label="Dimensions" value={na(item.dimensions)} />
@@ -46,19 +46,19 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
           <SpecField label="SKU / Model #" value={na(item.sku)} />
         </div>
 
-        <div className="flex items-center justify-between w-full pt-4">
+        <div className="flex w-full items-center justify-between pt-4">
           {vendor && (
-            <div className="flex flex-col gap-2 min-w-70">
+            <div className="flex min-w-70 flex-col gap-2">
               <Label className="text-xs uppercase">Assigned Sourcing Vendor</Label>
-              <div className="flex items-center justify-between p-3.5 rounded-lg border bg-muted/10">
+              <div className="flex items-center justify-between rounded-lg border bg-muted/10 p-3.5">
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-medium text-sm text-foreground">{vendor.name}</span>
+                  <span className="font-medium text-foreground text-sm">{vendor.name}</span>
                   {vendor.website && (
                     <a
                       href={withProtocol(vendor.website)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary font-medium hover:underline flex items-center gap-0.5 mt-0.5"
+                      className="mt-0.5 flex items-center gap-0.5 font-medium text-primary text-xs hover:underline"
                     >
                       {vendor.website}
                       <ExternalLink className="size-3" />
@@ -75,9 +75,9 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
                 href={withProtocol(item.sourcingLink)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full block"
+                className="block w-full"
               >
-                <Button className="w-full py-2.5 flex items-center justify-center gap-1.5 cursor-pointer">
+                <Button className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2.5">
                   <ExternalLink className="size-4" />
                   Go to Product Website
                 </Button>

@@ -26,15 +26,15 @@ interface ClientProjectsCardProps {
 /** Associated project spaces grid with an "Initialize Project" entry point. */
 export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCardProps) {
   return (
-    <Card className="bg-card/60 backdrop-blur-xs border border-border/40 shadow-xs">
-      <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/30">
-        <CardTitle className="text-lg font-bold font-heading flex items-center gap-2">
+    <Card className="border border-border/40 bg-card/60 shadow-xs backdrop-blur-xs">
+      <CardHeader className="flex flex-row items-center justify-between border-border/30 border-b pb-4">
+        <CardTitle className="flex items-center gap-2 font-bold font-heading text-lg">
           <FolderKanban className="size-4.5 text-primary/80" />
           Studio Project Spaces
         </CardTitle>
         <Button
           onClick={onAddProject}
-          className="bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 text-xs font-bold py-1.5 h-8 flex items-center gap-1.5 cursor-pointer"
+          className="flex h-8 cursor-pointer items-center gap-1.5 border border-primary/20 bg-primary/10 py-1.5 font-bold text-primary text-xs hover:bg-primary/20"
         >
           <Plus className="size-3.5" />
           Initialize Project
@@ -42,64 +42,64 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
       </CardHeader>
       <CardContent className="pt-6">
         {projects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 border border-dashed rounded-lg bg-background/20 text-center p-6">
-            <FolderKanban className="size-10 text-muted-foreground/30 mb-2" />
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-background/20 p-6 py-10 text-center">
+            <FolderKanban className="mb-2 size-10 text-muted-foreground/30" />
             <h3 className="font-semibold text-sm">No project spaces created</h3>
-            <p className="text-xs text-muted-foreground max-w-xs mt-1">
+            <p className="mt-1 max-w-xs text-muted-foreground text-xs">
               Begin drafting budget pools, address details, and design briefs by setting up this client's first project.
             </p>
-            <Button onClick={onAddProject} className="mt-4 flex items-center gap-1.5 text-xs h-8 cursor-pointer">
+            <Button onClick={onAddProject} className="mt-4 flex h-8 cursor-pointer items-center gap-1.5 text-xs">
               <Plus className="size-3.5" />
               Initialize First Project
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {projects.map((project) => (
               <div
                 key={project.projectId}
-                className="group/proj relative flex flex-col gap-3 p-4 rounded-lg border border-border/50 bg-background/50 hover:border-primary/20 hover:shadow-xs transition-all"
+                className="group/proj relative flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4 transition-all hover:border-primary/20 hover:shadow-xs"
               >
                 <div
-                  className={`absolute top-0 inset-x-0 h-1 bg-linear-to-r rounded-t-lg transition-all ${STATUS_BAR[project.status]}`}
+                  className={`absolute inset-x-0 top-0 h-1 rounded-t-lg bg-linear-to-r transition-all ${STATUS_BAR[project.status]}`}
                 />
-                <div className="flex items-center justify-between mt-1">
-                  <h4 className="font-semibold text-base text-foreground leading-tight line-clamp-1 group-hover/proj:text-primary transition-colors">
+                <div className="mt-1 flex items-center justify-between">
+                  <h4 className="line-clamp-1 font-semibold text-base text-foreground leading-tight transition-colors group-hover/proj:text-primary">
                     {project.name}
                   </h4>
                   <span
-                    className={`text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${STATUS_STYLES[project.status]}`}
+                    className={`rounded-full px-2 py-0.5 font-bold text-[9px] uppercase tracking-wider ${STATUS_STYLES[project.status]}`}
                   >
                     {project.status}
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-1.5 text-xs text-muted-foreground bg-muted/20 p-2.5 rounded-md border border-muted/30">
+                <div className="flex flex-col gap-1.5 rounded-md border border-muted/30 bg-muted/20 p-2.5 text-muted-foreground text-xs">
                   {project.budget && (
                     <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-                      <DollarSign className="size-3.5 text-emerald-500 shrink-0" />
+                      <DollarSign className="size-3.5 shrink-0 text-emerald-500" />
                       Budget: <span className="font-semibold text-foreground/90">{project.budget}</span>
                     </div>
                   )}
                   {project.address && (
                     <div className="flex items-center gap-1.5 truncate">
-                      <MapPin className="size-3.5 text-primary/70 shrink-0" />
+                      <MapPin className="size-3.5 shrink-0 text-primary/70" />
                       {project.address}
                     </div>
                   )}
                 </div>
 
                 {project.notes && (
-                  <p className="text-[11px] text-muted-foreground/80 leading-relaxed line-clamp-2 italic">
+                  <p className="line-clamp-2 text-[11px] text-muted-foreground/80 italic leading-relaxed">
                     "{project.notes}"
                   </p>
                 )}
 
-                <div className="border-t border-border/40 pt-2.5 mt-1 flex items-center justify-end">
+                <div className="mt-1 flex items-center justify-end border-border/40 border-t pt-2.5">
                   <Link
                     href={`/dashboard/proposals?projectId=${project.projectId}`}
                     prefetch={false}
-                    className="text-[11px] font-bold text-primary hover:underline flex items-center gap-0.5"
+                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline"
                   >
                     Configure Proposals →
                   </Link>

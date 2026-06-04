@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-context";
 import { addProject, deleteClient, getClient, getProjects, updateClient } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 
@@ -26,6 +27,7 @@ interface PageProps {
 export default function ClientProfilePage({ params }: PageProps) {
   const { clientId } = use(params);
   const router = useRouter();
+  const { profile, loading: authLoading } = useAuth();
 
   const [client, setClient] = useState<Client | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -39,11 +41,14 @@ export default function ClientProfilePage({ params }: PageProps) {
   const [addingProject, setAddingProject] = useState(false);
 
   useEffect(() => {
+    if (authLoading || !profile) return;
+    const orgId = profile.organizationId;
+
     async function loadClientData() {
       try {
-        const [clientData, projectsData] = await Promise.all([getClient(clientId), getProjects()]);
+        const [clientData, projectsData] = await Promise.all([getClient(clientId), getProjects(orgId)]);
 
-        if (!clientData) {
+        if (!clientData || clientData.organizationId !== orgId) {
           toast.error("Client profile not found.");
           router.push("/dashboard/clients");
           return;
@@ -59,7 +64,7 @@ export default function ClientProfilePage({ params }: PageProps) {
       }
     }
     void loadClientData();
-  }, [clientId, router]);
+  }, [clientId, router, profile, authLoading]);
 
   const handleEditSubmit = async (data: {
     firstName: string;
@@ -94,9 +99,13 @@ export default function ClientProfilePage({ params }: PageProps) {
   };
 
   const handleAddProject = async (data: ProjectFormData) => {
+    if (!profile) return;
     setAddingProject(true);
     try {
-      const created = await addProject(data);
+      const created = await addProject({
+        ...data,
+        organizationId: profile.organizationId,
+      });
       setProjects((prev) => [created, ...prev]);
       setIsAddProjectOpen(false);
       toast.success("New design project successfully mapped to this client!");
@@ -124,11 +133,11 @@ export default function ClientProfilePage({ params }: PageProps) {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
           Fetching Client Specifications
         </p>
       </div>
@@ -142,9 +151,9 @@ export default function ClientProfilePage({ params }: PageProps) {
     firstName = client.firstName.trim();
   } else if (
     typeof (client as { fullName?: string }).fullName === "string" &&
-    (client as { fullName?: string }).fullName!.trim()
+    (client as { fullName?: string }).fullName?.trim()
   ) {
-    firstName = (client as { fullName?: string }).fullName!.trim().split(" ")[0] || "";
+    firstName = (client as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
   }
 
   let lastName = "";
@@ -152,27 +161,27 @@ export default function ClientProfilePage({ params }: PageProps) {
     lastName = client.lastName.trim();
   } else if (
     typeof (client as { fullName?: string }).fullName === "string" &&
-    (client as { fullName?: string }).fullName!.trim()
+    (client as { fullName?: string }).fullName?.trim()
   ) {
-    lastName = (client as { fullName?: string }).fullName!.trim().split(" ").slice(1).join(" ") || "";
+    lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
   }
 
   const clientName = `${firstName} ${lastName}`.trim() || "Unnamed Client";
 
   return (
-    <div className="flex flex-col gap-6 w-full pb-10">
+    <div className="flex w-full flex-col gap-6 pb-10">
       <ClientDetailHeader
         client={client}
         onEdit={() => setIsEditOpen(true)}
         onRequestDelete={() => setIsDeleteAlertOpen(true)}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-8 flex flex-col gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+        <div className="flex flex-col gap-6 lg:col-span-8">
           <ClientProjectsCard projects={projects} onAddProject={() => setIsAddProjectOpen(true)} />
           <ClientNotesCard client={client} onEdit={() => setIsEditOpen(true)} />
         </div>
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:col-span-4">
           <ClientContactCard client={client} />
         </div>
       </div>

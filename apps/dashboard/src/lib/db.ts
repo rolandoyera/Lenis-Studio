@@ -1,10 +1,22 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from "firebase/firestore";
+import { format } from "date-fns";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 import { mockClients, mockLibraryItems, mockProjects, mockVendors } from "@/data/mock-studio";
 import { db, storage } from "@/lib/firebase";
 
-import type { Client, DiagnosticRun, LibraryItem, Project, Proposal, Vendor } from "./types";
+import type { Client, DiagnosticRun, LibraryItem, Organization, Project, Proposal, UserProfile, Vendor } from "./types";
 
 // --- CLIENT HELPER HOOKS & FUNCTIONS ---
 
@@ -22,7 +34,7 @@ export async function getClient(uid: string): Promise<Client | null> {
   }
 }
 
-export async function getClients(): Promise<Client[]> {
+export async function getClients(organizationId: string): Promise<Client[]> {
   try {
     const collRef = collection(db, "clients");
     const snapshot = await getDocs(collRef);
@@ -33,11 +45,13 @@ export async function getClients(): Promise<Client[]> {
       for (const client of mockClients) {
         await setDoc(doc(db, "clients", client.uid), client);
       }
-      return mockClients;
     }
 
+    const q = query(collRef, where("organizationId", "==", organizationId));
+    const filteredSnapshot = await getDocs(q);
+
     const clients: Client[] = [];
-    snapshot.forEach((doc) => {
+    filteredSnapshot.forEach((doc) => {
       clients.push(doc.data() as Client);
     });
 
@@ -49,7 +63,7 @@ export async function getClients(): Promise<Client[]> {
 }
 
 export async function addClient(client: Omit<Client, "uid" | "createdAt">): Promise<Client> {
-  const uid = "client-" + Math.random().toString(36).substr(2, 9);
+  const uid = `client-${Math.random().toString(36).substr(2, 9)}`;
   const newClient: Client = {
     ...client,
     uid,
@@ -82,7 +96,7 @@ export async function getVendor(vendorId: string): Promise<Vendor | null> {
   }
 }
 
-export async function getVendors(): Promise<Vendor[]> {
+export async function getVendors(organizationId: string): Promise<Vendor[]> {
   try {
     const collRef = collection(db, "vendors");
     const snapshot = await getDocs(collRef);
@@ -93,11 +107,13 @@ export async function getVendors(): Promise<Vendor[]> {
       for (const vendor of mockVendors) {
         await setDoc(doc(db, "vendors", vendor.vendorId), vendor);
       }
-      return mockVendors;
     }
 
+    const q = query(collRef, where("organizationId", "==", organizationId));
+    const filteredSnapshot = await getDocs(q);
+
     const vendors: Vendor[] = [];
-    snapshot.forEach((doc) => {
+    filteredSnapshot.forEach((doc) => {
       vendors.push(doc.data() as Vendor);
     });
 
@@ -109,7 +125,7 @@ export async function getVendors(): Promise<Vendor[]> {
 }
 
 export async function addVendor(vendor: Omit<Vendor, "vendorId" | "createdAt">): Promise<Vendor> {
-  const vendorId = "vendor-" + Math.random().toString(36).substr(2, 9);
+  const vendorId = `vendor-${Math.random().toString(36).substr(2, 9)}`;
   const newVendor: Vendor = {
     ...vendor,
     vendorId,
@@ -130,7 +146,7 @@ export async function deleteVendor(vendorId: string): Promise<void> {
 
 // --- PROJECT HELPER HOOKS & FUNCTIONS ---
 
-export async function getProjects(): Promise<Project[]> {
+export async function getProjects(organizationId: string): Promise<Project[]> {
   try {
     const collRef = collection(db, "projects");
     const snapshot = await getDocs(collRef);
@@ -141,11 +157,13 @@ export async function getProjects(): Promise<Project[]> {
       for (const project of mockProjects) {
         await setDoc(doc(db, "projects", project.projectId), project);
       }
-      return mockProjects;
     }
 
+    const q = query(collRef, where("organizationId", "==", organizationId));
+    const filteredSnapshot = await getDocs(q);
+
     const projects: Project[] = [];
-    snapshot.forEach((doc) => {
+    filteredSnapshot.forEach((doc) => {
       projects.push(doc.data() as Project);
     });
 
@@ -157,7 +175,7 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function addProject(project: Omit<Project, "projectId" | "createdAt">): Promise<Project> {
-  const projectId = "project-" + Math.random().toString(36).substr(2, 9);
+  const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
   const newProject: Project = {
     ...project,
     projectId,
@@ -192,7 +210,7 @@ export async function getLibraryItem(itemId: string): Promise<LibraryItem | null
   }
 }
 
-export async function getLibraryItems(): Promise<LibraryItem[]> {
+export async function getLibraryItems(organizationId: string): Promise<LibraryItem[]> {
   try {
     const collRef = collection(db, "library");
     const snapshot = await getDocs(collRef);
@@ -203,11 +221,13 @@ export async function getLibraryItems(): Promise<LibraryItem[]> {
       for (const item of mockLibraryItems) {
         await setDoc(doc(db, "library", item.itemId), item);
       }
-      return mockLibraryItems;
     }
 
+    const q = query(collRef, where("organizationId", "==", organizationId));
+    const filteredSnapshot = await getDocs(q);
+
     const items: LibraryItem[] = [];
-    snapshot.forEach((doc) => {
+    filteredSnapshot.forEach((doc) => {
       items.push(doc.data() as LibraryItem);
     });
 
@@ -219,7 +239,7 @@ export async function getLibraryItems(): Promise<LibraryItem[]> {
 }
 
 export async function addLibraryItem(item: Omit<LibraryItem, "itemId" | "updatedAt">): Promise<LibraryItem> {
-  const itemId = "item-" + Math.random().toString(36).substr(2, 9);
+  const itemId = `item-${Math.random().toString(36).substr(2, 9)}`;
   const newItem: LibraryItem = {
     ...item,
     itemId,
@@ -240,10 +260,11 @@ export async function deleteLibraryItem(itemId: string): Promise<void> {
 
 // --- PROPOSAL HELPER HOOKS & FUNCTIONS ---
 
-export async function getProposals(): Promise<Proposal[]> {
+export async function getProposals(organizationId: string): Promise<Proposal[]> {
   try {
     const collRef = collection(db, "proposals");
-    const snapshot = await getDocs(collRef);
+    const q = query(collRef, where("organizationId", "==", organizationId));
+    const snapshot = await getDocs(q);
 
     const proposals: Proposal[] = [];
     snapshot.forEach((doc) => {
@@ -258,7 +279,7 @@ export async function getProposals(): Promise<Proposal[]> {
 }
 
 export async function addProposal(proposal: Omit<Proposal, "proposalId" | "createdAt">): Promise<Proposal> {
-  const proposalId = "proposal-" + Math.random().toString(36).substr(2, 9);
+  const proposalId = `proposal-${Math.random().toString(36).substr(2, 9)}`;
   const newProposal: Proposal = {
     ...proposal,
     proposalId,
@@ -306,10 +327,25 @@ export async function uploadLibraryImageBlob(blob: Blob, extension = "jpg"): Pro
   return await getDownloadURL(snapshot.ref);
 }
 
+/**
+ * Uploads a raw image Blob to Firebase Storage under the vendors folder
+ * and returns its public download URL.
+ */
+export async function uploadVendorImageBlob(blob: Blob, type: "logo" | "hero", extension = "jpg"): Promise<string> {
+  const cleanFileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${extension}`;
+  const path = type === "logo" ? `vendors/logos/${cleanFileName}` : `vendors/heroes/${cleanFileName}`;
+  const storageRef = ref(storage, path);
+
+  const snapshot = await uploadBytes(storageRef, blob, {
+    contentType: blob.type || `image/${extension}`,
+  });
+  return await getDownloadURL(snapshot.ref);
+}
+
 // --- DIAGNOSTICS HELPER FUNCTIONS ---
 
 export async function saveDiagnosticRun(run: Omit<DiagnosticRun, "runId" | "createdAt">): Promise<DiagnosticRun> {
-  const runId = "run-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
+  const runId = `run-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
   // Firestore throws on undefined values. JSON serialization safely strips all undefined keys recursively.
   const sanitizedRun = JSON.parse(JSON.stringify(run));
   const newRun: DiagnosticRun = {
@@ -345,5 +381,124 @@ export async function clearDiagnosticRuns(): Promise<void> {
     }
   } catch (error) {
     console.error("Error clearing diagnostic runs:", error);
+  }
+}
+
+// --- ORGANIZATION / TENANT HELPER FUNCTIONS ---
+
+export async function getOrganizations(): Promise<Organization[]> {
+  try {
+    const collRef = collection(db, "organizations");
+    const snapshot = await getDocs(collRef);
+    const organizations: Organization[] = [];
+    snapshot.forEach((docSnap) => {
+      organizations.push(docSnap.data() as Organization);
+    });
+    return organizations.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error) {
+    console.error("Error fetching organizations:", error);
+    return [];
+  }
+}
+
+export async function addOrganization(org: Omit<Organization, "createdAt">, adminName: string): Promise<Organization> {
+  const newOrg: Organization = {
+    ...org,
+    createdAt: Date.now(),
+  };
+
+  // 1. Create the organization document
+  await setDoc(doc(db, "organizations", org.organizationId), newOrg);
+
+  // 2. Create the pending Administrator profile in the users collection
+  const adminEmailKey = org.adminEmail.trim().toLowerCase();
+  await setDoc(doc(db, "users", adminEmailKey), {
+    fullName: adminName.trim(),
+    email: adminEmailKey,
+    role: "Admin",
+    organizationId: org.organizationId,
+    status: "Pending",
+    joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
+    lastActive: 0,
+  });
+
+  // 3. Write invite email to the mail collection for Firebase Trigger Email extension
+  try {
+    await addDoc(collection(db, "mail"), {
+      to: adminEmailKey,
+      message: {
+        subject: `Welcome to SDG CRM - Set up your studio, ${adminName}!`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${adminName}!</h2>
+            <p style="color: #334155; font-size: 16px; line-height: 1.5;">
+              You have been invited to set up your design studio, <strong>${org.name}</strong>, on the Sarvian Design Group CRM platform.
+            </p>
+            <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
+              Click the button below to register and set up your administrator account:
+            </p>
+            <a href="${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/auth/invite?email=${adminEmailKey}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+              Activate Administrator Account
+            </a>
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
+            <p style="color: #64748b; font-size: 12px; text-align: center;">
+              Tenant onboarding invitation. If you did not expect this, please ignore this email.
+            </p>
+          </div>
+        `,
+      },
+    });
+  } catch (emailError) {
+    console.error("Failed to write to mail collection for trigger email:", emailError);
+  }
+
+  return newOrg;
+}
+
+export async function updateOrganization(orgId: string, org: Partial<Organization>): Promise<void> {
+  const docRef = doc(db, "organizations", orgId);
+  await updateDoc(docRef, { ...org });
+}
+
+export async function getOrganization(orgId: string): Promise<Organization | null> {
+  try {
+    const docRef = doc(db, "organizations", orgId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as Organization;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching organization:", error);
+    return null;
+  }
+}
+
+export async function getOrganizationUsers(orgId: string): Promise<UserProfile[]> {
+  try {
+    const collRef = collection(db, "users");
+    const q = query(collRef, where("organizationId", "==", orgId));
+    const snapshot = await getDocs(q);
+    const users: UserProfile[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      users.push({
+        uid: docSnap.id,
+        fullName: data.fullName || "User",
+        displayName: data.displayName,
+        email: data.email || "",
+        role: data.role || "Contributor",
+        organizationId: data.organizationId || "",
+        status: data.status || "Active",
+        joinedDate: data.joinedDate || "",
+        lastActive: data.lastActive || 0,
+        location: data.location,
+        phone: data.phone,
+      } as UserProfile);
+    });
+    return users.sort((a, b) => b.lastActive - a.lastActive);
+  } catch (error) {
+    console.error("Error fetching organization users:", error);
+    return [];
   }
 }

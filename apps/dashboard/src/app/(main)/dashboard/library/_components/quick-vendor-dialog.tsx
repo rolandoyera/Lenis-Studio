@@ -8,6 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -41,6 +42,7 @@ interface QuickVendorDialogProps {
 
 /** Lightweight inline vendor creation, used from the item form's vendor selector. */
 export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendorDialogProps) {
+  const { profile } = useAuth();
   const {
     control,
     handleSubmit,
@@ -57,6 +59,7 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
   }, [open, reset]);
 
   const onSubmit = async (data: QuickVendorFormData) => {
+    if (!profile) return;
     try {
       const created = await addVendor({
         name: data.name.trim(),
@@ -65,6 +68,7 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
         repEmail: "",
         repPhone: "",
         notes: "Quick-created during Catalog Item entry.",
+        organizationId: profile.organizationId,
       });
       onCreated(created);
       onOpenChange(false);
@@ -77,7 +81,7 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xs bg-popover/98 backdrop-blur-md">
+      <DialogContent className="bg-popover/98 backdrop-blur-md sm:max-w-xs">
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogHeader>
             <DialogTitle className="text-base">Quick Create Vendor</DialogTitle>

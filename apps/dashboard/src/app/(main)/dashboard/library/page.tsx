@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ExternalLink, Loader2, Plus, Search, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import { QuickVendorDialog } from "./_components/quick-vendor-dialog";
 import { useLibraryItemForm } from "./_components/use-library-item-form";
 
 export default function LibraryPage() {
+  const { profile, loading: authLoading } = useAuth();
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,9 +41,12 @@ export default function LibraryPage() {
 
   // Fetch Items & Vendors on Mount
   useEffect(() => {
+    if (authLoading || !profile) return;
+    const orgId = profile.organizationId;
+
     async function loadData() {
       try {
-        const [itemsData, vendorsData] = await Promise.all([getLibraryItems(), getVendors()]);
+        const [itemsData, vendorsData] = await Promise.all([getLibraryItems(orgId), getVendors(orgId)]);
         setItems(itemsData);
         setVendors(vendorsData);
 
@@ -65,7 +70,7 @@ export default function LibraryPage() {
       }
     }
     void loadData();
-  }, []);
+  }, [profile, authLoading, form.reset]);
 
   const handleOpenAdd = () => {
     form.reset();
@@ -73,11 +78,17 @@ export default function LibraryPage() {
   };
 
   const handleSubmit = async () => {
+    if (!profile) return;
     setSubmitting(true);
     try {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
       const { imageUrls, coverImageUrl } = await mirrorExternalImagesToFirebase(form.formData);
-      const created = await addLibraryItem({ ...form.formData, imageUrls, coverImageUrl });
+      const created = await addLibraryItem({
+        ...form.formData,
+        imageUrls,
+        coverImageUrl,
+        organizationId: profile.organizationId,
+      });
       setItems((prev) => [created, ...prev]);
       toast.success("New product successfully added to Global Library!");
       setIsModalOpen(false);
@@ -106,18 +117,18 @@ export default function LibraryPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex w-full flex-col gap-6">
       {/* Header section with Premium typography & Action trigger */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <H1>Product Library</H1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="mt-1 text-muted-foreground text-sm">
             Global catalog of furniture, fabric swatches, stone slabs, lighting structures, and bespoke services.
           </p>
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="sm:self-start bg-primary text-primary-foreground hover:bg-primary/95 flex items-center gap-2"
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
         >
           <Plus className="size-4" />
           Add Item to Library
@@ -125,15 +136,15 @@ export default function LibraryPage() {
       </div>
 
       {/* Filter and search controls combined into a clean layout */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between border-b pb-4">
+      <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
         {/* Category Tabs */}
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
-          <TabsList className="flex flex-wrap h-auto! gap-0.5 max-w-full">
-            <TabsTrigger value="All" className="text-[12px] font-semibold px-3 py-1.5 cursor-pointer">
+          <TabsList className="flex h-auto! max-w-full flex-wrap gap-0.5">
+            <TabsTrigger value="All" className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
               All Items
             </TabsTrigger>
             {CATEGORIES.map((cat) => (
-              <TabsTrigger key={cat} value={cat} className="text-[12px] font-semibold px-3 py-1.5 cursor-pointer">
+              <TabsTrigger key={cat} value={cat} className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
                 {cat}
               </TabsTrigger>
             ))}
@@ -141,8 +152,8 @@ export default function LibraryPage() {
         </Tabs>
 
         {/* Quick Search */}
-        <div className="relative max-w-xs w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search items, vendors or SKU..."
             value={searchQuery}
@@ -154,15 +165,15 @@ export default function LibraryPage() {
 
       {/* Library Grid or Skeletons */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[300px] gap-3">
+        <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">Loading Sourcing Catalog</p>
+          <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Sourcing Catalog</p>
         </div>
       ) : filteredItems.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center min-h-[300px] border-dashed text-center p-8 bg-background/30">
-          <ShoppingBag className="size-12 text-muted-foreground/40 mb-3" />
+        <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
+          <ShoppingBag className="mb-3 size-12 text-muted-foreground/40" />
           <h3 className="font-semibold text-lg">Library catalog empty</h3>
-          <p className="text-muted-foreground text-sm max-w-sm mt-1">
+          <p className="mt-1 max-w-sm text-muted-foreground text-sm">
             {searchQuery
               ? "Try broadening your search query or clear the active category filter."
               : "Get started by adding high-end furniture or material swatches to your catalog."}
@@ -175,7 +186,7 @@ export default function LibraryPage() {
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 3xl:grid-cols-8 gap-5">
+        <div className="grid 3xl:grid-cols-8 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {filteredItems.map((item) => {
             const parentVendor = vendors.find((v) => v.vendorId === item.vendorId);
             const vendorName = parentVendor?.name || "Unknown Vendor";
@@ -183,18 +194,18 @@ export default function LibraryPage() {
             return (
               <Card
                 key={item.itemId}
-                className="group relative overflow-hidden flex flex-col h-full transition-all shadow-sm duration-300 hover:shadow-md hover:border-primary/20 bg-card/60 backdrop-blur-xs pt-0"
+                className="group relative flex h-full flex-col overflow-hidden bg-card/60 pt-0 shadow-sm backdrop-blur-xs transition-all duration-300 hover:border-primary/20 hover:shadow-md"
               >
                 {/* Visual Thumbnail Area - Clicking/hovering on the image takes you to the detail page */}
                 <Link
                   href={`/dashboard/library/${item.itemId}`}
-                  className="relative aspect-square w-full overflow-hidden bg-muted/40 border-b border-border/40 flex items-center justify-center group/img"
+                  className="group/img relative flex aspect-square w-full items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40"
                 >
                   {item.coverImageUrl ? (
                     <img
                       src={item.coverImageUrl}
                       alt={item.name}
-                      className="h-full w-auto object-contain group-hover/img:scale-105 transition-transform duration-300"
+                      className="h-full w-auto object-contain transition-transform duration-300 group-hover/img:scale-105"
                     />
                   ) : (
                     <div className="flex size-full items-center justify-center bg-muted">
@@ -205,26 +216,26 @@ export default function LibraryPage() {
                   {/* Sourcing Category Tag */}
                   <Badge
                     variant="default"
-                    className="absolute top-2.5 left-2.5 text-[9px] font-bold tracking-wider uppercase bg-black/50 text-white backdrop-blur-xs"
+                    className="absolute top-2.5 left-2.5 bg-black/50 font-bold text-[9px] text-white uppercase tracking-wider backdrop-blur-xs"
                   >
                     {item.category}
                   </Badge>
                 </Link>
 
-                <CardContent className="flex flex-col flex-1 gap-3">
+                <CardContent className="flex flex-1 flex-col gap-3">
                   <div className="flex-1">
                     {/* Item Name - Clicking/hovering on the title takes you to the detail page */}
-                    <h3 className="font-heading font-semibold text-base line-clamp-1 leading-tight transition-colors">
+                    <h3 className="line-clamp-1 font-heading font-semibold text-base leading-tight transition-colors">
                       <Link
                         href={`/dashboard/library/${item.itemId}`}
-                        className="hover:text-primary transition-colors block"
+                        className="block transition-colors hover:text-primary"
                       >
                         {item.name}
                       </Link>
                     </h3>
 
                     {/* Vendor Name - Clicking on the vendor name filters the vendor profile in directory */}
-                    <div className="mt-1 text-[12px] text-muted-foreground flex items-center gap-1 min-w-0">
+                    <div className="mt-1 flex min-w-0 items-center gap-1 text-[12px] text-muted-foreground">
                       {item.vendorId ? (
                         parentVendor?.website ? (
                           <a
@@ -235,15 +246,15 @@ export default function LibraryPage() {
                             }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-medium text-foreground/80 hover:text-primary hover:underline truncate flex items-center gap-0.5"
+                            className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
                           >
                             {vendorName}
-                            <ExternalLink className="size-2.5 shrink-0 ml-1" />
+                            <ExternalLink className="ml-1 size-2.5 shrink-0" />
                           </a>
                         ) : (
                           <Link
                             href={`/dashboard/vendors/${item.vendorId}`}
-                            className="font-medium text-foreground/80 hover:text-primary hover:underline truncate flex items-center gap-0.5"
+                            className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
                           >
                             {vendorName}
                             <ExternalLink className="size-2.5 shrink-0" />
@@ -260,13 +271,13 @@ export default function LibraryPage() {
                         href={item.sourcingLink.startsWith("http") ? item.sourcingLink : `https://${item.sourcingLink}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 mt-1 text-[12px] font-medium text-primary hover:underline transition-colors py-0.5 max-w-full"
+                        className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline"
                       >
                         <span className="truncate">Origin Link</span>
                         <ExternalLink className="size-2.5 shrink-0" />
                       </a>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] font-normal text-muted-foreground/45 bg-muted/20 px-2 py-0.5 rounded-md border border-border/20 max-w-full select-none italic">
+                      <span className="mt-2 inline-flex max-w-full select-none items-center gap-1.5 rounded-md border border-border/20 bg-muted/20 px-2 py-0.5 font-normal text-[10px] text-muted-foreground/45 italic">
                         <span>No product link</span>
                       </span>
                     )}
@@ -274,14 +285,14 @@ export default function LibraryPage() {
                 </CardContent>
                 <CardFooter className="flex flex-col">
                   {/* Pricing Matrix summary */}
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex w-full items-center justify-between">
                     <div className="flex flex-col">
                       <Label className="mb-1">Cost</Label>
-                      <span className="text-sm font-semibold text-foreground/75">{formatCurrency(item.unitCost)}</span>
+                      <span className="font-semibold text-foreground/75 text-sm">{formatCurrency(item.unitCost)}</span>
                     </div>
                     <div className="flex flex-col text-right">
                       <Label className="mb-1 ml-auto">Selling Price</Label>
-                      <span className="text-sm font-bold text-primary">{formatCurrency(item.sellingPrice)}</span>
+                      <span className="font-bold text-primary text-sm">{formatCurrency(item.sellingPrice)}</span>
                     </div>
                   </div>
 
@@ -289,7 +300,7 @@ export default function LibraryPage() {
                   {(() => {
                     const profitable = item.sellingPrice > item.unitCost;
                     return (
-                      <Badge variant={profitable ? "profit" : "warning"} className="mx-auto gap-1 mt-3 -mb-1">
+                      <Badge variant={profitable ? "profit" : "warning"} className="mx-auto mt-3 -mb-1 gap-1">
                         {profitable ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
                         <span className="font-semibold">{Math.round(item.markup)}%</span>
                         <span>markup</span>

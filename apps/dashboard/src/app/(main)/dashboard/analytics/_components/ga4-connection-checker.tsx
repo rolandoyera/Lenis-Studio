@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 
@@ -11,12 +11,12 @@ export function GA4ConnectionChecker() {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<GA4ConnectionResult | null>(null);
 
-  const checkConnection = async () => {
+  const checkConnection = useCallback(async () => {
     setLoading(true);
     try {
       const res = await testGA4Connection();
       setResult(res);
-    } catch (e) {
+    } catch (_e) {
       setResult({
         success: false,
         configMissing: false,
@@ -25,36 +25,36 @@ export function GA4ConnectionChecker() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkConnection();
-  }, []);
+  }, [checkConnection]);
 
   return (
-    <div className="rounded-xl border bg-card p-4 shadow-sm ring-1 ring-foreground/5 mb-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="mb-4 rounded-xl border bg-card p-4 shadow-sm ring-1 ring-foreground/5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           {loading ? (
-            <div className="mt-0.5 rounded-full p-1 bg-muted text-muted-foreground animate-spin animate-duration-1000">
+            <div className="mt-0.5 animate-duration-1000 animate-spin rounded-full bg-muted p-1 text-muted-foreground">
               <Loader2 className="size-4" />
             </div>
           ) : result?.success ? (
-            <div className="mt-0.5 rounded-full p-1 bg-green-500/10 text-green-600 dark:text-green-400">
+            <div className="mt-0.5 rounded-full bg-green-500/10 p-1 text-green-600 dark:text-green-400">
               <CheckCircle2 className="size-4" />
             </div>
           ) : (
-            <div className="mt-0.5 rounded-full p-1 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <div className="mt-0.5 rounded-full bg-amber-500/10 p-1 text-amber-600 dark:text-amber-400">
               <AlertCircle className="size-4" />
             </div>
           )}
 
           <div>
-            <h3 className="font-medium text-sm leading-none flex items-center gap-2">
+            <h3 className="flex items-center gap-2 font-medium text-sm leading-none">
               GA4 Integration Status
               {!loading && (
                 <span
-                  className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded-full ${
+                  className={`rounded-full px-1.5 py-0.5 font-bold text-[10px] uppercase tracking-wider ${
                     result?.success
                       ? "bg-green-500/10 text-green-700 dark:text-green-300"
                       : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
@@ -65,7 +65,7 @@ export function GA4ConnectionChecker() {
               )}
             </h3>
 
-            <p className="text-muted-foreground text-xs mt-1.5 leading-normal max-w-xl">
+            <p className="mt-1.5 max-w-xl text-muted-foreground text-xs leading-normal">
               {loading && "Testing connection to Google Analytics 4 API..."}
 
               {!loading && result?.success && (
@@ -78,17 +78,17 @@ export function GA4ConnectionChecker() {
               {!loading && !result?.success && result?.configMissing && (
                 <>
                   Credentials missing. Add{" "}
-                  <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono">GA_PROPERTY_ID</code>,{" "}
-                  <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono">GA_CLIENT_ID</code>,{" "}
-                  <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono">GA_CLIENT_SECRET</code>, and{" "}
-                  <code className="bg-muted px-1.5 py-0.5 rounded text-[11px] font-mono">GA_REFRESH_TOKEN</code> inside
+                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_PROPERTY_ID</code>,{" "}
+                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_CLIENT_ID</code>,{" "}
+                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_CLIENT_SECRET</code>, and{" "}
+                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_REFRESH_TOKEN</code> inside
                   your <code className="font-semibold text-foreground">.env.local</code>.
                 </>
               )}
 
               {!loading && !result?.success && !result?.configMissing && (
                 <>
-                  Connection failed: <span className="text-destructive font-mono text-[11px]">{result?.error}</span>.
+                  Connection failed: <span className="font-mono text-[11px] text-destructive">{result?.error}</span>.
                   Make sure your Google Account has read access to the specified Property ID.
                 </>
               )}
@@ -96,7 +96,7 @@ export function GA4ConnectionChecker() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-2">
           <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={checkConnection} disabled={loading}>
             <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
             Refresh

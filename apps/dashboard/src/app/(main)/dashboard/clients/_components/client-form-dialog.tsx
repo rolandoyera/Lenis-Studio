@@ -64,7 +64,7 @@ export function ClientFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-popover/95 backdrop-blur-md">
+      <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
           <DialogHeader>
             <DialogTitle className="text-xl">{title}</DialogTitle>
@@ -79,7 +79,7 @@ export function ClientFormDialog({
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>
-                      First Name <span className="text-destructive ml-0.5">*</span>
+                      First Name <span className="ml-0.5 text-destructive">*</span>
                     </Label>
                     <Input {...field} aria-invalid={fieldState.invalid} />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -92,7 +92,7 @@ export function ClientFormDialog({
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>
-                      Last Name <span className="text-destructive ml-0.5">*</span>
+                      Last Name <span className="ml-0.5 text-destructive">*</span>
                     </Label>
                     <Input {...field} aria-invalid={fieldState.invalid} />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -160,7 +160,7 @@ export function ClientFormDialog({
                 control={control}
                 name="city"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5 col-span-2" data-invalid={fieldState.invalid}>
+                  <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>City</Label>
                     <Input {...field} aria-invalid={fieldState.invalid} />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

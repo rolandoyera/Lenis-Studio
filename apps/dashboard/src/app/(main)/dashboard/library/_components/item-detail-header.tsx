@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 
-import { Edit3, Forklift, MoreVertical, Trash2 } from "lucide-react";
+import { Forklift, MoreVertical } from "lucide-react";
 
+import { EditIcon, TrashIcon } from "@/components/icons/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,22 +32,22 @@ export function ItemDetailHeader({ item, vendorName, onEdit, onRequestDelete }: 
     <>
       <HeaderBackLink href="/dashboard/library" />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-start gap-16 border-b pb-6">
+      <div className="flex flex-col justify-start gap-16 border-b pb-6 md:flex-row md:items-center">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <Badge className="uppercase bg-primary/10 text-primary border border-primary/20">{item.category}</Badge>
+            <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">{item.category}</Badge>
           </div>
-          <h1 className="text-3xl font-medium tracking-tight font-heading mt-1">{item.name}</h1>
+          <h1 className="mt-1 font-heading font-medium text-3xl tracking-tight">{item.name}</h1>
           {vendorName && (
-            <p className="text-[12px] text-muted-foreground font-medium flex items-center gap-1">
-              <Forklift className="size-3.5 text-muted-foreground/60 shrink-0" />
+            <p className="flex items-center gap-1 font-medium text-[12px] text-muted-foreground">
+              <Forklift className="size-3.5 shrink-0 text-muted-foreground/60" />
               Vendor:{" "}
               {item.vendorId ? (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}
-                  className="hover:underline hover:text-primary transition-colors cursor-pointer"
+                  className="cursor-pointer transition-colors hover:text-primary hover:underline"
                 >
-                  <Label size="large" className="text-foreground hover:text-primary cursor-pointer">
+                  <Label size="large" className="cursor-pointer text-foreground hover:text-primary">
                     {vendorName}
                   </Label>
                 </Link>
@@ -57,25 +58,22 @@ export function ItemDetailHeader({ item, vendorName, onEdit, onRequestDelete }: 
           )}
         </div>
 
-        <div className="flex items-center sm:self-start md:self-center">
+        <div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="cursor-pointer">
+              <Button variant="ghost" size="icon">
                 <MoreVertical className="size-4" />
                 <span className="sr-only">Actions Menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-popover/95 backdrop-blur-md">
-              <DropdownMenuItem onClick={onEdit} className="text-sm cursor-pointer flex items-center gap-2">
-                <Edit3 className="size-4 text-muted-foreground" />
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuItem onClick={onEdit}>
+                <EditIcon size={4} />
                 Edit Specifications
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onRequestDelete}
-                className="text-sm text-destructive cursor-pointer flex items-center gap-2 focus:text-destructive focus:bg-destructive/10"
-              >
-                <Trash2 className="size-4" />
+              <DropdownMenuItem onClick={onRequestDelete} variant="destructive">
+                <TrashIcon size={4} />
                 Delete Product
               </DropdownMenuItem>
             </DropdownMenuContent>

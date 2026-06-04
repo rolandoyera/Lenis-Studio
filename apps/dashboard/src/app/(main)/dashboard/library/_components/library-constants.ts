@@ -34,24 +34,22 @@ export const libraryItemSchema = z.object({
   aiMetadata: z.any().optional(),
 });
 export const CATEGORIES = [
-  "Appliances",
-  "Art & Decor",
-  "Building Materials",
-  "Doors & Windows",
-  "Equipment",
-  "Fabrics & Rugs",
-  "Finishes",
-  "Fixtures",
   "Furniture",
-  "Hardware",
-  "Landscaping",
   "Lighting",
-  "Services",
+  "Plumbing",
+  "Appliances",
   "Surfaces",
+  "Fabrics & Textiles",
+  "Finishes",
+  "Doors & Windows",
+  "Decor",
+  "Outdoor",
+  "Construction Materials",
+  "Equipment",
 ];
 
 /** Shape of the shared Add/Edit library item form (everything persisted except server-managed keys). */
-export type LibraryItemFormData = Omit<LibraryItem, "itemId" | "updatedAt" | "tags">;
+export type LibraryItemFormData = Omit<LibraryItem, "itemId" | "updatedAt" | "tags" | "organizationId">;
 
 /** Pristine form values used when creating a new item or resetting the form. */
 export const EMPTY_LIBRARY_ITEM_FORM: LibraryItemFormData = {

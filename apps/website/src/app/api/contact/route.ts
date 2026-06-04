@@ -8,6 +8,7 @@ const Schema = z.object({
   phone: z.string().optional(),
   company: z.string().optional(), // honeypot
   message: z.string().optional(),
+  projectType: z.string().optional(),
   source: z.string().optional(), // "project" or "contact"
   ts: z.number().optional(), // time trap; client sends a number
 });
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false }, { status: 422 });
     }
 
-    const { name, email, phone, company, message, source, ts } = parsed.data;
+    const { name, email, phone, company, message, projectType, source, ts } = parsed.data;
 
     // Honeypot: if filled, silently succeed
     if (company && company.trim() !== "") {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
         to: [{ email: "rolysemail@gmail.com" }, { email: "osh@sarviandg.com" }],
         replyTo: { email: "osh@sarviandg.com", name: "Oshrat Rothschild" },
         subject: subjectLine,
-        textContent: `You've received a ${leadLabel} from SDG website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone ?? ""}${message ? `\n\nMessage:\n${message}` : ""}`,
+        textContent: `You've received a ${leadLabel} from SDG website\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone ?? ""}${projectType ? `\nProject Type: ${projectType}` : ""}${message ? `\n\nMessage:\n${message}` : ""}`,
         htmlContent: `
           <p style="font-family:Arial,sans-serif;font-size:16px;margin-bottom:20px;">
             <strong>You've received a ${leadLabel} from SDG website</strong>
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
             <tr><td><strong>Name:</strong></td><td>${name}</td></tr>
             <tr><td><strong>Email:</strong></td><td>${email}</td></tr>
             <tr><td><strong>Phone:</strong></td><td>${phone ?? ""}</td></tr>
+            ${projectType ? `<tr><td><strong>Project Type:</strong></td><td>${projectType}</td></tr>` : ""}
             ${message ? `<tr><td valign="top"><strong>Message:</strong></td><td>${message.replace(/\n/g, "<br>")}</td></tr>` : ""}
           </table>
         `,

@@ -18,13 +18,13 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { onAuthStateChanged } from "firebase/auth";
-import { addDoc, collection, doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
+import { addDoc, collection, doc, onSnapshot, query, setDoc, where } from "firebase/firestore";
 import { Grid, Plus, Rows3, Search } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -42,7 +42,7 @@ import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 
 import { filters, type UserRow } from "./data";
 import { usersColumns } from "./users-columns";
@@ -56,7 +56,8 @@ const addUserSchema = z.object({
 
 type AddUserFormData = z.infer<typeof addUserSchema>;
 
-export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
+export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
+  const { profile, loading: authLoading } = useAuth();
   const [dbUsers, setDbUsers] = React.useState<UserRow[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
@@ -82,7 +83,7 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
   }, [isAddOpen, form.reset]);
 
   const handleAddUser = async (data: AddUserFormData) => {
-    if (isSubmitting) return;
+    if (isSubmitting || !profile) return;
 
     const trimmedName = data.fullName.trim();
     const trimmedEmail = data.email.trim().toLowerCase();
@@ -103,6 +104,7 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
         status: "Pending",
         joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
         lastActive: 0,
+        organizationId: profile.organizationId,
       });
 
       // Write a mail document to trigger an invitation email via the Firebase Trigger Email extension
@@ -147,36 +149,23 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
   };
 
   React.useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        try {
-          const userDocRef = doc(db, "users", fbUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-            const role = userDocSnap.data().role;
-            if (role !== "Admin") {
-              toast.error("Access denied. Administrator privileges required.");
-              router.push("/dashboard/home");
-            }
-          } else {
-            toast.error("Access denied. Administrator privileges required.");
-            router.push("/dashboard/home");
-          }
-        } catch (e) {
-          console.error("Auth protection verify error:", e);
-          router.push("/dashboard/home");
-        }
-      } else {
-        router.push("/auth/login");
-      }
-    });
-
-    return () => unsubscribeAuth();
-  }, [router]);
+    if (authLoading) return;
+    if (!profile) {
+      router.push("/auth/login");
+      return;
+    }
+    if (profile.role !== "Admin" && profile.role !== "SuperAdmin") {
+      toast.error("Access denied. Administrator privileges required.");
+      router.push("/dashboard/home");
+    }
+  }, [profile, authLoading, router]);
 
   React.useEffect(() => {
+    if (authLoading || !profile) return;
+
+    const q = query(collection(db, "users"), where("organizationId", "==", profile.organizationId));
     const unsubscribe = onSnapshot(
-      collection(db, "users"),
+      q,
       (snapshot) => {
         const list = snapshot.docs.map((doc) => {
           const data = doc.data();
@@ -213,7 +202,7 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
     );
 
     return () => unsubscribe();
-  }, [fallbackUsers]);
+  }, [profile, authLoading]);
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "joinedDate", desc: true }]);
@@ -255,7 +244,7 @@ export function Users({ users: fallbackUsers }: { users: UserRow[] }) {
       <div className="flex h-[60vh] w-full items-center justify-center">
         <div className="relative size-12">
           <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-          <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       </div>
     );

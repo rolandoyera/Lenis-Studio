@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 import { Building2, ChevronDown, ChevronRight, PlusCircleIcon, ShoppingBag, UserPlus } from "lucide-react";
 
+import { useAuth } from "@/components/auth-context";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
@@ -28,7 +25,6 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { auth, db } from "@/lib/firebase";
 import type { NavGroup, NavMainItem } from "@/navigation/sidebar/sidebar-items";
 
 interface NavMainProps {
@@ -148,29 +144,8 @@ const NavItemCollapsed = ({
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        try {
-          const userDocRef = doc(db, "users", fbUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-            setUserRole(userDocSnap.data().role || "Contributor");
-          } else {
-            setUserRole("Contributor");
-          }
-        } catch (e) {
-          console.error("Sidebar role fetch error:", e);
-          setUserRole("Contributor");
-        }
-      } else {
-        setUserRole(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+  const { profile } = useAuth();
+  const userRole = profile?.role || null;
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -193,7 +168,7 @@ export function NavMain({ items }: NavMainProps) {
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     tooltip="Quick Create"
-                    className="min-w-8 w-full bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground flex items-center gap-2"
+                    className="flex w-full min-w-8 items-center gap-2 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
                   >
                     <PlusCircleIcon className="size-4 shrink-0" />
                     <span className="group-data-[collapsible=icon]:hidden">Quick Create</span>
@@ -202,19 +177,19 @@ export function NavMain({ items }: NavMainProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-52 bg-popover/95 backdrop-blur-md">
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/library?add=true" className="flex items-center gap-2 cursor-pointer py-2">
+                    <Link href="/dashboard/library?add=true" className="flex cursor-pointer items-center gap-2 py-2">
                       <ShoppingBag className="size-4 opacity-70" />
                       <span>Add Library Item</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/clients?add=true" className="flex items-center gap-2 cursor-pointer py-2">
+                    <Link href="/dashboard/clients?add=true" className="flex cursor-pointer items-center gap-2 py-2">
                       <UserPlus className="size-4 opacity-70" />
                       <span>Add Client Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/vendors?add=true" className="flex items-center gap-2 cursor-pointer py-2">
+                    <Link href="/dashboard/vendors?add=true" className="flex cursor-pointer items-center gap-2 py-2">
                       <Building2 className="size-4 opacity-70" />
                       <span>Add Trade Vendor</span>
                     </Link>
@@ -231,7 +206,10 @@ export function NavMain({ items }: NavMainProps) {
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
               {group.items.map((item) => {
-                if (item.title === "Users" && userRole !== "Admin") {
+                if (item.title === "Users" && userRole !== "Admin" && userRole !== "SuperAdmin") {
+                  return null;
+                }
+                if (item.title === "Tenants" && userRole !== "SuperAdmin") {
                   return null;
                 }
                 if (state === "collapsed" && !isMobile) {

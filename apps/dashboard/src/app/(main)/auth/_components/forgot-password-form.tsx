@@ -56,7 +56,7 @@ export function ForgotPasswordForm() {
         <p className="text-muted-foreground text-sm">
           We have sent a secure link to your email to reset your password. Please check your inbox and spam folder.
         </p>
-        <Button asChild className="w-full mt-4">
+        <Button asChild className="mt-4 w-full">
           <Link href="/auth/login">Back to Login</Link>
         </Button>
       </div>
@@ -88,7 +88,7 @@ export function ForgotPasswordForm() {
       <Button className="w-full" type="submit" disabled={isLoading}>
         {isLoading ? "Sending email..." : "Send Password Reset Link"}
       </Button>
-      <p className="text-center text-muted-foreground text-xs mt-2">
+      <p className="mt-2 text-center text-muted-foreground text-xs">
         Remembered your password?{" "}
         <Link href="/auth/login" className="text-primary hover:underline">
           Back to Login

@@ -29,7 +29,7 @@ export default function Input({
         onFocus={handleFocus}
         onBlur={handleBlur}
         className={cn(
-          "flex h-11 w-full bg-transparent border-none px-2 py-2 text-base placeholder:text-taupe-400 placeholder:font-light focus-visible:outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 text-taupe-800",
+          "flex h-11 w-full bg-transparent border-none px-2 py-2 text-base placeholder:text-muted-foreground placeholder:font-light focus-visible:outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 text-taupe-800",
           className,
         )}
       />

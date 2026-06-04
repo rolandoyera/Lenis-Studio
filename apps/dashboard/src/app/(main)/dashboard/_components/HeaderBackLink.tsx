@@ -24,7 +24,7 @@ export default function HeaderBackLink({ href = "/dashboard/home" }: { href?: st
   return (
     <div>
       <Link href={href ?? "#"} onClick={handleBack} prefetch={false}>
-        <Button className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1.5 bg-transparent hover:bg-transparent cursor-pointer">
+        <Button className="flex cursor-pointer items-center gap-1.5 bg-transparent text-muted-foreground text-sm hover:bg-transparent hover:text-primary">
           <ArrowLeft className="size-3.5" />
           Go Back
         </Button>

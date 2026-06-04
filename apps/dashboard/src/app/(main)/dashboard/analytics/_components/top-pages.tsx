@@ -31,7 +31,7 @@ export async function TopPages({ range }: { range?: string }) {
           <TableBody className="[&_tr]:border-border/50">
             {!result.success || result.data.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="h-32 text-center text-muted-foreground text-sm py-4">
+                <TableCell colSpan={4} className="h-32 py-4 text-center text-muted-foreground text-sm">
                   <AnalyticsErrorToast error={result.error} title="Page Performance Error" />
                   {result.error || "No page performance data available."}
                 </TableCell>

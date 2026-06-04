@@ -7,11 +7,13 @@ import Link from "next/link";
 import { Building2, Loader2, Mail, MapPin, Phone, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
-import XTwitterIcon, {
+import { useAuth } from "@/components/auth-context";
+import {
   FacebookIcon,
   GlobeIcon,
   InstagramIcon,
   PinterestIcon,
+  XTwitterIcon,
   YoutubeIcon,
 } from "@/components/icons/icons";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,7 @@ import { H1 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 import { formatPhone, getInitials } from "@/lib/utils";
+import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
 
 import {
   EMPTY_VENDOR_FORM,
@@ -49,6 +52,7 @@ function vendorGradient(name: string) {
 }
 
 export default function VendorsPage() {
+  const { profile, loading: authLoading } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,6 +62,9 @@ export default function VendorsPage() {
   const handleOpenAdd = () => setIsAddOpen(true);
 
   useEffect(() => {
+    if (authLoading || !profile) return;
+    const orgId = profile.organizationId;
+
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const searchParam = params.get("search");
@@ -70,7 +77,7 @@ export default function VendorsPage() {
 
     async function loadData() {
       try {
-        const data = await getVendors();
+        const data = await getVendors(orgId);
         setVendors(data);
       } catch {
         toast.error("Failed to fetch vendors from database.");
@@ -79,11 +86,21 @@ export default function VendorsPage() {
       }
     }
     void loadData();
-  }, []);
+  }, [profile, authLoading]);
 
   const handleAdd = async (data: VendorFormData) => {
+    if (!profile) return;
     try {
-      const created = await addVendor(data);
+      const mirrored = await mirrorVendorImagesToFirebase({
+        logoUrl: data.logoUrl,
+        heroImageUrl: data.heroImageUrl,
+      });
+      const created = await addVendor({
+        ...data,
+        logoUrl: mirrored.logoUrl,
+        heroImageUrl: mirrored.heroImageUrl,
+        organizationId: profile.organizationId,
+      });
       setVendors((prev) => [created, ...prev]);
       toast.success("New vendor added successfully!");
       setIsAddOpen(false);
@@ -128,15 +145,15 @@ export default function VendorsPage() {
       </div>
 
       {/* Filter and search controls combined into a clean layout */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between border-b pb-4">
+      <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
         {/* Category Tabs */}
         <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
-          <TabsList className="flex flex-wrap h-auto! gap-0.5 max-w-full">
-            <TabsTrigger value="All" className="text-[12px] font-semibold px-3 py-1.5 cursor-pointer">
+          <TabsList className="flex h-auto! max-w-full flex-wrap gap-0.5">
+            <TabsTrigger value="All" className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
               All Vendors
             </TabsTrigger>
             {VENDOR_CATEGORIES.map((cat) => (
-              <TabsTrigger key={cat} value={cat} className="text-[12px] font-semibold px-3 py-1.5 cursor-pointer">
+              <TabsTrigger key={cat} value={cat} className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
                 {cat}
               </TabsTrigger>
             ))}
@@ -144,8 +161,8 @@ export default function VendorsPage() {
         </Tabs>
 
         {/* Quick Search */}
-        <div className="relative max-w-xs w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search vendors, representatives or category..."
             value={searchQuery}

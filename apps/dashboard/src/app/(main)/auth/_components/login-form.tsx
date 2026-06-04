@@ -86,7 +86,7 @@ export function LoginForm() {
                 <FieldLabel htmlFor="login-password">Password</FieldLabel>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-4"
+                  className="text-muted-foreground text-xs underline underline-offset-4 hover:text-foreground"
                 >
                   Forgot password?
                 </Link>
@@ -104,7 +104,7 @@ export function LoginForm() {
           )}
         />
       </FieldGroup>
-      <Button className="w-full mt-6" type="submit" disabled={isLoading}>
+      <Button className="mt-6 w-full" type="submit" disabled={isLoading}>
         {isLoading ? "Logging in..." : "Login"}
       </Button>
     </form>

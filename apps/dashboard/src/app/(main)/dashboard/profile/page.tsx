@@ -2,14 +2,15 @@
 
 import { Suspense, useEffect, useState } from "react";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { format } from "date-fns";
-import { onAuthStateChanged, type User, updatePassword, updateProfile } from "firebase/auth";
+import { updatePassword, updateProfile } from "firebase/auth";
 import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { Edit, Lock, Mail, MapPin, MoreVertical, Phone, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,7 +32,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { getInitials } from "@/lib/utils";
 
 interface FirestoreProfile {
@@ -67,8 +68,9 @@ function formatPhoneNumber(value: string) {
 function ProfileContent() {
   const searchParams = useSearchParams();
   const profileUid = searchParams.get("uid");
+  const router = useRouter();
+  const { user: currentUser, profile: loggedInProfile, loading: authLoading } = useAuth();
 
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingGeneral, setSavingGeneral] = useState(false);
   const [savingSecurity, setSavingSecurity] = useState(false);
@@ -150,73 +152,74 @@ function ProfileContent() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUser(user);
+    if (authLoading || !loggedInProfile || !currentUser) return;
+    const currentUid = currentUser.uid;
+    const currentDisplayName = currentUser.displayName || "";
+    const currentEmail = currentUser.email || "";
+    const loggedInOrgId = loggedInProfile.organizationId;
+    const loggedInRole = loggedInProfile.role;
 
-        // Fetch logged-in user's role to determine privileges
-        let selfRole = "Contributor";
-        try {
-          const selfDocRef = doc(db, "users", user.uid);
-          const selfDocSnap = await getDoc(selfDocRef);
-          if (selfDocSnap.exists()) {
-            selfRole = selfDocSnap.data().role || "Contributor";
+    // Determine which UID to fetch
+    const activeUid = profileUid && profileUid !== currentUid ? profileUid : currentUid;
+    const isSelf = activeUid === currentUid;
+    setIsSelf(isSelf);
+
+    // Editable if it is their own profile OR if the logged-in user is an Admin
+    const readOnly = !isSelf && loggedInRole !== "Admin";
+    setIsReadOnly(readOnly);
+
+    // Role is editable ONLY if the logged-in user is an Admin AND it is someone else's profile!
+    const isRoleEditable = loggedInRole === "Admin" && !isSelf;
+    setIsRoleDisabled(!isRoleEditable);
+
+    setLoggedInUserRole(loggedInRole);
+
+    async function loadData() {
+      try {
+        // Fetch additional profile data from Firestore
+        const userDocRef = doc(db, "users", activeUid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const data = userDocSnap.data() as FirestoreProfile & { organizationId?: string };
+
+          // Tenant isolation check
+          const targetOrgId = data.organizationId || "org-demo";
+          if (targetOrgId !== loggedInOrgId) {
+            toast.error("Access denied. User profile not found in your organization.");
+            router.push("/dashboard/home");
+            return;
           }
-        } catch (e) {
-          console.error("Error fetching self profile:", e);
-        }
-        setLoggedInUserRole(selfRole);
 
-        // Determine which UID to fetch
-        const activeUid = profileUid && profileUid !== user.uid ? profileUid : user.uid;
-        const isSelf = activeUid === user.uid;
-        setIsSelf(isSelf);
-
-        // Editable if it is their own profile OR if the logged-in user is an Admin
-        const readOnly = !isSelf && selfRole !== "Admin";
-        setIsReadOnly(readOnly);
-
-        // Role is editable ONLY if the logged-in user is an Admin AND it is someone else's profile!
-        const isRoleEditable = selfRole === "Admin" && !isSelf;
-        setIsRoleDisabled(!isRoleEditable);
-
-        try {
-          // Fetch additional profile data from Firestore
-          const userDocRef = doc(db, "users", activeUid);
-          const userDocSnap = await getDoc(userDocRef);
-
-          if (userDocSnap.exists()) {
-            const data = userDocSnap.data() as FirestoreProfile;
-            setFullName(data.fullName || "");
-            setRole(data.role || "Contributor");
-            setPhone(formatPhoneNumber(data.phone || ""));
-            setLocation(data.location ? String(data.location) : "");
-            setDisplayName(data.displayName || (isSelf ? user.displayName : "") || "");
-            setEmail(data.email || "");
-            setStatus(data.status || "Active");
+          setFullName(data.fullName || "");
+          setRole(data.role || "Contributor");
+          setPhone(formatPhoneNumber(data.phone || ""));
+          setLocation(data.location ? String(data.location) : "");
+          setDisplayName(data.displayName || (isSelf ? currentDisplayName : "") || "");
+          setEmail(data.email || "");
+          setStatus(data.status || "Active");
+        } else {
+          // Default fallback if no doc exists yet
+          if (readOnly) {
+            setFullName("User Not Found");
+            setRole("Contributor");
+            setEmail("");
+            setDisplayName("");
           } else {
-            // Default fallback if no doc exists yet
-            if (readOnly) {
-              setFullName("User Not Found");
-              setRole("Contributor");
-              setEmail("");
-              setDisplayName("");
-            } else {
-              setFullName(isSelf ? user.displayName || "" : "");
-              setRole("Contributor");
-              setDisplayName(isSelf ? user.displayName || "" : "");
-              setEmail(isSelf ? user.email || "" : "");
-            }
+            setFullName(isSelf ? currentDisplayName : "");
+            setRole("Contributor");
+            setDisplayName(isSelf ? currentDisplayName : "");
+            setEmail(isSelf ? currentEmail : "");
           }
-        } catch (error) {
-          console.error("Error fetching firestore profile:", error);
         }
+      } catch (error) {
+        console.error("Error fetching firestore profile:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [profileUid]);
+    }
+    void loadData();
+  }, [profileUid, currentUser, loggedInProfile, authLoading, router]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,7 +307,7 @@ function ProfileContent() {
       <div className="flex h-[60vh] w-full items-center justify-center">
         <div className="relative size-12">
           <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-          <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       </div>
     );
@@ -313,35 +316,35 @@ function ProfileContent() {
   const userInitials = getInitials(fullName || displayName || email || currentUser?.email || "U");
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10">
+    <div className="mx-auto max-w-5xl space-y-6 pb-10">
       {/* Profile Premium Header Banner Card */}
-      <div className="relative overflow-hidden rounded-3xl border bg-card p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-sm">
+      <div className="relative flex flex-col items-center gap-6 overflow-hidden rounded-3xl border bg-card p-6 shadow-sm md:flex-row md:p-8">
         {/* Glow backdrop decorator */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
 
-        <Avatar className="size-24 md:size-28 border-4 border-background shadow-lg">
-          <AvatarFallback className="text-3xl font-semibold bg-primary text-primary-foreground">
+        <Avatar className="size-24 border-4 border-background shadow-lg md:size-28">
+          <AvatarFallback className="bg-primary font-semibold text-3xl text-primary-foreground">
             {userInitials}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1 text-center md:text-left space-y-2 min-w-0">
-          <div className="flex flex-col md:flex-row md:items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight truncate">{fullName || "User Profile"}</h1>
+        <div className="min-w-0 flex-1 space-y-2 text-center md:text-left">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <h1 className="truncate font-bold text-3xl tracking-tight">{fullName || "User Profile"}</h1>
             {role && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary self-center md:self-auto w-fit">
+              <span className="inline-flex w-fit items-center gap-1 self-center rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary text-xs md:self-auto">
                 <Sparkles className="size-3" />
                 {role}
               </span>
             )}
           </div>
-          <p className="text-muted-foreground text-sm truncate max-w-lg">{email}</p>
+          <p className="max-w-lg truncate text-muted-foreground text-sm">{email}</p>
         </div>
       </div>
 
       <Tabs defaultValue="general" className="w-full">
         <TabsList
-          className={`grid w-full max-w-md bg-sidebar p-1.5 rounded-xl h-13! ${isSelf ? "grid-cols-2" : "grid-cols-1"}`}
+          className={`grid h-13! w-full max-w-md rounded-xl bg-sidebar p-1.5 ${isSelf ? "grid-cols-2" : "grid-cols-1"}`}
         >
           <TabsTrigger value="general" className="flex items-center justify-center gap-2 rounded-lg">
             <UserRound className="size-4" />
@@ -356,7 +359,7 @@ function ProfileContent() {
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
-          <Card className="border shadow-sm rounded-2xl overflow-hidden py-0">
+          <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
             <CardHeader className="border-b bg-muted/20 py-4">
               <CardTitle>Profile Details</CardTitle>
               <CardDescription>View or edit your profile information.</CardDescription>
@@ -364,12 +367,12 @@ function ProfileContent() {
                 <CardAction>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-9 rounded-full cursor-pointer">
+                      <Button variant="ghost" size="icon" className="size-9 cursor-pointer rounded-full">
                         <MoreVertical className="size-5" />
                         <span className="sr-only">Actions</span>
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48 mt-1">
+                    <DropdownMenuContent align="end" className="mt-1 w-48">
                       <DropdownMenuItem
                         onSelect={(e) => {
                           e.preventDefault();
@@ -380,7 +383,7 @@ function ProfileContent() {
                           setEditLocation(location);
                           setIsEditModalOpen(true);
                         }}
-                        className="flex items-center gap-2 cursor-pointer"
+                        className="flex cursor-pointer items-center gap-2"
                       >
                         <Edit className="size-4" />
                         Edit Profile
@@ -391,7 +394,7 @@ function ProfileContent() {
                           onClick={handleResendInvite}
                           disabled={status !== "Pending" || isResending}
                           className={`flex items-center gap-2 ${
-                            status === "Pending" && !isResending ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
+                            status === "Pending" && !isResending ? "cursor-pointer" : "cursor-not-allowed opacity-50"
                           }`}
                         >
                           <Mail className="size-4" />
@@ -403,8 +406,8 @@ function ProfileContent() {
                 </CardAction>
               )}
             </CardHeader>
-            <CardContent className="p-6 md:p-8 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent className="space-y-6 p-6 md:p-8">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Display Name */}
                 <Field className="gap-1.5">
                   <FieldLabel htmlFor="profile-displayName">Username / Display Name</FieldLabel>
@@ -424,7 +427,7 @@ function ProfileContent() {
                   <FieldLabel htmlFor="profile-role">User Role</FieldLabel>
                   <NativeSelect
                     id="profile-role"
-                    className="w-full [&>select]:w-full [&>select]:h-10"
+                    className="w-full [&>select]:h-10 [&>select]:w-full"
                     value={role}
                     disabled
                   >
@@ -458,24 +461,24 @@ function ProfileContent() {
         {isSelf && (
           <TabsContent value="security" className="mt-6">
             <form onSubmit={handleUpdatePassword}>
-              <Card className="border shadow-sm rounded-2xl overflow-hidden py-0">
+              <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
                 <CardHeader className="border-b bg-muted/20 py-4">
                   <CardTitle>Account Credentials</CardTitle>
                   <CardDescription>Keep your administrator security tokens up to date.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-6 md:p-8 space-y-6">
-                  <div className="flex items-start gap-4 p-4 rounded-xl border bg-muted/10 text-muted-foreground text-sm">
-                    <ShieldCheck className="size-5 text-primary shrink-0 mt-0.5" />
+                <CardContent className="space-y-6 p-6 md:p-8">
+                  <div className="flex items-start gap-4 rounded-xl border bg-muted/10 p-4 text-muted-foreground text-sm">
+                    <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
                     <div>
                       <p className="font-medium text-foreground">Password Security Policy</p>
-                      <p className="font-light mt-0.5">
+                      <p className="mt-0.5 font-light">
                         Your password must contain at least 6 characters. If you have been signed in for a long
                         duration, you may be asked to re-authenticate before modifying credential databases.
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  <div className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-2">
                     {/* Email (Read Only) */}
                     <Field className="gap-1.5">
                       <FieldLabel htmlFor="security-email">Registered Email</FieldLabel>
@@ -483,7 +486,7 @@ function ProfileContent() {
                         <Mail className="absolute left-3 size-4 text-muted-foreground" />
                         <Input
                           id="security-email"
-                          className="pl-10 bg-muted/50 cursor-not-allowed"
+                          className="cursor-not-allowed bg-muted/50 pl-10"
                           value={currentUser?.email || ""}
                           disabled
                           readOnly
@@ -518,7 +521,7 @@ function ProfileContent() {
                     </Field>
                   </div>
 
-                  <div className="flex justify-end pt-4 border-t">
+                  <div className="flex justify-end border-t pt-4">
                     <Button type="submit" disabled={savingSecurity} className="min-w-[140px]">
                       {savingSecurity ? "Updating..." : "Change Password"}
                     </Button>
@@ -567,7 +570,7 @@ function ProfileContent() {
                 <FieldLabel htmlFor="modal-role">User Role</FieldLabel>
                 <NativeSelect
                   id="modal-role"
-                  className="w-full [&>select]:w-full [&>select]:h-10"
+                  className="w-full [&>select]:h-10 [&>select]:w-full"
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value)}
                   disabled={isRoleDisabled}
@@ -632,7 +635,7 @@ export default function ProfilePage() {
         <div className="flex h-[60vh] w-full items-center justify-center">
           <div className="relative size-12">
             <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-            <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         </div>
       }

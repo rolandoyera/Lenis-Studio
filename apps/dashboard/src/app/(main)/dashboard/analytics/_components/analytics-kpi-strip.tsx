@@ -15,10 +15,10 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
 
   if (!result.success || !result.data) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center text-muted-foreground bg-card ring-1 ring-foreground/10 min-h-[140px] gap-2">
+      <div className="flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-8 text-center text-muted-foreground ring-1 ring-foreground/10">
         <AnalyticsErrorToast error={result.error} title="Analytics KPI Error" />
-        <span className="font-semibold text-sm text-foreground">Failed to load live metrics</span>
-        <span className="text-xs text-muted-foreground max-w-md">
+        <span className="font-semibold text-foreground text-sm">Failed to load live metrics</span>
+        <span className="max-w-md text-muted-foreground text-xs">
           {result.error || "Please check your Google Analytics configuration settings."}
         </span>
       </div>

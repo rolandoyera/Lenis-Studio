@@ -10,11 +10,19 @@ import React, {
 } from "react";
 import Button from "./ui/Button";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2 } from "lucide-react";
 import Input from "./ui/Input";
+import DoubleBorder from "./ui/DoubleBorder";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 type Ctx = {
   open: () => void;
@@ -87,6 +95,9 @@ const ContactSchema = z.object({
     ),
   email: z.string().email("Enter a valid email"),
   company: z.string().optional(),
+  projectType: z.enum(["Residential", "Commercial", "Other"], {
+    message: "Please select a project type",
+  }),
   ts: z.number().optional(),
 });
 type ContactValues = z.infer<typeof ContactSchema>;
@@ -95,6 +106,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<ContactValues>({
@@ -104,12 +116,14 @@ function ContactModal({ onClose }: { onClose: () => void }) {
       email: "",
       phone: "",
       company: "",
+      projectType: "" as any,
       ts: Date.now(),
     },
   });
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const [isSelectFocused, setIsSelectFocused] = useState(false);
   const closeTimer = React.useRef<number | null>(null);
 
   // clean up timer if modal unmounts/closes early
@@ -190,7 +204,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* MIDDLE CONTENT SECTION */}
-        <div className="px-8 py-18 overflow-y-auto max-h-[60vh] flex-1 bg-card">
+        <div className="px-8 pt-10 pb-14 overflow-y-auto max-h-[60vh] flex-1 bg-card">
           {sent ? (
             <div className="py-8 text-center" aria-live="assertive">
               <CheckCircle2 className="mx-auto h-16 w-16 text-brand stroke-[1.5]" />
@@ -285,6 +299,67 @@ function ContactModal({ onClose }: { onClose: () => void }) {
                 {errors.email && (
                   <p id="email-error" className="mt-1 text-sm text-destructive">
                     {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-11">
+                <label htmlFor="projectType" className="sr-only">
+                  Project Type
+                </label>
+                <Controller
+                  control={control}
+                  name="projectType"
+                  render={({ field }) => (
+                    <div className="relative w-full">
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        onOpenChange={setIsSelectFocused}>
+                        <SelectTrigger
+                          id="projectType"
+                          aria-invalid={!!errors.projectType || undefined}
+                          aria-describedby={
+                            errors.projectType
+                              ? "project-type-error"
+                              : undefined
+                          }
+                          className="w-full flex h-11 items-center justify-between bg-transparent! border-none px-2 py-2 text-base text-taupe-800 focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 outline-none shadow-none cursor-pointer">
+                          <SelectValue placeholder="Select a Project Type *" />
+                        </SelectTrigger>
+                        <SelectContent
+                          position="popper"
+                          className="z-200 bg-card border border-border/30 text-taupe-800">
+                          <SelectItem
+                            value="Residential"
+                            className="cursor-pointer">
+                            Residential
+                          </SelectItem>
+                          <SelectItem
+                            value="Commercial"
+                            className="cursor-pointer">
+                            Commercial
+                          </SelectItem>
+                          <SelectItem value="Other" className="cursor-pointer">
+                            Other
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <DoubleBorder
+                        left="left-0"
+                        borderColor={
+                          isSelectFocused ? "bg-accent" : "bg-border/30"
+                        }
+                        className="transition-all duration-300"
+                      />
+                    </div>
+                  )}
+                />
+                {errors.projectType && (
+                  <p
+                    id="project-type-error"
+                    className="mt-1 text-sm text-destructive">
+                    {errors.projectType.message}
                   </p>
                 )}
               </div>

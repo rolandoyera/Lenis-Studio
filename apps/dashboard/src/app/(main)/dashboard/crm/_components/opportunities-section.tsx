@@ -102,9 +102,7 @@ export function OpportunitiesSection() {
       <Card>
         <CardHeader>
           <CardTitle className="leading-none">Recent Opportunities</CardTitle>
-          <CardDescription>
-            Track qualified leads moving through discovery, proposal, and closing stages.
-          </CardDescription>
+          <CardDescription>Track your recent opportunities here.</CardDescription>
           <CardAction>
             <div className="flex items-center gap-2">
               <Input

@@ -117,9 +117,25 @@ export interface AutofillResult {
  * size suffixes (e.g. `_300x300`, `-1200x1200`) so the same photo served at
  * different resolutions collapses to a single candidate.
  */
+function cleanImageUrlSize(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname;
+    // Strip common Shopify and WordPress thumbnail suffixes (e.g., _170x, _170x170, _large, etc.)
+    const cleanedPath = path.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+    if (cleanedPath !== path) {
+      parsed.pathname = cleanedPath;
+      return parsed.toString();
+    }
+  } catch {
+    return url.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+  }
+  return url;
+}
+
 function imageDedupKey(url: string): string {
   const path = url.split("?")[0].split("#")[0];
-  return path.replace(/[_-]\d{2,4}x\d{2,4}(?=\.[a-z]+$)/i, "").toLowerCase();
+  return cleanImageUrlSize(path).toLowerCase();
 }
 
 /** Picks the URL with the largest width (`w`) or pixel-density (`x`) descriptor in a srcset value. */
@@ -391,10 +407,11 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     for (const src of [...htmlImages, ...candidateImages]) {
       const trimmed = src.trim();
       if (!trimmed.startsWith("http") || junkPatterns.test(trimmed)) continue;
-      const key = imageDedupKey(trimmed);
+      const cleanUrl = cleanImageUrlSize(trimmed);
+      const key = imageDedupKey(cleanUrl);
       if (seenImageKeys.has(key)) continue;
       seenImageKeys.add(key);
-      mergedImages.push(trimmed);
+      mergedImages.push(cleanUrl);
     }
     const filteredImages = mergedImages.slice(0, SCRAPER_CONFIG.maxImageCandidates);
     console.log(`[AI Autofill] Filtered image candidates count: ${filteredImages.length}`, filteredImages);
@@ -422,7 +439,7 @@ ${JSON.stringify(filteredImages)}
 Extract the following specifications and return them in the requested JSON structure. If a field cannot be found, use an empty string or omit it.
 Specifically:
 - name: The clean, brief product name/title (e.g. "Carey Accent Chair").
-- category: Match the product to one of these exact categories: "Appliances", "Art & Decor", "Building Materials", "Doors & Windows", "Equipment", "Fabrics & Rugs", "Finishes", "Fixtures", "Furniture", "Hardware", "Landscaping", "Lighting", "Services", "Surfaces". Choose the single closest match.
+- category: Match the product to one of these exact categories: "Furniture", "Lighting", "Plumbing", "Appliances", "Surfaces", "Fabrics & Textiles", "Finishes", "Doors & Windows", "Decor", "Outdoor", "Construction Materials", "Equipment". Choose the single closest match.
 - description: A clean public description of the product.
 - finishColor: The finish, color, or upholstery (e.g. "Honed Natural", "Boucle Cream").
 - manufacturer: The brand or manufacturer (e.g. "Crate & Barrel").
@@ -647,7 +664,10 @@ function normalizeToHomepage(url: string): string {
 }
 
 function resolveAbsoluteUrl(href: string, base: string): string {
-  if (href.startsWith("http")) return href;
+  if (href.startsWith("http://")) {
+    return href.replace(/^http:\/\//i, "https://");
+  }
+  if (href.startsWith("https://")) return href;
   if (href.startsWith("//")) return `https:${href}`;
   if (href.startsWith("/")) {
     try {
@@ -775,10 +795,11 @@ function extractVendorImageCandidates(markdown: string): {
 
   for (const src of all) {
     if (junkRe.test(src)) continue;
-    if (logoKeyRe.test(src)) {
-      if (logoCandidates.length < 6) logoCandidates.push(src);
+    const cleanUrl = cleanImageUrlSize(src);
+    if (logoKeyRe.test(cleanUrl)) {
+      if (logoCandidates.length < 6 && !logoCandidates.includes(cleanUrl)) logoCandidates.push(cleanUrl);
     } else {
-      if (imageCandidates.length < 6) imageCandidates.push(src);
+      if (imageCandidates.length < 6 && !imageCandidates.includes(cleanUrl)) imageCandidates.push(cleanUrl);
     }
   }
 
@@ -848,15 +869,15 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
     );
 
     const logoSourceLines = [
-      ogMeta.schemaLogo ? `Schema.org logo (highest priority): ${ogMeta.schemaLogo}` : null,
-      ogMeta.faviconUrl ? `Apple touch icon / favicon: ${ogMeta.faviconUrl}` : null,
+      ogMeta.schemaLogo ? `Schema.org logo (highest priority): ${cleanImageUrlSize(ogMeta.schemaLogo)}` : null,
+      ogMeta.faviconUrl ? `Apple touch icon / favicon: ${cleanImageUrlSize(ogMeta.faviconUrl)}` : null,
       logoCandidates.length > 0 ? `Logo URL candidates from page: ${JSON.stringify(logoCandidates)}` : null,
     ]
       .filter(Boolean)
       .join("\n");
 
     const heroSourceLines = [
-      ogMeta.ogImage ? `og:image (highest priority): ${ogMeta.ogImage}` : null,
+      ogMeta.ogImage ? `og:image (highest priority): ${cleanImageUrlSize(ogMeta.ogImage)}` : null,
       imageCandidates.length > 0 ? `Hero image candidates from page: ${JSON.stringify(imageCandidates)}` : null,
     ]
       .filter(Boolean)

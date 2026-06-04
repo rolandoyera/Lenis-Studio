@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function ProposalsPage() {
   return (
-    <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto pt-6">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pt-6">
       {/* Header section with Premium typography */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight font-heading">Interactive Proposals</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <h1 className="font-bold font-heading text-3xl tracking-tight">Interactive Proposals</h1>
+        <p className="mt-1 text-muted-foreground text-sm">
           Create room-by-room spreadsheets, override quantities, print luxury client catalog PDFs, and dispatch via
           Brevo.
         </p>
@@ -20,16 +20,16 @@ export default function ProposalsPage() {
       {/* Modern teaser card for Phase 2 spreadsheet matrix */}
       <Card className="relative overflow-hidden border bg-linear-to-br from-primary/10 via-background to-background p-6">
         {/* Decorative subtle visual accent */}
-        <div className="absolute -top-12 -right-12 size-40 bg-primary/10 rounded-full blur-2xl" />
+        <div className="absolute -top-12 -right-12 size-40 rounded-full bg-primary/10 blur-2xl" />
 
-        <CardHeader className="p-0 pb-4 flex flex-row items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 border border-primary/20 text-primary">
+        <CardHeader className="flex flex-row items-center gap-3 p-0 pb-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/15 text-primary">
             <ReceiptText className="size-5" />
           </div>
           <div>
-            <CardTitle className="font-heading text-lg font-semibold flex items-center gap-1.5">
+            <CardTitle className="flex items-center gap-1.5 font-heading font-semibold text-lg">
               Room-by-Room Spreadsheet Matrix
-              <span className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-primary/20 text-primary animate-pulse">
+              <span className="animate-pulse rounded-full bg-primary/20 px-2 py-0.5 font-bold text-[9px] text-primary uppercase tracking-wider">
                 Phase 2
               </span>
             </CardTitle>
@@ -39,12 +39,12 @@ export default function ProposalsPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="p-0 flex flex-col gap-4 text-sm text-muted-foreground leading-relaxed">
+        <CardContent className="flex flex-col gap-4 p-0 text-muted-foreground text-sm leading-relaxed">
           <p>
             The upcoming **Interactive Proposal Matrix** will link your projects directly to items in the **Global
             Catalog Library**. You will be able to:
           </p>
-          <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-semibold text-foreground/80 list-disc list-inside pl-1.5">
+          <ul className="grid list-inside list-disc grid-cols-1 gap-2 pl-1.5 font-semibold text-foreground/80 text-xs md:grid-cols-2">
             <li>Nesting & collapsible Room Headers</li>
             <li>Drag & drop reordering handles</li>
             <li>Inline "Calculate Costs" Popups</li>
@@ -53,12 +53,12 @@ export default function ProposalsPage() {
             <li>Sourcing images inline previews</li>
           </ul>
 
-          <div className="flex items-center gap-3 border-t pt-5 mt-2">
+          <div className="mt-2 flex items-center gap-3 border-t pt-5">
             <Button disabled className="flex items-center gap-2">
               <Plus className="size-4" />
               Create Draft Proposal
             </Button>
-            <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+            <p className="flex items-center gap-1 text-[10px] text-muted-foreground italic">
               <Loader2 className="size-3 animate-spin text-primary" />
               Awaiting Phase 2 implementation. Database and collection structures are ready!
             </p>

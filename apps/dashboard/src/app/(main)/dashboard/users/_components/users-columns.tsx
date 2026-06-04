@@ -55,7 +55,7 @@ function AvatarCell({ lastActive, name, status }: { lastActive: number; name: st
     return (
       <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
         <AvatarFallback>{getInitials(name)}</AvatarFallback>
-        <AvatarBadge className="bg-rose-500 size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+        <AvatarBadge className="absolute flex size-2.5 items-center justify-center border-none bg-rose-500 p-0 ring-2 ring-background">
           <span className="size-1.5 rounded-full bg-rose-500" />
         </AvatarBadge>
       </Avatar>
@@ -76,11 +76,11 @@ function AvatarCell({ lastActive, name, status }: { lastActive: number; name: st
     return (
       <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
         <AvatarFallback>{getInitials(name)}</AvatarFallback>
-        <AvatarBadge className="bg-emerald-500 size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+        <AvatarBadge className="absolute flex size-2.5 items-center justify-center border-none bg-emerald-500 p-0 ring-2 ring-background">
           {/* Core dot */}
           <span className="absolute size-1.5 rounded-full bg-emerald-500" />
           {/* Breathing ping layer */}
-          <span className="absolute size-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
+          <span className="absolute size-full animate-ping rounded-full bg-emerald-500 opacity-75" />
         </AvatarBadge>
       </Avatar>
     );
@@ -90,7 +90,7 @@ function AvatarCell({ lastActive, name, status }: { lastActive: number; name: st
     return (
       <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
         <AvatarFallback>{getInitials(name)}</AvatarFallback>
-        <AvatarBadge className="bg-amber-500 size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+        <AvatarBadge className="absolute flex size-2.5 items-center justify-center border-none bg-amber-500 p-0 ring-2 ring-background">
           <span className="size-1.5 rounded-full bg-amber-500" />
         </AvatarBadge>
       </Avatar>
@@ -101,7 +101,7 @@ function AvatarCell({ lastActive, name, status }: { lastActive: number; name: st
   return (
     <Avatar size="lg" className={cn("font-medium", getAvatarTone(name))}>
       <AvatarFallback>{getInitials(name)}</AvatarFallback>
-      <AvatarBadge className="bg-background size-2.5 border-none ring-2 ring-background p-0 absolute flex items-center justify-center">
+      <AvatarBadge className="absolute flex size-2.5 items-center justify-center border-none bg-background p-0 ring-2 ring-background">
         <span className="size-1.5 rounded-full bg-muted-foreground/20 ring-1 ring-muted-foreground/30" />
       </AvatarBadge>
     </Avatar>
@@ -143,7 +143,7 @@ export const usersColumns: ColumnDef<UserRow>[] = [
     header: ({ column }) => (
       <Button
         variant="ghost"
-        className="-ml-3 hover:bg-transparent font-normal flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+        className="-ml-3 flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         User
@@ -165,7 +165,7 @@ export const usersColumns: ColumnDef<UserRow>[] = [
     header: ({ column }) => (
       <Button
         variant="ghost"
-        className="-ml-3 hover:bg-transparent font-normal flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+        className="-ml-3 flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         Role

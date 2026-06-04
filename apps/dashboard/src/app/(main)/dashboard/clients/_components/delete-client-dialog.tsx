@@ -25,13 +25,13 @@ interface DeleteClientDialogProps {
 export function DeleteClientDialog({ open, onOpenChange, clientName, deleting, onConfirm }: DeleteClientDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="sm:max-w-md bg-popover/95 backdrop-blur-md">
+      <AlertDialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription className="text-sm">
             This action cannot be undone. This will permanently delete the client contact profile{" "}
             <span className="font-medium text-foreground">{clientName}</span> from the studio databases.
-            <span className="block mt-2 font-medium text-amber-600">
+            <span className="mt-2 block font-medium text-amber-600">
               (Linked projects and proposals will remain, but the parent client reference association will be removed).
             </span>
           </AlertDialogDescription>
@@ -44,7 +44,7 @@ export function DeleteClientDialog({ open, onOpenChange, clientName, deleting, o
               onConfirm();
             }}
             disabled={deleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 flex items-center gap-1.5 cursor-pointer"
+            className="flex cursor-pointer items-center gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
             {deleting && <Loader2 className="size-4 animate-spin" />}
             Delete Client Profile

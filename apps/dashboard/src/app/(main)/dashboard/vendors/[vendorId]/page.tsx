@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +38,7 @@ import { Label } from "@/components/ui/label";
 import { deleteVendor, getVendor, updateVendor } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 import { formatPhone, getInitials, normalizePhone } from "@/lib/utils";
+import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
 
 import HeaderBackLink from "../../_components/HeaderBackLink";
 import { type VendorFormData, VendorFormDialog, vendorToForm } from "../_components/vendor-form-dialog";
@@ -62,6 +64,7 @@ function vendorGradient(name: string) {
 export default function VendorDetailPage({ params }: PageProps) {
   const { vendorId } = use(params);
   const router = useRouter();
+  const { profile, loading: authLoading } = useAuth();
 
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,10 +73,12 @@ export default function VendorDetailPage({ params }: PageProps) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    if (authLoading || !profile) return;
+    const orgId = profile.organizationId;
     async function load() {
       try {
         const data = await getVendor(vendorId);
-        if (!data) {
+        if (!data || data.organizationId !== orgId) {
           toast.error("Vendor not found.");
           router.push("/dashboard/vendors");
           return;
@@ -86,12 +91,21 @@ export default function VendorDetailPage({ params }: PageProps) {
       }
     }
     void load();
-  }, [vendorId, router]);
+  }, [vendorId, router, profile, authLoading]);
 
   const handleEdit = async (data: VendorFormData) => {
     if (!vendor) return;
-    await updateVendor(vendor.vendorId, data);
-    setVendor({ ...vendor, ...data });
+    const mirrored = await mirrorVendorImagesToFirebase({
+      logoUrl: data.logoUrl,
+      heroImageUrl: data.heroImageUrl,
+    });
+    const updatedData = {
+      ...data,
+      logoUrl: mirrored.logoUrl,
+      heroImageUrl: mirrored.heroImageUrl,
+    };
+    await updateVendor(vendor.vendorId, updatedData);
+    setVendor({ ...vendor, ...updatedData });
     toast.success("Vendor updated successfully!");
     setIsEditOpen(false);
   };
@@ -109,11 +123,11 @@ export default function VendorDetailPage({ params }: PageProps) {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">Loading Vendor Profile</p>
+        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Vendor Profile</p>
       </div>
     );
   }
@@ -130,38 +144,38 @@ export default function VendorDetailPage({ params }: PageProps) {
     : null;
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl mx-auto">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <HeaderBackLink />
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center gap-2">
-          <Badge className="uppercase bg-primary/10 text-primary border border-primary/20">{vendor.category}</Badge>
+          <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">{vendor.category}</Badge>
         </div>
-        <h1 className="text-3xl font-medium tracking-tight font-heading mt-1">{vendor.name}</h1>
+        <h1 className="mt-1 font-heading font-medium text-3xl tracking-tight">{vendor.name}</h1>
       </div>
 
       {/* Hero header card */}
       <Card className="overflow-hidden pt-0">
         {/* Banner: hero image → gradient fallback */}
-        <div className="relative h-62 w-full overflow-hidden flex items-end">
+        <div className="relative flex h-62 w-full items-end overflow-hidden">
           {vendor.heroImageUrl ? (
-            <img src={vendor.heroImageUrl} alt="Vendor Image" className="absolute inset-0 w-full h-full object-cover" />
+            <img src={vendor.heroImageUrl} alt="Vendor Image" className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
           )}
           <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute bottom-0 left-6 translate-y-1/2 z-10">
-            <div className="flex size-20 items-center justify-center rounded-2xl bg-background border-2 border-border shadow-md overflow-hidden">
+          <div className="absolute bottom-0 left-6 z-10 translate-y-1/2">
+            <div className="flex size-20 items-center justify-center overflow-hidden rounded-2xl border-2 border-border bg-background shadow-md">
               {vendor.logoUrl ? (
                 <img
                   src={vendor.logoUrl}
                   alt={vendor.name}
-                  className="w-full h-full object-contain p-2"
+                  className="h-full w-full object-contain p-2"
                   onError={(e) => {
                     (e.currentTarget as HTMLImageElement).style.display = "none";
                   }}
                 />
               ) : (
-                <span className="text-2xl font-bold font-heading text-foreground/80 select-none">
+                <span className="select-none font-bold font-heading text-2xl text-foreground/80">
                   {initials.slice(0, 2)}
                 </span>
               )}
@@ -170,10 +184,10 @@ export default function VendorDetailPage({ params }: PageProps) {
         </div>
 
         {/* Name row */}
-        <CardContent className="pt-14 pb-5 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <CardContent className="flex flex-col gap-4 pt-14 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold font-heading tracking-tight">{vendor.name}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-bold font-heading text-2xl tracking-tight">{vendor.name}</h1>
               {vendor.category && (
                 <Badge variant="secondary" className="text-xs">
                   {vendor.category}
@@ -185,18 +199,18 @@ export default function VendorDetailPage({ params }: PageProps) {
                 href={websiteHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-primary"
               >
                 <Globe className="size-3.5" />
-                {vendor.website!.replace(/(^\w+:|^)\/\//, "")}
+                {vendor.website?.replace(/(^\w+:|^)\/\//, "")}
                 <ExternalLink className="size-3" />
               </a>
             ) : (
-              <span className="text-sm text-muted-foreground/50 italic">No website on file</span>
+              <span className="text-muted-foreground/50 text-sm italic">No website on file</span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)} className="gap-1.5">
               <Edit3 className="size-3.5" />
               Edit
@@ -205,7 +219,7 @@ export default function VendorDetailPage({ params }: PageProps) {
               variant="ghost"
               size="sm"
               onClick={() => setIsDeleteOpen(true)}
-              className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
               <Trash2 className="size-3.5" />
               Delete
@@ -215,7 +229,7 @@ export default function VendorDetailPage({ params }: PageProps) {
       </Card>
 
       {/* Detail cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {/* Account & Address */}
         <Card className="bg-card/60">
           <CardHeader className="pb-3">
@@ -253,7 +267,7 @@ export default function VendorDetailPage({ params }: PageProps) {
               <div className="flex flex-col gap-1">
                 <Label>Address</Label>
                 <span className="flex items-start gap-2 text-foreground/80">
-                  <MapPin className="size-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                  <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                   <span>
                     {vendor.street && <span className="block">{vendor.street}</span>}
                     {(vendor.city || vendor.state || vendor.zip) && (
@@ -271,7 +285,7 @@ export default function VendorDetailPage({ params }: PageProps) {
               !vendor.street &&
               !vendor.city &&
               !vendor.state &&
-              !vendor.zip && <p className="text-sm text-muted-foreground/50 italic">No account information on file.</p>}
+              !vendor.zip && <p className="text-muted-foreground/50 text-sm italic">No account information on file.</p>}
           </CardContent>
         </Card>
 
@@ -295,7 +309,7 @@ export default function VendorDetailPage({ params }: PageProps) {
                 <Label>Email</Label>
                 <a
                   href={`mailto:${vendor.repEmail}`}
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors"
+                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary"
                 >
                   <Mail className="size-3.5 text-muted-foreground" />
                   {vendor.repEmail}
@@ -307,7 +321,7 @@ export default function VendorDetailPage({ params }: PageProps) {
                 <Label>Phone</Label>
                 <a
                   href={`tel:${normalizePhone(vendor.repPhone)}`}
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary transition-colors"
+                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary"
                 >
                   <Phone className="size-3.5 text-muted-foreground" />
                   {formatPhone(vendor.repPhone)}
@@ -315,22 +329,22 @@ export default function VendorDetailPage({ params }: PageProps) {
               </div>
             ) : null}
             {!vendor.repName && !vendor.repEmail && !vendor.repPhone && (
-              <p className="text-sm text-muted-foreground/50 italic">No representative contact on file.</p>
+              <p className="text-muted-foreground/50 text-sm italic">No representative contact on file.</p>
             )}
           </CardContent>
         </Card>
 
         {/* Sourcing Notes — full width */}
         {vendor.notes && (
-          <Card className="md:col-span-2 bg-card/60">
+          <Card className="bg-card/60 md:col-span-2">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-semibold text-sm">
                 <FileText className="size-4 text-muted-foreground" />
                 Sourcing Notes
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{vendor.notes}</p>
+              <p className="whitespace-pre-wrap text-foreground/80 text-sm leading-relaxed">{vendor.notes}</p>
             </CardContent>
           </Card>
         )}
@@ -349,7 +363,7 @@ export default function VendorDetailPage({ params }: PageProps) {
 
       {/* Delete confirm */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent className="sm:max-w-md bg-popover/95 backdrop-blur-md">
+        <AlertDialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{vendor.name}"?</AlertDialogTitle>
             <AlertDialogDescription>

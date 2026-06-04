@@ -3,6 +3,7 @@ import type { Client, LibraryItem, Project, Vendor } from "@/lib/types";
 export const mockVendors: Vendor[] = [
   {
     vendorId: "v-arteriors",
+    organizationId: "org-demo",
     name: "Arteriors Showroom",
     website: "https://www.arteriorshome.com",
     repName: "Diana Prince",
@@ -13,6 +14,7 @@ export const mockVendors: Vendor[] = [
   },
   {
     vendorId: "v-viola",
+    organizationId: "org-demo",
     name: "Calacatta Marble & Co",
     website: "https://www.calacattaviola.example.com",
     repName: "Marco Rossi",
@@ -23,6 +25,7 @@ export const mockVendors: Vendor[] = [
   },
   {
     vendorId: "v-rh",
+    organizationId: "org-demo",
     name: "RH Modern",
     website: "https://www.restorationhardware.com",
     repName: "Sarah Connor",
@@ -36,6 +39,7 @@ export const mockVendors: Vendor[] = [
 export const mockClients: Client[] = [
   {
     uid: "c-sophia",
+    organizationId: "org-demo",
     firstName: "Sophia",
     lastName: "Loren",
     email: "sophia.loren@luxurymail.com",
@@ -50,6 +54,7 @@ export const mockClients: Client[] = [
   },
   {
     uid: "c-arthur",
+    organizationId: "org-demo",
     firstName: "Arthur",
     lastName: "Pendragon",
     email: "arthur.king@camelotholdings.com",
@@ -67,6 +72,7 @@ export const mockClients: Client[] = [
 export const mockProjects: Project[] = [
   {
     projectId: "p-loren-malibu",
+    organizationId: "org-demo",
     clientId: "c-sophia",
     name: "Malibu Beachside Penthouse",
     address: "24000 Pacific Coast Hwy, Malibu, CA 90265",
@@ -78,6 +84,7 @@ export const mockProjects: Project[] = [
   },
   {
     projectId: "p-king-tudor",
+    organizationId: "org-demo",
     clientId: "c-arthur",
     name: "Camelot Coastal Estate Manor",
     address: "100 Ocean Drive, Newport, RI 02840",
@@ -92,6 +99,7 @@ export const mockProjects: Project[] = [
 export const mockLibraryItems: LibraryItem[] = [
   {
     itemId: "item-viola",
+    organizationId: "org-demo",
     name: "Calacatta Viola Marble, Honed Slab",
     costType: "Product",
     category: "Surfaces",
@@ -117,6 +125,7 @@ export const mockLibraryItems: LibraryItem[] = [
   },
   {
     itemId: "item-hayden",
+    organizationId: "org-demo",
     name: "Hayden 4-Globe Chandelier in Antique Brass",
     costType: "Product",
     category: "Lighting",
@@ -142,6 +151,7 @@ export const mockLibraryItems: LibraryItem[] = [
   },
   {
     itemId: "item-limestone",
+    organizationId: "org-demo",
     name: "Paris Gray Limestone Floor Tiles",
     costType: "Product",
     category: "Surfaces",

@@ -78,7 +78,7 @@ export function ProjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md lg:max-w-2xl bg-popover/95 backdrop-blur-md">
+      <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md lg:max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
           <DialogHeader>
             <DialogTitle className="text-xl">{title}</DialogTitle>
@@ -103,7 +103,7 @@ export function ProjectFormDialog({
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>
-                      Parent Client <span className="text-destructive ml-0.5">*</span>
+                      Parent Client <span className="ml-0.5 text-destructive">*</span>
                     </Label>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger aria-invalid={fieldState.invalid}>
@@ -130,7 +130,7 @@ export function ProjectFormDialog({
               render={({ field, fieldState }) => (
                 <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                   <Label className={LABEL_CLASS}>
-                    Project Title <span className="text-destructive ml-0.5">*</span>
+                    Project Title <span className="ml-0.5 text-destructive">*</span>
                   </Label>
                   <Input
                     {...field}

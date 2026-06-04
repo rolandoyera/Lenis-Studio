@@ -1,11 +1,13 @@
 import {
   Activity,
   Banknote,
+  Building2,
   Calendar,
   ChartBar,
   FolderKanban,
   Forklift,
   Gauge,
+  Globe,
   GraduationCap,
   Kanban,
   LayoutDashboard,
@@ -131,6 +133,12 @@ export const sidebarItems: NavGroup[] = [
     label: "Pages",
     items: [
       {
+        title: "Website",
+        url: "/dashboard/coming-soon",
+        icon: Globe,
+        comingSoon: true,
+      },
+      {
         title: "Chat",
         url: "/dashboard/coming-soon",
         icon: MessageSquare,
@@ -158,6 +166,11 @@ export const sidebarItems: NavGroup[] = [
         title: "Users",
         url: "/dashboard/users",
         icon: Users,
+      },
+      {
+        title: "Tenants",
+        url: "/dashboard/tenants",
+        icon: Building2,
       },
     ],
   },

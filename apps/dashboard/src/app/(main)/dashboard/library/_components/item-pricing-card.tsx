@@ -24,35 +24,35 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {/* Four-cell pricing row — gap-px/bg-border produces hairline dividers */}
-        <div className="grid grid-cols-4 gap-px rounded-xl border border-border/50 bg-border overflow-hidden text-center">
+        <div className="grid grid-cols-4 gap-px overflow-hidden rounded-xl border border-border/50 bg-border text-center">
           {/* Sourcing Cost */}
-          <div className="flex flex-col justify-center items-center gap-1 p-3.5 bg-linear-to-t from-primary/10 to-card shadow-xs bg-card">
+          <div className="flex flex-col items-center justify-center gap-1 bg-card bg-linear-to-t from-primary/10 to-card p-3.5 shadow-xs">
             <Label className="uppercase">Cost</Label>
-            <span className="text-base font-medium text-foreground">{formatCurrency(item.unitCost)}</span>
+            <span className="font-medium text-base text-foreground">{formatCurrency(item.unitCost)}</span>
           </div>
 
           {/* Markup */}
-          <div className="flex flex-col justify-center items-center gap-1 p-3.5 bg-linear-to-t from-primary/10 to-card shadow-xs bg-card">
+          <div className="flex flex-col items-center justify-center gap-1 bg-card bg-linear-to-t from-primary/10 to-card p-3.5 shadow-xs">
             <Label className="uppercase">Markup</Label>
-            <span className="text-base font-medium text-foreground">{Math.round(item.markup)}%</span>
+            <span className="font-medium text-base text-foreground">{Math.round(item.markup)}%</span>
           </div>
 
           {/* Selling Price */}
-          <div className="flex flex-col justify-center items-center gap-1 p-3.5 bg-linear-to-t from-primary/10 to-card shadow-xs bg-card">
+          <div className="flex flex-col items-center justify-center gap-1 bg-card bg-linear-to-t from-primary/10 to-card p-3.5 shadow-xs">
             <Label className="uppercase">Selling Price</Label>
-            <span className="text-base font-medium text-foreground">{formatCurrency(item.sellingPrice)}</span>
+            <span className="font-medium text-base text-foreground">{formatCurrency(item.sellingPrice)}</span>
           </div>
 
           {/* Net Profit — emerald when profitable, amber when not */}
           <div
             className={
               profitable
-                ? "flex flex-col gap-1 p-3.5 bg-linear-to-t from-emerald-600/10 to-card shadow-xs bg-card"
-                : "flex flex-col gap-1 p-3.5 bg-linear-to-t from-red-500/10 to-card shadow-xs bg-card"
+                ? "flex flex-col gap-1 bg-card bg-linear-to-t from-emerald-600/10 to-card p-3.5 shadow-xs"
+                : "flex flex-col gap-1 bg-card bg-linear-to-t from-red-500/10 to-card p-3.5 shadow-xs"
             }
           >
             <span
-              className={`flex items-center justify-center gap-1 text-[10px] font-medium tracking-wider uppercase ${
+              className={`flex items-center justify-center gap-1 font-medium text-[10px] uppercase tracking-wider ${
                 profitable ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
               }`}
             >
@@ -60,7 +60,7 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
               Profit
             </span>
             <span
-              className={`text-base font-semibold font-mono ${
+              className={`font-mono font-semibold text-base ${
                 profitable ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"
               }`}
             >
@@ -71,9 +71,9 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
 
         {/* Optional MSRP */}
         {item.msrp && item.msrp > 0 ? (
-          <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-3 border-border/30">
+          <div className="flex items-center justify-between border-border/30 border-t pt-3 text-muted-foreground text-sm">
             <span>Suggested Retail (MSRP)</span>
-            <span className="font-medium text-foreground/80 font-mono">{formatCurrency(item.msrp)}</span>
+            <span className="font-medium font-mono text-foreground/80">{formatCurrency(item.msrp)}</span>
           </div>
         ) : null}
       </CardContent>

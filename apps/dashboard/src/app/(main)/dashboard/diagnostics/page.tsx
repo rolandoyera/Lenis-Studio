@@ -67,7 +67,7 @@ export default function DiagnosticsPage() {
 
   useEffect(() => {
     void loadRuns();
-  }, []);
+  }, [loadRuns]);
 
   // Wipes temporary collection
   const handleClear = async () => {
@@ -106,16 +106,16 @@ export default function DiagnosticsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       {/* Premium Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
+      <div className="flex flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
         <div>
-          <div className="flex items-center gap-2 text-primary text-sm font-semibold mb-1 uppercase tracking-wider">
+          <div className="mb-1 flex items-center gap-2 font-semibold text-primary text-sm uppercase tracking-wider">
             <Activity className="size-4 animate-pulse" />
             AI Diagnostic Console
           </div>
           <H1>Logs & Extraction Diagnostics</H1>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="mt-1 text-muted-foreground text-sm">
             Real-time inspection center showing scraped markdown data, prompts, and raw JSON returned by Luna.
           </p>
         </div>
@@ -142,24 +142,24 @@ export default function DiagnosticsPage() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
           <RefreshCw className="size-8 animate-spin text-primary" />
-          <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+          <p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
             Querying Diagnostic Log Runs
           </p>
         </div>
       ) : runs.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center min-h-[350px] border-dashed text-center p-8 bg-background/30 backdrop-blur-xs">
-          <Activity className="size-16 text-muted-foreground/35 mb-4 animate-pulse" />
+        <Card className="flex min-h-[350px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center backdrop-blur-xs">
+          <Activity className="mb-4 size-16 animate-pulse text-muted-foreground/35" />
           <h3 className="font-heading font-semibold text-xl">No Diagnostic Runs Found</h3>
-          <p className="text-muted-foreground text-sm max-w-md mt-2 leading-relaxed">
+          <p className="mt-2 max-w-md text-muted-foreground text-sm leading-relaxed">
             Run an AI Product Autofill from a webpage link or AI Vendor Autofill from a domain homepage, and your
             telemetry logs will populate here automatically.
           </p>
-          <div className="flex items-center gap-4 mt-6">
+          <div className="mt-6 flex items-center gap-4">
             <Button asChild variant="outline">
               <Link href="/dashboard/library">
-                <ArrowLeft className="size-4 mr-2" />
+                <ArrowLeft className="mr-2 size-4" />
                 Go to Product Library
               </Link>
             </Button>
@@ -169,10 +169,10 @@ export default function DiagnosticsPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           {/* LEFT PANEL: Historical Run Selector */}
-          <div className="lg:col-span-4 flex flex-col gap-3 max-h-[750px] overflow-y-auto pr-1">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1 px-1">
+          <div className="flex max-h-[750px] flex-col gap-3 overflow-y-auto px-1 lg:col-span-4">
+            <h3 className="mb-1 px-1 font-bold text-muted-foreground text-xs uppercase tracking-wider">
               Captured Sessions ({runs.length})
             </h3>
             {runs.map((run) => {
@@ -184,30 +184,30 @@ export default function DiagnosticsPage() {
                   key={run.runId}
                   onClick={() => setSelectedRun(run)}
                   className={cn(
-                    "cursor-pointer transition-all duration-200 hover:border-primary/30 py-3.5",
+                    "cursor-pointer transition-all duration-200 hover:border-primary/30",
                     active
                       ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
-                      : "bg-card/40 hover:bg-card/75",
+                      : "bg-card/40 hover:bg-primary/10",
                   )}
                 >
-                  <CardContent className="flex flex-col gap-2.5 p-0">
-                    <div className="flex items-center justify-between w-full">
+                  <CardContent className="flex flex-col gap-2.5">
+                    <div className="flex w-full items-center justify-between">
                       <Badge
                         variant={run.type === "product" ? "default" : "secondary"}
-                        className="text-[9px] font-extrabold uppercase tracking-wider"
+                        className="font-extrabold text-[9px] uppercase tracking-wider"
                       >
                         {run.type === "product" ? "Product Autofill" : "Vendor Profile"}
                       </Badge>
-                      <span className="text-[11px] text-muted-foreground font-medium">
+                      <span className="font-medium text-[11px] text-muted-foreground">
                         {formatTimestamp(run.createdAt)}
                       </span>
                     </div>
 
                     <div>
-                      <h4 className="font-heading font-semibold text-sm truncate text-foreground group-hover:text-primary">
+                      <h4 className="truncate font-heading font-semibold text-foreground text-sm group-hover:text-primary">
                         {run.parsedData?.name || "Unnamed Entity"}
                       </h4>
-                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                      <p className="mt-0.5 flex items-center gap-1 truncate text-muted-foreground text-xs">
                         <Globe className="size-3 shrink-0" />
                         {domain}
                       </p>
@@ -219,23 +219,23 @@ export default function DiagnosticsPage() {
           </div>
 
           {/* RIGHT PANEL: Live Inspector Console */}
-          <div className="lg:col-span-8 flex flex-col gap-4">
+          <div className="flex flex-col gap-4 lg:col-span-8">
             {/* Header info of active inspect target */}
             {selectedRun && (
-              <Card className="bg-card/40 backdrop-blur-xs">
-                <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-0">
+              <Card>
+                <CardContent className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                   <div>
-                    <span className="text-xs text-primary font-bold uppercase tracking-wider">
+                    <span className="font-bold text-primary text-xs uppercase tracking-wider">
                       Active Inspector Target
                     </span>
-                    <h2 className="font-heading font-bold text-lg text-foreground mt-0.5">
+                    <h2 className="mt-0.5 font-bold font-heading text-foreground text-lg">
                       {selectedRun.parsedData?.name || "Unnamed"}
                     </h2>
                     <a
                       href={selectedRun.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-muted-foreground hover:text-primary hover:underline flex items-center gap-1.5 mt-1"
+                      className="mt-1 flex items-center gap-1.5 text-muted-foreground text-xs hover:text-primary hover:underline"
                     >
                       <Globe className="size-3" />
                       {selectedRun.url}
@@ -243,7 +243,7 @@ export default function DiagnosticsPage() {
                     </a>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="px-3 py-1 font-semibold text-xs border-border">
+                    <Badge variant="outline" className="border-border px-3 py-1 font-semibold text-xs">
                       ID: {selectedRun.runId}
                     </Badge>
                   </div>
@@ -252,7 +252,7 @@ export default function DiagnosticsPage() {
             )}
 
             {/* Tab navigation */}
-            <div className="flex border-b border-border gap-1 overflow-x-auto">
+            <div className="flex gap-1 overflow-x-auto border-border border-b">
               {TABS.map((tab) => {
                 const ActiveIcon = tab.icon;
                 const active = activeTab === tab.id;
@@ -261,10 +261,10 @@ export default function DiagnosticsPage() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
-                      "flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all cursor-pointer whitespace-nowrap",
+                      "flex cursor-pointer items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 font-semibold text-xs transition-all",
                       active
-                        ? "border-primary text-primary bg-primary/5"
-                        : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30",
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                     )}
                   >
                     <ActiveIcon className="size-3.5" />
@@ -280,22 +280,22 @@ export default function DiagnosticsPage() {
               {activeTab === "extracted" && selectedRun && (
                 <div className="flex flex-col gap-6">
                   {/* Detailed Field Cards Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                     {/* Basic Meta Fields */}
                     <Card className="bg-card/50">
-                      <CardHeader className="border-b border-border/30 pb-3">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <CardHeader className="border-border/30 border-b pb-3">
+                        <CardTitle className="flex items-center gap-2">
                           <ShoppingBag className="size-4 text-primary" />
                           Brand & Category Details
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="flex flex-col gap-4 mt-4">
+                      <CardContent className="mt-4 flex flex-col gap-4">
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                          <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                             Extracted Name
                           </span>
-                          <div className="h-5 flex items-center">
-                            <span className="text-sm font-semibold text-foreground">
+                          <div className="flex h-5 items-center">
+                            <span className="font-semibold text-foreground text-sm">
                               {selectedRun.parsedData?.name || (
                                 <em className="text-muted-foreground/50">Not extracted</em>
                               )}
@@ -304,29 +304,29 @@ export default function DiagnosticsPage() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                          <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                             Matched Category
                           </span>
-                          <div className="h-5 flex items-center">
+                          <div className="flex h-5 items-center">
                             {selectedRun.parsedData?.category ? (
                               <Badge className="font-bold text-[9px] uppercase tracking-wider">
                                 {selectedRun.parsedData.category}
                               </Badge>
                             ) : (
-                              <em className="text-xs text-muted-foreground/50">Not matched</em>
+                              <em className="text-muted-foreground/50 text-xs">Not matched</em>
                             )}
                           </div>
                         </div>
 
                         {selectedRun.type === "product" && (
                           <div className="flex flex-col gap-1">
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                            <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                               Product SKU
                             </span>
-                            <div className="h-5 flex items-center">
-                              <span className="text-sm font-mono font-medium text-foreground">
+                            <div className="flex h-5 items-center">
+                              <span className="font-medium font-mono text-foreground text-sm">
                                 {selectedRun.parsedData?.sku || (
-                                  <em className="text-muted-foreground/50 font-sans">Not extracted</em>
+                                  <em className="font-sans text-muted-foreground/50">Not extracted</em>
                                 )}
                               </span>
                             </div>
@@ -334,11 +334,11 @@ export default function DiagnosticsPage() {
                         )}
 
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                          <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                             Business Phone
                           </span>
-                          <div className="h-5 flex items-center">
-                            <span className="text-sm font-medium text-foreground">
+                          <div className="flex h-5 items-center">
+                            <span className="font-medium text-foreground text-sm">
                               {selectedRun.parsedData?.repPhone || (
                                 <em className="text-muted-foreground/50">Not extracted</em>
                               )}
@@ -347,11 +347,11 @@ export default function DiagnosticsPage() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                          <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                             Business Email
                           </span>
-                          <div className="h-5 flex items-center">
-                            <span className="text-sm font-medium text-foreground">
+                          <div className="flex h-5 items-center">
+                            <span className="font-medium text-foreground text-sm">
                               {selectedRun.parsedData?.repEmail || (
                                 <em className="text-muted-foreground/50">Not extracted</em>
                               )}
@@ -363,21 +363,21 @@ export default function DiagnosticsPage() {
 
                     {/* Address & Specs */}
                     <Card className="bg-card/50">
-                      <CardHeader className="border-b border-border/30 pb-3">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <CardHeader className="border-border/30 border-b pb-3">
+                        <CardTitle className="flex items-center gap-2">
                           <Globe className="size-4 text-primary" />
                           Specs & Address Context
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="flex flex-col gap-4 mt-4">
+                      <CardContent className="mt-4 flex flex-col gap-4">
                         {selectedRun.type === "vendor" ? (
                           <>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                 Street Address
                               </span>
-                              <div className="h-5 flex items-center">
-                                <span className="text-sm text-foreground truncate">
+                              <div className="flex h-5 items-center">
+                                <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.street || (
                                     <em className="text-muted-foreground/50">Not extracted</em>
                                   )}
@@ -385,11 +385,11 @@ export default function DiagnosticsPage() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                 City
                               </span>
-                              <div className="h-5 flex items-center">
-                                <span className="text-sm text-foreground">
+                              <div className="flex h-5 items-center">
+                                <span className="text-foreground text-sm">
                                   {selectedRun.parsedData?.city || (
                                     <em className="text-muted-foreground/50">Not extracted</em>
                                   )}
@@ -397,11 +397,11 @@ export default function DiagnosticsPage() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                 State
                               </span>
-                              <div className="h-5 flex items-center">
-                                <span className="text-sm text-foreground">
+                              <div className="flex h-5 items-center">
+                                <span className="text-foreground text-sm">
                                   {selectedRun.parsedData?.state || (
                                     <em className="text-muted-foreground/50">Not extracted</em>
                                   )}
@@ -412,11 +412,11 @@ export default function DiagnosticsPage() {
                         ) : (
                           <>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                 Finish / Color
                               </span>
-                              <div className="h-5 flex items-center">
-                                <span className="text-sm text-foreground truncate">
+                              <div className="flex h-5 items-center">
+                                <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.finishColor || (
                                     <em className="text-muted-foreground/50">Not extracted</em>
                                   )}
@@ -424,11 +424,11 @@ export default function DiagnosticsPage() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                 Dimensions
                               </span>
-                              <div className="h-5 flex items-center">
-                                <span className="text-sm text-foreground truncate">
+                              <div className="flex h-5 items-center">
+                                <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.dimensions || (
                                     <em className="text-muted-foreground/50">Not extracted</em>
                                   )}
@@ -436,11 +436,11 @@ export default function DiagnosticsPage() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                 Material Swatches
                               </span>
-                              <div className="h-5 flex items-center">
-                                <span className="text-sm text-foreground truncate">
+                              <div className="flex h-5 items-center">
+                                <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.materials || (
                                     <em className="text-muted-foreground/50">Not extracted</em>
                                   )}
@@ -448,15 +448,15 @@ export default function DiagnosticsPage() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1">
-                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                              <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                 Unit MSRP Price
                               </span>
-                              <div className="h-5 flex items-center">
-                                <span className="text-sm font-semibold text-primary">
+                              <div className="flex h-5 items-center">
+                                <span className="font-semibold text-primary text-sm">
                                   {selectedRun.parsedData?.msrp ? (
                                     formatCurrency(selectedRun.parsedData.msrp)
                                   ) : (
-                                    <em className="text-muted-foreground/50 font-normal">Not extracted</em>
+                                    <em className="font-normal text-muted-foreground/50">Not extracted</em>
                                   )}
                                 </span>
                               </div>
@@ -467,12 +467,12 @@ export default function DiagnosticsPage() {
                     </Card>
 
                     {/* Description Block */}
-                    <Card className="md:col-span-2 bg-card/50">
+                    <Card className="bg-card/50 md:col-span-2">
                       <CardContent className="flex flex-col gap-2 py-4">
-                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                        <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                           Extracted Company / Product Description
                         </span>
-                        <p className="text-sm leading-relaxed text-foreground">
+                        <p className="text-foreground text-sm leading-relaxed">
                           {selectedRun.parsedData?.description || (
                             <em className="text-muted-foreground/50">No description extracted</em>
                           )}
@@ -481,33 +481,33 @@ export default function DiagnosticsPage() {
                     </Card>
 
                     {/* Media Assets Inspector */}
-                    <Card className="md:col-span-2 bg-card/50">
-                      <CardHeader className="border-b border-border/30 pb-3">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <Card className="bg-card/50 md:col-span-2">
+                      <CardHeader className="border-border/30 border-b pb-3">
+                        <CardTitle className="flex items-center gap-2">
                           <Eye className="size-4 text-primary" />
                           Resolved Image Assets
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="flex flex-col gap-6 mt-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <CardContent className="mt-4 flex flex-col gap-6">
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                           {/* Logo URL */}
                           <div className="flex flex-col gap-2">
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                            <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                               Resolved Branding Logo
                             </span>
                             {selectedRun.parsedData?.logoUrl ? (
-                              <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-background/50">
+                              <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3">
                                 <img
                                   src={selectedRun.parsedData.logoUrl}
                                   alt="Logo"
-                                  className="size-12 rounded-md object-contain bg-white p-1 border border-border"
+                                  className="size-12 rounded-md border border-border bg-white object-contain p-1"
                                 />
-                                <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
+                                <span className="max-w-[200px] truncate font-mono text-muted-foreground text-xs">
                                   {selectedRun.parsedData.logoUrl}
                                 </span>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-center p-4 rounded-lg border border-dashed border-border text-xs text-muted-foreground italic select-none">
+                              <div className="flex select-none items-center justify-center rounded-lg border border-border border-dashed p-4 text-muted-foreground text-xs italic">
                                 No branding logo resolved
                               </div>
                             )}
@@ -515,22 +515,22 @@ export default function DiagnosticsPage() {
 
                           {/* Hero Image / Cover Image */}
                           <div className="flex flex-col gap-2">
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+                            <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                               Resolved Cover / Hero Image
                             </span>
                             {selectedRun.parsedData?.heroImageUrl || selectedRun.parsedData?.coverImageUrl ? (
-                              <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-background/50">
+                              <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3">
                                 <img
                                   src={selectedRun.parsedData.heroImageUrl || selectedRun.parsedData.coverImageUrl}
                                   alt="Hero Showcase"
-                                  className="size-12 rounded-md object-cover border border-border"
+                                  className="size-12 rounded-md border border-border object-cover"
                                 />
-                                <span className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
+                                <span className="max-w-[200px] truncate font-mono text-muted-foreground text-xs">
                                   {selectedRun.parsedData.heroImageUrl || selectedRun.parsedData.coverImageUrl}
                                 </span>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-center p-4 rounded-lg border border-dashed border-border text-xs text-muted-foreground italic select-none">
+                              <div className="flex select-none items-center justify-center rounded-lg border border-border border-dashed p-4 text-muted-foreground text-xs italic">
                                 No showcase image resolved
                               </div>
                             )}
@@ -540,11 +540,11 @@ export default function DiagnosticsPage() {
                     </Card>
 
                     {/* Confidence Ratings prevention of layout shift */}
-                    <Card className="md:col-span-2 bg-card/50">
-                      <CardHeader className="border-b border-border/30 pb-3">
-                        <CardTitle className="text-sm font-bold">AI Extraction Confidence Matrix</CardTitle>
+                    <Card className="bg-card/50 md:col-span-2">
+                      <CardHeader className="border-border/30 border-b pb-3">
+                        <CardTitle>AI Extraction Confidence Matrix</CardTitle>
                       </CardHeader>
-                      <CardContent className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
+                      <CardContent className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
                         {selectedRun.parsedData?.confidence &&
                           Object.entries(selectedRun.parsedData.confidence).map(([field, score]) => {
                             const val = typeof score === "number" ? score : 0;
@@ -552,15 +552,15 @@ export default function DiagnosticsPage() {
                             return (
                               <div
                                 key={field}
-                                className="flex flex-col p-2.5 rounded-lg border border-border/40 bg-background/40"
+                                className="flex flex-col rounded-lg border border-border/40 bg-background/40 p-2.5"
                               >
-                                <span className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-wider">
+                                <span className="truncate font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                                   {field}
                                 </span>
-                                <div className="h-5 flex items-center gap-1.5 mt-1">
+                                <div className="mt-1 flex h-5 items-center gap-1.5">
                                   <span
                                     className={cn(
-                                      "text-xs font-bold",
+                                      "font-bold text-xs",
                                       val >= 0.75
                                         ? "text-emerald-500"
                                         : val >= 0.4
@@ -570,7 +570,7 @@ export default function DiagnosticsPage() {
                                   >
                                     {pct}%
                                   </span>
-                                  <span className="text-[9px] text-muted-foreground font-semibold">certainty</span>
+                                  <span className="font-semibold text-[9px] text-muted-foreground">certainty</span>
                                 </div>
                               </div>
                             );
@@ -584,8 +584,8 @@ export default function DiagnosticsPage() {
               {/* TAB 2: Scraped Markdown text viewer */}
               {activeTab === "markdown" && selectedRun && (
                 <Card className="border border-border/50 bg-card/50">
-                  <CardHeader className="border-b pb-3.5 bg-muted/20">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <CardHeader className="border-b bg-muted/20 pb-3.5">
+                    <CardTitle className="flex items-center gap-2">
                       <FileText className="size-4 text-primary" />
                       Cleaned Webpage Readability Snapshot (Markdown)
                     </CardTitle>
@@ -595,7 +595,7 @@ export default function DiagnosticsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <pre className="text-[11px] leading-relaxed font-mono p-4 overflow-auto max-h-[580px] bg-background/30 text-muted-foreground whitespace-pre-wrap select-all selection:bg-primary/20">
+                    <pre className="max-h-[580px] overflow-auto whitespace-pre-wrap bg-background/30 p-4 font-mono text-[11px] text-muted-foreground leading-relaxed selection:bg-primary/20">
                       {selectedRun.scrapedMarkdown || "No Jina Reader scraped markdown captured."}
                     </pre>
                   </CardContent>
@@ -605,8 +605,8 @@ export default function DiagnosticsPage() {
               {/* TAB 3: Prompt viewer */}
               {activeTab === "prompt" && selectedRun && (
                 <Card className="border border-border/50 bg-card/50">
-                  <CardHeader className="border-b pb-3.5 bg-muted/20">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <CardHeader className="border-b bg-muted/20 pb-3.5">
+                    <CardTitle className="flex items-center gap-2">
                       <Code className="size-4 text-primary" />
                       Raw LLM Prompt Instructions Context
                     </CardTitle>
@@ -616,7 +616,7 @@ export default function DiagnosticsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <pre className="text-[11px] leading-relaxed font-mono p-4 overflow-auto max-h-[580px] bg-background/30 text-muted-foreground whitespace-pre-wrap select-all selection:bg-primary/20">
+                    <pre className="max-h-[580px] overflow-auto whitespace-pre-wrap bg-background/30 p-4 font-mono text-[11px] text-muted-foreground leading-relaxed selection:bg-primary/20">
                       {selectedRun.prompt || "No prompt context captured."}
                     </pre>
                   </CardContent>
@@ -626,8 +626,8 @@ export default function DiagnosticsPage() {
               {/* TAB 4: Raw Response JSON viewer */}
               {activeTab === "raw" && selectedRun && (
                 <Card className="border border-border/50 bg-card/50">
-                  <CardHeader className="border-b pb-3.5 bg-muted/20">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <CardHeader className="border-b bg-muted/20 pb-3.5">
+                    <CardTitle className="flex items-center gap-2">
                       <Database className="size-4 text-primary" />
                       Raw AI Extraction String (Structured JSON)
                     </CardTitle>
@@ -637,7 +637,7 @@ export default function DiagnosticsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <pre className="text-[11px] leading-relaxed font-mono p-4 overflow-auto max-h-[580px] bg-background/30 text-muted-foreground whitespace-pre-wrap select-all selection:bg-primary/20">
+                    <pre className="max-h-[580px] overflow-auto whitespace-pre-wrap bg-background/30 p-4 font-mono text-[11px] text-muted-foreground leading-relaxed selection:bg-primary/20">
                       {selectedRun.rawResponse || "No raw JSON response text captured."}
                     </pre>
                   </CardContent>

@@ -7,8 +7,8 @@ import { SubscriberOverview } from "./_components/subscriber-overview";
 export default function Page() {
   return (
     <div className="@container/main flex flex-col gap-4 md:gap-6">
-      <div className="flex flex-col mb-6">
-        <h1 className="text-4xl tracking-tight flex flex-wrap items-center gap-3">
+      <div className="mb-6 flex flex-col">
+        <h1 className="flex flex-wrap items-center gap-3 text-4xl tracking-tight">
           <UserGreeting prefix="Hello" />
           <WeatherWidget />
         </h1>

@@ -13,23 +13,23 @@ interface ClientContactCardProps {
 /** Contact credentials panel: email, phone, company, plus quick email/call actions. */
 export function ClientContactCard({ client }: ClientContactCardProps) {
   return (
-    <Card className="bg-card/60 backdrop-blur-xs border border-border/40 shadow-xs">
-      <CardHeader className="pb-4 border-b border-border/30">
-        <CardTitle className="text-base font-bold font-heading flex items-center gap-2">
+    <Card className="border border-border/40 bg-card/60 shadow-xs backdrop-blur-xs">
+      <CardHeader className="border-border/30 border-b pb-4">
+        <CardTitle className="flex items-center gap-2 font-bold font-heading text-base">
           <Users className="size-4 text-primary/80" />
           Contact Credentials
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-6 flex flex-col gap-5">
+      <CardContent className="flex flex-col gap-5 pt-6">
         <div className="flex flex-col gap-6.5 text-sm">
           {client.email && (
             <div className="flex flex-col gap-1">
-              <Label className="uppercase mb-1">Email Address</Label>
+              <Label className="mb-1 uppercase">Email Address</Label>
               <a
                 href={`mailto:${client.email}`}
-                className="text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group"
+                className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
               >
-                <Mail className="size-4 text-primary/70 shrink-0" />
+                <Mail className="size-4 shrink-0 text-primary/70" />
                 <span className="truncate group-hover:underline">{client.email}</span>
               </a>
             </div>
@@ -37,12 +37,12 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
 
           {client.phone && (
             <div className="flex flex-col gap-1">
-              <Label className="uppercase mb-1">Phone Number</Label>
+              <Label className="mb-1 uppercase">Phone Number</Label>
               <a
                 href={`tel:${normalizePhone(client.phone)}`}
-                className="text-foreground hover:text-primary transition-colors flex items-center gap-1.5 group"
+                className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
               >
-                <Phone className="size-4 text-primary/70 shrink-0" />
+                <Phone className="size-4 shrink-0 text-primary/70" />
                 <span className="group-hover:underline">{formatPhone(client.phone)}</span>
               </a>
             </div>
@@ -50,9 +50,9 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
 
           {client.company && (
             <div className="flex flex-col gap-1">
-              <Label className="uppercase mb-1">Company / Entity</Label>
-              <div className="text-foreground flex items-center gap-1.5">
-                <Briefcase className="size-4 text-primary/70 shrink-0" />
+              <Label className="mb-1 uppercase">Company / Entity</Label>
+              <div className="flex items-center gap-1.5 text-foreground">
+                <Briefcase className="size-4 shrink-0 text-primary/70" />
                 <span>{client.company}</span>
               </div>
             </div>
@@ -60,9 +60,9 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
 
           {(client.street || client.city || client.state || client.zip) && (
             <div className="flex flex-col gap-1">
-              <Label className="uppercase mb-1">Primary Address</Label>
-              <div className="text-foreground flex items-start gap-1.5 leading-tight">
-                <MapPin className="size-4 text-primary/70 shrink-0 mt-0.5" />
+              <Label className="mb-1 uppercase">Primary Address</Label>
+              <div className="flex items-start gap-1.5 text-foreground leading-tight">
+                <MapPin className="mt-0.5 size-4 shrink-0 text-primary/70" />
                 <div className="flex flex-col">
                   {client.street && <span>{client.street}</span>}
                   {(client.city || client.state || client.zip) && (
@@ -76,11 +76,11 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 border-t border-border/40 pt-4">
+        <div className="grid grid-cols-2 gap-2.5 border-border/40 border-t pt-4">
           <a href={`mailto:${client.email}`} className="w-full">
             <Button
               variant="outline"
-              className="w-full text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex w-full cursor-pointer items-center justify-center gap-1.5 text-xs"
             >
               <Mail className="size-3.5" />
               Send Email
@@ -90,14 +90,14 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
             <a href={`tel:${normalizePhone(client.phone)}`} className="w-full">
               <Button
                 variant="outline"
-                className="w-full text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex w-full cursor-pointer items-center justify-center gap-1.5 text-xs"
               >
                 <Phone className="size-3.5" />
                 Call
               </Button>
             </a>
           ) : (
-            <Button variant="outline" disabled className="w-full text-xs flex items-center justify-center gap-1.5">
+            <Button variant="outline" disabled className="flex w-full items-center justify-center gap-1.5 text-xs">
               <Phone className="size-3.5" />
               Call
             </Button>

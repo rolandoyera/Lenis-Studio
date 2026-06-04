@@ -60,7 +60,7 @@ export default function LunaMoon({
         height={size}
         role="img"
         aria-label={thinking ? `${AI_ASSISTANT_NAME} is thinking` : AI_ASSISTANT_NAME}
-        className={`luna luna-${variant}${on}${className ? " " + className : ""}`}
+        className={`luna luna-${variant}${on}${className ? ` ${className}` : ""}`}
         style={{ overflow: "visible", color: "currentColor" }}
         {...rest}
       >

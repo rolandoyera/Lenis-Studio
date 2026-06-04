@@ -1,5 +1,6 @@
 export interface Client {
   uid: string;
+  organizationId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -15,6 +16,7 @@ export interface Client {
 
 export interface Project {
   projectId: string;
+  organizationId: string;
   clientId: string;
   name: string;
   address?: string;
@@ -26,6 +28,7 @@ export interface Project {
 
 export interface Vendor {
   vendorId: string;
+  organizationId: string;
   name: string;
   category?: string;
   description?: string;
@@ -51,6 +54,7 @@ export interface Vendor {
 
 export interface LibraryItem {
   itemId: string;
+  organizationId: string;
   name: string;
   costType: "Product" | "Service" | "Labor" | "Shipping";
   category: string;
@@ -109,6 +113,7 @@ export interface ProposalLineItem {
 
 export interface Proposal {
   proposalId: string;
+  organizationId: string;
   projectId: string;
   clientId: string;
   title: string;
@@ -130,4 +135,36 @@ export interface DiagnosticRun {
   rawResponse: string;
   parsedData: any;
   createdAt: number;
+}
+
+export interface OrganizationConfig {
+  gaPropertyId?: string;
+  googleDriveFolderId?: string;
+  customGeminiKey?: string;
+  aiMonthlyLimit?: number;
+  aiUsedCount?: number;
+}
+
+export interface Organization {
+  organizationId: string;
+  name: string;
+  adminEmail: string;
+  status: "Active" | "Suspended";
+  plan: "Starter" | "Pro" | "Enterprise";
+  createdAt: number;
+  config?: OrganizationConfig;
+}
+
+export interface UserProfile {
+  uid: string;
+  fullName: string;
+  displayName?: string;
+  email: string;
+  role: "SuperAdmin" | "Admin" | "Contributor";
+  organizationId: string;
+  status: "Active" | "Pending";
+  joinedDate: string;
+  lastActive: number;
+  location?: string;
+  phone?: string;
 }
