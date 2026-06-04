@@ -18,7 +18,15 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { addDoc, collection, doc, onSnapshot, query, setDoc, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { Grid, Plus, Rows3, Search } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -26,7 +34,14 @@ import { z } from "zod";
 
 import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
@@ -39,17 +54,32 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/lib/firebase";
 
 import { filters, type UserRow } from "./data";
 import { usersColumns } from "./users-columns";
 import { UsersTable } from "./users-table";
+import { PageTitle } from "@/components/page-title-updater";
 
 const addUserSchema = z.object({
-  fullName: z.string().min(1, "Please enter a full name.").max(100, "Name is too long."),
+  fullName: z
+    .string()
+    .min(1, "Please enter a full name.")
+    .max(100, "Name is too long."),
   email: z.string().email("Please enter a valid email address."),
   role: z.enum(["Admin", "Contributor"]),
 });
@@ -88,7 +118,9 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
     const trimmedName = data.fullName.trim();
     const trimmedEmail = data.email.trim().toLowerCase();
 
-    const userExists = dbUsers.some((u) => u.email.toLowerCase() === trimmedEmail);
+    const userExists = dbUsers.some(
+      (u) => u.email.toLowerCase() === trimmedEmail,
+    );
     if (userExists) {
       toast.error("A user with this email address already exists.");
       return;
@@ -134,7 +166,10 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
           },
         });
       } catch (emailError) {
-        console.error("Failed to write to mail collection for Trigger Email:", emailError);
+        console.error(
+          "Failed to write to mail collection for Trigger Email:",
+          emailError,
+        );
       }
 
       toast.success("User added successfully!");
@@ -163,7 +198,10 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
   React.useEffect(() => {
     if (authLoading || !profile) return;
 
-    const q = query(collection(db, "users"), where("organizationId", "==", profile.organizationId));
+    const q = query(
+      collection(db, "users"),
+      where("organizationId", "==", profile.organizationId),
+    );
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -174,7 +212,10 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
             joinedDateStr = data.joinedDate;
           } else if (data.updatedAt) {
             try {
-              joinedDateStr = format(new Date(data.updatedAt), "dd MMM yyyy, h:mm a");
+              joinedDateStr = format(
+                new Date(data.updatedAt),
+                "dd MMM yyyy, h:mm a",
+              );
             } catch (e) {
               console.error("Date format error:", e);
             }
@@ -183,7 +224,11 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
           return {
             uid: doc.id,
             email: data.email || "",
-            name: data.fullName || data.displayName || data.email?.split("@")[0] || "User",
+            name:
+              data.fullName ||
+              data.displayName ||
+              data.email?.split("@")[0] ||
+              "User",
             role: data.role || "Contributor",
             status: data.status || "Active",
             joinedDate: joinedDateStr,
@@ -205,11 +250,16 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
   }, [profile, authLoading]);
 
   const [rowSelection, setRowSelection] = React.useState({});
-  const [sorting, setSorting] = React.useState<SortingState>([{ id: "joinedDate", desc: true }]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({
-    search: false,
-  });
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "joinedDate", desc: true },
+  ]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({
+      search: false,
+    });
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -250,177 +300,227 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
     );
   }
 
-  const searchQuery = (table.getColumn("search")?.getFilterValue() as string) ?? "";
-  const roleFilter = (table.getColumn("role")?.getFilterValue() as string) ?? filters.role[0];
-  const statusFilter = (table.getColumn("status")?.getFilterValue() as string) ?? filters.status[0];
+  const searchQuery =
+    (table.getColumn("search")?.getFilterValue() as string) ?? "";
+  const roleFilter =
+    (table.getColumn("role")?.getFilterValue() as string) ?? filters.role[0];
+  const statusFilter =
+    (table.getColumn("status")?.getFilterValue() as string) ??
+    filters.status[0];
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 
   function setColumnSelectFilter(columnId: string, value: string) {
-    table.getColumn(columnId)?.setFilterValue(value === "All" ? undefined : value);
+    table
+      .getColumn(columnId)
+      ?.setFilterValue(value === "All" ? undefined : value);
     table.setPageIndex(0);
   }
 
   return (
-    <Card>
-      <CardHeader className="border-b has-data-[slot=card-action]:grid-cols-1 md:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
-        <CardTitle className="text-xl leading-none">Users</CardTitle>
-        <CardDescription className="max-w-sm leading-snug">
-          Manage your organization members and their access.
-        </CardDescription>
-        <CardAction className="col-start-1 row-start-auto flex w-full flex-wrap justify-start gap-2 justify-self-stretch md:col-start-2 md:row-span-2 md:row-start-1 md:w-auto md:flex-nowrap md:justify-end md:justify-self-end">
-          <InputGroup className="h-7 w-full md:w-64">
-            <InputGroupAddon align="inline-start">
-              <Search className="size-3.5" />
-            </InputGroupAddon>
-            <InputGroupInput
-              className="h-7"
-              placeholder="Search users..."
-              value={searchQuery}
-              onChange={(event) => {
-                table.getColumn("search")?.setFilterValue(event.target.value || undefined);
-                table.setPageIndex(0);
-              }}
-            />
-          </InputGroup>
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus /> Add User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <form onSubmit={form.handleSubmit(handleAddUser)} className="contents">
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                  <DialogDescription>
-                    Invite a new member to your organization. They will show as Pending until they log in for the first
-                    time.
-                  </DialogDescription>
-                </DialogHeader>
+    <>
+      <PageTitle title="Users" />
+      <Card>
+        <CardHeader className="border-b has-data-[slot=card-action]:grid-cols-1 md:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
+          <CardTitle className="text-xl leading-none">Users</CardTitle>
+          <CardDescription className="max-w-sm leading-snug">
+            Manage your organization members and their access.
+          </CardDescription>
+          <CardAction className="col-start-1 row-start-auto flex w-full flex-wrap justify-start gap-2 justify-self-stretch md:col-start-2 md:row-span-2 md:row-start-1 md:w-auto md:flex-nowrap md:justify-end md:justify-self-end">
+            <InputGroup className="h-7 w-full md:w-64">
+              <InputGroupAddon align="inline-start">
+                <Search className="size-3.5" />
+              </InputGroupAddon>
+              <InputGroupInput
+                className="h-7"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(event) => {
+                  table
+                    .getColumn("search")
+                    ?.setFilterValue(event.target.value || undefined);
+                  table.setPageIndex(0);
+                }}
+              />
+            </InputGroup>
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus /> Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <form
+                  onSubmit={form.handleSubmit(handleAddUser)}
+                  className="contents">
+                  <DialogHeader>
+                    <DialogTitle>Add New User</DialogTitle>
+                    <DialogDescription>
+                      Invite a new member to your organization. They will show
+                      as Pending until they log in for the first time.
+                    </DialogDescription>
+                  </DialogHeader>
 
-                <div className="space-y-4 py-2">
-                  <Controller
-                    control={form.control}
-                    name="fullName"
-                    render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="add-fullName">Full Name</FieldLabel>
-                        <Input {...field} id="add-fullName" disabled={isSubmitting} aria-invalid={fieldState.invalid} />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                      </Field>
-                    )}
-                  />
+                  <div className="space-y-4 py-2">
+                    <Controller
+                      control={form.control}
+                      name="fullName"
+                      render={({ field, fieldState }) => (
+                        <Field
+                          className="gap-1.5"
+                          data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor="add-fullName">
+                            Full Name
+                          </FieldLabel>
+                          <Input
+                            {...field}
+                            id="add-fullName"
+                            disabled={isSubmitting}
+                            aria-invalid={fieldState.invalid}
+                          />
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      )}
+                    />
 
-                  <Controller
-                    control={form.control}
-                    name="email"
-                    render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="add-email">Email Address</FieldLabel>
-                        <Input
-                          {...field}
-                          id="add-email"
-                          type="email"
-                          disabled={isSubmitting}
-                          aria-invalid={fieldState.invalid}
-                        />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                      </Field>
-                    )}
-                  />
+                    <Controller
+                      control={form.control}
+                      name="email"
+                      render={({ field, fieldState }) => (
+                        <Field
+                          className="gap-1.5"
+                          data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor="add-email">
+                            Email Address
+                          </FieldLabel>
+                          <Input
+                            {...field}
+                            id="add-email"
+                            type="email"
+                            disabled={isSubmitting}
+                            aria-invalid={fieldState.invalid}
+                          />
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      )}
+                    />
 
-                  <Controller
-                    control={form.control}
-                    name="role"
-                    render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="add-role">Role</FieldLabel>
-                        <Select value={field.value} onValueChange={field.onChange} disabled={isSubmitting}>
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent position="popper">
-                            <SelectGroup>
-                              <SelectItem value="Admin">Admin</SelectItem>
-                              <SelectItem value="Contributor">Contributor</SelectItem>
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                      </Field>
-                    )}
-                  />
-                </div>
+                    <Controller
+                      control={form.control}
+                      name="role"
+                      render={({ field, fieldState }) => (
+                        <Field
+                          className="gap-1.5"
+                          data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor="add-role">Role</FieldLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isSubmitting}>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent position="popper">
+                              <SelectGroup>
+                                <SelectItem value="Admin">Admin</SelectItem>
+                                <SelectItem value="Contributor">
+                                  Contributor
+                                </SelectItem>
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      )}
+                    />
+                  </div>
 
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="outline" disabled={isSubmitting}>
-                      Cancel
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isSubmitting}>
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Adding..." : "Add User"}
                     </Button>
-                  </DialogClose>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Adding..." : "Add User"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4 px-0">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Select value={roleFilter} onValueChange={(value) => setColumnSelectFilter("role", value)}>
-              <SelectTrigger size="sm">
-                <span className="text-muted-foreground">Role:</span>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper" align="start">
-                <SelectGroup>
-                  {filters.role.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 px-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Select
+                value={roleFilter}
+                onValueChange={(value) => setColumnSelectFilter("role", value)}>
+                <SelectTrigger size="sm">
+                  <span className="text-muted-foreground">Role:</span>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start">
+                  <SelectGroup>
+                    {filters.role.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
 
-            <Select value={statusFilter} onValueChange={(value) => setColumnSelectFilter("status", value)}>
-              <SelectTrigger size="sm">
-                <span className="text-muted-foreground">Status:</span>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent position="popper" align="start">
-                <SelectGroup>
-                  {filters.status.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) =>
+                  setColumnSelectFilter("status", value)
+                }>
+                <SelectTrigger size="sm">
+                  <span className="text-muted-foreground">Status:</span>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start">
+                  <SelectGroup>
+                    {filters.status.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center justify-between gap-3 px-4">
-          <div className="text-muted-foreground text-sm tabular-nums">{selectedCount} selected</div>
+          <div className="flex items-center justify-between gap-3 px-4">
+            <div className="text-muted-foreground text-sm tabular-nums">
+              {selectedCount} selected
+            </div>
 
-          <Tabs defaultValue="list">
-            <TabsList>
-              <TabsTrigger value="list" aria-label="List view">
-                <Rows3 />
-              </TabsTrigger>
-              <TabsTrigger value="grid" aria-label="Grid view">
-                <Grid />
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+            <Tabs defaultValue="list">
+              <TabsList>
+                <TabsTrigger value="list" aria-label="List view">
+                  <Rows3 />
+                </TabsTrigger>
+                <TabsTrigger value="grid" aria-label="Grid view">
+                  <Grid />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
 
-        <UsersTable table={table} />
-      </CardContent>
-    </Card>
+          <UsersTable table={table} />
+        </CardContent>
+      </Card>
+    </>
   );
 }

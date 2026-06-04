@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { Metadata } from "next";
 
+import { PageTitleProvider } from "@/components/page-title-updater";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { APP_CONFIG } from "@/config/app-config";
@@ -45,8 +46,10 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
             navbarStyle={navbar_style}
             font={font}
           >
-            {children}
-            <Toaster />
+            <PageTitleProvider>
+              {children}
+              <Toaster />
+            </PageTitleProvider>
           </PreferencesStoreProvider>
         </TooltipProvider>
       </body>

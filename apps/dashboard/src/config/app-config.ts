@@ -3,12 +3,12 @@ import packageJson from "../../package.json";
 const currentYear = new Date().getFullYear();
 
 export const APP_CONFIG = {
-  name: "Sarvian Design Group",
+  name: "Studio Dezien",
   version: packageJson.version,
-  copyright: `© ${currentYear}, SDG.`,
+  copyright: `© ${currentYear}, Dezien CRM.`,
   meta: {
-    title: "Sarvian Design Group",
+    title: "Studio Dezien",
     description:
-      "SDG is a modern dashboard template for Sarvian Design Group built with Next.js 16, Tailwind CSS v4, and shadcn/ui.",
+      "Dezien CRM is a modern dashboard built by creatives for creatives. Sorry, accountants.",
   },
 };

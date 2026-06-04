@@ -7,13 +7,30 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { updatePassword, updateProfile } from "firebase/auth";
 import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
-import { Edit, Lock, Mail, MapPin, MoreVertical, Phone, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import {
+  Edit,
+  Lock,
+  Mail,
+  MapPin,
+  MoreVertical,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -30,10 +47,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/lib/firebase";
 import { getInitials } from "@/lib/utils";
+import { PageTitle } from "@/components/page-title-updater";
 
 interface FirestoreProfile {
   fullName: string;
@@ -69,7 +90,11 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const profileUid = searchParams.get("uid");
   const router = useRouter();
-  const { user: currentUser, profile: loggedInProfile, loading: authLoading } = useAuth();
+  const {
+    user: currentUser,
+    profile: loggedInProfile,
+    loading: authLoading,
+  } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [savingGeneral, setSavingGeneral] = useState(false);
@@ -160,7 +185,8 @@ function ProfileContent() {
     const loggedInRole = loggedInProfile.role;
 
     // Determine which UID to fetch
-    const activeUid = profileUid && profileUid !== currentUid ? profileUid : currentUid;
+    const activeUid =
+      profileUid && profileUid !== currentUid ? profileUid : currentUid;
     const isSelf = activeUid === currentUid;
     setIsSelf(isSelf);
 
@@ -181,12 +207,16 @@ function ProfileContent() {
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
-          const data = userDocSnap.data() as FirestoreProfile & { organizationId?: string };
+          const data = userDocSnap.data() as FirestoreProfile & {
+            organizationId?: string;
+          };
 
           // Tenant isolation check
           const targetOrgId = data.organizationId || "org-demo";
           if (targetOrgId !== loggedInOrgId) {
-            toast.error("Access denied. User profile not found in your organization.");
+            toast.error(
+              "Access denied. User profile not found in your organization.",
+            );
             router.push("/dashboard/home");
             return;
           }
@@ -195,7 +225,9 @@ function ProfileContent() {
           setRole(data.role || "Contributor");
           setPhone(formatPhoneNumber(data.phone || ""));
           setLocation(data.location ? String(data.location) : "");
-          setDisplayName(data.displayName || (isSelf ? currentDisplayName : "") || "");
+          setDisplayName(
+            data.displayName || (isSelf ? currentDisplayName : "") || "",
+          );
           setEmail(data.email || "");
           setStatus(data.status || "Active");
         } else {
@@ -227,7 +259,10 @@ function ProfileContent() {
 
     setSavingGeneral(true);
     try {
-      const activeUid = profileUid && profileUid !== currentUser.uid ? profileUid : currentUser.uid;
+      const activeUid =
+        profileUid && profileUid !== currentUser.uid
+          ? profileUid
+          : currentUser.uid;
       const isSelf = activeUid === currentUser.uid;
 
       // 1. Update Firebase Auth Profile (DisplayName) ONLY if editing self
@@ -293,7 +328,9 @@ function ProfileContent() {
     } catch (error: any) {
       console.error("Password update error:", error);
       if (error.code === "auth/requires-recent-login") {
-        toast.error("Please log out and log back in to perform this security action.");
+        toast.error(
+          "Please log out and log back in to perform this security action.",
+        );
       } else {
         toast.error("Failed to update password. Please try again.");
       }
@@ -313,318 +350,388 @@ function ProfileContent() {
     );
   }
 
-  const userInitials = getInitials(fullName || displayName || email || currentUser?.email || "U");
+  const userInitials = getInitials(
+    fullName || displayName || email || currentUser?.email || "U",
+  );
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 pb-10">
-      {/* Profile Premium Header Banner Card */}
-      <div className="relative flex flex-col items-center gap-6 overflow-hidden rounded-3xl border bg-card p-6 shadow-sm md:flex-row md:p-8">
-        {/* Glow backdrop decorator */}
-        <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+    <>
+      <PageTitle title="Profile" />
+      <div className="mx-auto max-w-5xl space-y-6 pb-10">
+        {/* Profile Premium Header Banner Card */}
+        <div className="relative flex flex-col items-center gap-6 overflow-hidden rounded-3xl border bg-card p-6 shadow-sm md:flex-row md:p-8">
+          {/* Glow backdrop decorator */}
+          <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
 
-        <Avatar className="size-24 border-4 border-background shadow-lg md:size-28">
-          <AvatarFallback className="bg-primary font-semibold text-3xl text-primary-foreground">
-            {userInitials}
-          </AvatarFallback>
-        </Avatar>
+          <Avatar className="size-24 border-4 border-background shadow-lg md:size-28">
+            <AvatarFallback className="bg-primary font-semibold text-3xl text-primary-foreground">
+              {userInitials}
+            </AvatarFallback>
+          </Avatar>
 
-        <div className="min-w-0 flex-1 space-y-2 text-center md:text-left">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center">
-            <h1 className="truncate font-bold text-3xl tracking-tight">{fullName || "User Profile"}</h1>
-            {role && (
-              <span className="inline-flex w-fit items-center gap-1 self-center rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary text-xs md:self-auto">
-                <Sparkles className="size-3" />
-                {role}
-              </span>
-            )}
-          </div>
-          <p className="max-w-lg truncate text-muted-foreground text-sm">{email}</p>
-        </div>
-      </div>
-
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList
-          className={`grid h-13! w-full max-w-md rounded-xl bg-sidebar p-1.5 ${isSelf ? "grid-cols-2" : "grid-cols-1"}`}
-        >
-          <TabsTrigger value="general" className="flex items-center justify-center gap-2 rounded-lg">
-            <UserRound className="size-4" />
-            General Info
-          </TabsTrigger>
-          {isSelf && (
-            <TabsTrigger value="security" className="flex items-center justify-center gap-2 rounded-lg">
-              <Lock className="size-4" />
-              Security & Password
-            </TabsTrigger>
-          )}
-        </TabsList>
-
-        <TabsContent value="general" className="mt-6">
-          <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
-            <CardHeader className="border-b bg-muted/20 py-4">
-              <CardTitle>Profile Details</CardTitle>
-              <CardDescription>View or edit your profile information.</CardDescription>
-              {(isSelf || (!isSelf && loggedInUserRole === "Admin")) && (
-                <CardAction>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-9 cursor-pointer rounded-full">
-                        <MoreVertical className="size-5" />
-                        <span className="sr-only">Actions</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="mt-1 w-48">
-                      <DropdownMenuItem
-                        onSelect={(e) => {
-                          e.preventDefault();
-                          setEditDisplayName(displayName);
-                          setEditFullName(fullName);
-                          setEditRole(role);
-                          setEditPhone(phone);
-                          setEditLocation(location);
-                          setIsEditModalOpen(true);
-                        }}
-                        className="flex cursor-pointer items-center gap-2"
-                      >
-                        <Edit className="size-4" />
-                        Edit Profile
-                      </DropdownMenuItem>
-
-                      {!isSelf && loggedInUserRole === "Admin" && (
-                        <DropdownMenuItem
-                          onClick={handleResendInvite}
-                          disabled={status !== "Pending" || isResending}
-                          className={`flex items-center gap-2 ${
-                            status === "Pending" && !isResending ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-                          }`}
-                        >
-                          <Mail className="size-4" />
-                          {isResending ? "Resending..." : "Resend Invite"}
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardAction>
+          <div className="min-w-0 flex-1 space-y-2 text-center md:text-left">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <h1 className="truncate font-bold text-3xl tracking-tight">
+                {fullName || "User Profile"}
+              </h1>
+              {role && (
+                <span className="inline-flex w-fit items-center gap-1 self-center rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary text-xs md:self-auto">
+                  <Sparkles className="size-3" />
+                  {role}
+                </span>
               )}
-            </CardHeader>
-            <CardContent className="space-y-6 p-6 md:p-8">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            </div>
+            <p className="max-w-lg truncate text-muted-foreground text-sm">
+              {email}
+            </p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList
+            className={`grid h-13! w-full max-w-md rounded-xl bg-sidebar p-1.5 ${isSelf ? "grid-cols-2" : "grid-cols-1"}`}>
+            <TabsTrigger
+              value="general"
+              className="flex items-center justify-center gap-2 rounded-lg">
+              <UserRound className="size-4" />
+              General Info
+            </TabsTrigger>
+            {isSelf && (
+              <TabsTrigger
+                value="security"
+                className="flex items-center justify-center gap-2 rounded-lg">
+                <Lock className="size-4" />
+                Security & Password
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="general" className="mt-6">
+            <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
+              <CardHeader className="border-b bg-muted/20 py-4">
+                <CardTitle>Profile Details</CardTitle>
+                <CardDescription>
+                  View or edit your profile information.
+                </CardDescription>
+                {(isSelf || (!isSelf && loggedInUserRole === "Admin")) && (
+                  <CardAction>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-9 cursor-pointer rounded-full">
+                          <MoreVertical className="size-5" />
+                          <span className="sr-only">Actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="mt-1 w-48">
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                            setEditDisplayName(displayName);
+                            setEditFullName(fullName);
+                            setEditRole(role);
+                            setEditPhone(phone);
+                            setEditLocation(location);
+                            setIsEditModalOpen(true);
+                          }}
+                          className="flex cursor-pointer items-center gap-2">
+                          <Edit className="size-4" />
+                          Edit Profile
+                        </DropdownMenuItem>
+
+                        {!isSelf && loggedInUserRole === "Admin" && (
+                          <DropdownMenuItem
+                            onClick={handleResendInvite}
+                            disabled={status !== "Pending" || isResending}
+                            className={`flex items-center gap-2 ${
+                              status === "Pending" && !isResending
+                                ? "cursor-pointer"
+                                : "cursor-not-allowed opacity-50"
+                            }`}>
+                            <Mail className="size-4" />
+                            {isResending ? "Resending..." : "Resend Invite"}
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardAction>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-6 p-6 md:p-8">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {/* Display Name */}
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="profile-displayName">
+                      Username / Display Name
+                    </FieldLabel>
+                    <div className="relative">
+                      <Input
+                        id="profile-displayName"
+                        value={displayName}
+                        disabled
+                      />
+                    </div>
+                  </Field>
+
+                  {/* Full Name */}
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="profile-fullName">
+                      Full Name
+                    </FieldLabel>
+                    <Input id="profile-fullName" value={fullName} disabled />
+                  </Field>
+
+                  {/* Role Selection Dropdown */}
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="profile-role">User Role</FieldLabel>
+                    <NativeSelect
+                      id="profile-role"
+                      className="w-full [&>select]:h-10 [&>select]:w-full"
+                      value={role}
+                      disabled>
+                      <NativeSelectOption value="Admin">
+                        Admin
+                      </NativeSelectOption>
+                      <NativeSelectOption value="Contributor">
+                        Contributor
+                      </NativeSelectOption>
+                    </NativeSelect>
+                  </Field>
+
+                  {/* Phone */}
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="profile-phone">
+                      Contact Phone
+                    </FieldLabel>
+                    <div className="relative flex items-center">
+                      <Phone className="absolute left-3 size-4 text-muted-foreground" />
+                      <Input
+                        id="profile-phone"
+                        className="pl-10"
+                        value={phone}
+                        disabled
+                      />
+                    </div>
+                  </Field>
+
+                  {/* Location */}
+                  <Field className="gap-1.5">
+                    <FieldLabel htmlFor="profile-location">Location</FieldLabel>
+                    <div className="relative flex items-center">
+                      <MapPin className="absolute left-3 size-4 text-muted-foreground" />
+                      <Input
+                        id="profile-location"
+                        className="pl-10"
+                        value={location}
+                        disabled
+                      />
+                    </div>
+                  </Field>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {isSelf && (
+            <TabsContent value="security" className="mt-6">
+              <form onSubmit={handleUpdatePassword}>
+                <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
+                  <CardHeader className="border-b bg-muted/20 py-4">
+                    <CardTitle>Account Credentials</CardTitle>
+                    <CardDescription>
+                      Keep your administrator security tokens up to date.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6 p-6 md:p-8">
+                    <div className="flex items-start gap-4 rounded-xl border bg-muted/10 p-4 text-muted-foreground text-sm">
+                      <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
+                      <div>
+                        <p className="font-medium text-foreground">
+                          Password Security Policy
+                        </p>
+                        <p className="mt-0.5 font-light">
+                          Your password must contain at least 6 characters. If
+                          you have been signed in for a long duration, you may
+                          be asked to re-authenticate before modifying
+                          credential databases.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-2">
+                      {/* Email (Read Only) */}
+                      <Field className="gap-1.5">
+                        <FieldLabel htmlFor="security-email">
+                          Registered Email
+                        </FieldLabel>
+                        <div className="relative flex items-center">
+                          <Mail className="absolute left-3 size-4 text-muted-foreground" />
+                          <Input
+                            id="security-email"
+                            className="cursor-not-allowed bg-muted/50 pl-10"
+                            value={currentUser?.email || ""}
+                            disabled
+                            readOnly
+                          />
+                        </div>
+                      </Field>
+
+                      <div className="hidden md:block" />
+
+                      {/* New Password */}
+                      <Field className="gap-1.5">
+                        <FieldLabel htmlFor="security-newPassword">
+                          New Password
+                        </FieldLabel>
+                        <Input
+                          id="security-newPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                      </Field>
+
+                      {/* Confirm Password */}
+                      <Field className="gap-1.5">
+                        <FieldLabel htmlFor="security-confirmPassword">
+                          Confirm Password
+                        </FieldLabel>
+                        <Input
+                          id="security-confirmPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="flex justify-end border-t pt-4">
+                      <Button
+                        type="submit"
+                        disabled={savingSecurity}
+                        className="min-w-[140px]">
+                        {savingSecurity ? "Updating..." : "Change Password"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </form>
+            </TabsContent>
+          )}
+        </Tabs>
+
+        {/* Edit Profile Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <form onSubmit={handleSaveProfile}>
+              <DialogHeader className="mb-4">
+                <DialogTitle>Edit Profile Details</DialogTitle>
+                <DialogDescription>
+                  Update your profile and contact information.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2">
                 {/* Display Name */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="profile-displayName">Username / Display Name</FieldLabel>
-                  <div className="relative">
-                    <Input id="profile-displayName" value={displayName} disabled />
-                  </div>
+                  <FieldLabel htmlFor="modal-displayName">
+                    Username / Display Name
+                  </FieldLabel>
+                  <Input
+                    id="modal-displayName"
+                    value={editDisplayName}
+                    onChange={(e) => setEditDisplayName(e.target.value)}
+                    required
+                  />
                 </Field>
 
                 {/* Full Name */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="profile-fullName">Full Name</FieldLabel>
-                  <Input id="profile-fullName" value={fullName} disabled />
+                  <FieldLabel htmlFor="modal-fullName">Full Name</FieldLabel>
+                  <Input
+                    id="modal-fullName"
+                    value={editFullName}
+                    onChange={(e) => setEditFullName(e.target.value)}
+                    required
+                  />
                 </Field>
 
                 {/* Role Selection Dropdown */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="profile-role">User Role</FieldLabel>
+                  <FieldLabel htmlFor="modal-role">User Role</FieldLabel>
                   <NativeSelect
-                    id="profile-role"
+                    id="modal-role"
                     className="w-full [&>select]:h-10 [&>select]:w-full"
-                    value={role}
-                    disabled
-                  >
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value)}
+                    disabled={isRoleDisabled}>
                     <NativeSelectOption value="Admin">Admin</NativeSelectOption>
-                    <NativeSelectOption value="Contributor">Contributor</NativeSelectOption>
+                    <NativeSelectOption value="Contributor">
+                      Contributor
+                    </NativeSelectOption>
                   </NativeSelect>
                 </Field>
 
                 {/* Phone */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="profile-phone">Contact Phone</FieldLabel>
+                  <FieldLabel htmlFor="modal-phone">Contact Phone</FieldLabel>
                   <div className="relative flex items-center">
                     <Phone className="absolute left-3 size-4 text-muted-foreground" />
-                    <Input id="profile-phone" className="pl-10" value={phone} disabled />
+                    <Input
+                      id="modal-phone"
+                      className="pl-10"
+                      value={editPhone}
+                      onChange={(e) =>
+                        setEditPhone(formatPhoneNumber(e.target.value))
+                      }
+                    />
                   </div>
                 </Field>
 
                 {/* Location */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="profile-location">Location</FieldLabel>
+                  <FieldLabel htmlFor="modal-location">Location</FieldLabel>
                   <div className="relative flex items-center">
                     <MapPin className="absolute left-3 size-4 text-muted-foreground" />
-                    <Input id="profile-location" className="pl-10" value={location} disabled />
+                    <Input
+                      id="modal-location"
+                      className="pl-10"
+                      placeholder="5-digit ZIP code"
+                      value={editLocation}
+                      onChange={(e) => {
+                        const clean = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 5);
+                        setEditLocation(clean);
+                      }}
+                    />
                   </div>
                 </Field>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        {isSelf && (
-          <TabsContent value="security" className="mt-6">
-            <form onSubmit={handleUpdatePassword}>
-              <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
-                <CardHeader className="border-b bg-muted/20 py-4">
-                  <CardTitle>Account Credentials</CardTitle>
-                  <CardDescription>Keep your administrator security tokens up to date.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6 p-6 md:p-8">
-                  <div className="flex items-start gap-4 rounded-xl border bg-muted/10 p-4 text-muted-foreground text-sm">
-                    <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">Password Security Policy</p>
-                      <p className="mt-0.5 font-light">
-                        Your password must contain at least 6 characters. If you have been signed in for a long
-                        duration, you may be asked to re-authenticate before modifying credential databases.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-2">
-                    {/* Email (Read Only) */}
-                    <Field className="gap-1.5">
-                      <FieldLabel htmlFor="security-email">Registered Email</FieldLabel>
-                      <div className="relative flex items-center">
-                        <Mail className="absolute left-3 size-4 text-muted-foreground" />
-                        <Input
-                          id="security-email"
-                          className="cursor-not-allowed bg-muted/50 pl-10"
-                          value={currentUser?.email || ""}
-                          disabled
-                          readOnly
-                        />
-                      </div>
-                    </Field>
-
-                    <div className="hidden md:block" />
-
-                    {/* New Password */}
-                    <Field className="gap-1.5">
-                      <FieldLabel htmlFor="security-newPassword">New Password</FieldLabel>
-                      <Input
-                        id="security-newPassword"
-                        type="password"
-                        placeholder="••••••••"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                      />
-                    </Field>
-
-                    {/* Confirm Password */}
-                    <Field className="gap-1.5">
-                      <FieldLabel htmlFor="security-confirmPassword">Confirm Password</FieldLabel>
-                      <Input
-                        id="security-confirmPassword"
-                        type="password"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                    </Field>
-                  </div>
-
-                  <div className="flex justify-end border-t pt-4">
-                    <Button type="submit" disabled={savingSecurity} className="min-w-[140px]">
-                      {savingSecurity ? "Updating..." : "Change Password"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <DialogFooter className="mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={savingGeneral}
+                  className="min-w-[120px]">
+                  {savingGeneral ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
             </form>
-          </TabsContent>
-        )}
-      </Tabs>
-
-      {/* Edit Profile Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <form onSubmit={handleSaveProfile}>
-            <DialogHeader className="mb-4">
-              <DialogTitle>Edit Profile Details</DialogTitle>
-              <DialogDescription>Update your profile and contact information.</DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-2">
-              {/* Display Name */}
-              <Field className="gap-1.5">
-                <FieldLabel htmlFor="modal-displayName">Username / Display Name</FieldLabel>
-                <Input
-                  id="modal-displayName"
-                  value={editDisplayName}
-                  onChange={(e) => setEditDisplayName(e.target.value)}
-                  required
-                />
-              </Field>
-
-              {/* Full Name */}
-              <Field className="gap-1.5">
-                <FieldLabel htmlFor="modal-fullName">Full Name</FieldLabel>
-                <Input
-                  id="modal-fullName"
-                  value={editFullName}
-                  onChange={(e) => setEditFullName(e.target.value)}
-                  required
-                />
-              </Field>
-
-              {/* Role Selection Dropdown */}
-              <Field className="gap-1.5">
-                <FieldLabel htmlFor="modal-role">User Role</FieldLabel>
-                <NativeSelect
-                  id="modal-role"
-                  className="w-full [&>select]:h-10 [&>select]:w-full"
-                  value={editRole}
-                  onChange={(e) => setEditRole(e.target.value)}
-                  disabled={isRoleDisabled}
-                >
-                  <NativeSelectOption value="Admin">Admin</NativeSelectOption>
-                  <NativeSelectOption value="Contributor">Contributor</NativeSelectOption>
-                </NativeSelect>
-              </Field>
-
-              {/* Phone */}
-              <Field className="gap-1.5">
-                <FieldLabel htmlFor="modal-phone">Contact Phone</FieldLabel>
-                <div className="relative flex items-center">
-                  <Phone className="absolute left-3 size-4 text-muted-foreground" />
-                  <Input
-                    id="modal-phone"
-                    className="pl-10"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(formatPhoneNumber(e.target.value))}
-                  />
-                </div>
-              </Field>
-
-              {/* Location */}
-              <Field className="gap-1.5">
-                <FieldLabel htmlFor="modal-location">Location</FieldLabel>
-                <div className="relative flex items-center">
-                  <MapPin className="absolute left-3 size-4 text-muted-foreground" />
-                  <Input
-                    id="modal-location"
-                    className="pl-10"
-                    placeholder="5-digit ZIP code"
-                    value={editLocation}
-                    onChange={(e) => {
-                      const clean = e.target.value.replace(/\D/g, "").slice(0, 5);
-                      setEditLocation(clean);
-                    }}
-                  />
-                </div>
-              </Field>
-            </div>
-
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={savingGeneral} className="min-w-[120px]">
-                {savingGeneral ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 }
 
@@ -638,8 +745,7 @@ export default function ProfilePage() {
             <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         </div>
-      }
-    >
+      }>
       <ProfileContent />
     </Suspense>
   );

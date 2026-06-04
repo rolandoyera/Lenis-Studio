@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Link from "next/link";
 
@@ -43,27 +43,28 @@ export default function DiagnosticsPage() {
   const [clearing, setClearing] = useState(false);
 
   // Fetch runs on mount
-  async function loadRuns(silent = false) {
+  const loadRuns = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
       const data = await getDiagnosticRuns();
       setRuns(data);
-      if (data.length > 0 && !selectedRun) {
-        setSelectedRun(data[0]);
-      } else if (data.length > 0 && selectedRun) {
-        // Keep selection updated
-        const updated = data.find((r) => r.runId === selectedRun.runId);
-        if (updated) setSelectedRun(updated);
-      } else {
-        setSelectedRun(null);
-      }
+      setSelectedRun((currentSelected) => {
+        if (data.length > 0) {
+          if (!currentSelected) {
+            return data[0];
+          }
+          const updated = data.find((r) => r.runId === currentSelected.runId);
+          return updated || data[0];
+        }
+        return null;
+      });
     } catch (error) {
       console.error("Failed to load diagnostic logs:", error);
       toast.error("Failed to fetch diagnostics from Firestore.");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadRuns();
@@ -258,6 +259,7 @@ export default function DiagnosticsPage() {
                 const active = activeTab === tab.id;
                 return (
                   <button
+                    type="button"
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(

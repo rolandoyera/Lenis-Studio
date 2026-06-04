@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { Building2, Loader2, Mail, MapPin, Phone, Plus, Search } from "lucide-react";
+import {
+  Building2,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
@@ -21,7 +29,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { H1 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
@@ -34,6 +46,7 @@ import {
   type VendorFormData,
   VendorFormDialog,
 } from "./_components/vendor-form-dialog";
+import { PageTitle } from "@/components/page-title-updater";
 
 // Cycle through accent gradients by first character for visual variety
 const CARD_GRADIENTS = [
@@ -119,99 +132,112 @@ export default function VendorsPage() {
         v.category?.toLowerCase().includes(term) ||
         v.notes?.toLowerCase().includes(term);
 
-      const matchesCategory = activeCategory === "All" || v.category === activeCategory;
+      const matchesCategory =
+        activeCategory === "All" || v.category === activeCategory;
 
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="flex w-full flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <H1>Vendor Directory</H1>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Manage trade vendors and client procurement representatives.
-          </p>
+    <>
+      <PageTitle title="Vendor Directory" />
+      <div className="flex w-full flex-col gap-6">
+        {/* Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <H1>Vendor Directory</H1>
+            <p className="mt-1 text-muted-foreground text-sm">
+              Manage trade vendors and client procurement representatives.
+            </p>
+          </div>
+          <Button
+            onClick={handleOpenAdd}
+            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
+            <Plus className="size-4" />
+            Add Vendor
+          </Button>
         </div>
-        <Button
-          onClick={handleOpenAdd}
-          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
-        >
-          <Plus className="size-4" />
-          Add Vendor
-        </Button>
-      </div>
 
-      {/* Filter and search controls combined into a clean layout */}
-      <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
-        {/* Category Tabs */}
-        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
-          <TabsList className="flex h-auto! max-w-full flex-wrap gap-0.5">
-            <TabsTrigger value="All" className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
-              All Vendors
-            </TabsTrigger>
-            {VENDOR_CATEGORIES.map((cat) => (
-              <TabsTrigger key={cat} value={cat} className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
-                {cat}
+        {/* Filter and search controls combined into a clean layout */}
+        <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
+          {/* Category Tabs */}
+          <Tabs
+            value={activeCategory}
+            onValueChange={setActiveCategory}
+            className="w-full md:w-auto">
+            <TabsList className="flex h-auto! max-w-full flex-wrap gap-0.5">
+              <TabsTrigger
+                value="All"
+                className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
+                All Vendors
               </TabsTrigger>
+              {VENDOR_CATEGORIES.map((cat) => (
+                <TabsTrigger
+                  key={cat}
+                  value={cat}
+                  className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
+                  {cat}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          {/* Quick Search */}
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search vendors, representatives or category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-background/50 pl-9"
+            />
+          </div>
+        </div>
+
+        {/* Grid */}
+        {loading ? (
+          <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              Loading Sourcing Directory
+            </p>
+          </div>
+        ) : filteredVendors.length === 0 ? (
+          <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
+            <Building2 className="mb-3 size-12 text-muted-foreground/40" />
+            <h3 className="font-semibold text-lg">No vendors found</h3>
+            <p className="mt-1 max-w-sm text-muted-foreground text-sm">
+              {searchQuery
+                ? "Try broadening your search or clear the filter."
+                : "Get started by adding your first vendor contact."}
+            </p>
+            {!searchQuery && (
+              <Button
+                onClick={handleOpenAdd}
+                className="mt-4 flex items-center gap-2">
+                <Plus className="size-4" />
+                Add Vendor
+              </Button>
+            )}
+          </Card>
+        ) : (
+          <div className="grid 3xl:grid-cols-6 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+            {filteredVendors.map((vendor) => (
+              <VendorCard key={vendor.vendorId} vendor={vendor} />
             ))}
-          </TabsList>
-        </Tabs>
+          </div>
+        )}
 
-        {/* Quick Search */}
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search vendors, representatives or category..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-background/50 pl-9"
-          />
-        </div>
+        <VendorFormDialog
+          open={isAddOpen}
+          onOpenChange={setIsAddOpen}
+          mode="add"
+          initialData={EMPTY_VENDOR_FORM}
+          onSave={handleAdd}
+        />
       </div>
-
-      {/* Grid */}
-      {loading ? (
-        <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
-          <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-            Loading Sourcing Directory
-          </p>
-        </div>
-      ) : filteredVendors.length === 0 ? (
-        <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
-          <Building2 className="mb-3 size-12 text-muted-foreground/40" />
-          <h3 className="font-semibold text-lg">No vendors found</h3>
-          <p className="mt-1 max-w-sm text-muted-foreground text-sm">
-            {searchQuery
-              ? "Try broadening your search or clear the filter."
-              : "Get started by adding your first vendor contact."}
-          </p>
-          {!searchQuery && (
-            <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
-              <Plus className="size-4" />
-              Add Vendor
-            </Button>
-          )}
-        </Card>
-      ) : (
-        <div className="grid 3xl:grid-cols-6 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-          {filteredVendors.map((vendor) => (
-            <VendorCard key={vendor.vendorId} vendor={vendor} />
-          ))}
-        </div>
-      )}
-
-      <VendorFormDialog
-        open={isAddOpen}
-        onOpenChange={setIsAddOpen}
-        mode="add"
-        initialData={EMPTY_VENDOR_FORM}
-        onSave={handleAdd}
-      />
-    </div>
+    </>
   );
 }
 
@@ -249,10 +275,13 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
       {/* Hero area: real image → gradient fallback */}
       <Link
         href={`/dashboard/vendors/${vendor.vendorId}`}
-        className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden"
-      >
+        className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden">
         {vendor.heroImageUrl ? (
-          <img src={vendor.heroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={vendor.heroImageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         ) : (
           <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
         )}
@@ -280,8 +309,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {vendor.category && (
           <Badge
             variant="secondary"
-            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm"
-          >
+            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm">
             {vendor.category}
           </Badge>
         )}
@@ -291,7 +319,9 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Name */}
         <div>
           <h3 className="line-clamp-1 font-heading font-semibold text-base leading-tight transition-colors group-has-[.detail-link:hover]:text-primary">
-            <Link href={`/dashboard/vendors/${vendor.vendorId}`} className="detail-link cursor-pointer">
+            <Link
+              href={`/dashboard/vendors/${vendor.vendorId}`}
+              className="detail-link cursor-pointer">
               {vendor.name}
             </Link>
           </h3>
@@ -300,7 +330,11 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Rep contact */}
         {vendor.repName || vendor.repEmail || vendor.repPhone ? (
           <div className="flex flex-col gap-1.5 rounded-lg border border-muted/60 bg-muted/40 px-3 py-2.5">
-            {vendor.repName && <p className="truncate font-medium text-foreground/80 text-xs">{vendor.repName}</p>}
+            {vendor.repName && (
+              <p className="truncate font-medium text-foreground/80 text-xs">
+                {vendor.repName}
+              </p>
+            )}
             <div className="flex flex-col gap-1 text-muted-foreground text-xs">
               {vendor.repEmail && (
                 <span className="flex items-center gap-1.5 truncate">
@@ -319,7 +353,11 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         ) : null}
 
         {/* Address or account number teaser */}
-        {(vendor.street || vendor.city || vendor.state || vendor.zip || vendor.accountNumber) && (
+        {(vendor.street ||
+          vendor.city ||
+          vendor.state ||
+          vendor.zip ||
+          vendor.accountNumber) && (
           <div className="mt-auto flex flex-col gap-1 text-muted-foreground text-xs">
             {(vendor.street || vendor.city || vendor.state || vendor.zip) && (
               <span className="flex items-start gap-1.5">
@@ -327,7 +365,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 <span className="line-clamp-1">
                   {[
                     vendor.street,
-                    [vendor.city, vendor.state].filter(Boolean).join(", ") + (vendor.zip ? ` ${vendor.zip}` : ""),
+                    [vendor.city, vendor.state].filter(Boolean).join(", ") +
+                      (vendor.zip ? ` ${vendor.zip}` : ""),
                   ]
                     .filter(Boolean)
                     .join(", ")}
@@ -339,7 +378,9 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 <span className="font-semibold text-[10px] text-muted-foreground/60 uppercase tracking-wider">
                   Acct:
                 </span>
-                <span className="font-mono text-foreground/70">{vendor.accountNumber}</span>
+                <span className="font-mono text-foreground/70">
+                  {vendor.accountNumber}
+                </span>
               </span>
             )}
           </div>
@@ -354,8 +395,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-              >
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                 <GlobeIcon />
               </a>
             </TooltipTrigger>
@@ -374,8 +414,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-              >
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                 <InstagramIcon />
               </a>
             </TooltipTrigger>
@@ -394,8 +433,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-              >
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                 <PinterestIcon />
               </a>
             </TooltipTrigger>
@@ -414,8 +452,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-              >
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                 <FacebookIcon />
               </a>
             </TooltipTrigger>
@@ -434,8 +471,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-              >
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                 <YoutubeIcon />
               </a>
             </TooltipTrigger>
@@ -454,8 +490,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-              >
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                 <XTwitterIcon />
               </a>
             </TooltipTrigger>

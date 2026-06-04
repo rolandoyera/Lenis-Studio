@@ -4,7 +4,7 @@
 export const SCRAPER_CONFIG = {
   maxCharacters: 100000,
   maxImageCandidates: 15,
-  primaryModel: "gemini-3.5-flash",
+  primaryModel: "gemini-3.1-flash-lite",
   fallbackModel: "gemini-2.5-flash",
   jinaReaderUrl: "https://r.jina.ai/",
 };

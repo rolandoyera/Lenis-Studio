@@ -85,11 +85,6 @@ export const sidebarItems: NavGroup[] = [
         icon: GraduationCap,
         isNew: true,
       },
-      {
-        title: "Logistics",
-        url: "/dashboard/logistics",
-        icon: Forklift,
-      },
     ],
   },
   {

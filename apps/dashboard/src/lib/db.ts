@@ -18,6 +18,12 @@ import { db, storage } from "@/lib/firebase";
 
 import type { Client, DiagnosticRun, LibraryItem, Organization, Project, Proposal, UserProfile, Vendor } from "./types";
 
+// Helper to recursively strip undefined properties, as Firestore throws on undefined.
+function cleanUndefined<T>(obj: T): T {
+  if (obj === undefined) return null as unknown as T;
+  return JSON.parse(JSON.stringify(obj)) as T;
+}
+
 // --- CLIENT HELPER HOOKS & FUNCTIONS ---
 
 export async function getClient(uid: string): Promise<Client | null> {
@@ -69,13 +75,13 @@ export async function addClient(client: Omit<Client, "uid" | "createdAt">): Prom
     uid,
     createdAt: Date.now(),
   };
-  await setDoc(doc(db, "clients", uid), newClient);
+  await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
   return newClient;
 }
 
 export async function updateClient(uid: string, client: Partial<Client>): Promise<void> {
   const docRef = doc(db, "clients", uid);
-  await updateDoc(docRef, { ...client });
+  await updateDoc(docRef, cleanUndefined({ ...client }));
 }
 
 export async function deleteClient(uid: string): Promise<void> {
@@ -131,13 +137,13 @@ export async function addVendor(vendor: Omit<Vendor, "vendorId" | "createdAt">):
     vendorId,
     createdAt: Date.now(),
   };
-  await setDoc(doc(db, "vendors", vendorId), newVendor);
+  await setDoc(doc(db, "vendors", vendorId), cleanUndefined(newVendor));
   return newVendor;
 }
 
 export async function updateVendor(vendorId: string, vendor: Partial<Vendor>): Promise<void> {
   const docRef = doc(db, "vendors", vendorId);
-  await updateDoc(docRef, { ...vendor });
+  await updateDoc(docRef, cleanUndefined({ ...vendor }));
 }
 
 export async function deleteVendor(vendorId: string): Promise<void> {
@@ -181,13 +187,13 @@ export async function addProject(project: Omit<Project, "projectId" | "createdAt
     projectId,
     createdAt: Date.now(),
   };
-  await setDoc(doc(db, "projects", projectId), newProject);
+  await setDoc(doc(db, "projects", projectId), cleanUndefined(newProject));
   return newProject;
 }
 
 export async function updateProject(projectId: string, project: Partial<Project>): Promise<void> {
   const docRef = doc(db, "projects", projectId);
-  await updateDoc(docRef, { ...project });
+  await updateDoc(docRef, cleanUndefined({ ...project }));
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
@@ -245,13 +251,13 @@ export async function addLibraryItem(item: Omit<LibraryItem, "itemId" | "updated
     itemId,
     updatedAt: Date.now(),
   };
-  await setDoc(doc(db, "library", itemId), newItem);
+  await setDoc(doc(db, "library", itemId), cleanUndefined(newItem));
   return newItem;
 }
 
 export async function updateLibraryItem(itemId: string, item: Partial<LibraryItem>): Promise<void> {
   const docRef = doc(db, "library", itemId);
-  await updateDoc(docRef, { ...item, updatedAt: Date.now() });
+  await updateDoc(docRef, cleanUndefined({ ...item, updatedAt: Date.now() }));
 }
 
 export async function deleteLibraryItem(itemId: string): Promise<void> {
@@ -285,13 +291,13 @@ export async function addProposal(proposal: Omit<Proposal, "proposalId" | "creat
     proposalId,
     createdAt: Date.now(),
   };
-  await setDoc(doc(db, "proposals", proposalId), newProposal);
+  await setDoc(doc(db, "proposals", proposalId), cleanUndefined(newProposal));
   return newProposal;
 }
 
 export async function updateProposal(proposalId: string, proposal: Partial<Proposal>): Promise<void> {
   const docRef = doc(db, "proposals", proposalId);
-  await updateDoc(docRef, { ...proposal });
+  await updateDoc(docRef, cleanUndefined({ ...proposal }));
 }
 
 export async function deleteProposal(proposalId: string): Promise<void> {
@@ -346,14 +352,12 @@ export async function uploadVendorImageBlob(blob: Blob, type: "logo" | "hero", e
 
 export async function saveDiagnosticRun(run: Omit<DiagnosticRun, "runId" | "createdAt">): Promise<DiagnosticRun> {
   const runId = `run-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-  // Firestore throws on undefined values. JSON serialization safely strips all undefined keys recursively.
-  const sanitizedRun = JSON.parse(JSON.stringify(run));
   const newRun: DiagnosticRun = {
-    ...sanitizedRun,
+    ...run,
     runId,
     createdAt: Date.now(),
   };
-  await setDoc(doc(db, "code", runId), newRun);
+  await setDoc(doc(db, "code", runId), cleanUndefined(newRun));
   return newRun;
 }
 
@@ -408,19 +412,22 @@ export async function addOrganization(org: Omit<Organization, "createdAt">, admi
   };
 
   // 1. Create the organization document
-  await setDoc(doc(db, "organizations", org.organizationId), newOrg);
+  await setDoc(doc(db, "organizations", org.organizationId), cleanUndefined(newOrg));
 
   // 2. Create the pending Administrator profile in the users collection
   const adminEmailKey = org.adminEmail.trim().toLowerCase();
-  await setDoc(doc(db, "users", adminEmailKey), {
-    fullName: adminName.trim(),
-    email: adminEmailKey,
-    role: "Admin",
-    organizationId: org.organizationId,
-    status: "Pending",
-    joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
-    lastActive: 0,
-  });
+  await setDoc(
+    doc(db, "users", adminEmailKey),
+    cleanUndefined({
+      fullName: adminName.trim(),
+      email: adminEmailKey,
+      role: "Admin",
+      organizationId: org.organizationId,
+      status: "Pending",
+      joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
+      lastActive: 0,
+    }),
+  );
 
   // 3. Write invite email to the mail collection for Firebase Trigger Email extension
   try {
@@ -457,7 +464,7 @@ export async function addOrganization(org: Omit<Organization, "createdAt">, admi
 
 export async function updateOrganization(orgId: string, org: Partial<Organization>): Promise<void> {
   const docRef = doc(db, "organizations", orgId);
-  await updateDoc(docRef, { ...org });
+  await updateDoc(docRef, cleanUndefined({ ...org }));
 }
 
 export async function getOrganization(orgId: string): Promise<Organization | null> {
