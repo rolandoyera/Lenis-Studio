@@ -14,10 +14,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.sarviandesign.com"),
-  title: {
-    default: "Sarvian Design Group",
-    template: "Sarvian Design Group | %s  ",
-  },
+  title: "Sarvian Design Group",
   description:
     "South Florida architecture and interior luxury design studio in Fort Lauderdale and Miami.",
 };

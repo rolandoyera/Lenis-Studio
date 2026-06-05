@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import AboutContent from "./about-content";
 
 export const metadata: Metadata = {
-  title: "About | SDG",
+  title: "About Sarvian Design Group",
   description: "Learn more about SDG and our mission.",
   openGraph: {
-    title: "About | SDG",
+    title: "About Sarvian Design Group",
     description: "Learn more about SDG and our mission.",
-    url: "https://your-domain.com/about",
+    url: "https://sarviandg.com/about",
     siteName: "SDG",
     type: "website",
   },

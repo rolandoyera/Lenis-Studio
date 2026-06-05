@@ -21,9 +21,9 @@ export default function NextProject({
       <Container className="flex flex-row items-stretch justify-center gap-6 py-12 text-center">
         {prevProject && (
           <div className="flex-1 flex flex-col items-center justify-between">
-            <h3 className="text-foreground text-2xl lg:text-4xl mb-4 text-center flex-1 flex items-center justify-center">
+            <h2 className="text-foreground text-2xl lg:text-4xl mb-4 text-center flex-1 flex items-center justify-center">
               {prevProject.title}
-            </h3>
+            </h2>
             <ArrowButton
               href={`/projects/${prevProject.slug}`}
               direction="left"
@@ -38,9 +38,9 @@ export default function NextProject({
         </div>
         {nextProject && (
           <div className="flex-1 flex flex-col items-center justify-between">
-            <h3 className="text-foreground text-2xl lg:text-4xl mb-4 text-center flex-1 flex items-center justify-center">
+            <h2 className="text-foreground text-2xl lg:text-4xl mb-4 text-center flex-1 flex items-center justify-center">
               {nextProject.title}
-            </h3>
+            </h2>
 
             <ArrowButton
               href={`/projects/${nextProject.slug}`}
