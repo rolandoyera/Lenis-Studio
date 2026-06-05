@@ -40,8 +40,8 @@ export default async function ProjectsPage() {
   return (
     <div>
       <div className="h-24 bg-linear-to-b from-taupe-900 to-taupe-800"></div>
-      <main className="px-8 mb-20">
-        <div className="w-full flex flex-col items-center justify-center py-30">
+      <main className="px-4 lg:px-8 mb-20">
+        <div className="w-full flex flex-col items-center justify-center py-10 lg:py-30">
           <H1>Latest Projects</H1>
           <P className="mt-4 max-w-4xl text-center">
             We had the privilege of collaborating with clients across South
