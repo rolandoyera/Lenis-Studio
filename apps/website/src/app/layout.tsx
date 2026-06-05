@@ -3,7 +3,7 @@ import Footer from "@/components/Footer";
 import "./globals.css";
 import { Manrope } from "next/font/google";
 import Providers from "./Providers";
-import Navbar2 from "@/components/Navbar2";
+import Navbar from "@/components/Navbar";
 import Script from "next/script";
 
 const manrope = Manrope({
@@ -42,7 +42,7 @@ export default function RootLayout({
               gtag('config', 'G-K0ZYTV5JSM');
             `}
           </Script>
-          <Navbar2 />
+          <Navbar />
           {children}
           <Footer />
         </Providers>

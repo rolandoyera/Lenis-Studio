@@ -4,12 +4,12 @@ import { groq } from "next-sanity";
 import { client } from "@/sanity/lib/client";
 import { urlFor, type SanityImageWithAlt } from "@/sanity/lib/image";
 import { notFound } from "next/navigation";
-import { PortableText } from "@portabletext/react";
 import type { PortableTextBlock } from "@portabletext/types";
 import ProjectButton from "@/components/ui/ProjectButton";
 import NextProject from "@/components/NextProject";
 import PanoramaViewer from "@/components/ui/PanoramaViewer";
 import P from "@/components/ui/P";
+import ProjectDescription from "./project-description";
 
 /* -------------------- Types -------------------- */
 
@@ -137,7 +137,7 @@ export default async function ProjectPage({
         )}
 
         {/* 2) Content row: left = info (sticky), right = gallery */}
-        <section className="mt-6 grid grid-cols-1 xl:grid-cols-12 gap-8 px-6 xl:p-6">
+        <section className="mt-6 grid grid-cols-1 xl:grid-cols-12 gap-8 px-4 xl:p-6">
           {/* LEFT: Project info */}
           <aside className="xl:col-span-4">
             <div className="xl:sticky xl:top-22">
@@ -203,12 +203,10 @@ export default async function ProjectPage({
                 )}
 
                 {Array.isArray(rich) && rich.length > 0 && (
-                  <div className="mt-10 prose prose-invert prose-sm max-w-none richtext text-justify">
-                    <PortableText value={rich} />
-                  </div>
+                  <ProjectDescription value={rich} />
                 )}
 
-                <div className="w-fit mt-16 ml-auto">
+                <div className="w-fit mt-16 mx-auto">
                   <ProjectButton location="project_detail">
                     Start a Similar Project
                   </ProjectButton>
