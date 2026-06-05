@@ -5,11 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Connect from "@/components/Connect";
 import Container from "@/components/ui/Container";
-import H1 from "@/components/ui/H1";
 import H2 from "@/components/ui/H2";
 import Main from "@/components/ui/Main";
 import P from "@/components/ui/P";
 import { cn } from "@/lib/utils";
+import { TextEffect } from "@/components/motion-primitives/text-effect";
 
 // ScrollReveal utility to wrap blocks with buttery-smooth entrance transitions
 function ScrollReveal({
@@ -85,18 +85,23 @@ export default function AboutContent() {
         <div className="absolute inset-0 flex items-end z-20 pb-16 md:pb-24 lg:pb-32 px-6">
           <div className="mx-auto max-w-[1400px] w-full">
             <div className="max-w-[900px] space-y-6">
-              <ScrollReveal>
-                <H1 className="leading-h1 tracking-[-0.02em] font-normal uppercase text-white drop-shadow-md">
-                  The Art of Refined Living
-                </H1>
-              </ScrollReveal>
-              <ScrollReveal delay={150}>
-                <p className="text-lg md:text-[24px] leading-relaxed text-taupe-100 font-light max-w-3xl drop-shadow-sm">
-                  Blending striking architectural forms with thoughtfully
-                  curated interiors, we create homes that unite nature and
-                  design into one harmonious experience.
-                </p>
-              </ScrollReveal>
+              <TextEffect
+                preset="fade-in-blur"
+                className="text-4xl lg:text-7xl font-normal text-balance tracking-tight text-white uppercase"
+                speedReveal={5}
+                speedSegment={0.3}
+                as="h1">
+                The Art of Refined Living
+              </TextEffect>
+              <TextEffect
+                preset="fade-in-blur"
+                speedReveal={5}
+                speedSegment={0.3}
+                className="text-taupe-100 text-base lg:text-[22px] font-light text-balance leading-[1.55]">
+                Blending striking architectural forms with thoughtfully curated
+                interiors, we create homes that unite nature and design into one
+                harmonious experience.
+              </TextEffect>
             </div>
           </div>
         </div>
@@ -126,9 +131,9 @@ export default function AboutContent() {
               <P>
                 From our design studio in South Florida, our team brings decades
                 of combined expertise in drafting, custom craftsmanship, and
-                interior curation. We orchestrate every stage of the
-                process - from early spatial planning to the final selection of
-                art and textures - ensuring your vision is executed with extreme
+                interior curation. We orchestrate every stage of the process -
+                from early spatial planning to the final selection of art and
+                textures - ensuring your vision is executed with extreme
                 precision.
               </P>
             </ScrollReveal>
