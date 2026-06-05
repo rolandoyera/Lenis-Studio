@@ -4,15 +4,7 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import {
-  Building2,
-  Loader2,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  Search,
-} from "lucide-react";
+import { Building2, Loader2, Mail, Phone, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
@@ -24,17 +16,14 @@ import {
   XTwitterIcon,
   YoutubeIcon,
 } from "@/components/icons/icons";
+import { PageTitle } from "@/components/page-title-updater";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { H1 } from "@/components/ui/typography";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { H1, H3 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 import { formatPhone, getInitials } from "@/lib/utils";
@@ -46,7 +35,6 @@ import {
   type VendorFormData,
   VendorFormDialog,
 } from "./_components/vendor-form-dialog";
-import { PageTitle } from "@/components/page-title-updater";
 
 // Cycle through accent gradients by first character for visual variety
 const CARD_GRADIENTS = [
@@ -132,8 +120,7 @@ export default function VendorsPage() {
         v.category?.toLowerCase().includes(term) ||
         v.notes?.toLowerCase().includes(term);
 
-      const matchesCategory =
-        activeCategory === "All" || v.category === activeCategory;
+      const matchesCategory = activeCategory === "All" || v.category === activeCategory;
 
       return matchesSearch && matchesCategory;
     })
@@ -153,7 +140,8 @@ export default function VendorsPage() {
           </div>
           <Button
             onClick={handleOpenAdd}
-            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
+            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
+          >
             <Plus className="size-4" />
             Add Vendor
           </Button>
@@ -162,21 +150,13 @@ export default function VendorsPage() {
         {/* Filter and search controls combined into a clean layout */}
         <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
           {/* Category Tabs */}
-          <Tabs
-            value={activeCategory}
-            onValueChange={setActiveCategory}
-            className="w-full md:w-auto">
+          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
             <TabsList className="flex h-auto! max-w-full flex-wrap gap-0.5">
-              <TabsTrigger
-                value="All"
-                className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
+              <TabsTrigger value="All" className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
                 All Vendors
               </TabsTrigger>
               {VENDOR_CATEGORIES.map((cat) => (
-                <TabsTrigger
-                  key={cat}
-                  value={cat}
-                  className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
+                <TabsTrigger key={cat} value={cat} className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
                   {cat}
                 </TabsTrigger>
               ))}
@@ -213,9 +193,7 @@ export default function VendorsPage() {
                 : "Get started by adding your first vendor contact."}
             </p>
             {!searchQuery && (
-              <Button
-                onClick={handleOpenAdd}
-                className="mt-4 flex items-center gap-2">
+              <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
                 Add Vendor
               </Button>
@@ -275,13 +253,10 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
       {/* Hero area: real image → gradient fallback */}
       <Link
         href={`/dashboard/vendors/${vendor.vendorId}`}
-        className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden">
+        className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden"
+      >
         {vendor.heroImageUrl ? (
-          <img
-            src={vendor.heroImageUrl}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <img src={vendor.heroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         ) : (
           <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
         )}
@@ -309,32 +284,27 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {vendor.category && (
           <Badge
             variant="secondary"
-            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm">
+            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm"
+          >
             {vendor.category}
           </Badge>
         )}
       </Link>
 
-      <CardContent className="flex flex-1 flex-col gap-3 pt-4">
+      <CardContent className="flex flex-1 flex-col gap-3">
         {/* Name */}
         <div>
-          <h3 className="line-clamp-1 font-heading font-semibold text-base leading-tight transition-colors group-has-[.detail-link:hover]:text-primary">
-            <Link
-              href={`/dashboard/vendors/${vendor.vendorId}`}
-              className="detail-link cursor-pointer">
+          <H3 className="transition-colors group-has-[.detail-link:hover]:text-primary">
+            <Link href={`/dashboard/vendors/${vendor.vendorId}`} className="detail-link cursor-pointer">
               {vendor.name}
             </Link>
-          </h3>
+          </H3>
         </div>
 
         {/* Rep contact */}
         {vendor.repName || vendor.repEmail || vendor.repPhone ? (
           <div className="flex flex-col gap-1.5 rounded-lg border border-muted/60 bg-muted/40 px-3 py-2.5">
-            {vendor.repName && (
-              <p className="truncate font-medium text-foreground/80 text-xs">
-                {vendor.repName}
-              </p>
-            )}
+            {vendor.repName && <p className="truncate font-medium text-foreground/80 text-xs">{vendor.repName}</p>}
             <div className="flex flex-col gap-1 text-muted-foreground text-xs">
               {vendor.repEmail && (
                 <span className="flex items-center gap-1.5 truncate">
@@ -351,40 +321,6 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
             </div>
           </div>
         ) : null}
-
-        {/* Address or account number teaser */}
-        {(vendor.street ||
-          vendor.city ||
-          vendor.state ||
-          vendor.zip ||
-          vendor.accountNumber) && (
-          <div className="mt-auto flex flex-col gap-1 text-muted-foreground text-xs">
-            {(vendor.street || vendor.city || vendor.state || vendor.zip) && (
-              <span className="flex items-start gap-1.5">
-                <MapPin className="mt-0.5 size-3 shrink-0" />
-                <span className="line-clamp-1">
-                  {[
-                    vendor.street,
-                    [vendor.city, vendor.state].filter(Boolean).join(", ") +
-                      (vendor.zip ? ` ${vendor.zip}` : ""),
-                  ]
-                    .filter(Boolean)
-                    .join(", ")}
-                </span>
-              </span>
-            )}
-            {vendor.accountNumber && (
-              <span className="flex items-center gap-1.5">
-                <span className="font-semibold text-[10px] text-muted-foreground/60 uppercase tracking-wider">
-                  Acct:
-                </span>
-                <span className="font-mono text-foreground/70">
-                  {vendor.accountNumber}
-                </span>
-              </span>
-            )}
-          </div>
-        )}
       </CardContent>
       <CardFooter className="flex items-center gap-3 border-t-0 bg-card text-muted-foreground">
         {websiteHref ? (
@@ -395,7 +331,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
                 <GlobeIcon />
               </a>
             </TooltipTrigger>
@@ -414,7 +351,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
                 <InstagramIcon />
               </a>
             </TooltipTrigger>
@@ -433,7 +371,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
                 <PinterestIcon />
               </a>
             </TooltipTrigger>
@@ -452,7 +391,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
                 <FacebookIcon />
               </a>
             </TooltipTrigger>
@@ -471,7 +411,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
                 <YoutubeIcon />
               </a>
             </TooltipTrigger>
@@ -490,7 +431,8 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.currentTarget.blur()}
-                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
+                className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
+              >
                 <XTwitterIcon />
               </a>
             </TooltipTrigger>

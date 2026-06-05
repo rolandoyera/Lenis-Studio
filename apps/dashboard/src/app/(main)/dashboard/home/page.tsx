@@ -16,9 +16,7 @@ export default function Page() {
             <UserGreeting prefix="Hello" />
             <WeatherWidget />
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Here's what's happening in the studio today.
-          </p>
+          <p className="text-muted-foreground text-sm">Here's what's happening in the studio today.</p>
         </div>
         <MetricCards />
         <PerformanceOverview />

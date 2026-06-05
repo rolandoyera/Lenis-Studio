@@ -21,31 +21,15 @@ import {
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
+import { PageTitle } from "@/components/page-title-updater";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  addProject,
-  deleteProject,
-  getClients,
-  getProjects,
-  updateProject,
-} from "@/lib/db";
+import { addProject, deleteProject, getClients, getProjects, updateProject } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 
-import {
-  EMPTY_PROJECT_FORM,
-  type ProjectFormData,
-  projectToForm,
-} from "./_components/project-constants";
+import { EMPTY_PROJECT_FORM, type ProjectFormData, projectToForm } from "./_components/project-constants";
 import { ProjectFormDialog } from "./_components/project-form-dialog";
-import { PageTitle } from "@/components/page-title-updater";
 
 export default function ProjectsPage() {
   const { profile, loading: authLoading } = useAuth();
@@ -65,10 +49,7 @@ export default function ProjectsPage() {
     const orgId = profile.organizationId;
     async function loadData() {
       try {
-        const [projectsData, clientsData] = await Promise.all([
-          getProjects(orgId),
-          getClients(orgId),
-        ]);
+        const [projectsData, clientsData] = await Promise.all([getProjects(orgId), getClients(orgId)]);
         setProjects(projectsData);
         setClients(clientsData);
       } catch (error) {
@@ -83,9 +64,7 @@ export default function ProjectsPage() {
 
   const handleOpenAdd = () => {
     if (clients.length === 0) {
-      toast.warning(
-        "Please create a client profile before adding a design project.",
-      );
+      toast.warning("Please create a client profile before adding a design project.");
       return;
     }
     setEditingProject(null);
@@ -98,12 +77,7 @@ export default function ProjectsPage() {
   };
 
   const handleDelete = async (projectId: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this project? This will detach any associated proposals.",
-      )
-    )
-      return;
+    if (!confirm("Are you sure you want to delete this project? This will detach any associated proposals.")) return;
 
     try {
       await deleteProject(projectId);
@@ -121,11 +95,7 @@ export default function ProjectsPage() {
     try {
       if (editingProject) {
         await updateProject(editingProject.projectId, data);
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.projectId === editingProject.projectId ? { ...p, ...data } : p,
-          ),
-        );
+        setProjects((prev) => prev.map((p) => (p.projectId === editingProject.projectId ? { ...p, ...data } : p)));
         toast.success("Project specifications updated successfully!");
       } else {
         const created = await addProject({
@@ -151,36 +121,22 @@ export default function ProjectsPage() {
     let clientFirstName = "";
     let clientLastName = "";
     if (parentClient) {
-      if (
-        typeof parentClient.firstName === "string" &&
-        parentClient.firstName.trim()
-      ) {
+      if (typeof parentClient.firstName === "string" && parentClient.firstName.trim()) {
         clientFirstName = parentClient.firstName.trim();
       } else if (
         typeof (parentClient as { fullName?: string }).fullName === "string" &&
         (parentClient as { fullName?: string }).fullName?.trim()
       ) {
-        clientFirstName =
-          (parentClient as { fullName?: string }).fullName
-            ?.trim()
-            .split(" ")[0] || "";
+        clientFirstName = (parentClient as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
       }
 
-      if (
-        typeof parentClient.lastName === "string" &&
-        parentClient.lastName.trim()
-      ) {
+      if (typeof parentClient.lastName === "string" && parentClient.lastName.trim()) {
         clientLastName = parentClient.lastName.trim();
       } else if (
         typeof (parentClient as { fullName?: string }).fullName === "string" &&
         (parentClient as { fullName?: string }).fullName?.trim()
       ) {
-        clientLastName =
-          (parentClient as { fullName?: string }).fullName
-            ?.trim()
-            .split(" ")
-            .slice(1)
-            .join(" ") || "";
+        clientLastName = (parentClient as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
       }
     }
 
@@ -202,12 +158,9 @@ export default function ProjectsPage() {
         {/* Header section with Premium typography & Action trigger */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-bold font-heading text-3xl tracking-tight">
-              Design Projects
-            </h1>
+            <h1 className="font-bold font-heading text-3xl tracking-tight">Design Projects</h1>
             <p className="mt-1 text-muted-foreground text-sm">
-              Initialize remodeling spaces, manage budgets, track sites, and
-              build targeted sourcing proposal contracts.
+              Initialize remodeling spaces, manage budgets, track sites, and build targeted sourcing proposal contracts.
             </p>
           </div>
 
@@ -221,7 +174,8 @@ export default function ProjectsPage() {
           ) : (
             <Button
               onClick={handleOpenAdd}
-              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
+              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
+            >
               <Plus className="size-4" />
               Start Project
             </Button>
@@ -243,9 +197,7 @@ export default function ProjectsPage() {
         {loading ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
             <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-              Loading Project spaces
-            </p>
+            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Project spaces</p>
           </div>
         ) : filteredProjects.length === 0 ? (
           <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
@@ -257,9 +209,7 @@ export default function ProjectsPage() {
                 : "Get started by initializing your first client project space (e.g. Master Living Room Renovation)."}
             </p>
             {!searchQuery && clients.length > 0 && (
-              <Button
-                onClick={handleOpenAdd}
-                className="mt-4 flex items-center gap-2">
+              <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
                 Initialize Project Space
               </Button>
@@ -268,14 +218,13 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => {
-              const parentClient = clients.find(
-                (c) => c.uid === project.clientId,
-              );
+              const parentClient = clients.find((c) => c.uid === project.clientId);
 
               return (
                 <Card
                   key={project.projectId}
-                  className="group relative overflow-hidden bg-card/60 backdrop-blur-xs transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+                  className="group relative overflow-hidden bg-card/60 backdrop-blur-xs transition-all duration-300 hover:border-primary/20 hover:shadow-md"
+                >
                   {/* Subtle top-bar indicator color matches active project status */}
                   <div
                     className={`absolute inset-x-0 top-0 h-1 bg-linear-to-r transition-all ${
@@ -297,7 +246,8 @@ export default function ProjectsPage() {
                             : project.status === "Completed"
                               ? "border border-blue-500/20 bg-blue-500/15 text-blue-500"
                               : "border border-amber-500/20 bg-amber-500/15 text-amber-500"
-                        }`}>
+                        }`}
+                      >
                         {project.status}
                       </span>
 
@@ -307,14 +257,16 @@ export default function ProjectsPage() {
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => handleOpenEdit(project)}
-                          className="text-muted-foreground hover:bg-primary/10 hover:text-primary">
+                          className="text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        >
                           <Edit3 className="size-3.5" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon-sm"
                           onClick={() => handleDelete(project.projectId)}
-                          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        >
                           <Trash2 className="size-3.5" />
                         </Button>
                       </div>
@@ -331,36 +283,21 @@ export default function ProjectsPage() {
                         <span className="font-medium text-foreground/80">
                           {(() => {
                             let f = "";
-                            if (
-                              typeof parentClient.firstName === "string" &&
-                              parentClient.firstName.trim()
-                            ) {
+                            if (typeof parentClient.firstName === "string" && parentClient.firstName.trim()) {
                               f = parentClient.firstName.trim();
                             } else if (
-                              typeof (parentClient as { fullName?: string })
-                                .fullName === "string" &&
-                              (
-                                parentClient as { fullName?: string }
-                              ).fullName?.trim()
+                              typeof (parentClient as { fullName?: string }).fullName === "string" &&
+                              (parentClient as { fullName?: string }).fullName?.trim()
                             ) {
-                              f =
-                                (parentClient as { fullName?: string }).fullName
-                                  ?.trim()
-                                  .split(" ")[0] || "";
+                              f = (parentClient as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
                             }
 
                             let l = "";
-                            if (
-                              typeof parentClient.lastName === "string" &&
-                              parentClient.lastName.trim()
-                            ) {
+                            if (typeof parentClient.lastName === "string" && parentClient.lastName.trim()) {
                               l = parentClient.lastName.trim();
                             } else if (
-                              typeof (parentClient as { fullName?: string })
-                                .fullName === "string" &&
-                              (
-                                parentClient as { fullName?: string }
-                              ).fullName?.trim()
+                              typeof (parentClient as { fullName?: string }).fullName === "string" &&
+                              (parentClient as { fullName?: string }).fullName?.trim()
                             ) {
                               l =
                                 (parentClient as { fullName?: string }).fullName
@@ -387,10 +324,7 @@ export default function ProjectsPage() {
                       {project.budget && (
                         <div className="flex items-center gap-2 text-muted-foreground text-xs">
                           <DollarSign className="size-3.5 shrink-0 text-emerald-500" />
-                          Budget Pool:{" "}
-                          <span className="font-semibold text-foreground/80">
-                            {project.budget}
-                          </span>
+                          Budget Pool: <span className="font-semibold text-foreground/80">{project.budget}</span>
                         </div>
                       )}
                       {project.address && (
@@ -417,7 +351,8 @@ export default function ProjectsPage() {
                       <Link
                         href={`/dashboard/proposals?projectId=${project.projectId}`}
                         prefetch={false}
-                        className="group/btn flex items-center gap-0.5 font-semibold text-primary hover:underline">
+                        className="group/btn flex items-center gap-0.5 font-semibold text-primary hover:underline"
+                      >
                         View Proposals
                         <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-0.5" />
                       </Link>
@@ -437,9 +372,7 @@ export default function ProjectsPage() {
           submitting={submitting}
           clients={clients}
           initialData={
-            editingProject
-              ? projectToForm(editingProject)
-              : { ...EMPTY_PROJECT_FORM, clientId: clients[0]?.uid ?? "" }
+            editingProject ? projectToForm(editingProject) : { ...EMPTY_PROJECT_FORM, clientId: clients[0]?.uid ?? "" }
           }
           onSubmit={handleSubmitProject}
         />

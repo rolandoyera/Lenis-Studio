@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Loader2, X } from "lucide-react";
+import { Check, Image, Loader2, Upload } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { runAiActionWithRetry } from "@/lib/ai-retry";
+import { uploadVendorImage } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
 import { formatPhone, formatZip, isValidUsPhone, isValidUsZip } from "@/lib/utils";
 import { autofillVendorFromUrl } from "@/server/ai-actions";
@@ -144,9 +145,10 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg">Choose Images</DialogTitle>
+          <DialogTitle className="text-lg">Select Brand Images</DialogTitle>
           <DialogDescription>
-            {AI_ASSISTANT_NAME} found multiple candidates. Select the best logo and main image for this vendor.
+            {AI_ASSISTANT_NAME} has found more than one image candidate for this vendor. Please review and select the
+            best Logo and Main Showcase Image from the options below.
           </DialogDescription>
         </DialogHeader>
 
@@ -275,6 +277,55 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
   const logoUrlValue = watch("logoUrl");
   const heroImageUrlValue = watch("heroImageUrl");
 
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Image size exceeds 5MB limit.", { duration: 8000 });
+      e.target.value = "";
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const url = await uploadVendorImage(file, "logo");
+      setValue("logoUrl", url);
+      toast.success("Logo uploaded successfully!");
+    } catch (error) {
+      console.error("Logo upload error:", error);
+      toast.error("Failed to upload logo.");
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    if (file.size > MAX_IMAGE_BYTES) {
+      toast.error("Image size exceeds 5MB limit.", { duration: 8000 });
+      e.target.value = "";
+      return;
+    }
+    setUploadingHero(true);
+    try {
+      const url = await uploadVendorImage(file, "hero");
+      setValue("heroImageUrl", url);
+      toast.success("Showcase image uploaded successfully!");
+    } catch (error) {
+      console.error("Hero upload error:", error);
+      toast.error("Failed to upload showcase image.");
+    } finally {
+      setUploadingHero(false);
+      e.target.value = "";
+    }
+  };
+
   useEffect(() => {
     if (open) reset(initialData ?? EMPTY_VENDOR_FORM);
   }, [open, initialData, reset]);
@@ -305,12 +356,14 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
         if (d.youtube) setValue("youtube", d.youtube);
         if (d.xTwitter) setValue("xTwitter", d.xTwitter);
 
-        if (d.showImagePicker && (d.logoCandidates?.length || d.imageCandidates?.length)) {
+        if (d.logoCandidates?.length || d.imageCandidates?.length) {
           setPickerData({
             logoCandidates: d.logoCandidates ?? [],
             imageCandidates: d.imageCandidates ?? [],
           });
-          setPickerOpen(true);
+          if (d.showImagePicker) {
+            setPickerOpen(true);
+          }
         }
 
         toast.success(`Vendor enriched with ${AI_ASSISTANT_NAME} — please review the fields.`, {
@@ -339,7 +392,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
         }}
       >
         <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-3xl">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate autoComplete="off">
             <DialogHeader>
               <DialogTitle className="text-xl">{mode === "edit" ? "Edit Vendor" : "Add Vendor"}</DialogTitle>
               <DialogDescription>
@@ -358,7 +411,12 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                       <Label className={LABEL_CLASS}>
                         Name <span className="ml-0.5 text-destructive">*</span>
                       </Label>
-                      <Input {...field} placeholder="e.g. Arteriors, RH" aria-invalid={fieldState.invalid} />
+                      <Input
+                        {...field}
+                        placeholder="e.g. Arteriors, RH"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="one-time-code"
+                      />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -400,11 +458,12 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         placeholder="www.arteriorshome.com"
                         aria-invalid={fieldState.invalid}
                         className="flex-1"
+                        autoComplete="one-time-code"
                       />
                       <Button
                         type="button"
                         onClick={handleEnrich}
-                        disabled={!field.value || aiLoading || isSubmitting}
+                        disabled={!field.value || aiLoading ? true : isSubmitting}
                         className="group relative h-10 shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-sm text-white shadow-violet-500/20 shadow-xs transition-all duration-200 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100"
                       >
                         {aiLoading && (
@@ -421,59 +480,146 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 )}
               />
 
-              {/* AI Image Previews */}
-              {(logoUrlValue || heroImageUrlValue) && (
-                <div className="flex items-center gap-3 rounded-lg border border-muted/60 bg-muted/30 px-3 py-2.5">
-                  <LunaMoon variant="phase" size={14} />
-                  <span className="font-medium text-muted-foreground text-xs">AI images:</span>
-                  <div className="flex flex-1 gap-2">
-                    {logoUrlValue && (
-                      <div className="relative">
-                        <div className="flex size-9 items-center justify-center overflow-hidden rounded border bg-background">
+              {/* Branding & Media Section */}
+              <div className="flex flex-col gap-3 border-t pt-4">
+                <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+                  Branding & Gallery Media
+                </h4>
+
+                {/* Hidden File Uploaders */}
+                <input
+                  type="file"
+                  id="vendor-logo-uploader"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                  disabled={uploadingLogo}
+                />
+                <input
+                  type="file"
+                  id="vendor-hero-uploader"
+                  accept="image/*"
+                  onChange={handleHeroUpload}
+                  className="hidden"
+                  disabled={uploadingHero}
+                />
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                  {/* BRAND LOGO CARD (Aspect ratio 1:1, takes 4 columns on desktop) */}
+                  <div className="sm:col-span-4 flex flex-col gap-2">
+                    <Label className={LABEL_CLASS}>Logo (1:1)</Label>
+                    <div className="group/logo relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-background transition-all hover:border-primary/50">
+                      {uploadingLogo ? (
+                        <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center text-primary">
+                          <Loader2 className="size-6 animate-spin" />
+                          <p className="text-[10px]">Uploading...</p>
+                        </div>
+                      ) : logoUrlValue ? (
+                        <>
                           <img
                             src={logoUrlValue}
-                            alt="Logo"
-                            className="h-full w-full object-contain p-1"
-                            onError={(e) => {
-                              (e.currentTarget.parentElement as HTMLElement).style.display = "none";
-                            }}
+                            alt="Brand Logo"
+                            className="absolute inset-0 size-full object-contain p-3"
                           />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setValue("logoUrl", "")}
-                          className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
-                          aria-label="Remove logo"
+                          <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover/logo:opacity-100 flex items-center justify-center gap-2">
+                            <Label
+                              htmlFor="vendor-logo-uploader"
+                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100"
+                            >
+                              Change
+                            </Label>
+                            <button
+                              type="button"
+                              onClick={() => setValue("logoUrl", "")}
+                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <Label
+                          htmlFor="vendor-logo-uploader"
+                          className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
                         >
-                          <X className="size-2.5" />
-                        </button>
-                      </div>
+                          <Upload className="size-6 text-muted-foreground/40" />
+                          <p className="text-[11px] font-medium">Upload Logo</p>
+                          <p className="text-muted-foreground/50 text-[9px]">Max 5MB</p>
+                        </Label>
+                      )}
+                    </div>
+                    {/* Manual trigger for candidate selection */}
+                    {pickerData.logoCandidates.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPickerOpen(true)}
+                        className="mt-1 w-full text-[10px] h-7 gap-1"
+                      >
+                        <Image className="size-3" /> Select Logo Candidate
+                      </Button>
                     )}
-                    {heroImageUrlValue && (
-                      <div className="relative">
-                        <div className="h-9 w-14 overflow-hidden rounded border bg-background">
+                  </div>
+
+                  {/* HERO BANNER CARD (Aspect ratio 16:9, takes 8 columns on desktop) */}
+                  <div className="sm:col-span-8 flex flex-col gap-2">
+                    <Label className={LABEL_CLASS}>Hero / Showcase Banner (16:9)</Label>
+                    <div className="group/hero relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-background transition-all hover:border-primary/50">
+                      {uploadingHero ? (
+                        <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center text-primary">
+                          <Loader2 className="size-6 animate-spin" />
+                          <p className="text-[10px]">Uploading...</p>
+                        </div>
+                      ) : heroImageUrlValue ? (
+                        <>
                           <img
                             src={heroImageUrlValue}
-                            alt="Hero"
-                            className="h-full w-full object-cover"
-                            onError={(e) => {
-                              (e.currentTarget.parentElement as HTMLElement).style.display = "none";
-                            }}
+                            alt="Hero Showcase"
+                            className="absolute inset-0 size-full object-cover"
                           />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setValue("heroImageUrl", "")}
-                          className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
-                          aria-label="Remove hero image"
+                          <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover/hero:opacity-100 flex items-center justify-center gap-2">
+                            <Label
+                              htmlFor="vendor-hero-uploader"
+                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100"
+                            >
+                              Change
+                            </Label>
+                            <button
+                              type="button"
+                              onClick={() => setValue("heroImageUrl", "")}
+                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <Label
+                          htmlFor="vendor-hero-uploader"
+                          className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
                         >
-                          <X className="size-2.5" />
-                        </button>
-                      </div>
+                          <Upload className="size-6 text-muted-foreground/40" />
+                          <p className="text-[11px] font-medium">Upload Hero Banner</p>
+                          <p className="text-muted-foreground/50 text-[9px]">Max 5MB</p>
+                        </Label>
+                      )}
+                    </div>
+                    {/* Manual trigger for candidate selection */}
+                    {pickerData.imageCandidates.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPickerOpen(true)}
+                        className="mt-1 w-full text-[10px] h-7 gap-1"
+                      >
+                        <Image className="size-3" /> Select Hero Candidate
+                      </Button>
                     )}
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Account Number */}
               <Controller
@@ -482,7 +628,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>Account Number</Label>
-                    <Input {...field} placeholder="e.g. TRA-002341" aria-invalid={fieldState.invalid} />
+                    <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
@@ -513,7 +659,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>Street Address</Label>
-                    <Input {...field} aria-invalid={fieldState.invalid} />
+                    <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
@@ -525,7 +671,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   render={({ field, fieldState }) => (
                     <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>City</Label>
-                      <Input {...field} aria-invalid={fieldState.invalid} />
+                      <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -536,7 +682,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   render={({ field, fieldState }) => (
                     <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>State</Label>
-                      <Input {...field} maxLength={2} aria-invalid={fieldState.invalid} />
+                      <Input {...field} maxLength={2} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -553,6 +699,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         maxLength={5}
                         aria-invalid={fieldState.invalid}
                         onChange={(e) => field.onChange(formatZip(e.target.value))}
+                        autoComplete="one-time-code"
                       />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
@@ -567,8 +714,8 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   name="repName"
                   render={({ field, fieldState }) => (
                     <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                      <Label className={LABEL_CLASS}>Representative Name</Label>
-                      <Input {...field} placeholder="e.g. Diana Prince" aria-invalid={fieldState.invalid} />
+                      <Label className={LABEL_CLASS}>Contact Name</Label>
+                      <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -578,8 +725,8 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   name="repEmail"
                   render={({ field, fieldState }) => (
                     <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                      <Label className={LABEL_CLASS}>Rep Email</Label>
-                      <Input {...field} type="email" aria-invalid={fieldState.invalid} />
+                      <Label className={LABEL_CLASS}>Contact Email</Label>
+                      <Input {...field} type="email" aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -589,12 +736,12 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   name="repPhone"
                   render={({ field, fieldState }) => (
                     <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                      <Label className={LABEL_CLASS}>Rep Phone</Label>
+                      <Label className={LABEL_CLASS}>Contact Phone</Label>
                       <Input
                         {...field}
-                        placeholder="(555) 000-0000"
                         aria-invalid={fieldState.invalid}
                         onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                        autoComplete="one-time-code"
                       />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>

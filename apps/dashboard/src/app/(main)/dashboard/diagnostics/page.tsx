@@ -296,8 +296,8 @@ export default function DiagnosticsPage() {
                           <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                             Extracted Name
                           </span>
-                          <div className="flex h-5 items-center">
-                            <span className="font-semibold text-foreground text-sm">
+                          <div className="flex h-5 items-center w-full overflow-hidden">
+                            <span className="truncate font-semibold text-foreground text-sm">
                               {selectedRun.parsedData?.name || (
                                 <em className="text-muted-foreground/50">Not extracted</em>
                               )}
@@ -326,7 +326,7 @@ export default function DiagnosticsPage() {
                               Product SKU
                             </span>
                             <div className="flex h-5 items-center">
-                              <span className="font-medium font-mono text-foreground text-sm">
+                              <span className="truncate font-medium font-mono text-foreground text-sm">
                                 {selectedRun.parsedData?.sku || (
                                   <em className="font-sans text-muted-foreground/50">Not extracted</em>
                                 )}
@@ -340,7 +340,7 @@ export default function DiagnosticsPage() {
                             Business Phone
                           </span>
                           <div className="flex h-5 items-center">
-                            <span className="font-medium text-foreground text-sm">
+                            <span className="truncate font-medium text-foreground text-sm">
                               {selectedRun.parsedData?.repPhone || (
                                 <em className="text-muted-foreground/50">Not extracted</em>
                               )}
@@ -353,7 +353,7 @@ export default function DiagnosticsPage() {
                             Business Email
                           </span>
                           <div className="flex h-5 items-center">
-                            <span className="font-medium text-foreground text-sm">
+                            <span className="truncate font-medium text-foreground text-sm">
                               {selectedRun.parsedData?.repEmail || (
                                 <em className="text-muted-foreground/50">Not extracted</em>
                               )}

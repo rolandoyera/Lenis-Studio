@@ -8,7 +8,6 @@ export const APP_CONFIG = {
   copyright: `© ${currentYear}, Dezien CRM.`,
   meta: {
     title: "Studio Dezien",
-    description:
-      "Dezien CRM is a modern dashboard built by creatives for creatives. Sorry, accountants.",
+    description: "Dezien CRM is a modern dashboard built by creatives for creatives. Sorry, accountants.",
   },
 };

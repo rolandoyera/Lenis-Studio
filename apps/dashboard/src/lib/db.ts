@@ -244,6 +244,22 @@ export async function getLibraryItems(organizationId: string): Promise<LibraryIt
   }
 }
 
+export async function getVendorLibraryItems(organizationId: string, vendorId: string): Promise<LibraryItem[]> {
+  try {
+    const collRef = collection(db, "library");
+    const q = query(collRef, where("organizationId", "==", organizationId), where("vendorId", "==", vendorId));
+    const snapshot = await getDocs(q);
+    const items: LibraryItem[] = [];
+    snapshot.forEach((docSnap) => {
+      items.push(docSnap.data() as LibraryItem);
+    });
+    return items.sort((a, b) => b.updatedAt - a.updatedAt);
+  } catch (error) {
+    console.error("Error fetching vendor library items:", error);
+    return [];
+  }
+}
+
 export async function addLibraryItem(item: Omit<LibraryItem, "itemId" | "updatedAt">): Promise<LibraryItem> {
   const itemId = `item-${Math.random().toString(36).substr(2, 9)}`;
   const newItem: LibraryItem = {
@@ -316,6 +332,14 @@ export async function uploadLibraryImage(file: File): Promise<string> {
   // Get public CDN download URL
   const downloadURL = await getDownloadURL(snapshot.ref);
   return downloadURL;
+}
+
+export async function uploadVendorImage(file: File, type: "logo" | "hero"): Promise<string> {
+  const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+  const path = type === "logo" ? `vendors/logos/${cleanFileName}` : `vendors/heroes/${cleanFileName}`;
+  const storageRef = ref(storage, path);
+  const snapshot = await uploadBytes(storageRef, file);
+  return await getDownloadURL(snapshot.ref);
 }
 
 /**

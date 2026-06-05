@@ -88,7 +88,6 @@ export interface AiMetadata {
   importedAt?: number;
   model?: string;
   confidence?: Record<string, number>;
-  rawExtraction?: string;
 }
 
 export interface ProposalLineItem {

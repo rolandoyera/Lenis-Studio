@@ -702,30 +702,41 @@ export function LibraryItemFormDialog({
                   {/* Secondary Gallery Grid of up to 4 thumbnail slots */}
                   <div className="grid grid-cols-4 gap-3">
                     {imageUrls.map((url, i) => (
+                      // biome-ignore lint/a11y/noStaticElementInteractions: draggable list element
                       <div
                         key={url}
-                        className={`relative aspect-square overflow-hidden rounded-md border bg-background transition-all hover:scale-102 ${
-                          formData.coverImageUrl === url
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", String(i));
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const sourceIndex = Number(e.dataTransfer.getData("text/plain"));
+                          form.reorderImages(sourceIndex, i);
+                        }}
+                        className={`group/thumb relative aspect-square cursor-grab overflow-hidden rounded-md border bg-background transition-all hover:scale-102 active:cursor-grabbing ${
+                          i === 0
                             ? "scale-102 border-primary ring-2 ring-primary/20"
                             : "border-border hover:border-primary/50"
                         }`}
                       >
-                        <button
-                          type="button"
-                          onClick={() => form.setAsCover(url)}
-                          aria-label={`Set thumbnail ${i + 1} as cover`}
-                          className="block size-full cursor-pointer"
-                        >
-                          <img src={url} alt={`Thumbnail ${i + 1}`} className="size-full object-cover" />
-                        </button>
+                        <img src={url} alt={`Thumbnail ${i + 1}`} className="size-full object-cover" />
                         <button
                           type="button"
                           onClick={() => form.removeImageUrl(url)}
                           aria-label={`Remove thumbnail ${i + 1}`}
-                          className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-black/70 text-sm text-white hover:bg-black"
+                          className="absolute top-1 right-1 z-10 flex size-4 items-center justify-center rounded-full bg-black/70 text-sm text-white hover:bg-black"
                         >
                           ×
                         </button>
+                        {i === 0 && (
+                          <span className="absolute bottom-1 left-1 z-10 rounded bg-black/60 px-1 py-0.5 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs">
+                            Cover
+                          </span>
+                        )}
                       </div>
                     ))}
 

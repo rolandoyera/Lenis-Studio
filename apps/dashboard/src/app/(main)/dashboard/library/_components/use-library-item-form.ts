@@ -45,7 +45,10 @@ export function useLibraryItemForm() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  const reset = (values?: Partial<LibraryItemFormData>) => rhfForm.reset({ ...EMPTY_LIBRARY_ITEM_FORM, ...values });
+  const reset = useCallback(
+    (values?: Partial<LibraryItemFormData>) => rhfForm.reset({ ...EMPTY_LIBRARY_ITEM_FORM, ...values }),
+    [rhfForm],
+  );
 
   // Wraps RHF's handleSubmit so the dialog can call form.handleSubmit(onSubmit)
   // where onSubmit is a simple no-arg async function from the page.
@@ -138,7 +141,6 @@ export function useLibraryItemForm() {
             importedAt: Date.now(),
             model: res.modelUsed || "gemini-3.5-flash",
             confidence: ext.confidence,
-            rawExtraction: ext.rawExtraction,
           },
         };
 
@@ -192,22 +194,57 @@ export function useLibraryItemForm() {
     }
   };
 
-  const setAsCover = (url: string) => {
-    setFormData((prev) => ({ ...prev, coverImageUrl: url }));
-    toast.success("Primary cover image updated!");
-  };
+  const setAsCover = useCallback(
+    (url: string) => {
+      setFormData((prev) => {
+        const urls = prev.imageUrls ?? [];
+        const index = urls.indexOf(url);
+        if (index <= 0) return prev;
+        const nextUrls = [url, ...urls.filter((u) => u !== url)];
+        return {
+          ...prev,
+          imageUrls: nextUrls,
+          coverImageUrl: url,
+        };
+      });
+      toast.success("Image moved to cover (first slot)!");
+    },
+    [setFormData],
+  );
 
-  const removeImageUrl = (url: string) => {
-    setFormData((prev) => {
-      const filtered = (prev.imageUrls ?? []).filter((u) => u !== url);
-      return {
-        ...prev,
-        imageUrls: filtered,
-        manualImageUrls: (prev.manualImageUrls ?? []).filter((u) => u !== url),
-        coverImageUrl: prev.coverImageUrl === url ? filtered[0] || "" : prev.coverImageUrl,
-      };
-    });
-  };
+  const reorderImages = useCallback(
+    (sourceIndex: number, targetIndex: number) => {
+      setFormData((prev) => {
+        const urls = [...(prev.imageUrls ?? [])];
+        if (sourceIndex < 0 || sourceIndex >= urls.length || targetIndex < 0 || targetIndex >= urls.length) {
+          return prev;
+        }
+        const [removed] = urls.splice(sourceIndex, 1);
+        urls.splice(targetIndex, 0, removed);
+        return {
+          ...prev,
+          imageUrls: urls,
+          coverImageUrl: urls[0] ?? "",
+        };
+      });
+    },
+    [setFormData],
+  );
+
+  const removeImageUrl = useCallback(
+    (url: string) => {
+      setFormData((prev) => {
+        const filtered = (prev.imageUrls ?? []).filter((u) => u !== url);
+        return {
+          ...prev,
+          imageUrls: filtered,
+          manualImageUrls: (prev.manualImageUrls ?? []).filter((u) => u !== url),
+          coverImageUrl: filtered[0] || "",
+        };
+      });
+    },
+    [setFormData],
+  );
 
   return {
     formData,
@@ -228,6 +265,7 @@ export function useLibraryItemForm() {
     autofillWithAi,
     handleImageUpload,
     setAsCover,
+    reorderImages,
     removeImageUrl,
   };
 }

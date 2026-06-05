@@ -33,7 +33,7 @@ export function H3({ children, className }: H1Props) {
   return (
     <h3
       className={cn(
-        "scroll-m-20 text-xl font-semibold tracking-tight",
+        "scroll-m-20 text-lg font-semibold tracking-tight",
         className,
       )}>
       {children}

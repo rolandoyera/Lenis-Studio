@@ -401,7 +401,7 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     // Merge HTML-derived (priority) ahead of markdown candidates, collapsing size
     // variants of the same photo so the largest/canonical version wins each slot.
     const junkPatterns =
-      /logo|icon|avatar|sprite|banner|pixel|social|facebook|instagram|pinterest|twitter|linkedin|tracker|nav|footer|header|loading|\.svg|\.gif|analytics|checkout|cart/i;
+      /logo|icon|avatar|sprite|banner|pixel|social|facebook|instagram|pinterest|twitter|linkedin|tracker|nav|footer|header|loading|\.svg|\.gif|analytics|checkout|cart|adroll|doubleclick|yotpo|trust|badge|payment|paypal|visa|mastercard|amex|applepay|googlepay|shipping|delivery|guarante|refund|secur|padlock|warranty/i;
     const mergedImages: string[] = [];
     const seenImageKeys = new Set<string>();
     for (const src of [...htmlImages, ...candidateImages]) {
@@ -450,7 +450,7 @@ Specifically:
 - imageUrls: The 'Candidate Images' array below is already pre-ranked best-first — the earliest entries are the canonical, highest-resolution images extracted from the page's metadata (og:image, structured data, and responsive srcset). Select the top 1 to ${MAX_IMAGES} direct product image URLs strictly from that array, strongly preferring the earliest (highest-priority) entries and keeping the very first suitable product image as the primary cover. If the candidate list is empty, you may extract valid absolute product image URLs directly from the page content. CRITICAL: You must NEVER under any circumstances return base64-encoded image data URLs (e.g. data:image/jpeg;base64,...). Only return absolute HTTP or HTTPS URLs.
 - confidence: An object with keys matching each of the parsed text/numeric fields above (name, sku, category, description, finishColor, manufacturer, materials, dimensions, msrp, imageUrls). For each field, return a float confidence value between 0.0 (completely uncertain) and 1.0 (absolutely certain) based on how clearly and unambiguously the information was stated in the page content.
 
-CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines or raw unescaped double quotes inside your string properties. All double quotes inside text properties must be escaped as \\" and all literal linebreaks must be escaped as \\n.`,
+CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines or raw unescaped double quotes inside your string properties. All double quotes inside text properties must be escaped as \\" and all literal linebreaks must be escaped as \\n. Do not include any inner monologues, reasoning, debates, or explanations within the JSON property values. Every property value must contain ONLY the final extracted data value (or an empty string if not found).`,
             },
           ],
         },
@@ -487,10 +487,32 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
                 msrp: { type: "NUMBER" },
                 imageUrls: { type: "NUMBER" },
               },
-              required: ["name"],
+              required: [
+                "name",
+                "sku",
+                "category",
+                "description",
+                "finishColor",
+                "manufacturer",
+                "materials",
+                "dimensions",
+                "msrp",
+                "imageUrls",
+              ],
             },
           },
-          required: ["name", "confidence"],
+          required: [
+            "name",
+            "sku",
+            "category",
+            "description",
+            "finishColor",
+            "manufacturer",
+            "materials",
+            "dimensions",
+            "imageUrls",
+            "confidence",
+          ],
         },
       },
     });
@@ -523,7 +545,8 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
     }
 
     const data = parseGeminiJson(parsedText);
-    console.log(`[AI Autofill] Gemini response successfully parsed! Data:`, data);
+    const sanitizedData = sanitizeProductData(data);
+    console.log(`[AI Autofill] Gemini response successfully parsed and sanitized! Data:`, sanitizedData);
 
     // Save diagnostic run in Firestore background (non-blocking)
     void saveDiagnosticRun({
@@ -533,7 +556,7 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
       prompt:
         typeof requestBody === "string" ? JSON.parse(requestBody).contents?.[0]?.parts?.[0]?.text || requestBody : "",
       rawResponse: parsedText,
-      parsedData: data,
+      parsedData: sanitizedData,
     });
 
     // Append the raw Markdown snapshot of Jina Reader for tracing and debugging purposes
@@ -541,7 +564,7 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
       success: true,
       modelUsed,
       data: {
-        ...data,
+        ...sanitizedData,
         rawExtraction: optimizedMarkdown,
       },
     };
@@ -787,7 +810,8 @@ function extractVendorImageCandidates(markdown: string): {
     m = rawUrlRe.exec(markdown);
   }
 
-  const junkRe = /pixel|tracker|analytics|data:|base64|cart|checkout|spinner|loading|1x1/i;
+  const junkRe =
+    /pixel|tracker|analytics|data:|base64|cart|checkout|spinner|loading|1x1|adroll|doubleclick|yotpo|trust|badge|payment|paypal|visa|mastercard|amex|applepay|googlepay|shipping|delivery|guarante|refund|secur|padlock|warranty|\.svg|\.gif/i;
   const logoKeyRe = /logo|brand|icon/i;
 
   const logoCandidates: string[] = [];
@@ -964,10 +988,45 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
                 youtube: { type: "NUMBER" },
                 xTwitter: { type: "NUMBER" },
               },
-              required: ["name"],
+              required: [
+                "name",
+                "category",
+                "description",
+                "street",
+                "city",
+                "state",
+                "zip",
+                "repPhone",
+                "repEmail",
+                "logoUrl",
+                "heroImageUrl",
+                "instagram",
+                "pinterest",
+                "facebook",
+                "youtube",
+                "xTwitter",
+              ],
             },
           },
-          required: ["name", "confidence"],
+          required: [
+            "name",
+            "category",
+            "description",
+            "street",
+            "city",
+            "state",
+            "zip",
+            "repPhone",
+            "repEmail",
+            "logoUrl",
+            "heroImageUrl",
+            "instagram",
+            "pinterest",
+            "facebook",
+            "youtube",
+            "xTwitter",
+            "confidence",
+          ],
         },
       },
     });
@@ -1007,14 +1066,16 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
     const logoUrl = needLogoPicker ? "" : (extracted.logoUrl as string) || "";
     const heroImageUrl = needHeroPicker ? "" : (extracted.heroImageUrl as string) || "";
 
-    const pickerLogoCandidates = needLogoPicker
-      ? [...new Set([extracted.logoUrl as string, ...logoCandidates].filter(Boolean))]
-      : undefined;
-    const pickerImageCandidates = needHeroPicker
-      ? [...new Set([extracted.heroImageUrl as string, ...imageCandidates].filter(Boolean))]
-      : undefined;
+    const pickerLogoCandidates =
+      logoCandidates.length > 0
+        ? [...new Set([extracted.logoUrl as string, ...logoCandidates].filter(Boolean))]
+        : undefined;
+    const pickerImageCandidates =
+      imageCandidates.length > 0
+        ? [...new Set([extracted.heroImageUrl as string, ...imageCandidates].filter(Boolean))]
+        : undefined;
 
-    const returnedData = {
+    const rawReturnedData = {
       name: (extracted.name as string) || undefined,
       category: (extracted.category as string) || undefined,
       description: (extracted.description as string) || undefined,
@@ -1036,6 +1097,8 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
       youtube: (extracted.youtube as string) || undefined,
       xTwitter: (extracted.xTwitter as string) || undefined,
     };
+
+    const returnedData = sanitizeVendorData(rawReturnedData);
 
     // Save diagnostic run in Firestore background (non-blocking)
     void saveDiagnosticRun({
@@ -1136,4 +1199,118 @@ function cleanScrapedMarkdown(text: string): string {
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n");
 
   return cleaned.trim();
+}
+
+/**
+ * Helper function to detect and strip out model reasoning, debates,
+ * or conversational text mistakenly placed in structured fields,
+ * and truncate them to a reasonable length.
+ */
+function sanitizeField(value: any, maxLength = 80, fieldName = "", allowParagraphs = false): string {
+  if (value === undefined || value === null) return "";
+  const str = String(value).trim();
+  if (str === "") return "";
+
+  const lower = str.toLowerCase();
+
+  // Detect reasoning/explanation text
+  const isReasoning =
+    str.length > 40 &&
+    str.includes(" ") &&
+    (lower.includes("not specified") ||
+      lower.includes("not found") ||
+      lower.includes("could not be") ||
+      lower.includes("omitted") ||
+      lower.includes("empty string") ||
+      lower.includes("per instructions") ||
+      lower.includes("schema") ||
+      lower.includes("unable to") ||
+      lower.includes("not present") ||
+      lower.includes("no explicit") ||
+      lower.includes("instead of") ||
+      lower.includes("safe to") ||
+      lower.includes("decided to") ||
+      lower.includes("re-evaluating") ||
+      lower.includes("re-reading") ||
+      (!allowParagraphs &&
+        lower.includes("is") &&
+        lower.includes("the") &&
+        lower.includes("to") &&
+        str.split(/\s+/).length > 8));
+
+  if (isReasoning || str.length > maxLength) {
+    console.warn(`[AI Sanitizer] Stripped conversational text for field '${fieldName}': "${str.substring(0, 60)}..."`);
+    if (fieldName === "name") {
+      return "Unnamed Product";
+    }
+    return "";
+  }
+
+  return str;
+}
+
+function sanitizeProductData(data: any): any {
+  if (!data) return {};
+
+  const name = sanitizeField(data.name, 150, "name");
+  const sku = sanitizeField(data.sku, 50, "sku");
+  const category = sanitizeField(data.category, 50, "category");
+  const description = sanitizeField(data.description, 1000, "description", true);
+  const finishColor = sanitizeField(data.finishColor, 80, "finishColor");
+  const manufacturer = sanitizeField(data.manufacturer, 100, "manufacturer");
+  const materials = sanitizeField(data.materials, 150, "materials");
+  const dimensions = sanitizeField(data.dimensions, 100, "dimensions");
+
+  return {
+    ...data,
+    name: name || "Unnamed Product",
+    sku,
+    category,
+    description,
+    finishColor,
+    manufacturer,
+    materials,
+    dimensions,
+  };
+}
+
+function sanitizeVendorData(data: any): any {
+  if (!data) return {};
+
+  const name = sanitizeField(data.name, 150, "name");
+  const category = sanitizeField(data.category, 50, "category");
+  const description = sanitizeField(data.description, 1000, "description", true);
+  const street = sanitizeField(data.street, 150, "street");
+  const city = sanitizeField(data.city, 80, "city");
+  const state = sanitizeField(data.state, 30, "state");
+  const zip = sanitizeField(data.zip, 20, "zip");
+  const repPhone = sanitizeField(data.repPhone, 40, "repPhone");
+  const repEmail = sanitizeField(data.repEmail, 80, "repEmail");
+  const logoUrl = sanitizeField(data.logoUrl, 1000, "logoUrl", true);
+  const heroImageUrl = sanitizeField(data.heroImageUrl, 1000, "heroImageUrl", true);
+  const instagram = sanitizeField(data.instagram, 500, "instagram", true);
+  const pinterest = sanitizeField(data.pinterest, 500, "pinterest", true);
+  const facebook = sanitizeField(data.facebook, 500, "facebook", true);
+  const youtube = sanitizeField(data.youtube, 500, "youtube", true);
+  const xTwitter = sanitizeField(data.xTwitter, 500, "xTwitter", true);
+
+  return {
+    ...data,
+    name: name || "Unnamed Vendor",
+    category,
+    description,
+    street,
+    city,
+    state,
+    zip,
+    repPhone,
+    repEmail,
+    logoUrl,
+    heroImageUrl,
+    instagram,
+    pinterest,
+    facebook,
+    youtube,
+    xTwitter,
+  };
 }
