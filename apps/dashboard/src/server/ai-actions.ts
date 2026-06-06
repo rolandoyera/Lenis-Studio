@@ -640,6 +640,8 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
         Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
         ...(referer ? { Referer: referer } : {}),
       },
+      // Never cache: a transient failure (e.g. a 403) must not be replayed.
+      cache: "no-store",
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) {

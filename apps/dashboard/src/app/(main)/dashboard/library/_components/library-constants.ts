@@ -6,7 +6,7 @@ export const COST_TYPES = ["Product", "Service", "Labor", "Shipping"] as const;
 export const UNIT_TYPES = ["Each", "SF", "LF", "Yard", "Pieces"] as const;
 
 /** Maximum images allowed on a library item (gallery slots, upload cap, AI fill). */
-export const MAX_IMAGES = 8;
+export const MAX_IMAGES = 6;
 
 export const libraryItemSchema = z.object({
   name: z.string().min(1, "Item name is required."),
@@ -51,7 +51,15 @@ export const CATEGORIES = [
 ];
 
 export const SUBCATEGORIES: Record<string, string[]> = {
-  Furniture: ["Tables", "Seating", "Beds", "Casegoods", "Children's", "Custom Furniture", "Other"],
+  Furniture: [
+    "Tables",
+    "Seating",
+    "Beds",
+    "Casegoods",
+    "Children's",
+    "Custom Furniture",
+    "Other",
+  ],
   Lighting: [
     "Ceiling Lights",
     "Wall Lights",
@@ -62,7 +70,16 @@ export const SUBCATEGORIES: Record<string, string[]> = {
     "Accent Lighting",
     "Other",
   ],
-  Kitchen: ["Cabinets", "Sinks", "Faucets", "Countertops", "Hardware", "Appliances", "Accessories", "Other"],
+  Kitchen: [
+    "Cabinets",
+    "Sinks",
+    "Faucets",
+    "Countertops",
+    "Hardware",
+    "Appliances",
+    "Accessories",
+    "Other",
+  ],
   Bath: [
     "Cabinets",
     "Vanities",
@@ -76,7 +93,15 @@ export const SUBCATEGORIES: Record<string, string[]> = {
     "Accessories",
     "Other",
   ],
-  Surfaces: ["Stone", "Tile", "Wood Flooring", "Concrete", "Wall Coverings", "Glass", "Other"],
+  Surfaces: [
+    "Stone",
+    "Tile",
+    "Wood Flooring",
+    "Concrete",
+    "Wall Coverings",
+    "Glass",
+    "Other",
+  ],
   "Fabrics & Textiles": [
     "Upholstery Fabrics",
     "Leather",
@@ -86,10 +111,29 @@ export const SUBCATEGORIES: Record<string, string[]> = {
     "Towels & Bath Linens",
     "Other",
   ],
-  Finishes: ["Paint & Stain", "Metal Finish", "Wood Finish", "Specialty Finish", "Other"],
-  "Doors & Windows": ["Doors", "Windows", "Hardware", "Window Treatments", "Other"],
+  Finishes: [
+    "Paint & Stain",
+    "Metal Finish",
+    "Wood Finish",
+    "Specialty Finish",
+    "Other",
+  ],
+  "Doors & Windows": [
+    "Doors",
+    "Windows",
+    "Hardware",
+    "Window Treatments",
+    "Other",
+  ],
   Decor: ["Art", "Mirrors", "Planters", "Vases", "Rugs", "Other"],
-  Outdoor: ["Furniture", "Lighting", "Kitchen", "Structures", "Planters", "Other"],
+  Outdoor: [
+    "Furniture",
+    "Lighting",
+    "Kitchen",
+    "Structures",
+    "Planters",
+    "Other",
+  ],
   "Construction Materials": [
     "Lumber",
     "Drywall",
@@ -106,7 +150,10 @@ export const SUBCATEGORIES: Record<string, string[]> = {
 };
 
 /** Shape of the shared Add/Edit library item form (everything persisted except server-managed keys). */
-export type LibraryItemFormData = Omit<LibraryItem, "itemId" | "updatedAt" | "tags" | "organizationId">;
+export type LibraryItemFormData = Omit<
+  LibraryItem,
+  "itemId" | "updatedAt" | "tags" | "organizationId"
+>;
 
 /** Pristine form values used when creating a new item or resetting the form. */
 export const EMPTY_LIBRARY_ITEM_FORM: LibraryItemFormData = {
@@ -168,7 +215,13 @@ export function libraryItemToForm(item: LibraryItem): LibraryItemFormData {
 
 /** Format a numeric price for display in a text input (blank for empty/zero). */
 export function formatPriceInput(value: number | undefined): string {
-  if (value === undefined || value === null || Number.isNaN(value) || value === 0) return "";
+  if (
+    value === undefined ||
+    value === null ||
+    Number.isNaN(value) ||
+    value === 0
+  )
+    return "";
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
