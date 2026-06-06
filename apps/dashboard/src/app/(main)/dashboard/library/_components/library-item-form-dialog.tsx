@@ -2,8 +2,32 @@
 
 import { useState } from "react";
 
-import { Loader2 as LoaderIcon, Plus, Sparkles, Upload } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { rectSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
+import {
+  Copy,
+  Download,
+  GripVertical,
+  Loader2 as LoaderIcon,
+  MoreHorizontal,
+  Plus,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { createPortal } from "react-dom";
 import { Controller } from "react-hook-form";
+import { toast } from "sonner";
 
 import LunaMoon from "@/components/LunaMoon";
 import { Button } from "@/components/ui/button";
@@ -24,6 +48,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,8 +63,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import type { Vendor } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
+import { fetchImageBytes } from "@/server/ai-actions";
 
-import { CATEGORIES, COST_TYPES, formatPriceInput, MAX_IMAGES, UNIT_TYPES } from "./library-constants";
+import { CATEGORIES, formatPriceInput, MAX_IMAGES, SUBCATEGORIES, UNIT_TYPES } from "./library-constants";
 import type { LibraryItemFormApi } from "./use-library-item-form";
 
 const LABEL_CLASS = "h-5 flex items-center";
@@ -50,6 +82,180 @@ interface LibraryItemFormDialogProps {
   onQuickAddVendor: () => void;
   /** Unique id for the hidden file input (must differ if two forms ever mount together). */
   uploaderId?: string;
+}
+
+const downloadImage = async (url: string) => {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    let filename = "image.jpg";
+    try {
+      const parsed = new URL(url);
+      const pathname = parsed.pathname;
+      const part = pathname.split("/").pop();
+      if (part?.includes(".")) {
+        filename = part;
+      }
+    } catch {
+      /* ignore */
+    }
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+    toast.success("Image download started!");
+  } catch (error) {
+    console.error("Download error:", error);
+    window.open(url, "_blank");
+    toast.info("Opened image in new tab for download.");
+  }
+};
+
+function DroppablePlaceholderWrapper({
+  id,
+  children,
+  className,
+}: {
+  id: string;
+  children: React.ReactNode;
+  className: string;
+}) {
+  const { setNodeRef } = useDroppable({ id });
+  return (
+    <div ref={setNodeRef} className={className}>
+      {children}
+    </div>
+  );
+}
+
+interface SortableImageCardProps {
+  url: string;
+  index: number;
+  onRemove: (url: string) => void;
+}
+
+function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: url });
+
+  const style = {
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${transform.scaleX ?? 1}, ${transform.scaleY ?? 1})`
+      : undefined,
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 30 : 1,
+  };
+
+  const handleCopyImage = async () => {
+    try {
+      // Fetch the bytes server-side to avoid CORS on the Firebase Storage host.
+      const res = await fetchImageBytes(url);
+      if (!res.success || !res.base64 || !res.contentType) {
+        throw new Error(res.error ?? "Could not load image bytes.");
+      }
+
+      const binary = atob(res.base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: res.contentType });
+
+      // Browsers only reliably accept image/png for clipboard image writes,
+      // so convert non-PNG sources (JPG/WEBP) through a canvas first.
+      let pngBlob = blob;
+      if (blob.type !== "image/png") {
+        const bitmap = await createImageBitmap(blob);
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
+        pngBlob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+        });
+      }
+
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+      toast.success("Image copied to clipboard!");
+    } catch (error) {
+      console.error("Copy image error:", error);
+      toast.error("Couldn't copy image to clipboard.");
+    }
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group/thumb relative aspect-square overflow-hidden rounded-md border bg-background transition-all hover:scale-102 ${
+        index === 0 ? "scale-102 border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
+      }`}
+    >
+      <img
+        src={url}
+        alt={`Thumbnail ${index + 1}`}
+        className="size-full object-cover select-none pointer-events-none"
+        draggable={false}
+        onDragStart={(e) => e.preventDefault()}
+      />
+
+      {/* Grip handle in top-left, visible on hover. Gets the sortable drag listeners & attributes. */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-1.5 left-1.5 z-20 flex size-6 cursor-all-scroll items-center justify-center rounded bg-black/60 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black"
+        title="Drag to sort"
+      >
+        <GripVertical className="size-4" />
+      </div>
+
+      {/* Action Ellipsis dropdown button in bottom-right */}
+      <div className="absolute bottom-1.5 right-1.5 z-20">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex size-6 items-center justify-center rounded bg-black/60 text-white hover:bg-black transition-colors cursor-pointer"
+              aria-label="Image actions"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[120px]">
+            <DropdownMenuItem onClick={handleCopyImage} className="flex items-center gap-2">
+              <Copy className="size-3.5 text-muted-foreground" />
+              <span>Copy Image</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => downloadImage(url)} className="flex items-center gap-2">
+              <Download className="size-3.5 text-muted-foreground" />
+              <span>Download</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => onRemove(url)}
+              variant="destructive"
+              className="flex items-center gap-2 text-destructive"
+            >
+              <Trash2 className="size-3.5" />
+              <span>Remove</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {index === 0 && (
+        <span className="absolute bottom-1.5 left-1.5 z-10 rounded bg-black/60 px-1 py-0.5 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs select-none">
+          Cover
+        </span>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -72,6 +278,53 @@ export function LibraryItemFormDialog({
   const [comboboxContainer, setComboboxContainer] = useState<HTMLDivElement | null>(null);
   const { formData, setFormData, uploadingImage } = form;
   const imageUrls = formData.imageUrls ?? [];
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  // Reorder once, on drop. Mutating the list during drag-over shifts the
+  // SortableContext items underneath the cursor and breaks the gesture.
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over) return;
+
+    const activeUrl = active.id as string;
+    const overIdStr = over.id.toString();
+    const oldIndex = imageUrls.indexOf(activeUrl);
+    if (oldIndex === -1) return;
+
+    // Dropping onto an empty slot sends the image to the end of the gallery.
+    if (overIdStr.startsWith("placeholder-")) {
+      const targetIndex = imageUrls.length - 1;
+      if (oldIndex !== targetIndex) {
+        form.reorderImages(oldIndex, targetIndex);
+      }
+      return;
+    }
+
+    if (activeUrl !== overIdStr) {
+      const newIndex = imageUrls.indexOf(overIdStr);
+      if (newIndex !== -1) {
+        form.reorderImages(oldIndex, newIndex);
+      }
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
 
   const isLowConfidence = (field: string) => {
     const confidence = formData.aiMetadata?.confidence?.[field];
@@ -166,30 +419,6 @@ export function LibraryItemFormDialog({
               <div className="grid grid-cols-2 gap-4">
                 <Controller
                   control={form.control}
-                  name="costType"
-                  render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                      <Label className={LABEL_CLASS}>
-                        Cost Type <span className="text-destructive">*</span>
-                      </Label>
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className="h-9 w-full" aria-invalid={fieldState.invalid}>
-                          <SelectValue placeholder="Choose Cost Type" />
-                        </SelectTrigger>
-                        <SelectContent position="popper">
-                          {COST_TYPES.map((ct) => (
-                            <SelectItem key={ct} value={ct}>
-                              {ct}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                    </Field>
-                  )}
-                />
-                <Controller
-                  control={form.control}
                   name="category"
                   render={({ field, fieldState }) => (
                     <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
@@ -200,13 +429,16 @@ export function LibraryItemFormDialog({
                         value={field.value}
                         onValueChange={(val) => {
                           field.onChange(val);
+                          form.setValue("subcategory", "");
                           const updatedConfidence = {
                             ...formData.aiMetadata?.confidence,
                           };
                           if (updatedConfidence.category) delete updatedConfidence.category;
+                          if (updatedConfidence.subcategory) delete updatedConfidence.subcategory;
                           setFormData({
                             ...formData,
                             category: val,
+                            subcategory: "",
                             aiMetadata: formData.aiMetadata
                               ? {
                                   ...formData.aiMetadata,
@@ -233,6 +465,59 @@ export function LibraryItemFormDialog({
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
+                />
+                <Controller
+                  control={form.control}
+                  name="subcategory"
+                  render={({ field, fieldState }) => {
+                    const activeCategory = formData.category;
+                    const availableSubs = activeCategory ? SUBCATEGORIES[activeCategory] || [] : [];
+                    return (
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={`${LABEL_CLASS} flex items-center`}>
+                          Subcategory {renderConfidenceBadge("subcategory")}
+                        </Label>
+                        <Select
+                          value={field.value}
+                          disabled={!activeCategory}
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            const updatedConfidence = {
+                              ...formData.aiMetadata?.confidence,
+                            };
+                            if (updatedConfidence.subcategory) delete updatedConfidence.subcategory;
+                            setFormData({
+                              ...formData,
+                              subcategory: val,
+                              aiMetadata: formData.aiMetadata
+                                ? {
+                                    ...formData.aiMetadata,
+                                    confidence: updatedConfidence,
+                                  }
+                                : undefined,
+                            });
+                          }}
+                        >
+                          <SelectTrigger
+                            className={cn("h-9 w-full", getFieldStyle("subcategory"))}
+                            aria-invalid={fieldState.invalid}
+                          >
+                            <SelectValue
+                              placeholder={activeCategory ? "Select Subcategory" : "Choose Category first"}
+                            />
+                          </SelectTrigger>
+                          <SelectContent position="popper">
+                            {availableSubs.map((sub) => (
+                              <SelectItem key={sub} value={sub}>
+                                {sub}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    );
+                  }}
                 />
               </div>
 
@@ -700,71 +985,83 @@ export function LibraryItemFormDialog({
                   </div>
 
                   {/* Secondary Gallery Grid of up to 4 thumbnail slots */}
-                  <div className="grid grid-cols-4 gap-3">
-                    {imageUrls.map((url, i) => (
-                      // biome-ignore lint/a11y/noStaticElementInteractions: draggable list element
-                      <div
-                        key={url}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData("text/plain", String(i));
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const sourceIndex = Number(e.dataTransfer.getData("text/plain"));
-                          form.reorderImages(sourceIndex, i);
-                        }}
-                        className={`group/thumb relative aspect-square cursor-grab overflow-hidden rounded-md border bg-background transition-all hover:scale-102 active:cursor-grabbing ${
-                          i === 0
-                            ? "scale-102 border-primary ring-2 ring-primary/20"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <img src={url} alt={`Thumbnail ${i + 1}`} className="size-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => form.removeImageUrl(url)}
-                          aria-label={`Remove thumbnail ${i + 1}`}
-                          className="absolute top-1 right-1 z-10 flex size-4 items-center justify-center rounded-full bg-black/70 text-sm text-white hover:bg-black"
-                        >
-                          ×
-                        </button>
-                        {i === 0 && (
-                          <span className="absolute bottom-1 left-1 z-10 rounded bg-black/60 px-1 py-0.5 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs">
-                            Cover
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onDragCancel={handleDragCancel}
+                  >
+                    {/* Force a consistent drag cursor everywhere until release. */}
+                    {activeId && <style>{"*{cursor:all-scroll !important}"}</style>}
+                    <SortableContext items={imageUrls} strategy={rectSortingStrategy}>
+                      <div className="grid grid-cols-4 gap-3">
+                        {imageUrls.map((url, i) => (
+                          <SortableImageCard key={url} url={url} index={i} onRemove={form.removeImageUrl} />
+                        ))}
 
-                    {/* Empty slots placeholders */}
-                    {Array.from({
-                      length: Math.max(0, MAX_IMAGES - imageUrls.length),
-                    }).map((_, idx) => {
-                      if (idx === 0 && uploadingImage) {
-                        return (
-                          <div
-                            key={idx}
-                            className="flex aspect-square items-center justify-center rounded-md border border-primary/50 border-dashed bg-primary/5 text-primary"
-                          >
-                            <LoaderIcon className="size-4 animate-spin" />
-                          </div>
-                        );
-                      }
-                      return (
-                        <Label
-                          key={idx}
-                          htmlFor={uploaderId}
-                          className="flex aspect-square cursor-pointer items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground/40 hover:border-primary/50 hover:bg-primary/5"
-                        >
-                          <Plus className="size-4" />
-                        </Label>
-                      );
-                    })}
-                  </div>
+                        {/* Empty slots placeholders */}
+                        {Array.from({
+                          length: Math.max(0, MAX_IMAGES - imageUrls.length),
+                        }).map((_, idx) => {
+                          const placeholderId = `placeholder-${idx}`;
+                          if (idx === 0 && uploadingImage) {
+                            return (
+                              <DroppablePlaceholderWrapper
+                                key={placeholderId}
+                                id={placeholderId}
+                                className="aspect-square"
+                              >
+                                <div className="flex size-full items-center justify-center rounded-md border border-primary/50 border-dashed bg-primary/5 text-primary">
+                                  <LoaderIcon className="size-4 animate-spin" />
+                                </div>
+                              </DroppablePlaceholderWrapper>
+                            );
+                          }
+                          return (
+                            <DroppablePlaceholderWrapper
+                              key={placeholderId}
+                              id={placeholderId}
+                              className="aspect-square"
+                            >
+                              <Label
+                                htmlFor={uploaderId}
+                                className="flex size-full cursor-pointer items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground/40 hover:border-primary/50 hover:bg-primary/5"
+                              >
+                                <Plus className="size-4" />
+                              </Label>
+                            </DroppablePlaceholderWrapper>
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+
+                    {/*
+                      Portal the overlay to <body> so it escapes the dialog's
+                      centering transform — a transformed ancestor would become
+                      the containing block for the overlay's `position: fixed`,
+                      offsetting it so it never tracks the cursor.
+                    */}
+                    {typeof document !== "undefined" &&
+                      createPortal(
+                        <DragOverlay adjustScale={true}>
+                          {activeId ? (
+                            <div className="relative aspect-square overflow-hidden rounded-md border border-primary bg-background shadow-2xl scale-102 opacity-90 cursor-grabbing">
+                              <img
+                                src={activeId}
+                                alt="Dragging preview"
+                                className="pointer-events-none size-full select-none object-cover"
+                                draggable={false}
+                              />
+                              <div className="absolute top-1.5 left-1.5 z-20 flex size-6 items-center justify-center rounded bg-black/60 text-white">
+                                <GripVertical className="size-4" />
+                              </div>
+                            </div>
+                          ) : null}
+                        </DragOverlay>,
+                        document.body,
+                      )}
+                  </DndContext>
                 </div>
               </div>
             </div>

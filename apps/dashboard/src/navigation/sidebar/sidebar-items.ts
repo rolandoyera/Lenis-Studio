@@ -4,6 +4,7 @@ import {
   Building2,
   Calendar,
   ChartBar,
+  Cog,
   FolderKanban,
   Forklift,
   Gauge,
@@ -13,7 +14,6 @@ import {
   LayoutDashboard,
   ListTodo,
   type LucideIcon,
-  MessageSquare,
   ReceiptText,
   ShoppingBag,
   Users,
@@ -134,12 +134,6 @@ export const sidebarItems: NavGroup[] = [
         comingSoon: true,
       },
       {
-        title: "Chat",
-        url: "/dashboard/coming-soon",
-        icon: MessageSquare,
-        comingSoon: true,
-      },
-      {
         title: "Calendar",
         url: "/dashboard/coming-soon",
         icon: Calendar,
@@ -152,12 +146,6 @@ export const sidebarItems: NavGroup[] = [
         comingSoon: true,
       },
       {
-        title: "Invoice",
-        url: "/dashboard/coming-soon",
-        icon: ReceiptText,
-        comingSoon: true,
-      },
-      {
         title: "Users",
         url: "/dashboard/users",
         icon: Users,
@@ -166,6 +154,11 @@ export const sidebarItems: NavGroup[] = [
         title: "Tenants",
         url: "/dashboard/tenants",
         icon: Building2,
+      },
+      {
+        title: "Settings",
+        url: "/dashboard/settings",
+        icon: Cog,
       },
     ],
   },

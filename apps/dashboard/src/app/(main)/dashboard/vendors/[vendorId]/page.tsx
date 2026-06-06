@@ -1,13 +1,18 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-import { Building2, FileText, Hash, Loader2, Mail, MapPin, Phone } from "lucide-react";
+import {
+  Building2,
+  FileText,
+  Hash,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+} from "lucide-react";
 import { toast } from "sonner";
-
 import { useAuth } from "@/components/auth-context";
 import {
   AlertDialog,
@@ -21,15 +26,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { deleteVendor, getVendor, getVendorLibraryItems, updateVendor } from "@/lib/db";
+import {
+  deleteVendor,
+  getVendor,
+  getVendorLibraryItems,
+  updateVendor,
+} from "@/lib/db";
 import type { LibraryItem, Vendor } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
 import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
 
-import { VendorDetailHeader } from "../_components/vendor-detail-header";
-import { VendorDetailHero } from "../_components/vendor-detail-hero";
-import { VendorDetailItems } from "../_components/vendor-detail-items";
-import { type VendorFormData, VendorFormDialog, vendorToForm } from "../_components/vendor-form-dialog";
+import {
+  type VendorFormData,
+  VendorFormDialog,
+  vendorToForm,
+} from "../_components/vendor-form-dialog";
+import { VendorHeader } from "../_components/vendor-header";
+import { VendorHero } from "../_components/vendor-hero";
+import { VendorItems } from "../_components/vendor-items";
 
 interface PageProps {
   params: Promise<{ vendorId: string }>;
@@ -106,7 +120,9 @@ export default function VendorDetailPage({ params }: PageProps) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Vendor Profile</p>
+        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          Loading Vendor Profile
+        </p>
       </div>
     );
   }
@@ -115,7 +131,7 @@ export default function VendorDetailPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <VendorDetailHeader
+      <VendorHeader
         vendor={vendor}
         onEdit={() => setIsEditOpen(true)}
         onRequestDelete={() => setIsDeleteOpen(true)}
@@ -123,10 +139,10 @@ export default function VendorDetailPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Hero header card */}
-        <VendorDetailHero vendor={vendor} />
+        <VendorHero vendor={vendor} />
 
         {/* Linked Library Items Card */}
-        <VendorDetailItems items={items} />
+        <VendorItems items={items} />
       </div>
 
       {/* Detail cards grid */}
@@ -156,22 +172,29 @@ export default function VendorDetailPage({ params }: PageProps) {
                 <span className="flex items-start gap-2 text-foreground/80">
                   <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                   <span>
-                    {vendor.street && <span className="block">{vendor.street}</span>}
+                    {vendor.street && (
+                      <span className="block">{vendor.street}</span>
+                    )}
                     {(vendor.city || vendor.state || vendor.zip) && (
                       <span className="block">
-                        {[vendor.city, vendor.state].filter(Boolean).join(", ") + (vendor.zip ? ` ${vendor.zip}` : "")}
+                        {[vendor.city, vendor.state]
+                          .filter(Boolean)
+                          .join(", ") + (vendor.zip ? ` ${vendor.zip}` : "")}
                       </span>
                     )}
                   </span>
                 </span>
               </div>
             ) : null}
-            {!vendor.description &&
-              !vendor.accountNumber &&
+            {!vendor.accountNumber &&
               !vendor.street &&
               !vendor.city &&
               !vendor.state &&
-              !vendor.zip && <p className="text-muted-foreground/50 text-sm italic">No account information on file.</p>}
+              !vendor.zip && (
+                <p className="text-muted-foreground/50 text-sm italic">
+                  No account information on file.
+                </p>
+              )}
           </CardContent>
         </Card>
 
@@ -195,8 +218,7 @@ export default function VendorDetailPage({ params }: PageProps) {
                 <Label>Email</Label>
                 <a
                   href={`mailto:${vendor.repEmail}`}
-                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary"
-                >
+                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary">
                   <Mail className="size-3.5 text-muted-foreground" />
                   {vendor.repEmail}
                 </a>
@@ -207,15 +229,16 @@ export default function VendorDetailPage({ params }: PageProps) {
                 <Label>Phone</Label>
                 <a
                   href={`tel:${normalizePhone(vendor.repPhone)}`}
-                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary"
-                >
+                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary">
                   <Phone className="size-3.5 text-muted-foreground" />
                   {formatPhone(vendor.repPhone)}
                 </a>
               </div>
             ) : null}
             {!vendor.repName && !vendor.repEmail && !vendor.repPhone && (
-              <p className="text-muted-foreground/50 text-sm italic">No contact on file.</p>
+              <p className="text-muted-foreground/50 text-sm italic">
+                No contact on file.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -230,7 +253,9 @@ export default function VendorDetailPage({ params }: PageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="whitespace-pre-wrap text-foreground/80 text-sm leading-relaxed">{vendor.notes}</p>
+            <p className="whitespace-pre-wrap text-foreground/80 text-sm leading-relaxed">
+              {vendor.notes}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -251,29 +276,35 @@ export default function VendorDetailPage({ params }: PageProps) {
         <AlertDialogContent className="bg-popover sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {items.length > 0 ? `Cannot delete "${vendor.name}"` : `Delete "${vendor.name}"?`}
+              {items.length > 0
+                ? `Cannot delete "${vendor.name}"`
+                : `Delete "${vendor.name}"?`}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4">
                 {items.length > 0 ? (
                   <>
                     <span className="block font-semibold text-destructive">
-                      This vendor is currently linked to {items.length} active catalog{" "}
-                      {items.length === 1 ? "item" : "items"}.
+                      This vendor is currently linked to {items.length} active
+                      catalog {items.length === 1 ? "item" : "items"}.
                     </span>
                     <span>
-                      You must delete these items or reassign their vendor references first before this vendor can be
-                      removed from the directory.
+                      You must delete these items or reassign their vendor
+                      references first before this vendor can be removed from
+                      the directory.
                     </span>
                     <div className="mt-3 max-h-40 divide-y divide-border/40 overflow-y-auto rounded-lg border border-border/40 bg-muted/30">
                       {items.map((item) => (
-                        <div key={item.itemId} className="flex items-center justify-between p-2.5 text-xs">
-                          <span className="max-w-[240px] truncate font-medium">{item.name}</span>
+                        <div
+                          key={item.itemId}
+                          className="flex items-center justify-between p-2.5 text-xs">
+                          <span className="max-w-[240px] truncate font-medium">
+                            {item.name}
+                          </span>
                           <Link
                             href={`/dashboard/library/${item.itemId}`}
                             onClick={() => setIsDeleteOpen(false)}
-                            className="font-semibold text-primary hover:underline"
-                          >
+                            className="font-semibold text-primary hover:underline">
                             View Item
                           </Link>
                         </div>
@@ -281,7 +312,10 @@ export default function VendorDetailPage({ params }: PageProps) {
                     </div>
                   </>
                 ) : (
-                  <span>This will permanently remove the vendor from the directory. This action cannot be undone.</span>
+                  <span>
+                    This will permanently remove the vendor from the directory.
+                    This action cannot be undone.
+                  </span>
                 )}
               </div>
             </AlertDialogDescription>
@@ -291,8 +325,14 @@ export default function VendorDetailPage({ params }: PageProps) {
               <AlertDialogCancel>Close</AlertDialogCancel>
             ) : (
               <>
-                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-                <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={deleting} className="gap-2">
+                <AlertDialogCancel disabled={deleting}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="gap-2">
                   {deleting && <Loader2 className="size-4 animate-spin" />}
                   Delete Vendor
                 </AlertDialogAction>

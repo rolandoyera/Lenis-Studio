@@ -4,7 +4,13 @@ import { SCRAPER_CONFIG } from "@/config/scraper-config";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { saveDiagnosticRun } from "@/lib/db";
 
-import { MAX_IMAGES, withProtocol } from "../app/(main)/dashboard/library/_components/library-constants";
+import {
+  CATEGORIES,
+  MAX_IMAGES,
+  SUBCATEGORIES,
+  withProtocol,
+} from "../app/(main)/dashboard/library/_components/library-constants";
+import { VENDOR_CATEGORIES } from "../app/(main)/dashboard/vendors/_components/vendor-constants";
 
 /**
  * Classifies a non-OK Gemini HTTP status. Transient overload (503/500) and rate-limit (429)
@@ -36,8 +42,7 @@ interface GeminiFetchResult {
 }
 
 /**
- * Executes a Gemini API request with an automatic transparent fallback from gemini-3.5-flash
- * to gemini-2.5-flash if the primary model returns a rate limit (429), service unavailable (503),
+ * Executes a Gemini API request with an automatic transparent fallback if the primary model returns a rate limit (429), service unavailable (503),
  * or times out.
  */
 async function fetchGeminiWithFallback(apiKey: string, body: string, signal: AbortSignal): Promise<GeminiFetchResult> {
@@ -100,6 +105,7 @@ export interface AutofillResult {
     name: string;
     sku?: string;
     category?: string;
+    subcategory?: string;
     description?: string;
     finishColor?: string;
     manufacturer?: string;
@@ -246,7 +252,7 @@ function extractProductImagesFromHtml(html: string, base: string): string[] {
 
 /**
  * Server Action: Scrapes a product webpage via Jina Reader and passes the cleaned
- * markdown to Gemini 2.5 Flash. Returns structured, verified JSON content
+ * markdown to Gemini. Returns structured, verified JSON content
  * alongside confidence ratings and a raw snapshot of the page contents.
  */
 export async function autofillProductFromUrl(url: string): Promise<AutofillResult> {
@@ -324,15 +330,13 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
         markdownText.split("\n").find((line) => line.includes("Warning: Target URL returned error")) || "";
       console.error(`[AI Autofill] Jina Reader scraped a target site error: ${errorLine}`);
 
-      let friendlyError = "The AI scraper was blocked or could not read this website. Please input specs manually.";
+      let friendlyError = "Fetching data was blocked or could not read this website. Please input specs manually.";
       if (errorLine.includes("403")) {
-        friendlyError =
-          "This website is protected against AI scrapers (403 Forbidden). Please input specifications manually.";
+        friendlyError = "This website is protected against AI. Please input specifications manually.";
       } else if (errorLine.includes("404")) {
-        friendlyError = "This product page was not found (404 Not Found). Please verify the link.";
+        friendlyError = "This product page was not found. Please verify the link.";
       } else if (errorLine.includes("503") || errorLine.includes("502")) {
-        friendlyError =
-          "The website's server is temporarily unavailable. Please try again later or type details manually.";
+        friendlyError = "The website is temporarily unavailable. Please try again later or type details manually.";
       }
 
       return { success: false, error: friendlyError };
@@ -438,8 +442,12 @@ ${JSON.stringify(filteredImages)}
 
 Extract the following specifications and return them in the requested JSON structure. If a field cannot be found, use an empty string or omit it.
 Specifically:
-- name: The clean, brief product name/title (e.g. "Carey Accent Chair").
-- category: Match the product to one of these exact categories: "Furniture", "Lighting", "Plumbing", "Appliances", "Surfaces", "Fabrics & Textiles", "Finishes", "Doors & Windows", "Decor", "Outdoor", "Construction Materials", "Equipment". Choose the single closest match.
+- name: The clean, brief product name/title (e.g. "Carey Acce- category: Match the product to one of these exact categories: ${CATEGORIES.map((c) => `"${c}"`).join(", ")}. Choose the single closest match.
+- subcategory: Match the product to one of the exact subcategories corresponding to the chosen category. The valid subcategories for each category are:
+${Object.entries(SUBCATEGORIES)
+  .map(([cat, subs]) => `  - "${cat}": ${subs.map((s) => `"${s}"`).join(", ")}`)
+  .join("\n")}
+  Choose the single closest match. If the category does not have a matching specific subcategory, use "Other".
 - description: A clean public description of the product.
 - finishColor: The finish, color, or upholstery (e.g. "Honed Natural", "Boucle Cream").
 - manufacturer: The brand or manufacturer (e.g. "Crate & Barrel").
@@ -448,8 +456,8 @@ Specifically:
 - msrp: The retail price/selling price listed on the page. Parse as a clean float number (e.g. 1299.00). Do not include currency symbols.
 - sku: The model number, article number, model name, or inventory SKU of the product if listed (e.g. "42801140").
 - imageUrls: The 'Candidate Images' array below is already pre-ranked best-first — the earliest entries are the canonical, highest-resolution images extracted from the page's metadata (og:image, structured data, and responsive srcset). Select the top 1 to ${MAX_IMAGES} direct product image URLs strictly from that array, strongly preferring the earliest (highest-priority) entries and keeping the very first suitable product image as the primary cover. If the candidate list is empty, you may extract valid absolute product image URLs directly from the page content. CRITICAL: You must NEVER under any circumstances return base64-encoded image data URLs (e.g. data:image/jpeg;base64,...). Only return absolute HTTP or HTTPS URLs.
-- confidence: An object with keys matching each of the parsed text/numeric fields above (name, sku, category, description, finishColor, manufacturer, materials, dimensions, msrp, imageUrls). For each field, return a float confidence value between 0.0 (completely uncertain) and 1.0 (absolutely certain) based on how clearly and unambiguously the information was stated in the page content.
-
+- confidence: An object with keys matching each of the parsed text/numeric fields above (name, sku, category, subcategory, description, finishColor, manufacturer, materials, dimensions, msrp, imageUrls). For each field, return a float confidence value between 0.0 (completely uncertain) and 1.0 (absolutely certain) based on how clearly and unambiguously the information was stated in the page content.
+ 
 CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines or raw unescaped double quotes inside your string properties. All double quotes inside text properties must be escaped as \\" and all literal linebreaks must be escaped as \\n. Do not include any inner monologues, reasoning, debates, or explanations within the JSON property values. Every property value must contain ONLY the final extracted data value (or an empty string if not found).`,
             },
           ],
@@ -463,6 +471,7 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
             name: { type: "STRING" },
             sku: { type: "STRING" },
             category: { type: "STRING" },
+            subcategory: { type: "STRING" },
             description: { type: "STRING" },
             finishColor: { type: "STRING" },
             manufacturer: { type: "STRING" },
@@ -479,6 +488,7 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
                 name: { type: "NUMBER" },
                 sku: { type: "NUMBER" },
                 category: { type: "NUMBER" },
+                subcategory: { type: "NUMBER" },
                 description: { type: "NUMBER" },
                 finishColor: { type: "NUMBER" },
                 manufacturer: { type: "NUMBER" },
@@ -491,6 +501,7 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
                 "name",
                 "sku",
                 "category",
+                "subcategory",
                 "description",
                 "finishColor",
                 "manufacturer",
@@ -505,6 +516,7 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
             "name",
             "sku",
             "category",
+            "subcategory",
             "description",
             "finishColor",
             "manufacturer",
@@ -611,8 +623,23 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
       return { success: false, error: "Invalid image URL." };
     }
 
+    // Present as a real browser. Many image hosts return 403 to non-browser
+    // User-Agents or to requests with no Referer (hotlink protection); a
+    // same-origin Referer is what those checks usually look for.
+    let referer: string | undefined;
+    try {
+      referer = `${new URL(url).origin}/`;
+    } catch {
+      referer = undefined;
+    }
+
     const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; CRM-Enricher/1.0)" },
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+        ...(referer ? { Referer: referer } : {}),
+      },
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) {
@@ -830,20 +857,6 @@ function extractVendorImageCandidates(markdown: string): {
   return { logoCandidates, imageCandidates };
 }
 
-const VENDOR_CATS_FOR_PROMPT = [
-  "Furniture",
-  "Fabric & Textiles",
-  "Lighting",
-  "Stone & Tile",
-  "Hardware & Plumbing",
-  "Art & Accessories",
-  "Flooring",
-  "Window Treatments",
-  "Custom Millwork",
-  "Outdoor & Landscape",
-  "Other",
-];
-
 export async function autofillVendorFromUrl(url: string): Promise<VendorAutofillResult> {
   try {
     if (!url?.trim()) {
@@ -926,7 +939,7 @@ ${optimizedMarkdown}
 
 Extract the following and return as JSON:
 - name: The company's official brand/trade name. Prefer og:site_name over page title.
-- category: Match to ONE of these exact categories: ${VENDOR_CATS_FOR_PROMPT.join(", ")}. Leave empty if unsure.
+- category: Match to ONE of these exact categories: ${VENDOR_CATEGORIES.join(", ")}. Leave empty if unsure.
 - description: A clean 1–3 sentence company description or tagline. About the company, not a product.
 - street: Full street address from footer, contact page, or about section. Empty if not found.
 - city: City from the business address. Empty if not found.

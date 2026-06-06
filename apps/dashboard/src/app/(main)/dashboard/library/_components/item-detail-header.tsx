@@ -36,12 +36,17 @@ export function ItemDetailHeader({ item, vendorName, onEdit, onRequestDelete }: 
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">{item.category}</Badge>
+            {item.subcategory && (
+              <Badge className="border border-muted-foreground/20 bg-muted/10 text-muted-foreground uppercase">
+                {item.subcategory}
+              </Badge>
+            )}
           </div>
           <h1 className="mt-1 font-heading font-medium text-3xl tracking-tight">{item.name}</h1>
           {vendorName && (
             <p className="flex items-center gap-1 font-medium text-[12px] text-muted-foreground">
-              <Forklift className="size-3.5 shrink-0 text-muted-foreground/60" />
-              Vendor:{" "}
+              <Forklift className="size-4 shrink-0 text-primary" />
+
               {item.vendorId ? (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}

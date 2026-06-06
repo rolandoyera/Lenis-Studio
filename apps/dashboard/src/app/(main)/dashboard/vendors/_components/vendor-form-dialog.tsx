@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Image, Loader2, Upload } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import LunaMoon from "@/components/LunaMoon";
 import { Button } from "@/components/ui/button";
@@ -21,102 +20,37 @@ import {
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { runAiActionWithRetry } from "@/lib/ai-retry";
 import { uploadVendorImage } from "@/lib/db";
-import type { Vendor } from "@/lib/types";
-import { formatPhone, formatZip, isValidUsPhone, isValidUsZip } from "@/lib/utils";
+import { formatPhone, formatZip } from "@/lib/utils";
 import { autofillVendorFromUrl } from "@/server/ai-actions";
 
-export const VENDOR_CATEGORIES = [
-  "Appliances",
-  "Furniture",
-  "Fabric & Textiles",
-  "Lighting",
-  "Stone & Tile",
-  "Hardware & Plumbing",
-  "Art & Accessories",
-  "Flooring",
-  "Window Treatments",
-  "Custom Millwork",
-  "Outdoor & Landscape",
-  "Other",
-];
+import {
+  cleanTrailingSlash,
+  EMPTY_VENDOR_FORM,
+  VENDOR_CATEGORIES,
+  type VendorFormData,
+  vendorSchema,
+  vendorToForm,
+} from "./vendor-constants";
 
-export const vendorSchema = z.object({
-  name: z.string().min(1, "Vendor name is required."),
-  category: z.string(),
-  description: z.string(),
-  website: z.string(),
-  accountNumber: z.string(),
-  street: z.string(),
-  city: z.string(),
-  state: z.string(),
-  zip: z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
-  logoUrl: z.string(),
-  heroImageUrl: z.string(),
-  repName: z.string(),
-  repEmail: z.union([z.string().email("Please enter a valid email address."), z.literal("")]),
-  repPhone: z.string().refine(isValidUsPhone, "Enter a valid 10-digit US phone number."),
-  notes: z.string(),
-  instagram: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
-  pinterest: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
-  facebook: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
-  youtube: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
-  xTwitter: z.union([z.string().url("Enter a valid URL."), z.literal("")]),
-});
-
-export type VendorFormData = z.infer<typeof vendorSchema>;
-
-export const EMPTY_VENDOR_FORM: VendorFormData = {
-  name: "",
-  category: "",
-  description: "",
-  website: "",
-  accountNumber: "",
-  street: "",
-  city: "",
-  state: "",
-  zip: "",
-  logoUrl: "",
-  heroImageUrl: "",
-  repName: "",
-  repEmail: "",
-  repPhone: "",
-  notes: "",
-  instagram: "",
-  pinterest: "",
-  facebook: "",
-  youtube: "",
-  xTwitter: "",
+export {
+  cleanTrailingSlash,
+  EMPTY_VENDOR_FORM,
+  VENDOR_CATEGORIES,
+  type VendorFormData,
+  vendorSchema,
+  vendorToForm,
 };
-
-export function vendorToForm(vendor: Vendor): VendorFormData {
-  return {
-    name: vendor.name,
-    category: vendor.category ?? "",
-    description: vendor.description ?? "",
-    website: vendor.website ?? "",
-    accountNumber: vendor.accountNumber ?? "",
-    street: vendor.street ?? "",
-    city: vendor.city ?? "",
-    state: vendor.state ?? "",
-    zip: formatZip(vendor.zip ?? ""),
-    logoUrl: vendor.logoUrl ?? "",
-    heroImageUrl: vendor.heroImageUrl ?? "",
-    repName: vendor.repName ?? "",
-    repEmail: vendor.repEmail ?? "",
-    repPhone: formatPhone(vendor.repPhone ?? ""),
-    notes: vendor.notes ?? "",
-    instagram: vendor.instagram ?? "",
-    pinterest: vendor.pinterest ?? "",
-    facebook: vendor.facebook ?? "",
-    youtube: vendor.youtube ?? "",
-    xTwitter: vendor.xTwitter ?? "",
-  };
-}
 
 const LABEL_CLASS = "h-5 flex items-center";
 
@@ -130,7 +64,13 @@ interface ImagePickerDialogProps {
   onApply: (logo: string | null, hero: string | null) => void;
 }
 
-function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates, onApply }: ImagePickerDialogProps) {
+function ImagePickerDialog({
+  open,
+  onOpenChange,
+  logoCandidates,
+  imageCandidates,
+  onApply,
+}: ImagePickerDialogProps) {
   const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
 
@@ -147,8 +87,9 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
         <DialogHeader>
           <DialogTitle className="text-lg">Select Brand Images</DialogTitle>
           <DialogDescription>
-            {AI_ASSISTANT_NAME} has found more than one image candidate for this vendor. Please review and select the
-            best Logo and Main Showcase Image from the options below.
+            {AI_ASSISTANT_NAME} has found more than one image candidate for this
+            vendor. Please review and select the best Logo and Main Showcase
+            Image from the options below.
           </DialogDescription>
         </DialogHeader>
 
@@ -161,19 +102,22 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
                   <button
                     key={url}
                     type="button"
-                    onClick={() => setSelectedLogo(url === selectedLogo ? null : url)}
+                    onClick={() =>
+                      setSelectedLogo(url === selectedLogo ? null : url)
+                    }
                     className={`relative aspect-square overflow-hidden rounded-lg border-2 bg-muted/30 transition-all ${
                       selectedLogo === url
                         ? "border-primary shadow-md"
                         : "border-border hover:border-muted-foreground/40"
-                    }`}
-                  >
+                    }`}>
                     <img
                       src={url}
                       alt=""
                       className="h-full w-full object-contain p-2"
                       onError={(e) => {
-                        (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                        (
+                          e.currentTarget.parentElement as HTMLElement
+                        ).style.display = "none";
                       }}
                     />
                     {selectedLogo === url && (
@@ -195,19 +139,22 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
                   <button
                     key={url}
                     type="button"
-                    onClick={() => setSelectedHero(url === selectedHero ? null : url)}
+                    onClick={() =>
+                      setSelectedHero(url === selectedHero ? null : url)
+                    }
                     className={`relative aspect-video overflow-hidden rounded-lg border-2 bg-muted/30 transition-all ${
                       selectedHero === url
                         ? "border-primary shadow-md"
                         : "border-border hover:border-muted-foreground/40"
-                    }`}
-                  >
+                    }`}>
                     <img
                       src={url}
                       alt=""
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        (e.currentTarget.parentElement as HTMLElement).style.display = "none";
+                        (
+                          e.currentTarget.parentElement as HTMLElement
+                        ).style.display = "none";
                       }}
                     />
                     {selectedHero === url && (
@@ -223,7 +170,10 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
         </div>
 
         <DialogFooter className="mt-2">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}>
             Skip
           </Button>
           <Button
@@ -231,8 +181,7 @@ function ImagePickerDialog({ open, onOpenChange, logoCandidates, imageCandidates
             onClick={() => {
               onApply(selectedLogo, selectedHero);
               onOpenChange(false);
-            }}
-          >
+            }}>
             Apply Selection
           </Button>
         </DialogFooter>
@@ -251,7 +200,13 @@ interface VendorFormDialogProps {
   onSave: (data: VendorFormData) => Promise<void>;
 }
 
-export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave }: VendorFormDialogProps) {
+export function VendorFormDialog({
+  open,
+  onOpenChange,
+  mode,
+  initialData,
+  onSave,
+}: VendorFormDialogProps) {
   const form = useForm<VendorFormData>({
     resolver: zodResolver(vendorSchema),
     defaultValues: initialData ?? EMPTY_VENDOR_FORM,
@@ -334,9 +289,14 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
     const url = getValues("website");
     if (!url) return;
     setAiLoading(true);
-    const toastId = toast.loading(`${AI_ASSISTANT_NAME} is analyzing the vendor site…`);
+    const toastId = toast.loading(
+      `${AI_ASSISTANT_NAME} is analyzing the vendor site…`,
+    );
     try {
-      const result = await runAiActionWithRetry(() => autofillVendorFromUrl(url), { toastId });
+      const result = await runAiActionWithRetry(
+        () => autofillVendorFromUrl(url),
+        { toastId },
+      );
       if (result.success && result.data) {
         const d = result.data;
         if (d.name) setValue("name", d.name);
@@ -366,9 +326,12 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
           }
         }
 
-        toast.success(`Vendor enriched with ${AI_ASSISTANT_NAME} — please review the fields.`, {
-          id: toastId,
-        });
+        toast.success(
+          `Vendor enriched with ${AI_ASSISTANT_NAME} — please review the fields.`,
+          {
+            id: toastId,
+          },
+        );
       } else {
         toast.error(result.error ?? "Failed to enrich vendor.", {
           id: toastId,
@@ -389,14 +352,20 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
         open={open}
         onOpenChange={(v) => {
           if (!isSubmitting && !aiLoading) onOpenChange(v);
-        }}
-      >
+        }}>
         <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-3xl">
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate autoComplete="off">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4"
+            noValidate
+            autoComplete="off">
             <DialogHeader>
-              <DialogTitle className="text-xl">{mode === "edit" ? "Edit Vendor" : "Add Vendor"}</DialogTitle>
+              <DialogTitle className="text-xl">
+                {mode === "edit" ? "Edit Vendor" : "Add Vendor"}
+              </DialogTitle>
               <DialogDescription>
-                Input sourcing details, vendor contacts, and designer procurement notes.
+                Input sourcing details, vendor contacts, and designer
+                procurement notes.
               </DialogDescription>
             </DialogHeader>
 
@@ -407,7 +376,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="name"
                   render={({ field, fieldState }) => (
-                    <Field className="col-span-2 flex flex-col gap-1.5 sm:col-span-1" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>
                         Name <span className="ml-0.5 text-destructive">*</span>
                       </Label>
@@ -417,7 +388,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         aria-invalid={fieldState.invalid}
                         autoComplete="one-time-code"
                       />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -425,9 +398,13 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="category"
                   render={({ field, fieldState }) => (
-                    <Field className="col-span-2 flex flex-col gap-1.5 sm:col-span-1" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>Category</Label>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}>
                         <SelectTrigger aria-invalid={fieldState.invalid}>
                           <SelectValue placeholder="Select category..." />
                         </SelectTrigger>
@@ -439,7 +416,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                           ))}
                         </SelectContent>
                       </Select>
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -450,7 +429,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 control={control}
                 name="website"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>Website</Label>
                     <div className="flex gap-2">
                       <Input
@@ -459,23 +440,39 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         aria-invalid={fieldState.invalid}
                         className="flex-1"
                         autoComplete="one-time-code"
+                        onBlur={(e) => {
+                          field.onBlur();
+                          field.onChange(cleanTrailingSlash(e.target.value));
+                        }}
                       />
                       <Button
                         type="button"
                         onClick={handleEnrich}
-                        disabled={!field.value || aiLoading ? true : isSubmitting}
-                        className="group relative h-10 shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-sm text-white shadow-violet-500/20 shadow-xs transition-all duration-200 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100"
-                      >
+                        disabled={
+                          !field.value || aiLoading ? true : isSubmitting
+                        }
+                        className="group relative h-10 shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-sm text-white shadow-violet-500/20 shadow-xs transition-all duration-200 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100">
                         {aiLoading && (
                           <span className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/20 to-transparent" />
                         )}
                         <span className="relative flex items-center gap-1.5">
-                          <LunaMoon variant="phase" thinking={aiLoading} size={22} className="size-[22px]" />
-                          <span>{aiLoading ? "Analyzing..." : `Enrich with ${AI_ASSISTANT_NAME}`}</span>
+                          <LunaMoon
+                            variant="phase"
+                            thinking={aiLoading}
+                            size={22}
+                            className="size-[22px]"
+                          />
+                          <span>
+                            {aiLoading
+                              ? "Analyzing..."
+                              : `Enrich with ${AI_ASSISTANT_NAME}`}
+                          </span>
                         </span>
                       </Button>
                     </div>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -507,7 +504,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
                   {/* BRAND LOGO CARD (Aspect ratio 1:1, takes 4 columns on desktop) */}
                   <div className="sm:col-span-4 flex flex-col gap-2">
-                    <Label className={LABEL_CLASS}>Logo (1:1)</Label>
+                    <Label className={LABEL_CLASS}>Logo</Label>
                     <div className="group/logo relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-background transition-all hover:border-primary/50">
                       {uploadingLogo ? (
                         <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center text-primary">
@@ -524,15 +521,13 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                           <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover/logo:opacity-100 flex items-center justify-center gap-2">
                             <Label
                               htmlFor="vendor-logo-uploader"
-                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100"
-                            >
+                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100">
                               Change
                             </Label>
                             <button
                               type="button"
                               onClick={() => setValue("logoUrl", "")}
-                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
-                            >
+                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90">
                               Remove
                             </button>
                           </div>
@@ -540,11 +535,12 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                       ) : (
                         <Label
                           htmlFor="vendor-logo-uploader"
-                          className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
-                        >
+                          className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground">
                           <Upload className="size-6 text-muted-foreground/40" />
                           <p className="text-[11px] font-medium">Upload Logo</p>
-                          <p className="text-muted-foreground/50 text-[9px]">Max 5MB</p>
+                          <p className="text-muted-foreground/50 text-[9px]">
+                            Max 5MB
+                          </p>
                         </Label>
                       )}
                     </div>
@@ -555,8 +551,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         variant="outline"
                         size="sm"
                         onClick={() => setPickerOpen(true)}
-                        className="mt-1 w-full text-[10px] h-7 gap-1"
-                      >
+                        className="mt-1 w-full text-[10px] h-7 gap-1">
                         <Image className="size-3" /> Select Logo Candidate
                       </Button>
                     )}
@@ -564,7 +559,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
 
                   {/* HERO BANNER CARD (Aspect ratio 16:9, takes 8 columns on desktop) */}
                   <div className="sm:col-span-8 flex flex-col gap-2">
-                    <Label className={LABEL_CLASS}>Hero / Showcase Banner (16:9)</Label>
+                    <Label className={LABEL_CLASS}>Hero Banner</Label>
                     <div className="group/hero relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-background transition-all hover:border-primary/50">
                       {uploadingHero ? (
                         <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center text-primary">
@@ -581,15 +576,13 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                           <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover/hero:opacity-100 flex items-center justify-center gap-2">
                             <Label
                               htmlFor="vendor-hero-uploader"
-                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100"
-                            >
+                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100">
                               Change
                             </Label>
                             <button
                               type="button"
                               onClick={() => setValue("heroImageUrl", "")}
-                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
-                            >
+                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90">
                               Remove
                             </button>
                           </div>
@@ -597,11 +590,14 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                       ) : (
                         <Label
                           htmlFor="vendor-hero-uploader"
-                          className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
-                        >
+                          className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground">
                           <Upload className="size-6 text-muted-foreground/40" />
-                          <p className="text-[11px] font-medium">Upload Hero Banner</p>
-                          <p className="text-muted-foreground/50 text-[9px]">Max 5MB</p>
+                          <p className="text-[11px] font-medium">
+                            Upload Hero Banner
+                          </p>
+                          <p className="text-muted-foreground/50 text-[9px]">
+                            Max 5MB
+                          </p>
                         </Label>
                       )}
                     </div>
@@ -612,8 +608,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                         variant="outline"
                         size="sm"
                         onClick={() => setPickerOpen(true)}
-                        className="mt-1 w-full text-[10px] h-7 gap-1"
-                      >
+                        className="mt-1 w-full text-[10px] h-7 gap-1">
                         <Image className="size-3" /> Select Hero Candidate
                       </Button>
                     )}
@@ -626,10 +621,18 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 control={control}
                 name="accountNumber"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>Account Number</Label>
-                    <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    <Input
+                      {...field}
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="one-time-code"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -639,7 +642,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 control={control}
                 name="description"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>Company Description</Label>
                     <Textarea
                       {...field}
@@ -647,7 +652,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                       aria-invalid={fieldState.invalid}
                       className="min-h-[64px]"
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -657,10 +664,18 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 control={control}
                 name="street"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>Street Address</Label>
-                    <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    <Input
+                      {...field}
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="one-time-code"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -669,10 +684,18 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="city"
                   render={({ field, fieldState }) => (
-                    <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="col-span-2 flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>City</Label>
-                      <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      <Input
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="one-time-code"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -680,10 +703,19 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="state"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>State</Label>
-                      <Input {...field} maxLength={2} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      <Input
+                        {...field}
+                        maxLength={2}
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="one-time-code"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -691,17 +723,23 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="zip"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>ZIP</Label>
                       <Input
                         {...field}
                         inputMode="numeric"
                         maxLength={5}
                         aria-invalid={fieldState.invalid}
-                        onChange={(e) => field.onChange(formatZip(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(formatZip(e.target.value))
+                        }
                         autoComplete="one-time-code"
                       />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -713,10 +751,18 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="repName"
                   render={({ field, fieldState }) => (
-                    <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="col-span-2 flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>Contact Name</Label>
-                      <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      <Input
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="one-time-code"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -724,10 +770,19 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="repEmail"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>Contact Email</Label>
-                      <Input {...field} type="email" aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      <Input
+                        {...field}
+                        type="email"
+                        aria-invalid={fieldState.invalid}
+                        autoComplete="one-time-code"
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -735,15 +790,21 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                   control={control}
                   name="repPhone"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="flex flex-col gap-1.5"
+                      data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>Contact Phone</Label>
                       <Input
                         {...field}
                         aria-invalid={fieldState.invalid}
-                        onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                        onChange={(e) =>
+                          field.onChange(formatPhone(e.target.value))
+                        }
                         autoComplete="one-time-code"
                       />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -761,15 +822,20 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                     render={({ field, fieldState }) => (
                       <Field
                         className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
-                        data-invalid={fieldState.invalid}
-                      >
+                        data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>Instagram URL</Label>
                         <Input
                           {...field}
                           placeholder="https://instagram.com/handle"
                           aria-invalid={fieldState.invalid}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            field.onChange(cleanTrailingSlash(e.target.value));
+                          }}
                         />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -779,15 +845,20 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                     render={({ field, fieldState }) => (
                       <Field
                         className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
-                        data-invalid={fieldState.invalid}
-                      >
+                        data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>Pinterest URL</Label>
                         <Input
                           {...field}
                           placeholder="https://pinterest.com/handle"
                           aria-invalid={fieldState.invalid}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            field.onChange(cleanTrailingSlash(e.target.value));
+                          }}
                         />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -797,11 +868,20 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                     render={({ field, fieldState }) => (
                       <Field
                         className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
-                        data-invalid={fieldState.invalid}
-                      >
+                        data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>Facebook URL</Label>
-                        <Input {...field} placeholder="https://facebook.com/handle" aria-invalid={fieldState.invalid} />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        <Input
+                          {...field}
+                          placeholder="https://facebook.com/handle"
+                          aria-invalid={fieldState.invalid}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            field.onChange(cleanTrailingSlash(e.target.value));
+                          }}
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -811,15 +891,20 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                     render={({ field, fieldState }) => (
                       <Field
                         className="col-span-2 flex flex-col gap-1.5 sm:col-span-1"
-                        data-invalid={fieldState.invalid}
-                      >
+                        data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>YouTube URL</Label>
                         <Input
                           {...field}
                           placeholder="https://youtube.com/c/handle"
                           aria-invalid={fieldState.invalid}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            field.onChange(cleanTrailingSlash(e.target.value));
+                          }}
                         />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -827,10 +912,22 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                     control={control}
                     name="xTwitter"
                     render={({ field, fieldState }) => (
-                      <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                      <Field
+                        className="col-span-2 flex flex-col gap-1.5"
+                        data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>X / Twitter URL</Label>
-                        <Input {...field} placeholder="https://x.com/handle" aria-invalid={fieldState.invalid} />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        <Input
+                          {...field}
+                          placeholder="https://x.com/handle"
+                          aria-invalid={fieldState.invalid}
+                          onBlur={(e) => {
+                            field.onBlur();
+                            field.onChange(cleanTrailingSlash(e.target.value));
+                          }}
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -842,7 +939,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 control={control}
                 name="notes"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>Internal Notes</Label>
                     <Textarea
                       {...field}
@@ -850,7 +949,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                       aria-invalid={fieldState.invalid}
                       className="min-h-[72px]"
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -861,11 +962,13 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isSubmitting || aiLoading}
-              >
+                disabled={isSubmitting || aiLoading}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting || aiLoading} className="flex items-center gap-2">
+              <Button
+                type="submit"
+                disabled={isSubmitting || aiLoading}
+                className="flex items-center gap-2">
                 {isSubmitting && <Loader2 className="size-4 animate-spin" />}
                 {mode === "edit" ? "Save Changes" : "Create Vendor"}
               </Button>

@@ -58,6 +58,7 @@ export interface LibraryItem {
   name: string;
   costType: "Product" | "Service" | "Labor" | "Shipping";
   category: string;
+  subcategory?: string;
   vendorId?: string; // Links to Vendor
   sku?: string;
   description?: string;

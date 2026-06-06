@@ -127,6 +127,7 @@ export function useLibraryItemForm() {
           name: ext.name || prev.name,
           sku: ext.sku || prev.sku,
           category: ext.category || prev.category,
+          subcategory: ext.subcategory || prev.subcategory,
           description: ext.description || prev.description,
           finishColor: ext.finishColor || prev.finishColor,
           manufacturer: ext.manufacturer || prev.manufacturer,
