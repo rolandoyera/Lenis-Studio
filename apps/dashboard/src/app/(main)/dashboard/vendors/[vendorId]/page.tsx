@@ -181,14 +181,18 @@ export default function VendorDetailPage({ params }: PageProps) {
       />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Hero header card */}
+        {/* Hero header card — defines the row height */}
         <VendorHero vendor={vendor} />
 
-        {/* Linked Library Items Card */}
-        <VendorItems items={items} />
+        {/* Linked Library Items Card — fills the row height and scrolls internally */}
+        <div className="relative">
+          <div className="md:absolute md:inset-0">
+            <VendorItems items={items} />
+          </div>
+        </div>
       </div>
 
-      {/* Detail cards grid */}
+      {/* Account Info Card */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Account & Address */}
         <Card>

@@ -16,7 +16,7 @@ interface VendorItemsProps {
 
 export function VendorItems({ items }: VendorItemsProps) {
   return (
-    <Card className="flex max-h-[522px] flex-col bg-card/60">
+    <Card className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
@@ -28,7 +28,7 @@ export function VendorItems({ items }: VendorItemsProps) {
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-0">
+      <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
             <ShoppingBag className="mb-2 size-10 text-muted-foreground/30" />

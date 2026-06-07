@@ -5,12 +5,6 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { type StoreApi, useStore } from "zustand";
 
 import { type FontKey, fontRegistry } from "@/lib/fonts/registry";
-import {
-  CONTENT_LAYOUT_VALUES,
-  NAVBAR_STYLE_VALUES,
-  SIDEBAR_COLLAPSIBLE_VALUES,
-  SIDEBAR_VARIANT_VALUES,
-} from "@/lib/preferences/layout";
 import { THEME_MODE_VALUES, THEME_PRESET_VALUES } from "@/lib/preferences/theme";
 import { applyThemeMode, subscribeToSystemTheme } from "@/lib/preferences/theme-utils";
 
@@ -36,10 +30,6 @@ function readDomState(): Partial<PreferencesState> {
     resolvedThemeMode: resolvedMode,
     themePreset: getSafeValue(root.getAttribute("data-theme-preset"), THEME_PRESET_VALUES),
     font: getSafeValue(root.getAttribute("data-font"), FONT_VALUES),
-    contentLayout: getSafeValue(root.getAttribute("data-content-layout"), CONTENT_LAYOUT_VALUES),
-    navbarStyle: getSafeValue(root.getAttribute("data-navbar-style"), NAVBAR_STYLE_VALUES),
-    sidebarVariant: getSafeValue(root.getAttribute("data-sidebar-variant"), SIDEBAR_VARIANT_VALUES),
-    sidebarCollapsible: getSafeValue(root.getAttribute("data-sidebar-collapsible"), SIDEBAR_COLLAPSIBLE_VALUES),
   };
 }
 
@@ -48,23 +38,17 @@ export const PreferencesStoreProvider = ({
   themeMode,
   themePreset,
   font,
-  contentLayout,
-  navbarStyle,
 }: {
   children: React.ReactNode;
   themeMode: PreferencesState["themeMode"];
   themePreset: PreferencesState["themePreset"];
   font: PreferencesState["font"];
-  contentLayout: PreferencesState["contentLayout"];
-  navbarStyle: PreferencesState["navbarStyle"];
 }) => {
   const [store] = useState<StoreApi<PreferencesState>>(() =>
     createPreferencesStore({
       themeMode,
       themePreset,
       font,
-      contentLayout,
-      navbarStyle,
     }),
   );
 

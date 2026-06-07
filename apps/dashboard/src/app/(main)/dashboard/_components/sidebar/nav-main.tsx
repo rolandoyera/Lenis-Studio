@@ -44,6 +44,10 @@ const NavItemExpanded = ({
   isActive: (url: string, subItems?: NavMainItem["subItems"]) => boolean;
   isSubmenuOpen: (subItems?: NavMainItem["subItems"]) => boolean;
 }) => {
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
   return (
     <Collapsible key={item.title} asChild defaultOpen={isSubmenuOpen(item.subItems)} className="group/collapsible">
       <SidebarMenuItem>
@@ -66,7 +70,12 @@ const NavItemExpanded = ({
               isActive={isActive(item.url)}
               tooltip={item.title}
             >
-              <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined}>
+              <Link
+                prefetch={false}
+                href={item.url}
+                target={item.newTab ? "_blank" : undefined}
+                onClick={closeOnMobile}
+              >
                 {item.icon && <item.icon />}
                 <span>{item.title}</span>
                 {item.comingSoon && <IsComingSoon />}
@@ -80,7 +89,12 @@ const NavItemExpanded = ({
               {item.subItems.map((subItem) => (
                 <SidebarMenuSubItem key={subItem.title}>
                   <SidebarMenuSubButton aria-disabled={subItem.comingSoon} isActive={isActive(subItem.url)} asChild>
-                    <Link prefetch={false} href={subItem.url} target={subItem.newTab ? "_blank" : undefined}>
+                    <Link
+                      prefetch={false}
+                      href={subItem.url}
+                      target={subItem.newTab ? "_blank" : undefined}
+                      onClick={closeOnMobile}
+                    >
                       {subItem.icon && <subItem.icon />}
                       <span>{subItem.title}</span>
                       {subItem.comingSoon && <IsComingSoon />}
@@ -143,9 +157,12 @@ const NavItemCollapsed = ({
 
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
-  const { state, isMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const { profile } = useAuth();
   const userRole = profile?.role || null;
+  const closeOnMobile = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -177,19 +194,31 @@ export function NavMain({ items }: NavMainProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-52 bg-popover/95 backdrop-blur-md">
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/library?add=true" className="flex cursor-pointer items-center gap-2 py-2">
+                    <Link
+                      href="/dashboard/library?add=true"
+                      onClick={closeOnMobile}
+                      className="flex cursor-pointer items-center gap-2 py-2"
+                    >
                       <ShoppingBag className="size-4 opacity-70" />
                       <span>Add Library Item</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/clients?add=true" className="flex cursor-pointer items-center gap-2 py-2">
+                    <Link
+                      href="/dashboard/clients?add=true"
+                      onClick={closeOnMobile}
+                      className="flex cursor-pointer items-center gap-2 py-2"
+                    >
                       <UserPlus className="size-4 opacity-70" />
                       <span>Add Client Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/vendors?add=true" className="flex cursor-pointer items-center gap-2 py-2">
+                    <Link
+                      href="/dashboard/vendors?add=true"
+                      onClick={closeOnMobile}
+                      className="flex cursor-pointer items-center gap-2 py-2"
+                    >
                       <Building2 className="size-4 opacity-70" />
                       <span>Add Trade Vendor</span>
                     </Link>

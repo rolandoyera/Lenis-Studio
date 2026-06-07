@@ -5,9 +5,7 @@ import { cookies } from "next/headers";
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { SIDEBAR_COLLAPSIBLE_VALUES, SIDEBAR_VARIANT_VALUES } from "@/lib/preferences/layout";
 import { cn } from "@/lib/utils";
-import { getPreference } from "@/server/server-actions";
 
 import { LayoutControls } from "./_components/sidebar/layout-controls";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
@@ -17,10 +15,6 @@ import { UserProfile } from "./_components/sidebar/user-profile";
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
-  const [variant, collapsible] = await Promise.all([
-    getPreference("sidebar_variant", SIDEBAR_VARIANT_VALUES, "inset"),
-    getPreference("sidebar_collapsible", SIDEBAR_COLLAPSIBLE_VALUES, "icon"),
-  ]);
 
   return (
     <SidebarProvider
@@ -31,21 +25,13 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant={variant} collapsible={collapsible} />
-      <SidebarInset
-        className={cn(
-          "[html[data-content-layout=centered]_&>*]:mx-auto",
-          "[html[data-content-layout=centered]_&>*]:w-full",
-          "[html[data-content-layout=centered]_&>*]:max-w-screen-2xl",
-          "peer-data-[variant=inset]:border",
-          "[--dashboard-header-height:--spacing(12)]",
-        )}
-      >
+      <AppSidebar variant="inset" collapsible="icon" />
+      <SidebarInset className={cn("peer-data-[variant=inset]:border", "[--dashboard-header-height:--spacing(12)]")}>
         <header
           className={cn(
             "flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
-            // Handle sticky navbar style with conditional classes so blur, background, z-index, and rounded corners remain consistent across all SidebarVariant layouts.
-            "[html[data-navbar-style=sticky]_&]:sticky [html[data-navbar-style=sticky]_&]:top-0 [html[data-navbar-style=sticky]_&]:z-50 [html[data-navbar-style=sticky]_&]:overflow-hidden [html[data-navbar-style=sticky]_&]:rounded-t-[inherit] [html[data-navbar-style=sticky]_&]:bg-background/50 [html[data-navbar-style=sticky]_&]:backdrop-blur-md",
+            // Sticky navbar: blur, background, z-index, and rounded corners stay consistent across all SidebarVariant layouts.
+            "sticky top-0 z-50 overflow-hidden rounded-t-[inherit] bg-background/50 backdrop-blur-md",
           )}
         >
           <div className="flex w-full items-center justify-between px-4 lg:px-6">
