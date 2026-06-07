@@ -23,11 +23,7 @@ interface VendorHeaderProps {
 }
 
 /** Back link, vendor title banner, website, and the edit/delete actions menu. */
-export function VendorHeader({
-  vendor,
-  onEdit,
-  onRequestDelete,
-}: VendorHeaderProps) {
+export function VendorHeader({ vendor, onEdit, onRequestDelete }: VendorHeaderProps) {
   return (
     <>
       <HeaderBackLink href="/dashboard/vendors" />
@@ -36,9 +32,7 @@ export function VendorHeader({
         <div className="flex flex-col gap-1.5">
           {vendor.category && (
             <div className="flex items-center gap-2">
-              <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">
-                {vendor.category}
-              </Badge>
+              <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">{vendor.category}</Badge>
             </div>
           )}
           <H1>{vendor.name}</H1>

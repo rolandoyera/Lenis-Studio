@@ -140,8 +140,18 @@ function cleanImageUrlSize(url: string): string {
 }
 
 function imageDedupKey(url: string): string {
-  const path = url.split("?")[0].split("#")[0];
-  return cleanImageUrlSize(path).toLowerCase();
+  try {
+    const cleanUrl = url.split("?")[0].split("#")[0];
+    const parsed = new URL(cleanUrl);
+    const filename = parsed.pathname.split("/").pop() || "";
+    const cleaned = filename.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+    return cleaned.toLowerCase();
+  } catch {
+    const cleanUrl = url.split("?")[0].split("#")[0];
+    const filename = cleanUrl.split("/").pop() || "";
+    const cleaned = filename.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+    return cleaned.toLowerCase();
+  }
 }
 
 /** Picks the URL with the largest width (`w`) or pixel-density (`x`) descriptor in a srcset value. */
@@ -276,7 +286,11 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     console.log(`[AI Autofill] Starting scraping via Jina Reader for: ${normalizedUrl}`);
 
     // 1. Fetch the raw page contents converted to clean Markdown via Jina Reader
-    const jinaHeaders: Record<string, string> = {};
+    const jinaHeaders: Record<string, string> = {
+      "X-Remove-Selector":
+        "nav, header, footer, .navigation, .menu, .nav, .minicart, .mega-menu, .megamenu, #header, #footer, #nav, #menu, .header, .footer, .js-mini-cart, .global-header, .global-footer, .newsletter-signup",
+      "X-No-Cache": "true",
+    };
     if (process.env.JINA_API_KEY) {
       jinaHeaders.Authorization = `Bearer ${process.env.JINA_API_KEY}`;
     }
@@ -345,7 +359,47 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     console.log(`[AI Autofill] Scraped Markdown successfully. Length: ${markdownText.length} characters.`);
 
     // 2. High-Density Payload Extraction (Multi-Strategy Image URL Crawler)
-    const candidateImages: string[] = [];
+    const markdownCandidates: { url: string; highPriority: boolean }[] = [];
+    const seenMarkdownUrls = new Set<string>();
+
+    // Find the first index of specifications or details sections in markdown
+    const lowerMarkdown = markdownText.toLowerCase();
+    const specKeywords = [
+      "specification",
+      "spec sheet",
+      "specsheet",
+      "specs",
+      "dimension",
+      "details",
+      "downloads",
+      "tearsheet",
+    ];
+    let specStartIndex = markdownText.length;
+    for (const kw of specKeywords) {
+      const idx = lowerMarkdown.indexOf(kw);
+      if (idx !== -1 && idx < specStartIndex) {
+        specStartIndex = idx;
+      }
+    }
+
+    const addMarkdownCandidate = (src: string, matchIndex: number, matchLength: number) => {
+      const trimmed = src.trim();
+      if (!trimmed || seenMarkdownUrls.has(trimmed)) return;
+      seenMarkdownUrls.add(trimmed);
+
+      // Check if near "View larger image"
+      const startRange = Math.max(0, matchIndex - 120);
+      const endRange = Math.min(markdownText.length, matchIndex + matchLength + 120);
+      const surroundingContext = markdownText.substring(startRange, endRange).toLowerCase();
+      const isNearViewLarger = surroundingContext.includes("view larger image");
+
+      // Check if before specifications
+      const isBeforeSpecs = matchIndex < specStartIndex;
+
+      const highPriority = isNearViewLarger || isBeforeSpecs;
+      markdownCandidates.push({ url: trimmed, highPriority });
+    };
+
     let match: RegExpExecArray | null;
 
     // Strategy A: Standard markdown images `![Alt text](url)`
@@ -353,9 +407,7 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     match = mdImgRegex.exec(markdownText);
     while (match !== null) {
       const src = match[1].trim();
-      if (src && !candidateImages.includes(src)) {
-        candidateImages.push(src);
-      }
+      addMarkdownCandidate(src, match.index, match[0].length);
       match = mdImgRegex.exec(markdownText);
     }
 
@@ -364,9 +416,7 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     match = htmlImgRegex.exec(markdownText);
     while (match !== null) {
       const src = match[1].trim();
-      if (src && !candidateImages.includes(src)) {
-        candidateImages.push(src);
-      }
+      addMarkdownCandidate(src, match.index, match[0].length);
       match = htmlImgRegex.exec(markdownText);
     }
 
@@ -377,10 +427,8 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     match = mdLinkRegex.exec(markdownText);
     while (match !== null) {
       const src = match[1].trim();
-      if (src && !candidateImages.includes(src)) {
-        if (imgExtensionOrPathPattern.test(src) || imageKeywordPattern.test(src)) {
-          candidateImages.push(src);
-        }
+      if (imgExtensionOrPathPattern.test(src) || imageKeywordPattern.test(src)) {
+        addMarkdownCandidate(src, match.index, match[0].length);
       }
       match = mdLinkRegex.exec(markdownText);
     }
@@ -390,9 +438,7 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     match = rawUrlRegex.exec(markdownText);
     while (match !== null) {
       const src = match[1].trim();
-      if (src && !candidateImages.includes(src)) {
-        candidateImages.push(src);
-      }
+      addMarkdownCandidate(src, match.index, match[0].length);
       match = rawUrlRegex.exec(markdownText);
     }
 
@@ -405,18 +451,39 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     // Merge HTML-derived (priority) ahead of markdown candidates, collapsing size
     // variants of the same photo so the largest/canonical version wins each slot.
     const junkPatterns =
-      /logo|icon|avatar|sprite|banner|pixel|social|facebook|instagram|pinterest|twitter|linkedin|tracker|nav|footer|header|loading|\.svg|\.gif|analytics|checkout|cart|adroll|doubleclick|yotpo|trust|badge|payment|paypal|visa|mastercard|amex|applepay|googlepay|shipping|delivery|guarante|refund|secur|padlock|warranty/i;
+      /logo|icon|avatar|sprite|banner|pixel|social|facebook|instagram|pinterest|twitter|linkedin|tracker|nav|footer|header|loading|\.svg|\.gif|analytics|checkout|cart|adroll|doubleclick|yotpo|trust|badge|payment|paypal|visa|mastercard|amex|applepay|googlepay|shipping|delivery|guarante|refund|secur|padlock|warranty|search-menu|placeholder/i;
     const mergedImages: string[] = [];
     const seenImageKeys = new Set<string>();
-    for (const src of [...htmlImages, ...candidateImages]) {
+
+    const tryAddImage = (src: string) => {
       const trimmed = src.trim();
-      if (!trimmed.startsWith("http") || junkPatterns.test(trimmed)) continue;
+      if (!trimmed.startsWith("http") || junkPatterns.test(trimmed)) return;
       const cleanUrl = cleanImageUrlSize(trimmed);
       const key = imageDedupKey(cleanUrl);
-      if (seenImageKeys.has(key)) continue;
+      if (seenImageKeys.has(key)) return;
       seenImageKeys.add(key);
       mergedImages.push(cleanUrl);
+    };
+
+    // 1. Add high-priority markdown images (View larger / before specs)
+    for (const item of markdownCandidates) {
+      if (item.highPriority) {
+        tryAddImage(item.url);
+      }
     }
+
+    // 2. Add HTML-derived images (og:image, JSON-LD, etc.)
+    for (const src of htmlImages) {
+      tryAddImage(src);
+    }
+
+    // 3. Add other markdown images
+    for (const item of markdownCandidates) {
+      if (!item.highPriority) {
+        tryAddImage(item.url);
+      }
+    }
+
     const filteredImages = mergedImages.slice(0, SCRAPER_CONFIG.maxImageCandidates);
     console.log(`[AI Autofill] Filtered image candidates count: ${filteredImages.length}`, filteredImages);
 
@@ -455,7 +522,7 @@ ${Object.entries(SUBCATEGORIES)
 - dimensions: The dimensions of the product. Format the value consistently using abbreviated dimensions with double quotes for inches and capital letters for directions, separated by " x " (e.g., "25.5" W x 25.5" D x 32.25" H"). Never write out the full words (e.g., do not write "Width", "Depth", "Height", "inches", or "in"). If only some dimensions are present, format similarly (e.g., "18" W x 24" H").
 - msrp: The retail price/selling price listed on the page. Parse as a clean float number (e.g. 1299.00). Do not include currency symbols.
 - sku: The model number, article number, model name, or inventory SKU of the product if listed (e.g. "42801140").
-- imageUrls: The 'Candidate Images' array below is already pre-ranked best-first — the earliest entries are the canonical, highest-resolution images extracted from the page's metadata (og:image, structured data, and responsive srcset). Select the top 1 to ${MAX_IMAGES} direct product image URLs strictly from that array, strongly preferring the earliest (highest-priority) entries and keeping the very first suitable product image as the primary cover. If the candidate list is empty, you may extract valid absolute product image URLs directly from the page content. CRITICAL: You must NEVER under any circumstances return base64-encoded image data URLs (e.g. data:image/jpeg;base64,...). Only return absolute HTTP or HTTPS URLs.
+- imageUrls: The 'Candidate Images' array below is pre-ranked best-first. Select the top 1 to ${MAX_IMAGES} direct product image URLs from that array, keeping the very first suitable product image as the primary cover. If the 'Candidate Images' array is incomplete (contains fewer than ${MAX_IMAGES} valid product gallery images) or empty, you MUST also extract valid absolute product image URLs directly from the Markdown page content to complete the list up to ${MAX_IMAGES} images. Strongly prefer images that represent different views/details of the product. CRITICAL: You must NEVER under any circumstances return base64-encoded image data URLs (e.g. data:image/jpeg;base64,...). Only return absolute HTTP or HTTPS URLs.
 - confidence: An object with keys matching each of the parsed text/numeric fields above (name, sku, category, subcategory, description, finishColor, manufacturer, materials, dimensions, msrp, imageUrls). For each field, return a float confidence value between 0.0 (completely uncertain) and 1.0 (absolutely certain) based on how clearly and unambiguously the information was stated in the page content.
  
 CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines or raw unescaped double quotes inside your string properties. All double quotes inside text properties must be escaped as \\" and all literal linebreaks must be escaped as \\n. Do not include any inner monologues, reasoning, debates, or explanations within the JSON property values. Every property value must contain ONLY the final extracted data value (or an empty string if not found).`,
