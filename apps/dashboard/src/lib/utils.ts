@@ -78,3 +78,15 @@ export function isValidUsZip(value: string): boolean {
   const digits = (value ?? "").replace(/\D/g, "");
   return digits.length === 0 || digits.length === 5;
 }
+
+/** Strip a Tax ID string to its 9-digit core (digits only, capped at 9). */
+export function normalizeTaxId(value: string): string {
+  return (value ?? "").replace(/\D/g, "").slice(0, 9);
+}
+
+/** Format a Tax ID as XX-XXXXXXX. */
+export function formatTaxId(value: string): string {
+  const digits = normalizeTaxId(value);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+}

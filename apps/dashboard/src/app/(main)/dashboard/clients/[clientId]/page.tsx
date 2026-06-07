@@ -13,6 +13,7 @@ import type { Client, Project } from "@/lib/types";
 
 import type { ProjectFormData } from "../../projects/_components/project-constants";
 import { ProjectFormDialog } from "../../projects/_components/project-form-dialog";
+import type { ClientFormData } from "../_components/client-constants";
 import { ClientContactCard } from "../_components/client-contact-card";
 import { ClientDetailHeader } from "../_components/client-detail-header";
 import { ClientFormDialog } from "../_components/client-form-dialog";
@@ -66,18 +67,7 @@ export default function ClientProfilePage({ params }: PageProps) {
     void loadClientData();
   }, [clientId, router, profile, authLoading]);
 
-  const handleEditSubmit = async (data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    company: string;
-    street: string;
-    city: string;
-    state: string;
-    zip: string;
-    notes: string;
-  }) => {
+  const handleEditSubmit = async (data: ClientFormData) => {
     if (!client) return;
     if (!data.firstName.trim() || !data.lastName.trim()) {
       toast.error("First name and last name are required.");
@@ -86,8 +76,9 @@ export default function ClientProfilePage({ params }: PageProps) {
 
     setUpdatingProfile(true);
     try {
-      await updateClient(client.uid, data);
-      setClient({ ...client, ...data });
+      const { isCompany, ...clientData } = data;
+      await updateClient(client.uid, clientData);
+      setClient({ ...client, ...clientData });
       setIsEditOpen(false);
       toast.success("Client profile updated successfully!");
     } catch (error) {
@@ -177,11 +168,11 @@ export default function ClientProfilePage({ params }: PageProps) {
       />
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        <div className="flex flex-col gap-6 lg:col-span-8">
+        <div className="flex flex-col gap-6 lg:col-span-7">
           <ClientProjectsCard projects={projects} onAddProject={() => setIsAddProjectOpen(true)} />
           <ClientNotesCard client={client} onEdit={() => setIsEditOpen(true)} />
         </div>
-        <div className="flex flex-col gap-6 lg:col-span-4">
+        <div className="flex flex-col gap-6 lg:col-span-5">
           <ClientContactCard client={client} />
         </div>
       </div>
@@ -190,7 +181,7 @@ export default function ClientProfilePage({ params }: PageProps) {
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
         title="Edit Client Profile"
-        description="Modify client contacts, optional company settings, and design preferences."
+        description="Modify client contacts and optional company settings."
         submitLabel="Save Changes"
         submitting={updatingProfile}
         defaultValues={{
@@ -199,6 +190,8 @@ export default function ClientProfilePage({ params }: PageProps) {
           email: client.email || "",
           phone: client.phone ?? "",
           company: client.company ?? "",
+          taxId: client.taxId ?? "",
+          taxable: client.taxable ?? true,
           street: client.street ?? "",
           city: client.city ?? "",
           state: client.state ?? "",

@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { formatPhone } from "@/lib/utils";
+import { formatPhone, formatTaxId, normalizeTaxId } from "@/lib/utils";
 
 import { type ClientFormData, clientSchema, EMPTY_CLIENT_FORM } from "./client-constants";
 
@@ -52,26 +53,116 @@ export function ClientFormDialog({
   defaultValues,
   onSubmit,
 }: ClientFormDialogProps) {
-  const { control, handleSubmit, reset } = useForm<ClientFormData>({
+  const { control, handleSubmit, reset, watch } = useForm<ClientFormData>({
     resolver: zodResolver(clientSchema),
-    defaultValues: { ...EMPTY_CLIENT_FORM, ...defaultValues, phone: formatPhone(defaultValues?.phone ?? "") },
+    defaultValues: {
+      ...EMPTY_CLIENT_FORM,
+      ...defaultValues,
+      isCompany: !!defaultValues?.company || !!defaultValues?.taxId,
+      phone: formatPhone(defaultValues?.phone ?? ""),
+      taxId: formatTaxId(defaultValues?.taxId ?? ""),
+    },
   });
+
+  const isCompany = watch("isCompany");
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reseed only when the dialog opens, not on every defaultValues change
   useEffect(() => {
-    if (open) reset({ ...EMPTY_CLIENT_FORM, ...defaultValues, phone: formatPhone(defaultValues?.phone ?? "") });
+    if (open) {
+      reset({
+        ...EMPTY_CLIENT_FORM,
+        ...defaultValues,
+        isCompany: !!defaultValues?.company || !!defaultValues?.taxId,
+        phone: formatPhone(defaultValues?.phone ?? ""),
+        taxId: formatTaxId(defaultValues?.taxId ?? ""),
+      });
+    }
   }, [open, reset]);
+
+  const handleFormSubmit = (data: ClientFormData) => {
+    onSubmit({
+      ...data,
+      company: data.isCompany ? data.company : "",
+      taxId: data.isCompany ? normalizeTaxId(data.taxId) : "",
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-          <DialogHeader>
-            <DialogTitle className="text-xl">{title}</DialogTitle>
+      <DialogContent className="sm:max-w-3xl">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4" noValidate>
+          <DialogHeader className="mb-4">
+            <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
+          <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+            <Controller
+              control={control}
+              name="isCompany"
+              render={({ field }) => (
+                <div className="flex items-center gap-2">
+                  <Checkbox id="is-company-checkbox" checked={field.value} onCheckedChange={field.onChange} />
+                  <Label size="large" htmlFor="is-company-checkbox" className="cursor-pointer select-none leading-none">
+                    This is a company or commercial entity
+                  </Label>
+                </div>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="taxable"
+              render={({ field }) => (
+                <div className="flex items-center gap-2">
+                  <Checkbox id="taxable-checkbox" checked={field.value} onCheckedChange={field.onChange} />
+                  <Label size="large" htmlFor="taxable-checkbox" className="cursor-pointer select-none">
+                    This client is taxable
+                  </Label>
+                </div>
+              )}
+            />
+          </div>
+
           <div className="flex flex-col gap-4 py-2">
+            <div
+              className="grid transition-all duration-300 ease-in-out"
+              style={{ gridTemplateRows: isCompany ? "1fr" : "0fr" }}
+            >
+              <div className="overflow-hidden">
+                <div className="grid grid-cols-2 gap-4 pb-4">
+                  <Controller
+                    control={control}
+                    name="company"
+                    render={({ field, fieldState }) => (
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>
+                          Company Name {isCompany && <span className="ml-0.5 text-destructive">*</span>}
+                        </Label>
+                        <Input {...field} aria-invalid={fieldState.invalid} />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name="taxId"
+                    render={({ field, fieldState }) => (
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>Tax ID</Label>
+                        <Input
+                          {...field}
+                          placeholder="xx-xxxxxxx"
+                          aria-invalid={fieldState.invalid}
+                          onChange={(e) => field.onChange(formatTaxId(e.target.value))}
+                        />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <Controller
                 control={control}
@@ -101,19 +192,18 @@ export function ClientFormDialog({
               />
             </div>
 
-            <Controller
-              control={control}
-              name="email"
-              render={({ field, fieldState }) => (
-                <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                  <Label className={LABEL_CLASS}>Email Address</Label>
-                  <Input {...field} type="email" aria-invalid={fieldState.invalid} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                </Field>
-              )}
-            />
-
             <div className="grid grid-cols-2 gap-4">
+              <Controller
+                control={control}
+                name="email"
+                render={({ field, fieldState }) => (
+                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Label className={LABEL_CLASS}>Email Address</Label>
+                    <Input {...field} type="email" aria-invalid={fieldState.invalid} />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
               <Controller
                 control={control}
                 name="phone"
@@ -126,17 +216,6 @@ export function ClientFormDialog({
                       aria-invalid={fieldState.invalid}
                       onChange={(e) => field.onChange(formatPhone(e.target.value))}
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              <Controller
-                control={control}
-                name="company"
-                render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                    <Label className={LABEL_CLASS}>Company Name</Label>
-                    <Input {...field} aria-invalid={fieldState.invalid} />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
@@ -199,7 +278,7 @@ export function ClientFormDialog({
                   <Label className={LABEL_CLASS}>General Notes</Label>
                   <Textarea
                     {...field}
-                    placeholder="This is where you can add any notes about the client..."
+                    placeholder="Add notes about the client..."
                     aria-invalid={fieldState.invalid}
                     className="min-h-[80px]"
                   />

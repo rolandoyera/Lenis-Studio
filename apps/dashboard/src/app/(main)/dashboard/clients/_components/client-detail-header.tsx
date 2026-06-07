@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Calendar, Edit3, MoreVertical, Trash2, User } from "lucide-react";
+import { Building2, Calendar, Edit3, MoreVertical, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -49,17 +49,15 @@ export function ClientDetailHeader({ client, onEdit, onRequestDelete }: ClientDe
       <div className="flex flex-col gap-16 border-b pb-6 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-xs">
-            <User className="size-8" />
+            {client.company ? <Building2 className="size-8" /> : <User className="size-8" />}
           </div>
           <div>
-            <H1>
-              {firstName} {lastName}
-            </H1>
+            <H1>{client.company ? client.company : `${firstName} ${lastName}`}</H1>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-medium text-muted-foreground text-sm">
               {client.company ? (
                 <span className="flex items-center gap-1">
-                  <Briefcase className="size-3.5 text-muted-foreground/80" />
-                  {client.company}
+                  <User className="size-3.5 text-muted-foreground/80" />
+                  {firstName} {lastName}
                 </span>
               ) : (
                 <span className="text-muted-foreground/60 italic">Private Residence</span>

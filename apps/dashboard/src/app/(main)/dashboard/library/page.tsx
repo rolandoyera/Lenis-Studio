@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { ExternalLink, Loader2, Plus, Search, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  ExternalLink,
+  Loader2,
+  Plus,
+  Search,
+  ShoppingBag,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
@@ -14,7 +22,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { H1, H3 } from "@/components/ui/typography";
 import { addLibraryItem, getLibraryItems, getVendors } from "@/lib/db";
@@ -49,7 +63,10 @@ export default function LibraryPage() {
 
     async function loadData() {
       try {
-        const [itemsData, vendorsData] = await Promise.all([getLibraryItems(orgId), getVendors(orgId)]);
+        const [itemsData, vendorsData] = await Promise.all([
+          getLibraryItems(orgId),
+          getVendors(orgId),
+        ]);
         setItems(itemsData);
         setVendors(vendorsData);
 
@@ -85,15 +102,16 @@ export default function LibraryPage() {
     setSubmitting(true);
     try {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
-      const { imageUrls, coverImageUrl, coverImagePath, images } = await mirrorExternalImagesToFirebase(
-        {
-          imageUrls: form.formData.imageUrls,
-          coverImageUrl: form.formData.coverImageUrl,
-          coverImagePath: form.formData.coverImagePath,
-          images: form.formData.images,
-        },
-        form.tempItemId,
-      );
+      const { imageUrls, coverImageUrl, coverImagePath, images } =
+        await mirrorExternalImagesToFirebase(
+          {
+            imageUrls: form.formData.imageUrls,
+            coverImageUrl: form.formData.coverImageUrl,
+            coverImagePath: form.formData.coverImagePath,
+            images: form.formData.images,
+          },
+          form.tempItemId,
+        );
       const created = await addLibraryItem(
         {
           ...form.formData,
@@ -127,15 +145,19 @@ export default function LibraryPage() {
       item.sku?.toLowerCase().includes(query) ||
       item.finishColor?.toLowerCase().includes(query);
 
-    const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+    const matchesCategory =
+      activeCategory === "All" || item.category === activeCategory;
 
     const matchesSubcategory =
-      activeCategory === "All" || activeSubcategory === "All" || item.subcategory === activeSubcategory;
+      activeCategory === "All" ||
+      activeSubcategory === "All" ||
+      item.subcategory === activeSubcategory;
 
     return matchesSearch && matchesCategory && matchesSubcategory;
   });
 
-  const isSubcategoryVisible = activeCategory !== "All" && SUBCATEGORIES[activeCategory] !== undefined;
+  const isSubcategoryVisible =
+    activeCategory !== "All" && SUBCATEGORIES[activeCategory] !== undefined;
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -145,13 +167,13 @@ export default function LibraryPage() {
         <div>
           <H1>Product Library</H1>
           <p className="mt-1 text-muted-foreground text-sm">
-            Global catalog of furniture, fabric swatches, stone slabs, lighting structures, and bespoke services.
+            Global catalog of furniture, fabric swatches, stone slabs, lighting
+            structures, and bespoke services.
           </p>
         </div>
         <Button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
-        >
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
           <Plus className="size-4" />
           Add Item to Library
         </Button>
@@ -167,8 +189,7 @@ export default function LibraryPage() {
               setActiveCategory(val);
               setActiveSubcategory("All");
             }}
-            className="w-full"
-          >
+            className="w-full">
             <TabsList className="flex max-w-full flex-wrap gap-0.5">
               <TabsTrigger value="All">All Categories</TabsTrigger>
               {CATEGORIES.map((cat) => (
@@ -185,10 +206,12 @@ export default function LibraryPage() {
               gridTemplateRows: isSubcategoryVisible ? "1fr" : "0fr",
               opacity: isSubcategoryVisible ? 1 : 0,
               marginTop: isSubcategoryVisible ? "1rem" : "0rem",
-            }}
-          >
+            }}>
             <div className="overflow-hidden">
-              <Tabs value={activeSubcategory} onValueChange={setActiveSubcategory} className="w-full">
+              <Tabs
+                value={activeSubcategory}
+                onValueChange={setActiveSubcategory}
+                className="w-full">
                 <TabsList className="flex max-w-full flex-wrap gap-0.5">
                   <TabsTrigger value="All">All {activeCategory}</TabsTrigger>
                   {isSubcategoryVisible &&
@@ -209,8 +232,7 @@ export default function LibraryPage() {
             onValueChange={(val) => {
               setActiveCategory(val);
               setActiveSubcategory("All");
-            }}
-          >
+            }}>
             <SelectTrigger className="w-full md:w-[220px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -225,7 +247,9 @@ export default function LibraryPage() {
           </Select>
 
           {activeCategory !== "All" && SUBCATEGORIES[activeCategory] && (
-            <Select value={activeSubcategory} onValueChange={setActiveSubcategory}>
+            <Select
+              value={activeSubcategory}
+              onValueChange={setActiveSubcategory}>
               <SelectTrigger className="fade-in w-full animate-in duration-200 md:w-[220px]">
                 <SelectValue placeholder="Subcategory" />
               </SelectTrigger>
@@ -257,7 +281,9 @@ export default function LibraryPage() {
       {loading ? (
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Sourcing Catalog</p>
+          <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            Loading Catalog
+          </p>
         </div>
       ) : filteredItems.length === 0 ? (
         <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
@@ -269,7 +295,9 @@ export default function LibraryPage() {
               : "Get started by adding high-end furniture or material swatches to your catalog."}
           </p>
           {!searchQuery && (
-            <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
+            <Button
+              onClick={handleOpenAdd}
+              className="mt-4 flex items-center gap-2">
               <Plus className="size-4" />
               Add First Library Item
             </Button>
@@ -278,19 +306,19 @@ export default function LibraryPage() {
       ) : (
         <div className="grid 3xl:grid-cols-7 grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           {filteredItems.map((item) => {
-            const parentVendor = vendors.find((v) => v.vendorId === item.vendorId);
+            const parentVendor = vendors.find(
+              (v) => v.vendorId === item.vendorId,
+            );
             const vendorName = parentVendor?.name || "Unknown Vendor";
 
             return (
               <Card
                 key={item.itemId}
-                className="group relative flex h-full flex-col overflow-hidden pt-0 shadow-sm transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md"
-              >
+                className="group relative flex h-full flex-col overflow-hidden pt-0 shadow-sm transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
                 {/* Visual Thumbnail Area */}
                 <Link
                   href={`/dashboard/library/${item.itemId}`}
-                  className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40"
-                >
+                  className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40">
                   {item.coverImageUrl ? (
                     <img
                       src={item.coverImageUrl}
@@ -307,15 +335,13 @@ export default function LibraryPage() {
                   <div className="absolute top-2 left-2.5 flex items-center gap-1.5">
                     <Badge
                       variant="default"
-                      className="bg-black/50 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs"
-                    >
+                      className="bg-black/50 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs">
                       {item.category}
                     </Badge>
                     {item.subcategory && (
                       <Badge
                         variant="default"
-                        className="bg-black/50 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs"
-                      >
+                        className="bg-black/50 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs">
                         {item.subcategory}
                       </Badge>
                     )}
@@ -326,7 +352,9 @@ export default function LibraryPage() {
                   <div className="flex-1">
                     {/* Item Name - Clicking/hovering on the title takes you to the detail page */}
                     <H3 className="transition-colors group-has-[.detail-link:hover]:text-primary">
-                      <Link href={`/dashboard/library/${item.itemId}`} className="detail-link block">
+                      <Link
+                        href={`/dashboard/library/${item.itemId}`}
+                        className="detail-link block">
                         {item.name}
                       </Link>
                     </H3>
@@ -343,33 +371,36 @@ export default function LibraryPage() {
                             }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                          >
+                            className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                             {vendorName}
                             <ExternalLink className="ml-1 size-2.5 shrink-0" />
                           </a>
                         ) : (
                           <Link
                             href={`/dashboard/vendors/${item.vendorId}`}
-                            className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                          >
+                            className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                             {vendorName}
                             <ExternalLink className="size-2.5 shrink-0" />
                           </Link>
                         )
                       ) : (
-                        <span className="font-medium text-foreground/60">{vendorName}</span>
+                        <span className="font-medium text-foreground/60">
+                          {vendorName}
+                        </span>
                       )}
                     </div>
 
                     {/* Product webpage link on vendor's site */}
                     {item.sourcingLink ? (
                       <a
-                        href={item.sourcingLink.startsWith("http") ? item.sourcingLink : `https://${item.sourcingLink}`}
+                        href={
+                          item.sourcingLink.startsWith("http")
+                            ? item.sourcingLink
+                            : `https://${item.sourcingLink}`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline"
-                      >
+                        className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline">
                         <span className="truncate">Origin Link</span>
                         <ExternalLink className="size-2.5 shrink-0" />
                       </a>
@@ -385,11 +416,15 @@ export default function LibraryPage() {
                   <div className="flex w-full items-center justify-between">
                     <div className="flex flex-col">
                       <Label className="mb-1">Cost</Label>
-                      <span className="font-semibold text-foreground/75 text-sm">{formatCurrency(item.unitCost)}</span>
+                      <span className="font-semibold text-foreground/75 text-sm">
+                        {formatCurrency(item.unitCost)}
+                      </span>
                     </div>
                     <div className="flex flex-col text-right">
                       <Label className="mb-1 ml-auto">Selling Price</Label>
-                      <span className="font-bold text-primary text-sm">{formatCurrency(item.sellingPrice)}</span>
+                      <span className="font-bold text-primary text-sm">
+                        {formatCurrency(item.sellingPrice)}
+                      </span>
                     </div>
                   </div>
 
@@ -397,9 +432,17 @@ export default function LibraryPage() {
                   {(() => {
                     const profitable = item.sellingPrice > item.unitCost;
                     return (
-                      <Badge variant={profitable ? "profit" : "warning"} className="mx-auto mt-3 -mb-1 gap-1">
-                        {profitable ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
-                        <span className="font-semibold">{Math.round(item.markup)}%</span>
+                      <Badge
+                        variant={profitable ? "profit" : "warning"}
+                        className="mx-auto mt-3 -mb-1 gap-1">
+                        {profitable ? (
+                          <TrendingUp className="size-3" />
+                        ) : (
+                          <TrendingDown className="size-3" />
+                        )}
+                        <span className="font-semibold">
+                          {Math.round(item.markup)}%
+                        </span>
                         <span>markup</span>
                       </Badge>
                     );

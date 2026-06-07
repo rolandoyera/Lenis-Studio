@@ -14,7 +14,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
       <Card className="min-h-57.5">
         <CardHeader>
           <CardTitle>
-            <ShoppingBag className="size-4 text-primary" />
+            <ShoppingBag className="icons" />
             Public Description
           </CardTitle>
         </CardHeader>
@@ -34,7 +34,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
       <Card className="min-h-57.5">
         <CardHeader>
           <CardTitle>
-            <FileText className="size-4 text-primary" />
+            <FileText className="icons" />
             Internal Notes
           </CardTitle>
         </CardHeader>

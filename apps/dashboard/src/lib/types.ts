@@ -6,6 +6,8 @@ export interface Client {
   email: string;
   phone: string;
   company?: string;
+  taxId?: string;
+  taxable?: boolean;
   street?: string;
   city?: string;
   state?: string;

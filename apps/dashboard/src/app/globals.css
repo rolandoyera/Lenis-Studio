@@ -247,6 +247,10 @@ These serve as the fallback; there is no separate default.css file. */
   }
 }
 
+@utility icons {
+  @apply size-4.5 text-primary;
+}
+
 html {
   overscroll-behavior: none;
 }
