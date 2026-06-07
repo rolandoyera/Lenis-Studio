@@ -249,7 +249,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
   const xTwitterHref = formatSocialHref(vendor.xTwitter);
 
   return (
-    <Card className="group relative flex h-full flex-col overflow-hidden pt-0 shadow-sm transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
+    <Card className="group relative flex h-full flex-col overflow-hidden pt-0 transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
       {/* Hero area: real image → gradient fallback */}
       <Link
         href={`/dashboard/vendors/${vendor.vendorId}`}
@@ -322,7 +322,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
           </div>
         ) : null}
       </CardContent>
-      <CardFooter className="flex items-center gap-3 border-t-0 bg-card text-muted-foreground">
+      <CardFooter className="flex items-center gap-3 text-muted-foreground">
         {websiteHref ? (
           <Tooltip>
             <TooltipTrigger asChild>

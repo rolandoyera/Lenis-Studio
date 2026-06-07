@@ -1,6 +1,6 @@
 import { Calculator, TrendingDown, TrendingUp } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import type { LibraryItem } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -18,11 +18,11 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
     <Card>
       <CardHeader>
         <CardTitle>
-          <Calculator className="size-4.5 text-primary/80" />
-          Cost & Pricing Intelligence
+          <Calculator className="size-4.5 text-primary" />
+          Cost & Pricing
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-4 pb-4">
         {/* Four-cell pricing row — gap-px/bg-border produces hairline dividers */}
         <div className="grid grid-cols-4 gap-px overflow-hidden rounded-xl border border-border/50 bg-border text-center">
           {/* Sourcing Cost */}
@@ -68,15 +68,16 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
             </span>
           </div>
         </div>
-
+      </CardContent>
+      <CardFooter>
         {/* Optional MSRP */}
         {item.msrp && item.msrp > 0 ? (
-          <div className="flex items-center justify-between border-border/30 border-t pt-3 text-muted-foreground text-sm">
-            <span>Suggested Retail (MSRP)</span>
-            <span className="font-medium font-mono text-foreground/80">{formatCurrency(item.msrp)}</span>
+          <div className="flex items-center justify-end gap-4 w-full text-sm">
+            <span className="text-muted-foreground">Suggested Retail:</span>
+            <span className="font-medium">{formatCurrency(item.msrp)}</span>
           </div>
         ) : null}
-      </CardContent>
+      </CardFooter>
     </Card>
   );
 }

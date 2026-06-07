@@ -13,18 +13,18 @@ interface ClientContactCardProps {
 /** Contact credentials panel: email, phone, company, plus quick email/call actions. */
 export function ClientContactCard({ client }: ClientContactCardProps) {
   return (
-    <Card className="border border-border/40 bg-card/60 shadow-xs backdrop-blur-xs">
+    <Card>
       <CardHeader className="border-border/30 border-b pb-4">
-        <CardTitle className="flex items-center gap-2 font-bold font-heading text-base">
-          <Users className="size-4 text-primary/80" />
-          Contact Credentials
+        <CardTitle>
+          <Users className="size-4.5 text-primary" />
+          Contact Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5 pt-6">
+      <CardContent className="flex flex-col gap-5">
         <div className="flex flex-col gap-6.5 text-sm">
           {client.email && (
             <div className="flex flex-col gap-1">
-              <Label className="mb-1 uppercase">Email Address</Label>
+              <Label className="mb-1">Email Address</Label>
               <a
                 href={`mailto:${client.email}`}
                 className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
@@ -37,7 +37,7 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
 
           {client.phone && (
             <div className="flex flex-col gap-1">
-              <Label className="mb-1 uppercase">Phone Number</Label>
+              <Label className="mb-1">Phone Number</Label>
               <a
                 href={`tel:${normalizePhone(client.phone)}`}
                 className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
@@ -50,7 +50,7 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
 
           {client.company && (
             <div className="flex flex-col gap-1">
-              <Label className="mb-1 uppercase">Company / Entity</Label>
+              <Label className="mb-1">Company / Entity</Label>
               <div className="flex items-center gap-1.5 text-foreground">
                 <Briefcase className="size-4 shrink-0 text-primary/70" />
                 <span>{client.company}</span>
@@ -60,7 +60,7 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
 
           {(client.street || client.city || client.state || client.zip) && (
             <div className="flex flex-col gap-1">
-              <Label className="mb-1 uppercase">Primary Address</Label>
+              <Label className="mb-1">Primary Address</Label>
               <div className="flex items-start gap-1.5 text-foreground leading-tight">
                 <MapPin className="mt-0.5 size-4 shrink-0 text-primary/70" />
                 <div className="flex flex-col">

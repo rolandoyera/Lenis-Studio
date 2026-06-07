@@ -5,6 +5,11 @@ import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function DropdownMenu({
   ...props
@@ -20,9 +25,70 @@ function DropdownMenuPortal({
   );
 }
 
+const TooltipDropdownContext = React.createContext<{
+  isMenuOpen: boolean;
+  tooltipOpen: boolean;
+  preventTooltip: boolean;
+  setTooltipOpen: (open: boolean) => void;
+} | null>(null);
+
+function TooltipDropdownMenu({
+  children,
+  tooltip = "More Actions",
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root> & {
+  tooltip?: string;
+}) {
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [tooltipOpen, setTooltipOpen] = React.useState(false);
+  const [preventTooltip, setPreventTooltip] = React.useState(false);
+
+  const handleMenuOpenChange = (open: boolean) => {
+    setIsMenuOpen(open);
+    if (!open) {
+      setPreventTooltip(true);
+      setTimeout(() => setPreventTooltip(false), 150);
+    }
+    props.onOpenChange?.(open);
+  };
+
+  return (
+    <TooltipDropdownContext.Provider
+      value={{ isMenuOpen, tooltipOpen, preventTooltip, setTooltipOpen }}>
+      <Tooltip
+        open={tooltipOpen && !isMenuOpen && !preventTooltip}
+        onOpenChange={(open) => {
+          if (open && (isMenuOpen || preventTooltip)) return;
+          setTooltipOpen(open);
+        }}>
+        <DropdownMenuPrimitive.Root
+          data-slot="dropdown-menu"
+          {...props}
+          onOpenChange={handleMenuOpenChange}>
+          {children}
+        </DropdownMenuPrimitive.Root>
+        <TooltipContent>{tooltip}</TooltipContent>
+      </Tooltip>
+    </TooltipDropdownContext.Provider>
+  );
+}
+
 function DropdownMenuTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  const context = React.useContext(TooltipDropdownContext);
+
+  if (context) {
+    return (
+      <TooltipTrigger asChild>
+        <DropdownMenuPrimitive.Trigger
+          data-slot="dropdown-menu-trigger"
+          {...props}
+        />
+      </TooltipTrigger>
+    );
+  }
+
   return (
     <DropdownMenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
@@ -251,6 +317,7 @@ function DropdownMenuSubContent({
 
 export {
   DropdownMenu,
+  TooltipDropdownMenu,
   DropdownMenuPortal,
   DropdownMenuTrigger,
   DropdownMenuContent,

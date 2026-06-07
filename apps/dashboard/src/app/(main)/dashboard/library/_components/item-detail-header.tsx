@@ -8,11 +8,10 @@ import { EditIcon, TrashIcon } from "@/components/icons/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import type { LibraryItem } from "@/lib/types";
@@ -64,7 +63,7 @@ export function ItemDetailHeader({ item, vendorName, onEdit, onRequestDelete }: 
         </div>
 
         <div>
-          <DropdownMenu>
+          <TooltipDropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <MoreVertical className="size-4" />
@@ -76,13 +75,13 @@ export function ItemDetailHeader({ item, vendorName, onEdit, onRequestDelete }: 
                 <EditIcon size={4} />
                 Edit Specifications
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
+
               <DropdownMenuItem onClick={onRequestDelete} variant="destructive">
                 <TrashIcon size={4} />
                 Delete Product
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </TooltipDropdownMenu>
         </div>
       </div>
     </>

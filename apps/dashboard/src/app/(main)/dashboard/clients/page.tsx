@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { Briefcase, FolderKanban, Loader2, Mail, MapPin, Phone, Plus, Search, Users } from "lucide-react";
+import { Briefcase, FolderKanban, Loader2, Mail, MapPin, Phone, Plus, Search, User, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { H1 } from "@/components/ui/typography";
 import { addClient, getClients, getProjects } from "@/lib/db";
@@ -195,65 +196,67 @@ export default function ClientsPage() {
                 lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
               }
 
-              const initials = ((firstName[0] || "") + (lastName[0] || "")).toUpperCase() || "?";
               const clientProjects = projects.filter((p) => p.clientId === client.uid);
 
               return (
-                <Link href={`/dashboard/clients/${client.uid}`} key={client.uid} className="block">
-                  <Card className="group relative h-full cursor-pointer overflow-hidden bg-card/60 backdrop-blur-xs transition-all duration-300 hover:border-primary/20 hover:shadow-md">
-                    <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary/30 via-primary/10 to-transparent" />
-
-                    <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-primary/5 font-bold text-lg text-primary">
-                        {initials.toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="truncate font-heading font-semibold text-lg transition-colors group-hover:text-primary">
+                <Card
+                  key={client.uid}
+                  className="group relative flex h-full flex-col overflow-hidden transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md"
+                >
+                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
+                    <Avatar className="size-12">
+                      <User className="size-6" />
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="truncate font-heading font-semibold text-lg transition-colors group-has-[.detail-link:hover]:text-primary">
+                        <Link
+                          href={`/dashboard/clients/${client.uid}`}
+                          className="detail-link cursor-pointer hover:underline"
+                        >
                           {firstName} {lastName}
-                        </CardTitle>
-                        {client.company ? (
-                          <p className="mt-0.5 flex items-center gap-1 truncate font-medium text-muted-foreground text-xs">
-                            <Briefcase className="size-3 text-muted-foreground/60" />
-                            {client.company}
-                          </p>
-                        ) : (
-                          <p className="mt-0.5 text-muted-foreground/50 text-xs italic">Private Residence</p>
-                        )}
-                      </div>
-                    </CardHeader>
+                        </Link>
+                      </CardTitle>
+                      {client.company ? (
+                        <p className="mt-0.5 flex items-center gap-1 truncate font-medium text-muted-foreground text-xs">
+                          <Briefcase className="size-3 text-muted-foreground/60" />
+                          {client.company}
+                        </p>
+                      ) : (
+                        <p className="mt-0.5 text-muted-foreground/50 text-xs italic">Private Residence</p>
+                      )}
+                    </div>
+                  </CardHeader>
 
-                    <CardContent className="flex flex-col gap-3 text-sm">
-                      <div className="flex flex-col gap-1.5 rounded-md border border-muted/50 bg-muted/30 p-2.5 text-muted-foreground text-xs">
+                  <CardContent className="flex flex-col gap-3 text-sm">
+                    <div className="flex flex-col gap-1.5 rounded-md border border-muted/50 bg-muted/30 p-2.5 text-muted-foreground text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <Mail className="size-3.5 shrink-0" />
+                        {client.email}
+                      </div>
+                      {client.phone && (
                         <div className="flex items-center gap-2 truncate">
-                          <Mail className="size-3.5 shrink-0" />
-                          {client.email}
+                          <Phone className="size-3.5 shrink-0" />
+                          {formatPhone(client.phone)}
                         </div>
-                        {client.phone && (
-                          <div className="flex items-center gap-2 truncate">
-                            <Phone className="size-3.5 shrink-0" />
-                            {formatPhone(client.phone)}
-                          </div>
-                        )}
-                        {(client.city || client.state) && (
-                          <div className="flex items-center gap-2 truncate">
-                            <MapPin className="size-3.5 shrink-0 text-muted-foreground/85" />
-                            <span className="truncate">{[client.city, client.state].filter(Boolean).join(", ")}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="mt-1 flex items-center justify-between border-border/40 border-t pt-2.5 text-muted-foreground text-xs">
-                        <span className="flex items-center gap-1.5 font-medium">
-                          <FolderKanban className="size-3.5 text-primary/70" />
-                          Active Projects:
-                        </span>
-                        <span className="rounded-full bg-primary/10 px-2 py-0.5 font-semibold text-primary">
-                          {clientProjects.length}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                      )}
+                      {(client.city || client.state) && (
+                        <div className="flex items-center gap-2 truncate">
+                          <MapPin className="size-3.5 shrink-0 text-muted-foreground/85" />
+                          <span className="truncate">{[client.city, client.state].filter(Boolean).join(", ")}</span>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="mt-1 flex items-center justify-between text-muted-foreground text-xs">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <FolderKanban className="size-3.5 text-primary/70" />
+                      Active Projects:
+                    </span>
+                    <span className="flex size-6 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+                      {clientProjects.length}
+                    </span>
+                  </CardFooter>
+                </Card>
               );
             })}
           </div>

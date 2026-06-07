@@ -11,16 +11,16 @@ interface ItemNotesCardsProps {
 export function ItemNotesCards({ item }: ItemNotesCardsProps) {
   return (
     <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
-      <Card>
-        <CardHeader className="border-border/30 border-b pb-4">
+      <Card className="min-h-57.5">
+        <CardHeader>
           <CardTitle>
-            <ShoppingBag className="size-4 text-primary/80" />
+            <ShoppingBag className="size-4 text-primary" />
             Public Description
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           {item.description ? (
-            <div className="rounded-lg border bg-background/25 p-3.5 text-muted-foreground text-sm leading-relaxed shadow-inner">
+            <div className="rounded-lg border border-border p-3.5 text-foreground bg-muted/50 text-sm leading-relaxed shadow-inner">
               {item.description}
             </div>
           ) : (
@@ -31,20 +31,22 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="border-border/30 border-b pb-4">
+      <Card className="min-h-57.5">
+        <CardHeader>
           <CardTitle>
-            <FileText className="size-4 text-primary/80" />
+            <FileText className="size-4 text-primary" />
             Internal Notes
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-6">
           {item.internalNote ? (
-            <div className="rounded-lg border bg-background/25 p-3.5 text-muted-foreground text-sm leading-relaxed shadow-inner">
+            <div className="rounded-lg border p-3.5 text-foreground bg-muted/50 text-sm leading-relaxed shadow-inner">
               {item.internalNote}
             </div>
           ) : (
-            <p className="py-2 text-muted-foreground/60 text-sm italic">No internal notes logged.</p>
+            <div className="rounded-lg border p-3.5 text-foreground/50 italic bg-muted/50 text-sm leading-relaxed shadow-inner">
+              No internal notes logged.
+            </div>
           )}
         </CardContent>
       </Card>

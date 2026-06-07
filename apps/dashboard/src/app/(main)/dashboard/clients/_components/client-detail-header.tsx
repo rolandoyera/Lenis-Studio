@@ -1,14 +1,13 @@
 "use client";
 
-import { Briefcase, Calendar, Edit3, MoreVertical, Trash2 } from "lucide-react";
+import { Briefcase, Calendar, Edit3, MoreVertical, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
 import { H1 } from "@/components/ui/typography";
 import type { Client } from "@/lib/types";
@@ -43,16 +42,14 @@ export function ClientDetailHeader({ client, onEdit, onRequestDelete }: ClientDe
     lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
   }
 
-  const initials = ((firstName[0] || "") + (lastName[0] || "")).toUpperCase() || "?";
-
   return (
     <>
       <HeaderBackLink href="/dashboard/clients" />
 
-      <div className="flex flex-col justify-between gap-6 border-b pb-6 md:flex-row md:items-center">
+      <div className="flex flex-col gap-16 border-b pb-6 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 font-bold text-2xl text-primary shadow-xs">
-            {initials.toUpperCase()}
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-xs">
+            <User className="size-8" />
           </div>
           <div>
             <H1>
@@ -81,29 +78,25 @@ export function ClientDetailHeader({ client, onEdit, onRequestDelete }: ClientDe
           </div>
         </div>
 
-        <div className="flex items-center sm:self-start md:self-center">
-          <DropdownMenu>
+        <div>
+          <TooltipDropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="default" size="icon" className="cursor-pointer">
+              <Button variant="ghost" size="icon">
                 <MoreVertical className="size-4" />
                 <span className="sr-only">Actions Menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44 bg-popover/95 backdrop-blur-md">
-              <DropdownMenuItem onClick={onEdit} className="flex cursor-pointer items-center gap-2 text-sm">
-                <Edit3 className="size-4 text-muted-foreground" />
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={onEdit}>
+                <Edit3 className="size-4" />
                 Edit Profile
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={onRequestDelete}
-                className="flex cursor-pointer items-center gap-2 text-destructive text-sm focus:bg-destructive/10 focus:text-destructive"
-              >
+              <DropdownMenuItem variant="destructive" onClick={onRequestDelete}>
                 <Trash2 className="size-4" />
                 Delete Profile
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </TooltipDropdownMenu>
         </div>
       </div>
     </>

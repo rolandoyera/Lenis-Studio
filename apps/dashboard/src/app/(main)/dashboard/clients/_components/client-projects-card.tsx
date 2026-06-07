@@ -26,16 +26,13 @@ interface ClientProjectsCardProps {
 /** Associated project spaces grid with an "Initialize Project" entry point. */
 export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCardProps) {
   return (
-    <Card className="border border-border/40 bg-card/60 shadow-xs backdrop-blur-xs">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between border-border/30 border-b pb-4">
-        <CardTitle className="flex items-center gap-2 font-bold font-heading text-lg">
-          <FolderKanban className="size-4.5 text-primary/80" />
-          Studio Project Spaces
+        <CardTitle>
+          <FolderKanban className="size-4.5 text-primary" />
+          Projects
         </CardTitle>
-        <Button
-          onClick={onAddProject}
-          className="flex h-8 cursor-pointer items-center gap-1.5 border border-primary/20 bg-primary/10 py-1.5 font-bold text-primary text-xs hover:bg-primary/20"
-        >
+        <Button variant="secondary" onClick={onAddProject}>
           <Plus className="size-3.5" />
           Initialize Project
         </Button>
@@ -44,11 +41,11 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
         {projects.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-background/20 p-6 py-10 text-center">
             <FolderKanban className="mb-2 size-10 text-muted-foreground/30" />
-            <h3 className="font-semibold text-sm">No project spaces created</h3>
+            <h3 className="font-semibold text-sm">No projects created</h3>
             <p className="mt-1 max-w-xs text-muted-foreground text-xs">
               Begin drafting budget pools, address details, and design briefs by setting up this client's first project.
             </p>
-            <Button onClick={onAddProject} className="mt-4 flex h-8 cursor-pointer items-center gap-1.5 text-xs">
+            <Button onClick={onAddProject} className="mt-4">
               <Plus className="size-3.5" />
               Initialize First Project
             </Button>
