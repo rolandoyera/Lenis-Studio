@@ -11,7 +11,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 import { mockClients, mockLibraryItems, mockProjects, mockVendors } from "@/data/mock-studio";
 import { db, storage } from "@/lib/firebase";
@@ -130,8 +130,11 @@ export async function getVendors(organizationId: string): Promise<Vendor[]> {
   }
 }
 
-export async function addVendor(vendor: Omit<Vendor, "vendorId" | "createdAt">): Promise<Vendor> {
-  const vendorId = `vendor-${Math.random().toString(36).substr(2, 9)}`;
+export async function addVendor(
+  vendor: Omit<Vendor, "vendorId" | "createdAt">,
+  customVendorId?: string,
+): Promise<Vendor> {
+  const vendorId = customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
   const newVendor: Vendor = {
     ...vendor,
     vendorId,
@@ -146,8 +149,43 @@ export async function updateVendor(vendorId: string, vendor: Partial<Vendor>): P
   await updateDoc(docRef, cleanUndefined({ ...vendor }));
 }
 
-export async function deleteVendor(vendorId: string): Promise<void> {
-  await deleteDoc(doc(db, "vendors", vendorId));
+export async function deleteStorageFileByPath(path: string): Promise<void> {
+  if (!path || path.trim() === "") return;
+  try {
+    const fileRef = ref(storage, path);
+    await deleteObject(fileRef);
+  } catch (error: any) {
+    if (error && error.code === "storage/object-not-found") {
+      console.warn(`File not found in storage (ignored): ${path}`);
+      return;
+    }
+    console.error(`Failed to delete storage object at ${path}:`, error);
+    throw error;
+  }
+}
+
+export async function deleteVendor(vendorOrId: Vendor | string): Promise<void> {
+  let vendor: Vendor | null = null;
+  if (typeof vendorOrId === "string") {
+    vendor = await getVendor(vendorOrId);
+  } else {
+    vendor = vendorOrId;
+  }
+  if (!vendor) return;
+
+  const paths = [vendor.logoPath, vendor.heroImagePath].filter(
+    (p): p is string => typeof p === "string" && p.trim().length > 0,
+  );
+
+  const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
+
+  const failures = results.filter((r) => r.status === "rejected");
+  if (failures.length > 0) {
+    const error = (failures[0] as PromiseRejectedResult).reason;
+    throw new Error(`Failed to clean up storage files: ${error.message || error}`);
+  }
+
+  await deleteDoc(doc(db, "vendors", vendor.vendorId));
 }
 
 // --- PROJECT HELPER HOOKS & FUNCTIONS ---
@@ -260,8 +298,11 @@ export async function getVendorLibraryItems(organizationId: string, vendorId: st
   }
 }
 
-export async function addLibraryItem(item: Omit<LibraryItem, "itemId" | "updatedAt">): Promise<LibraryItem> {
-  const itemId = `item-${Math.random().toString(36).substr(2, 9)}`;
+export async function addLibraryItem(
+  item: Omit<LibraryItem, "itemId" | "updatedAt">,
+  customItemId?: string,
+): Promise<LibraryItem> {
+  const itemId = customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`;
   const newItem: LibraryItem = {
     ...item,
     itemId,
@@ -276,8 +317,28 @@ export async function updateLibraryItem(itemId: string, item: Partial<LibraryIte
   await updateDoc(docRef, cleanUndefined({ ...item, updatedAt: Date.now() }));
 }
 
-export async function deleteLibraryItem(itemId: string): Promise<void> {
-  await deleteDoc(doc(db, "library", itemId));
+export async function deleteLibraryItem(itemOrId: LibraryItem | string): Promise<void> {
+  let item: LibraryItem | null = null;
+  if (typeof itemOrId === "string") {
+    item = await getLibraryItem(itemOrId);
+  } else {
+    item = itemOrId;
+  }
+  if (!item) return;
+
+  const paths = [item.coverImagePath, ...(item.images || []).map((img) => img.path)].filter(
+    (p): p is string => typeof p === "string" && p.trim().length > 0,
+  );
+
+  const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
+
+  const failures = results.filter((r) => r.status === "rejected");
+  if (failures.length > 0) {
+    const error = (failures[0] as PromiseRejectedResult).reason;
+    throw new Error(`Failed to clean up storage files: ${error.message || error}`);
+  }
+
+  await deleteDoc(doc(db, "library", item.itemId));
 }
 
 // --- PROPOSAL HELPER HOOKS & FUNCTIONS ---
@@ -322,24 +383,37 @@ export async function deleteProposal(proposalId: string): Promise<void> {
 
 // --- STORAGE HELPER FUNCTIONS ---
 
-export async function uploadLibraryImage(file: File): Promise<string> {
-  const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-  const storageRef = ref(storage, `library/${cleanFileName}`);
+export async function uploadLibraryImage(
+  file: File,
+  itemId?: string,
+  imageId?: string,
+): Promise<{ url: string; path: string }> {
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const id = imageId ?? `img-${Math.random().toString(36).substr(2, 9)}`;
+  const resolvedItemId = itemId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
+  const storagePath = `library/${resolvedItemId}/images/${id}.${ext}`;
+  const storageRef = ref(storage, storagePath);
 
   // Upload raw file bytes
   const snapshot = await uploadBytes(storageRef, file);
 
   // Get public CDN download URL
-  const downloadURL = await getDownloadURL(snapshot.ref);
-  return downloadURL;
+  const url = await getDownloadURL(snapshot.ref);
+  return { url, path: storagePath };
 }
 
-export async function uploadVendorImage(file: File, type: "logo" | "hero"): Promise<string> {
-  const cleanFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-  const path = type === "logo" ? `vendors/logos/${cleanFileName}` : `vendors/heroes/${cleanFileName}`;
-  const storageRef = ref(storage, path);
+export async function uploadVendorImage(
+  file: File,
+  type: "logo" | "hero",
+  vendorId?: string,
+): Promise<{ url: string; path: string }> {
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const resolvedVendorId = vendorId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
+  const storagePath = `vendors/${resolvedVendorId}/${type}.${ext}`;
+  const storageRef = ref(storage, storagePath);
   const snapshot = await uploadBytes(storageRef, file);
-  return await getDownloadURL(snapshot.ref);
+  const url = await getDownloadURL(snapshot.ref);
+  return { url, path: storagePath };
 }
 
 /**
@@ -347,29 +421,43 @@ export async function uploadVendorImage(file: File, type: "logo" | "hero"): Prom
  * rebuilt on the client) to Firebase Storage and returns its public download URL.
  * Used when mirroring AI-sourced vendor images so library items self-host their images.
  */
-export async function uploadLibraryImageBlob(blob: Blob, extension = "jpg"): Promise<string> {
-  const cleanFileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${extension}`;
-  const storageRef = ref(storage, `library/${cleanFileName}`);
+export async function uploadLibraryImageBlob(
+  blob: Blob,
+  itemId: string,
+  type: "cover" | "gallery",
+  imageId?: string,
+  extension = "jpg",
+): Promise<{ url: string; path: string }> {
+  const id = imageId ?? `img-${Math.random().toString(36).substr(2, 9)}`;
+  const storagePath =
+    type === "cover" ? `library/${itemId}/cover.${extension}` : `library/${itemId}/images/${id}.${extension}`;
+  const storageRef = ref(storage, storagePath);
 
   const snapshot = await uploadBytes(storageRef, blob, {
     contentType: blob.type || `image/${extension}`,
   });
-  return await getDownloadURL(snapshot.ref);
+  const url = await getDownloadURL(snapshot.ref);
+  return { url, path: storagePath };
 }
 
 /**
  * Uploads a raw image Blob to Firebase Storage under the vendors folder
  * and returns its public download URL.
  */
-export async function uploadVendorImageBlob(blob: Blob, type: "logo" | "hero", extension = "jpg"): Promise<string> {
-  const cleanFileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${extension}`;
-  const path = type === "logo" ? `vendors/logos/${cleanFileName}` : `vendors/heroes/${cleanFileName}`;
-  const storageRef = ref(storage, path);
+export async function uploadVendorImageBlob(
+  blob: Blob,
+  type: "logo" | "hero",
+  vendorId: string,
+  extension = "jpg",
+): Promise<{ url: string; path: string }> {
+  const storagePath = `vendors/${vendorId}/${type}.${extension}`;
+  const storageRef = ref(storage, storagePath);
 
   const snapshot = await uploadBytes(storageRef, blob, {
     contentType: blob.type || `image/${extension}`,
   });
-  return await getDownloadURL(snapshot.ref);
+  const url = await getDownloadURL(snapshot.ref);
+  return { url, path: storagePath };
 }
 
 // --- DIAGNOSTICS HELPER FUNCTIONS ---

@@ -26,21 +26,30 @@ function base64ToBlob(base64: string, contentType: string): Blob {
 
 export interface VendorMirrorResult {
   logoUrl: string;
+  logoPath?: string;
   heroImageUrl: string;
+  heroImagePath?: string;
 }
 
 /**
  * Mirrors external vendor logo and hero images into Firebase Storage.
  */
-export async function mirrorVendorImagesToFirebase(input: {
-  logoUrl?: string;
-  heroImageUrl?: string;
-}): Promise<VendorMirrorResult> {
+export async function mirrorVendorImagesToFirebase(
+  input: {
+    logoUrl?: string;
+    logoPath?: string;
+    heroImageUrl?: string;
+    heroImagePath?: string;
+  },
+  vendorId: string,
+): Promise<VendorMirrorResult> {
   const logo = input.logoUrl?.trim() || "";
   const hero = input.heroImageUrl?.trim() || "";
 
   let resolvedLogo = logo;
+  let logoPath = input.logoPath ?? "";
   let resolvedHero = hero;
+  let heroImagePath = input.heroImagePath ?? "";
 
   // Mirror logo if external
   if (logo && !isFirebaseHosted(logo)) {
@@ -48,7 +57,9 @@ export async function mirrorVendorImagesToFirebase(input: {
       const res = await fetchImageBytes(logo);
       if (res.success && res.base64 && res.contentType) {
         const blob = base64ToBlob(res.base64, res.contentType);
-        resolvedLogo = await uploadVendorImageBlob(blob, "logo", extensionForContentType(res.contentType));
+        const uploadRes = await uploadVendorImageBlob(blob, "logo", vendorId, extensionForContentType(res.contentType));
+        resolvedLogo = uploadRes.url;
+        logoPath = uploadRes.path;
       }
     } catch (error) {
       console.error(`[Vendor Mirror] Failed to mirror logo ${logo}:`, error);
@@ -61,12 +72,14 @@ export async function mirrorVendorImagesToFirebase(input: {
       const res = await fetchImageBytes(hero);
       if (res.success && res.base64 && res.contentType) {
         const blob = base64ToBlob(res.base64, res.contentType);
-        resolvedHero = await uploadVendorImageBlob(blob, "hero", extensionForContentType(res.contentType));
+        const uploadRes = await uploadVendorImageBlob(blob, "hero", vendorId, extensionForContentType(res.contentType));
+        resolvedHero = uploadRes.url;
+        heroImagePath = uploadRes.path;
       }
     } catch (error) {
       console.error(`[Vendor Mirror] Failed to mirror hero ${hero}:`, error);
     }
   }
 
-  return { logoUrl: resolvedLogo, heroImageUrl: resolvedHero };
+  return { logoUrl: resolvedLogo, logoPath, heroImageUrl: resolvedHero, heroImagePath };
 }

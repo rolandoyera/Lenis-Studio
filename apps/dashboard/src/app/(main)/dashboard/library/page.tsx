@@ -85,13 +85,26 @@ export default function LibraryPage() {
     setSubmitting(true);
     try {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
-      const { imageUrls, coverImageUrl } = await mirrorExternalImagesToFirebase(form.formData);
-      const created = await addLibraryItem({
-        ...form.formData,
-        imageUrls,
-        coverImageUrl,
-        organizationId: profile.organizationId,
-      });
+      const { imageUrls, coverImageUrl, coverImagePath, images } = await mirrorExternalImagesToFirebase(
+        {
+          imageUrls: form.formData.imageUrls,
+          coverImageUrl: form.formData.coverImageUrl,
+          coverImagePath: form.formData.coverImagePath,
+          images: form.formData.images,
+        },
+        form.tempItemId,
+      );
+      const created = await addLibraryItem(
+        {
+          ...form.formData,
+          imageUrls,
+          coverImageUrl,
+          coverImagePath,
+          images,
+          organizationId: profile.organizationId,
+        },
+        form.tempItemId,
+      );
       setItems((prev) => [created, ...prev]);
       toast.success("New product successfully added to Global Library!");
       setIsModalOpen(false);

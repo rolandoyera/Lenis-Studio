@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import { deleteLibraryItem, getLibraryItem, getVendors, updateLibraryItem } from "@/lib/db";
+import { deleteLibraryItem, deleteStorageFileByPath, getLibraryItem, getVendors, updateLibraryItem } from "@/lib/db";
 import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
 
@@ -84,16 +84,46 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
     setUpdatingCatalog(true);
     try {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
-      const { imageUrls, coverImageUrl } = await mirrorExternalImagesToFirebase(form.formData);
-      const updated = { ...form.formData, imageUrls, coverImageUrl };
+      const { imageUrls, coverImageUrl, coverImagePath, images } = await mirrorExternalImagesToFirebase(
+        {
+          imageUrls: form.formData.imageUrls,
+          coverImageUrl: form.formData.coverImageUrl,
+          coverImagePath: form.formData.coverImagePath,
+          images: form.formData.images,
+        },
+        item.itemId,
+      );
+      const updated = { ...form.formData, imageUrls, coverImageUrl, coverImagePath, images };
+
+      // Perform replacement cleanup
+      const oldPaths = [item.coverImagePath, ...(item.images || []).map((img) => img.path)].filter(
+        (p): p is string => typeof p === "string" && p.trim().length > 0,
+      );
+      const newPaths = new Set(
+        [updated.coverImagePath, ...(updated.images || []).map((img) => img.path)].filter(
+          (p): p is string => typeof p === "string" && p.trim().length > 0,
+        ),
+      );
+      const pathsToDelete = oldPaths.filter((p) => !newPaths.has(p));
+
+      if (pathsToDelete.length > 0) {
+        const deleteResults = await Promise.allSettled(pathsToDelete.map(deleteStorageFileByPath));
+        const failures = deleteResults.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          const error = (failures[0] as PromiseRejectedResult).reason;
+          toast.error(`Failed to clean up replaced product images: ${error.message || error}`);
+          return; // Abort saving if storage cleanup fails
+        }
+      }
+
       await updateLibraryItem(item.itemId, updated);
       setItem({ ...item, ...updated });
       setIsEditOpen(false);
       setActivePreviewImage(coverImageUrl || imageUrls[0] || "");
       toast.success("Catalog item updated successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to update library item details.");
+      toast.error(error.message || "Failed to update library item details.");
     } finally {
       setUpdatingCatalog(false);
     }
@@ -103,12 +133,12 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
     if (!item) return;
     setDeletingCatalog(true);
     try {
-      await deleteLibraryItem(item.itemId);
+      await deleteLibraryItem(item);
       toast.success("Product successfully deleted from Global Library!");
       router.push("/dashboard/library");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to delete product item.");
+      toast.error(error.message || "Failed to delete product item.");
     } finally {
       setDeletingCatalog(false);
       setIsDeleteAlertOpen(false);

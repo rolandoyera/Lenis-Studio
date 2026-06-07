@@ -24,6 +24,7 @@ export function useLibraryItemForm() {
 
   // Reactive form data — replaces useState<LibraryItemFormData>
   const formData = rhfForm.watch();
+  const [tempItemId, setTempItemId] = useState("");
 
   // Compatibility setter: mirrors the previous useState pattern so the dialog
   // doesn't need wholesale rewrites on every field.
@@ -46,7 +47,10 @@ export function useLibraryItemForm() {
   const [aiLoading, setAiLoading] = useState(false);
 
   const reset = useCallback(
-    (values?: Partial<LibraryItemFormData>) => rhfForm.reset({ ...EMPTY_LIBRARY_ITEM_FORM, ...values }),
+    (values?: Partial<LibraryItemFormData>, customItemId?: string) => {
+      rhfForm.reset({ ...EMPTY_LIBRARY_ITEM_FORM, ...values });
+      setTempItemId(customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`);
+    },
     [rhfForm],
   );
 
@@ -177,14 +181,20 @@ export function useLibraryItemForm() {
 
     setUploadingImage(true);
     try {
-      const url = await uploadLibraryImage(file);
-      setFormData((prev) => ({
-        ...prev,
-        imageUrls: [...(prev.imageUrls ?? []), url].slice(0, MAX_IMAGES),
-        // Record this as a manual upload so AI re-scrapes never remove it.
-        manualImageUrls: [...(prev.manualImageUrls ?? []), url],
-        coverImageUrl: prev.coverImageUrl || url,
-      }));
+      const { url, path } = await uploadLibraryImage(file, tempItemId);
+      setFormData((prev) => {
+        const nextUrls = [...(prev.imageUrls ?? []), url].slice(0, MAX_IMAGES);
+        const nextImages = [...(prev.images ?? []), { url, path }].slice(0, MAX_IMAGES);
+        return {
+          ...prev,
+          imageUrls: nextUrls,
+          // Record this as a manual upload so AI re-scrapes never remove it.
+          manualImageUrls: [...(prev.manualImageUrls ?? []), url],
+          coverImageUrl: prev.coverImageUrl || url,
+          coverImagePath: prev.coverImagePath || path,
+          images: nextImages,
+        };
+      });
       toast.success("Image uploaded successfully!");
     } catch (error) {
       console.error("Upload error:", error);
@@ -202,10 +212,17 @@ export function useLibraryItemForm() {
         const index = urls.indexOf(url);
         if (index <= 0) return prev;
         const nextUrls = [url, ...urls.filter((u) => u !== url)];
+
+        const images = prev.images ?? [];
+        const matchedImage = images.find((img) => img.url === url);
+        const nextImages = matchedImage ? [matchedImage, ...images.filter((img) => img.url !== url)] : images;
+
         return {
           ...prev,
           imageUrls: nextUrls,
           coverImageUrl: url,
+          coverImagePath: matchedImage?.path || prev.coverImagePath,
+          images: nextImages,
         };
       });
       toast.success("Image moved to cover (first slot)!");
@@ -217,15 +234,25 @@ export function useLibraryItemForm() {
     (sourceIndex: number, targetIndex: number) => {
       setFormData((prev) => {
         const urls = [...(prev.imageUrls ?? [])];
+        const images = [...(prev.images ?? [])];
         if (sourceIndex < 0 || sourceIndex >= urls.length || targetIndex < 0 || targetIndex >= urls.length) {
           return prev;
         }
-        const [removed] = urls.splice(sourceIndex, 1);
-        urls.splice(targetIndex, 0, removed);
+        const [removedUrl] = urls.splice(sourceIndex, 1);
+        urls.splice(targetIndex, 0, removedUrl);
+
+        if (sourceIndex < images.length && targetIndex < images.length) {
+          const [removedImage] = images.splice(sourceIndex, 1);
+          images.splice(targetIndex, 0, removedImage);
+        }
+
+        const firstImage = images[0];
         return {
           ...prev,
           imageUrls: urls,
           coverImageUrl: urls[0] ?? "",
+          coverImagePath: firstImage?.path || "",
+          images,
         };
       });
     },
@@ -236,11 +263,15 @@ export function useLibraryItemForm() {
     (url: string) => {
       setFormData((prev) => {
         const filtered = (prev.imageUrls ?? []).filter((u) => u !== url);
+        const filteredImages = (prev.images ?? []).filter((img) => img.url !== url);
+        const firstImage = filteredImages[0];
         return {
           ...prev,
           imageUrls: filtered,
           manualImageUrls: (prev.manualImageUrls ?? []).filter((u) => u !== url),
           coverImageUrl: filtered[0] || "",
+          coverImagePath: firstImage?.path || "",
+          images: filteredImages,
         };
       });
     },
@@ -268,6 +299,7 @@ export function useLibraryItemForm() {
     setAsCover,
     reorderImages,
     removeImageUrl,
+    tempItemId,
   };
 }
 

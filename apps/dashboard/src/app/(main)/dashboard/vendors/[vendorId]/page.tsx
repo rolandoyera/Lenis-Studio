@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { deleteVendor, getVendor, getVendorLibraryItems, updateVendor } from "@/lib/db";
+import { deleteStorageFileByPath, deleteVendor, getVendor, getVendorLibraryItems, updateVendor } from "@/lib/db";
 import type { LibraryItem, Vendor } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
 import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
@@ -74,30 +74,62 @@ export default function VendorDetailPage({ params }: PageProps) {
 
   const handleEdit = async (data: VendorFormData) => {
     if (!vendor) return;
-    const mirrored = await mirrorVendorImagesToFirebase({
-      logoUrl: data.logoUrl,
-      heroImageUrl: data.heroImageUrl,
-    });
-    const updatedData = {
-      ...data,
-      logoUrl: mirrored.logoUrl,
-      heroImageUrl: mirrored.heroImageUrl,
-    };
-    await updateVendor(vendor.vendorId, updatedData);
-    setVendor({ ...vendor, ...updatedData });
-    toast.success("Vendor updated successfully!");
-    setIsEditOpen(false);
+    try {
+      const mirrored = await mirrorVendorImagesToFirebase(
+        {
+          logoUrl: data.logoUrl,
+          logoPath: data.logoPath,
+          heroImageUrl: data.heroImageUrl,
+          heroImagePath: data.heroImagePath,
+        },
+        vendor.vendorId,
+      );
+      const updatedData = {
+        ...data,
+        logoUrl: mirrored.logoUrl,
+        logoPath: mirrored.logoPath,
+        heroImageUrl: mirrored.heroImageUrl,
+        heroImagePath: mirrored.heroImagePath,
+      };
+
+      // Perform replacement cleanup for logo & hero
+      const storagePathsToDelete: string[] = [];
+      if (vendor.logoPath && vendor.logoPath !== updatedData.logoPath) {
+        storagePathsToDelete.push(vendor.logoPath);
+      }
+      if (vendor.heroImagePath && vendor.heroImagePath !== updatedData.heroImagePath) {
+        storagePathsToDelete.push(vendor.heroImagePath);
+      }
+
+      if (storagePathsToDelete.length > 0) {
+        const deleteResults = await Promise.allSettled(storagePathsToDelete.map(deleteStorageFileByPath));
+        const failures = deleteResults.filter((r) => r.status === "rejected");
+        if (failures.length > 0) {
+          const error = (failures[0] as PromiseRejectedResult).reason;
+          toast.error(`Failed to clean up replaced brand images: ${error.message || error}`);
+          return; // Abort update if storage deletion fails (except object-not-found which is ignored internally)
+        }
+      }
+
+      await updateVendor(vendor.vendorId, updatedData);
+      setVendor({ ...vendor, ...updatedData });
+      toast.success("Vendor updated successfully!");
+      setIsEditOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || "Failed to update vendor.");
+    }
   };
 
   const handleDelete = async () => {
     if (!vendor) return;
     setDeleting(true);
     try {
-      await deleteVendor(vendor.vendorId);
+      await deleteVendor(vendor);
       toast.success("Vendor deleted.");
       router.push("/dashboard/vendors");
-    } catch {
-      toast.error("Failed to delete vendor.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete vendor.");
       setDeleting(false);
     }
   };

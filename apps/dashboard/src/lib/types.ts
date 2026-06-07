@@ -39,7 +39,9 @@ export interface Vendor {
   state?: string;
   zip?: string;
   logoUrl?: string;
+  logoPath?: string;
   heroImageUrl?: string;
+  heroImagePath?: string;
   repName?: string;
   repEmail?: string;
   repPhone?: string;
@@ -80,6 +82,8 @@ export interface LibraryItem {
   /** Subset of imageUrls that the user uploaded manually (always Firebase-hosted). Preserved across AI re-scrapes. */
   manualImageUrls?: string[];
   coverImageUrl?: string;
+  coverImagePath?: string;
+  images?: Array<{ url: string; path: string }>;
   updatedAt: number;
   aiMetadata?: AiMetadata;
 }

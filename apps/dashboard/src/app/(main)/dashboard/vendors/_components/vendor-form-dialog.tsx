@@ -169,10 +169,11 @@ interface VendorFormDialogProps {
   onOpenChange: (open: boolean) => void;
   mode: "add" | "edit";
   initialData?: VendorFormData;
-  onSave: (data: VendorFormData) => Promise<void>;
+  vendorId?: string;
+  onSave: (data: VendorFormData, customVendorId?: string) => Promise<void>;
 }
 
-export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave }: VendorFormDialogProps) {
+export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendorId, onSave }: VendorFormDialogProps) {
   const form = useForm<VendorFormData>({
     resolver: zodResolver(vendorSchema),
     defaultValues: initialData ?? EMPTY_VENDOR_FORM,
@@ -200,6 +201,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
 
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
+  const [tempVendorId, setTempVendorId] = useState("");
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -212,8 +214,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
     }
     setUploadingLogo(true);
     try {
-      const url = await uploadVendorImage(file, "logo");
+      const { url, path } = await uploadVendorImage(file, "logo", tempVendorId);
       setValue("logoUrl", url);
+      setValue("logoPath", path);
       toast.success("Logo uploaded successfully!");
     } catch (error) {
       console.error("Logo upload error:", error);
@@ -235,8 +238,9 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
     }
     setUploadingHero(true);
     try {
-      const url = await uploadVendorImage(file, "hero");
+      const { url, path } = await uploadVendorImage(file, "hero", tempVendorId);
       setValue("heroImageUrl", url);
+      setValue("heroImagePath", path);
       toast.success("Showcase image uploaded successfully!");
     } catch (error) {
       console.error("Hero upload error:", error);
@@ -248,8 +252,11 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
   };
 
   useEffect(() => {
-    if (open) reset(initialData ?? EMPTY_VENDOR_FORM);
-  }, [open, initialData, reset]);
+    if (open) {
+      reset(initialData ?? EMPTY_VENDOR_FORM);
+      setTempVendorId(vendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`);
+    }
+  }, [open, initialData, reset, vendorId]);
 
   const handleEnrich = async () => {
     const url = getValues("website");
@@ -301,7 +308,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
   };
 
   const onSubmit = async (data: VendorFormData) => {
-    await onSave(data);
+    await onSave(data, tempVendorId);
   };
 
   return (
@@ -455,7 +462,10 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                             </Label>
                             <button
                               type="button"
-                              onClick={() => setValue("logoUrl", "")}
+                              onClick={() => {
+                                setValue("logoUrl", "");
+                                setValue("logoPath", "");
+                              }}
                               className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
                             >
                               Remove
@@ -512,7 +522,10 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, onSave
                             </Label>
                             <button
                               type="button"
-                              onClick={() => setValue("heroImageUrl", "")}
+                              onClick={() => {
+                                setValue("heroImageUrl", "");
+                                setValue("heroImagePath", "");
+                              }}
                               className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
                             >
                               Remove

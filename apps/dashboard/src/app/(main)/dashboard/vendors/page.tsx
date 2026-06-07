@@ -89,19 +89,30 @@ export default function VendorsPage() {
     void loadData();
   }, [profile, authLoading]);
 
-  const handleAdd = async (data: VendorFormData) => {
+  const handleAdd = async (data: VendorFormData, customVendorId?: string) => {
     if (!profile) return;
+    const vendorId = customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
     try {
-      const mirrored = await mirrorVendorImagesToFirebase({
-        logoUrl: data.logoUrl,
-        heroImageUrl: data.heroImageUrl,
-      });
-      const created = await addVendor({
-        ...data,
-        logoUrl: mirrored.logoUrl,
-        heroImageUrl: mirrored.heroImageUrl,
-        organizationId: profile.organizationId,
-      });
+      const mirrored = await mirrorVendorImagesToFirebase(
+        {
+          logoUrl: data.logoUrl,
+          logoPath: data.logoPath,
+          heroImageUrl: data.heroImageUrl,
+          heroImagePath: data.heroImagePath,
+        },
+        vendorId,
+      );
+      const created = await addVendor(
+        {
+          ...data,
+          logoUrl: mirrored.logoUrl,
+          logoPath: mirrored.logoPath,
+          heroImageUrl: mirrored.heroImageUrl,
+          heroImagePath: mirrored.heroImagePath,
+          organizationId: profile.organizationId,
+        },
+        vendorId,
+      );
       setVendors((prev) => [created, ...prev]);
       toast.success("New vendor added successfully!");
       setIsAddOpen(false);
