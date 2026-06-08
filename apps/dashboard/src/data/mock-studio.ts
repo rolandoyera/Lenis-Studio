@@ -80,6 +80,11 @@ export const mockProjects: Project[] = [
     clientId: "c-sophia",
     name: "Malibu Beachside Penthouse",
     address: "24000 Pacific Coast Hwy, Malibu, CA 90265",
+    street: "24000 Pacific Coast Hwy",
+    city: "Malibu",
+    state: "CA",
+    zip: "90265",
+    sameAsMain: false,
     status: "Active",
     budget: "$450,000",
     notes:
@@ -92,6 +97,11 @@ export const mockProjects: Project[] = [
     clientId: "c-arthur",
     name: "Camelot Coastal Estate Manor",
     address: "100 Ocean Drive, Newport, RI 02840",
+    street: "100 Ocean Drive",
+    city: "Newport",
+    state: "RI",
+    zip: "02840",
+    sameAsMain: false,
     status: "Active",
     budget: "$1,200,000",
     notes:

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isValidUsPhone } from "@/lib/utils";
+import { isValidUsPhone, isValidUsZip } from "@/lib/utils";
 
 export const clientSchema = z
   .object({
@@ -15,7 +15,7 @@ export const clientSchema = z
     street: z.string(),
     city: z.string(),
     state: z.string(),
-    zip: z.string(),
+    zip: z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
     notes: z.string(),
   })
   .refine(

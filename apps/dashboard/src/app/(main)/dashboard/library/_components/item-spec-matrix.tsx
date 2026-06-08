@@ -3,13 +3,7 @@ import type React from "react";
 import { ExternalLink, Tag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import type { LibraryItem, Vendor } from "@/lib/types";
 
@@ -18,26 +12,12 @@ import { withProtocol } from "./library-constants";
 /** Show the value, or a muted "N/A" placeholder when it is empty. */
 const na = (value?: string) => (value ? value : "N/A");
 
-function SpecField({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function SpecField({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5 bg-background p-4">
       <Label className="uppercase">{label}</Label>
-      {value && (
-        <span className="font-medium text-foreground text-sm capitalize">
-          {value}
-        </span>
-      )}
-      {!value && (
-        <span className="font-medium text-muted-foreground/30 text-sm">
-          N/A
-        </span>
-      )}
+      {value && <span className="font-medium text-foreground text-sm capitalize">{value}</span>}
+      {!value && <span className="font-medium text-muted-foreground/30 text-sm">N/A</span>}
     </div>
   );
 }
@@ -71,12 +51,9 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
       </CardContent>
       <CardFooter>
         <div className="flex w-full items-center justify-end gap-4">
-          {vendor && vendor.website && (
+          {vendor?.website && (
             <div>
-              <a
-                href={withProtocol(vendor.website)}
-                target="_blank"
-                rel="noopener noreferrer">
+              <a href={withProtocol(vendor.website)} target="_blank" rel="noopener noreferrer">
                 <Button variant="secondary">
                   <ExternalLink className="size-4" />
                   Vendor Website
@@ -86,10 +63,7 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
           )}
           {item.sourcingLink && (
             <div>
-              <a
-                href={withProtocol(item.sourcingLink)}
-                target="_blank"
-                rel="noopener noreferrer">
+              <a href={withProtocol(item.sourcingLink)} target="_blank" rel="noopener noreferrer">
                 <Button variant="secondary">
                   <ExternalLink className="size-4" />
                   Product Website

@@ -208,6 +208,7 @@ export default function ClientProfilePage({ params }: PageProps) {
         submitting={addingProject}
         lockedClientId={client.uid}
         clientName={clientName}
+        clients={[client]}
         onSubmit={handleAddProject}
       />
 

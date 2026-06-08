@@ -107,7 +107,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
         </div>
       </CardContent>
       <CardFooter className="flex items-center justify-center text-muted-foreground">
-        <div className="h-6 flex items-center gap-3">
+        <div className="flex h-6 items-center gap-3">
           {websiteHref ? (
             <Tooltip>
               <TooltipTrigger asChild>

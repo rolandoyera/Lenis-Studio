@@ -3,10 +3,11 @@
 import { useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { DollarSign, Loader2 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -17,10 +18,12 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Client } from "@/lib/types";
+import { formatCurrency, formatZip } from "@/lib/utils";
 
 import { EMPTY_PROJECT_FORM, PROJECT_STATUSES, type ProjectFormData, projectSchema } from "./project-constants";
 
@@ -63,10 +66,25 @@ export function ProjectFormDialog({
     clientId: lockedClientId ?? initialData?.clientId ?? "",
   });
 
-  const { control, handleSubmit, reset } = useForm<ProjectFormData>({
+  const { control, handleSubmit, reset, watch, setValue } = useForm<ProjectFormData>({
     resolver: zodResolver(projectSchema),
     defaultValues: seed(),
   });
+
+  const sameAsMain = watch("sameAsMain");
+  const clientId = watch("clientId");
+
+  useEffect(() => {
+    if (sameAsMain && clientId) {
+      const client = clients?.find((c) => c.uid === clientId);
+      if (client) {
+        setValue("street", client.street ?? "");
+        setValue("city", client.city ?? "");
+        setValue("state", client.state ?? "");
+        setValue("zip", client.zip ?? "");
+      }
+    }
+  }, [sameAsMain, clientId, clients, setValue]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reseed only when the dialog opens
   useEffect(() => {
@@ -132,11 +150,7 @@ export function ProjectFormDialog({
                   <Label className={LABEL_CLASS}>
                     Project Title <span className="ml-0.5 text-destructive">*</span>
                   </Label>
-                  <Input
-                    {...field}
-                    placeholder="e.g. Penthouse Living Room, Coastal Kitchen"
-                    aria-invalid={fieldState.invalid}
-                  />
+                  <Input {...field} placeholder="e.g. Golden Dreams" aria-invalid={fieldState.invalid} />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -148,8 +162,22 @@ export function ProjectFormDialog({
                 name="budget"
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                    <Label className={LABEL_CLASS}>Project Budget Pool</Label>
-                    <Input {...field} placeholder="e.g. $150,000" aria-invalid={fieldState.invalid} />
+                    <Label className={LABEL_CLASS}>Project Budget</Label>
+                    <InputGroup>
+                      <InputGroupAddon align="inline-start">
+                        <DollarSign className="size-4" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          field.onChange(
+                            digits ? formatCurrency(Number(digits), { noDecimals: true, noSymbol: true }) : "",
+                          );
+                        }}
+                      />
+                    </InputGroup>
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
@@ -178,17 +206,92 @@ export function ProjectFormDialog({
               />
             </div>
 
-            <Controller
-              control={control}
-              name="address"
-              render={({ field, fieldState }) => (
-                <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                  <Label className={LABEL_CLASS}>Site / Shipping Address</Label>
-                  <Input {...field} placeholder="e.g. 100 Ocean Drive, Newport, RI" aria-invalid={fieldState.invalid} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                </Field>
-              )}
-            />
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+              <Controller
+                control={control}
+                name="sameAsMain"
+                render={({ field }) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox id="same-as-main-checkbox" checked={field.value} onCheckedChange={field.onChange} />
+                    <Label
+                      size="large"
+                      htmlFor="same-as-main-checkbox"
+                      className="cursor-pointer select-none leading-none"
+                    >
+                      Same as client's main address
+                    </Label>
+                  </div>
+                )}
+              />
+            </div>
+
+            <div
+              className="grid transition-all duration-300 ease-in-out"
+              style={{ gridTemplateRows: !sameAsMain ? "1fr" : "0fr" }}
+            >
+              <div className="-mx-1 overflow-hidden px-1">
+                <div className="flex flex-col gap-4 pt-1 pb-4">
+                  <Controller
+                    control={control}
+                    name="street"
+                    render={({ field, fieldState }) => (
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>Street Address</Label>
+                        <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+                  <div className="grid grid-cols-4 gap-4">
+                    <Controller
+                      control={control}
+                      name="city"
+                      render={({ field, fieldState }) => (
+                        <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                          <Label className={LABEL_CLASS}>City</Label>
+                          <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
+                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      control={control}
+                      name="state"
+                      render={({ field, fieldState }) => (
+                        <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                          <Label className={LABEL_CLASS}>State</Label>
+                          <Input
+                            {...field}
+                            maxLength={2}
+                            aria-invalid={fieldState.invalid}
+                            autoComplete="one-time-code"
+                          />
+                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        </Field>
+                      )}
+                    />
+                    <Controller
+                      control={control}
+                      name="zip"
+                      render={({ field, fieldState }) => (
+                        <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                          <Label className={LABEL_CLASS}>ZIP</Label>
+                          <Input
+                            {...field}
+                            inputMode="numeric"
+                            maxLength={5}
+                            aria-invalid={fieldState.invalid}
+                            onChange={(e) => field.onChange(formatZip(e.target.value))}
+                            autoComplete="one-time-code"
+                          />
+                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        </Field>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <Controller
               control={control}

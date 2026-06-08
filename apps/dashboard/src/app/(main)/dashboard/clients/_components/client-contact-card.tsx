@@ -1,22 +1,8 @@
-import {
-  Building2,
-  ExternalLink,
-  Mail,
-  MapPin,
-  Phone,
-  User,
-  Users,
-} from "lucide-react";
+import { Building2, ExternalLink, Mail, MapPin, Phone, User, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import type { Client } from "@/lib/types";
 import { formatPhone, formatTaxId, normalizePhone } from "@/lib/utils";
@@ -48,21 +34,11 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                     {client.street && <span>{client.street}</span>}
                     {(client.city || client.state || client.zip) && (
                       <span className="mt-0.5">
-                        {[
-                          client.city,
-                          [client.state, client.zip].filter(Boolean).join(" "),
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
+                        {[client.city, [client.state, client.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
                       </span>
                     )}
                     {(() => {
-                      const fullAddress = [
-                        client.street,
-                        client.city,
-                        client.state,
-                        client.zip,
-                      ]
+                      const fullAddress = [client.street, client.city, client.state, client.zip]
                         .filter(Boolean)
                         .join(", ");
                       return (
@@ -71,7 +47,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                            className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                          >
                             google maps
                             <ExternalLink className="size-3" />
                           </a>
@@ -99,13 +76,12 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                 {client.taxable ? (
                   <Badge
                     variant="default"
-                    className="flex h-5 w-fit items-center px-2 py-0 bg-primary/10 text-primary border border-primary/20">
+                    className="flex h-5 w-fit items-center border border-primary/20 bg-primary/10 px-2 py-0 text-primary"
+                  >
                     Taxable
                   </Badge>
                 ) : (
-                  <Badge
-                    variant="outline"
-                    className="flex h-5 w-fit items-center px-2 py-0 text-muted-foreground">
+                  <Badge variant="outline" className="flex h-5 w-fit items-center px-2 py-0 text-muted-foreground">
                     Tax Exempt
                   </Badge>
                 )}
@@ -130,11 +106,10 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                 <Label className="mb-1">Email Address</Label>
                 <a
                   href={`mailto:${client.email}`}
-                  className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary">
+                  className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
+                >
                   <Mail className="size-4 shrink-0 text-primary" />
-                  <span className="truncate group-hover:underline">
-                    {client.email}
-                  </span>
+                  <span className="truncate group-hover:underline">{client.email}</span>
                 </a>
               </div>
             )}
@@ -144,11 +119,10 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                 <Label className="mb-1">Phone Number</Label>
                 <a
                   href={`tel:${normalizePhone(client.phone)}`}
-                  className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary">
+                  className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
+                >
                   <Phone className="size-4 shrink-0 text-primary" />
-                  <span className="group-hover:underline">
-                    {formatPhone(client.phone)}
-                  </span>
+                  <span className="group-hover:underline">{formatPhone(client.phone)}</span>
                 </a>
               </div>
             )}
@@ -164,18 +138,13 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
         </a>
         {client.phone ? (
           <a href={`tel:${normalizePhone(client.phone)}`} className="w-fit">
-            <Button
-              variant="secondary"
-              className="flex w-20 items-center justify-center gap-1.5 text-xs">
+            <Button variant="secondary" className="flex w-20 items-center justify-center gap-1.5 text-xs">
               <Phone className="size-3.5" />
               Call
             </Button>
           </a>
         ) : (
-          <Button
-            variant="outline"
-            disabled
-            className="flex w-full items-center justify-center gap-1.5 text-xs">
+          <Button variant="outline" disabled className="flex w-full items-center justify-center gap-1.5 text-xs">
             <Phone className="size-3.5" />
             Call
           </Button>

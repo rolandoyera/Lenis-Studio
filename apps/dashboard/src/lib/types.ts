@@ -22,6 +22,11 @@ export interface Project {
   clientId: string;
   name: string;
   address?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  sameAsMain?: boolean;
   status: "Active" | "Completed" | "Paused";
   budget?: string;
   notes?: string;

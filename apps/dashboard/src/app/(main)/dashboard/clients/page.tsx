@@ -4,30 +4,14 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import {
-  Building2,
-  FolderKanban,
-  Loader2,
-  Mail,
-  MapPin,
-  Phone,
-  Plus,
-  Search,
-  User,
-  Users,
-} from "lucide-react";
+import { Building2, FolderKanban, Loader2, Mail, MapPin, Phone, Plus, Search, User, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { H1, H3 } from "@/components/ui/typography";
 import { addClient, getClients, getProjects } from "@/lib/db";
@@ -62,10 +46,7 @@ export default function ClientsPage() {
 
     async function loadData() {
       try {
-        const [clientsData, projectsData] = await Promise.all([
-          getClients(orgId),
-          getProjects(orgId),
-        ]);
+        const [clientsData, projectsData] = await Promise.all([getClients(orgId), getProjects(orgId)]);
         setClients(clientsData);
         setProjects(projectsData);
       } catch (error) {
@@ -114,8 +95,7 @@ export default function ClientsPage() {
       typeof (client as { fullName?: string }).fullName === "string" &&
       (client as { fullName?: string }).fullName?.trim()
     ) {
-      firstName =
-        (client as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
+      firstName = (client as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
     }
 
     let lastName = "";
@@ -125,12 +105,7 @@ export default function ClientsPage() {
       typeof (client as { fullName?: string }).fullName === "string" &&
       (client as { fullName?: string }).fullName?.trim()
     ) {
-      lastName =
-        (client as { fullName?: string }).fullName
-          ?.trim()
-          .split(" ")
-          .slice(1)
-          .join(" ") || "";
+      lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
     }
 
     const email = typeof client.email === "string" ? client.email : "";
@@ -154,13 +129,13 @@ export default function ClientsPage() {
           <div>
             <H1>Client Directory</H1>
             <p className="mt-1 text-muted-foreground text-sm">
-              Manage your design clients, corporate account brief contracts, and
-              multi-project relationships.
+              Manage your design clients, corporate account brief contracts, and multi-project relationships.
             </p>
           </div>
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
+            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
+          >
             <Plus className="size-4" />
             Add Client Profile
           </Button>
@@ -193,9 +168,7 @@ export default function ClientsPage() {
                 : "Create your first client contact sheet to start attaching design projects."}
             </p>
             {!searchQuery && (
-              <Button
-                onClick={() => setIsDialogOpen(true)}
-                className="mt-4 flex items-center gap-2">
+              <Button onClick={() => setIsDialogOpen(true)} className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
                 Add Client profile
               </Button>
@@ -205,69 +178,42 @@ export default function ClientsPage() {
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {filteredClients.map((client) => {
               let firstName = "";
-              if (
-                typeof client.firstName === "string" &&
-                client.firstName.trim()
-              ) {
+              if (typeof client.firstName === "string" && client.firstName.trim()) {
                 firstName = client.firstName.trim();
               } else if (
-                typeof (client as { fullName?: string }).fullName ===
-                  "string" &&
+                typeof (client as { fullName?: string }).fullName === "string" &&
                 (client as { fullName?: string }).fullName?.trim()
               ) {
-                firstName =
-                  (client as { fullName?: string }).fullName
-                    ?.trim()
-                    .split(" ")[0] || "";
+                firstName = (client as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
               }
 
               let lastName = "";
-              if (
-                typeof client.lastName === "string" &&
-                client.lastName.trim()
-              ) {
+              if (typeof client.lastName === "string" && client.lastName.trim()) {
                 lastName = client.lastName.trim();
               } else if (
-                typeof (client as { fullName?: string }).fullName ===
-                  "string" &&
+                typeof (client as { fullName?: string }).fullName === "string" &&
                 (client as { fullName?: string }).fullName?.trim()
               ) {
-                lastName =
-                  (client as { fullName?: string }).fullName
-                    ?.trim()
-                    .split(" ")
-                    .slice(1)
-                    .join(" ") || "";
+                lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
               }
 
-              const clientProjects = projects.filter(
-                (p) => p.clientId === client.uid,
-              );
+              const clientProjects = projects.filter((p) => p.clientId === client.uid);
 
               return (
                 <Card
                   key={client.uid}
-                  className="group relative flex h-full flex-col overflow-hidden transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
+                  className="group relative flex h-full flex-col overflow-hidden transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md"
+                >
                   <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
-                    <Link
-                      href={`/dashboard/clients/${client.uid}`}
-                      className="detail-link cursor-pointer shrink-0">
+                    <Link href={`/dashboard/clients/${client.uid}`} className="detail-link shrink-0 cursor-pointer">
                       <Avatar className="size-12">
-                        {client.company ? (
-                          <Building2 className="size-6" />
-                        ) : (
-                          <User className="size-6" />
-                        )}
+                        {client.company ? <Building2 className="size-6" /> : <User className="size-6" />}
                       </Avatar>
                     </Link>
                     <div className="min-w-0 flex-1">
                       <H3 className="truncate transition-colors group-has-[.detail-link:hover]:text-primary">
-                        <Link
-                          href={`/dashboard/clients/${client.uid}`}
-                          className="detail-link cursor-pointer">
-                          {client.company
-                            ? client.company
-                            : `${firstName} ${lastName}`}
+                        <Link href={`/dashboard/clients/${client.uid}`} className="detail-link cursor-pointer">
+                          {client.company ? client.company : `${firstName} ${lastName}`}
                         </Link>
                       </H3>
                       {client.company ? (
@@ -276,9 +222,7 @@ export default function ClientsPage() {
                           {firstName} {lastName}
                         </p>
                       ) : (
-                        <p className="mt-0.5 text-muted-foreground/50 text-xs italic">
-                          Private Residence
-                        </p>
+                        <p className="mt-0.5 text-muted-foreground/50 text-xs italic">Private Residence</p>
                       )}
                     </div>
                   </CardHeader>
@@ -298,11 +242,7 @@ export default function ClientsPage() {
                       {(client.city || client.state) && (
                         <div className="flex items-center gap-2 truncate">
                           <MapPin className="size-3.5 shrink-0 text-muted-foreground/85" />
-                          <span className="truncate">
-                            {[client.city, client.state]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </span>
+                          <span className="truncate">{[client.city, client.state].filter(Boolean).join(", ")}</span>
                         </div>
                       )}
                     </div>

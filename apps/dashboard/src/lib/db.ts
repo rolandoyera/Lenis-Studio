@@ -13,7 +13,6 @@ import {
 } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
-import { mockClients, mockLibraryItems, mockProjects, mockVendors } from "@/data/mock-studio";
 import { db, storage } from "@/lib/firebase";
 
 import type { Client, DiagnosticRun, LibraryItem, Organization, Project, Proposal, UserProfile, Vendor } from "./types";
@@ -42,17 +41,8 @@ export async function getClient(uid: string): Promise<Client | null> {
 
 export async function getClients(organizationId: string): Promise<Client[]> {
   try {
+    console.log("[db.ts] getClients called for org:", organizationId);
     const collRef = collection(db, "clients");
-    const snapshot = await getDocs(collRef);
-
-    if (snapshot.empty) {
-      // Seed default mock clients
-      console.log("Seeding mock clients to Firestore...");
-      for (const client of mockClients) {
-        await setDoc(doc(db, "clients", client.uid), client);
-      }
-    }
-
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
 
@@ -104,17 +94,8 @@ export async function getVendor(vendorId: string): Promise<Vendor | null> {
 
 export async function getVendors(organizationId: string): Promise<Vendor[]> {
   try {
+    console.log("[db.ts] getVendors called for org:", organizationId);
     const collRef = collection(db, "vendors");
-    const snapshot = await getDocs(collRef);
-
-    if (snapshot.empty) {
-      // Seed default mock vendors
-      console.log("Seeding mock vendors to Firestore...");
-      for (const vendor of mockVendors) {
-        await setDoc(doc(db, "vendors", vendor.vendorId), vendor);
-      }
-    }
-
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
 
@@ -192,17 +173,8 @@ export async function deleteVendor(vendorOrId: Vendor | string): Promise<void> {
 
 export async function getProjects(organizationId: string): Promise<Project[]> {
   try {
+    console.log("[db.ts] getProjects called for org:", organizationId);
     const collRef = collection(db, "projects");
-    const snapshot = await getDocs(collRef);
-
-    if (snapshot.empty) {
-      // Seed default mock projects
-      console.log("Seeding mock projects to Firestore...");
-      for (const project of mockProjects) {
-        await setDoc(doc(db, "projects", project.projectId), project);
-      }
-    }
-
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
 
@@ -220,8 +192,19 @@ export async function getProjects(organizationId: string): Promise<Project[]> {
 
 export async function addProject(project: Omit<Project, "projectId" | "createdAt">): Promise<Project> {
   const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
+  const address = [project.street, [project.city, project.state].filter(Boolean).join(", "), project.zip]
+    .filter(Boolean)
+    .join(" ");
+
+  let budget = project.budget;
+  if (budget && budget.trim() && !budget.startsWith("$")) {
+    budget = `$${budget.trim()}`;
+  }
+
   const newProject: Project = {
     ...project,
+    address: address || project.address,
+    budget,
     projectId,
     createdAt: Date.now(),
   };
@@ -231,7 +214,32 @@ export async function addProject(project: Omit<Project, "projectId" | "createdAt
 
 export async function updateProject(projectId: string, project: Partial<Project>): Promise<void> {
   const docRef = doc(db, "projects", projectId);
-  await updateDoc(docRef, cleanUndefined({ ...project }));
+  const updatedProject: Partial<Project> = {
+    ...project,
+  };
+
+  if (project.budget !== undefined) {
+    let budget = project.budget;
+    if (budget && budget.trim() && !budget.startsWith("$")) {
+      budget = `$${budget.trim()}`;
+    }
+    updatedProject.budget = budget;
+  }
+
+  const hasAddressFields =
+    project.street !== undefined ||
+    project.city !== undefined ||
+    project.state !== undefined ||
+    project.zip !== undefined;
+
+  if (hasAddressFields) {
+    const address = [project.street, [project.city, project.state].filter(Boolean).join(", "), project.zip]
+      .filter(Boolean)
+      .join(" ");
+    updatedProject.address = address;
+  }
+
+  await updateDoc(docRef, cleanUndefined(updatedProject));
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
@@ -256,17 +264,8 @@ export async function getLibraryItem(itemId: string): Promise<LibraryItem | null
 
 export async function getLibraryItems(organizationId: string): Promise<LibraryItem[]> {
   try {
+    console.log("[db.ts] getLibraryItems called for org:", organizationId);
     const collRef = collection(db, "library");
-    const snapshot = await getDocs(collRef);
-
-    if (snapshot.empty) {
-      // Seed default mock library items
-      console.log("Seeding mock library items to Firestore...");
-      for (const item of mockLibraryItems) {
-        await setDoc(doc(db, "library", item.itemId), item);
-      }
-    }
-
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
 

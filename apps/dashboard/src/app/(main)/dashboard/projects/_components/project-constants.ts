@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { Project } from "@/lib/types";
+import { formatCurrency, formatZip, isValidUsZip } from "@/lib/utils";
 
 export const PROJECT_STATUSES = ["Active", "Completed", "Paused"] as const;
 
@@ -9,7 +10,11 @@ export const projectSchema = z.object({
   name: z.string().min(1, "Project title is required."),
   status: z.enum(PROJECT_STATUSES),
   budget: z.string(),
-  address: z.string(),
+  sameAsMain: z.boolean(),
+  street: z.string(),
+  city: z.string(),
+  state: z.string(),
+  zip: z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
   notes: z.string(),
 });
 
@@ -20,18 +25,36 @@ export const EMPTY_PROJECT_FORM: ProjectFormData = {
   name: "",
   status: "Active",
   budget: "",
-  address: "",
+  sameAsMain: false,
+  street: "",
+  city: "",
+  state: "",
+  zip: "",
   notes: "",
 };
 
 /** Map an existing project onto the editable form shape. */
 export function projectToForm(project: Project): ProjectFormData {
+  const streetVal =
+    project.street !== undefined && project.street !== ""
+      ? project.street
+      : !project.city && !project.state && !project.zip
+        ? project.address
+        : "";
+  const budgetDigits = (project.budget ?? "").toString().replace(/\D/g, "");
+  const budgetFormatted = budgetDigits
+    ? formatCurrency(Number(budgetDigits), { noDecimals: true, noSymbol: true })
+    : "";
   return {
     clientId: project.clientId,
     name: project.name,
     status: project.status,
-    budget: project.budget ?? "",
-    address: project.address ?? "",
+    budget: budgetFormatted,
+    sameAsMain: project.sameAsMain ?? false,
+    street: streetVal ?? "",
+    city: project.city ?? "",
+    state: project.state ?? "",
+    zip: formatZip(project.zip ?? ""),
     notes: project.notes ?? "",
   };
 }

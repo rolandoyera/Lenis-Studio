@@ -438,7 +438,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
                   {/* BRAND LOGO CARD (Aspect ratio 1:1, takes 4 columns on desktop) */}
-                  <div className="sm:col-span-4 flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 sm:col-span-4">
                     <Label className={LABEL_CLASS}>Logo</Label>
                     <div className="group/logo relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-background transition-all hover:border-primary/50">
                       {uploadingLogo ? (
@@ -453,10 +453,10 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                             alt="Brand Logo"
                             className="absolute inset-0 size-full object-contain p-3"
                           />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover/logo:opacity-100 flex items-center justify-center gap-2">
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover/logo:opacity-100">
                             <Label
                               htmlFor="vendor-logo-uploader"
-                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100"
+                              className="cursor-pointer rounded bg-white px-2 py-1 font-medium text-[10px] text-black hover:bg-gray-100"
                             >
                               Change
                             </Label>
@@ -466,7 +466,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                                 setValue("logoUrl", "");
                                 setValue("logoPath", "");
                               }}
-                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
+                              className="rounded bg-destructive px-2 py-1 font-medium text-[10px] text-destructive-foreground hover:bg-destructive/90"
                             >
                               Remove
                             </button>
@@ -478,8 +478,8 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                           className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
                         >
                           <Upload className="size-6 text-muted-foreground/40" />
-                          <p className="text-[11px] font-medium">Upload Logo</p>
-                          <p className="text-muted-foreground/50 text-[9px]">Max 5MB</p>
+                          <p className="font-medium text-[11px]">Upload Logo</p>
+                          <p className="text-[9px] text-muted-foreground/50">Max 5MB</p>
                         </Label>
                       )}
                     </div>
@@ -490,7 +490,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                         variant="outline"
                         size="sm"
                         onClick={() => setPickerOpen(true)}
-                        className="mt-1 w-full text-[10px] h-7 gap-1"
+                        className="mt-1 h-7 w-full gap-1 text-[10px]"
                       >
                         <Image className="size-3" /> Select Logo Candidate
                       </Button>
@@ -498,7 +498,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                   </div>
 
                   {/* HERO BANNER CARD (Aspect ratio 16:9, takes 8 columns on desktop) */}
-                  <div className="sm:col-span-8 flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 sm:col-span-8">
                     <Label className={LABEL_CLASS}>Hero Banner</Label>
                     <div className="group/hero relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-background transition-all hover:border-primary/50">
                       {uploadingHero ? (
@@ -513,10 +513,10 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                             alt="Hero Showcase"
                             className="absolute inset-0 size-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover/hero:opacity-100 flex items-center justify-center gap-2">
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover/hero:opacity-100">
                             <Label
                               htmlFor="vendor-hero-uploader"
-                              className="cursor-pointer rounded bg-white px-2 py-1 text-[10px] font-medium text-black hover:bg-gray-100"
+                              className="cursor-pointer rounded bg-white px-2 py-1 font-medium text-[10px] text-black hover:bg-gray-100"
                             >
                               Change
                             </Label>
@@ -526,7 +526,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                                 setValue("heroImageUrl", "");
                                 setValue("heroImagePath", "");
                               }}
-                              className="rounded bg-destructive px-2 py-1 text-[10px] font-medium text-destructive-foreground hover:bg-destructive/90"
+                              className="rounded bg-destructive px-2 py-1 font-medium text-[10px] text-destructive-foreground hover:bg-destructive/90"
                             >
                               Remove
                             </button>
@@ -538,8 +538,8 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                           className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
                         >
                           <Upload className="size-6 text-muted-foreground/40" />
-                          <p className="text-[11px] font-medium">Upload Hero Banner</p>
-                          <p className="text-muted-foreground/50 text-[9px]">Max 5MB</p>
+                          <p className="font-medium text-[11px]">Upload Hero Banner</p>
+                          <p className="text-[9px] text-muted-foreground/50">Max 5MB</p>
                         </Label>
                       )}
                     </div>
@@ -550,7 +550,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                         variant="outline"
                         size="sm"
                         onClick={() => setPickerOpen(true)}
-                        className="mt-1 w-full text-[10px] h-7 gap-1"
+                        className="mt-1 h-7 w-full gap-1 text-[10px]"
                       >
                         <Image className="size-3" /> Select Hero Candidate
                       </Button>

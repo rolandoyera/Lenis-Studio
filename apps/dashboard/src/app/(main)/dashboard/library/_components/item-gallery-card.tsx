@@ -3,12 +3,7 @@
 import { Image, ShoppingBag } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import type { LibraryItem } from "@/lib/types";
 
 interface ItemGalleryCardProps {
@@ -18,11 +13,7 @@ interface ItemGalleryCardProps {
 }
 
 /** Sourcing gallery: large active preview plus a clickable thumbnail strip. */
-export function ItemGalleryCard({
-  item,
-  activeImage,
-  onSelectImage,
-}: ItemGalleryCardProps) {
+export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGalleryCardProps) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="h-6.5">
@@ -35,17 +26,11 @@ export function ItemGalleryCard({
       </CardHeader>
       <CardContent className="relative flex aspect-16/14.5 w-full items-center justify-center">
         {activeImage ? (
-          <img
-            src={activeImage}
-            alt={item.name}
-            className="absolute inset-0 size-full object-contain px-2"
-          />
+          <img src={activeImage} alt={item.name} className="absolute inset-0 size-full object-contain px-2" />
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 p-8 text-muted-foreground/30">
             <ShoppingBag className="size-16" />
-            <p className="text-xs uppercase tracking-wider">
-              No photos uploaded
-            </p>
+            <p className="text-xs uppercase tracking-wider">No photos uploaded</p>
           </div>
         )}
       </CardContent>
@@ -62,12 +47,9 @@ export function ItemGalleryCard({
                     ? "scale-105 border-primary ring-2 ring-primary/20"
                     : "border-border/60 hover:border-border"
                 }`}
-                onClick={() => onSelectImage(url)}>
-                <img
-                  src={url}
-                  alt="thumbnail"
-                  className="size-full object-cover"
-                />
+                onClick={() => onSelectImage(url)}
+              >
+                <img src={url} alt="thumbnail" className="size-full object-cover" />
               </button>
             ))}
           </div>

@@ -198,7 +198,7 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
       <img
         src={url}
         alt={`Thumbnail ${index + 1}`}
-        className="size-full object-cover select-none pointer-events-none"
+        className="pointer-events-none size-full select-none object-cover"
         draggable={false}
         onDragStart={(e) => e.preventDefault()}
       />
@@ -207,19 +207,19 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-1.5 left-1.5 z-20 flex size-6 cursor-all-scroll items-center justify-center rounded bg-black/60 text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-black"
+        className="absolute top-1.5 left-1.5 z-20 flex size-6 cursor-all-scroll items-center justify-center rounded bg-black/60 text-white opacity-0 transition-opacity hover:bg-black group-hover/thumb:opacity-100"
         title="Drag to sort"
       >
         <GripVertical className="size-4" />
       </div>
 
       {/* Action Ellipsis dropdown button in bottom-right */}
-      <div className="absolute bottom-1.5 right-1.5 z-20">
+      <div className="absolute right-1.5 bottom-1.5 z-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex size-6 items-center justify-center rounded bg-black/60 text-white hover:bg-black transition-colors cursor-pointer"
+              className="flex size-6 cursor-pointer items-center justify-center rounded bg-black/60 text-white transition-colors hover:bg-black"
               aria-label="Image actions"
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
@@ -250,7 +250,7 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
       </div>
 
       {index === 0 && (
-        <span className="absolute bottom-1.5 left-1.5 z-10 rounded bg-black/60 px-1 py-0.5 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs select-none">
+        <span className="absolute bottom-1.5 left-1.5 z-10 select-none rounded bg-black/60 px-1 py-0.5 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs">
           Cover
         </span>
       )}
@@ -1046,7 +1046,7 @@ export function LibraryItemFormDialog({
                       createPortal(
                         <DragOverlay adjustScale={true}>
                           {activeId ? (
-                            <div className="relative aspect-square overflow-hidden rounded-md border border-primary bg-background shadow-2xl scale-102 opacity-90 cursor-grabbing">
+                            <div className="relative aspect-square scale-102 cursor-grabbing overflow-hidden rounded-md border border-primary bg-background opacity-90 shadow-2xl">
                               <img
                                 src={activeId}
                                 alt="Dragging preview"

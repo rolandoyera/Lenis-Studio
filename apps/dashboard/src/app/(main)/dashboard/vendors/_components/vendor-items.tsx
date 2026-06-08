@@ -32,12 +32,9 @@ export function VendorItems({ items }: VendorItemsProps) {
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
             <ShoppingBag className="mb-2 size-10 text-muted-foreground/30" />
-            <p className="font-medium text-muted-foreground text-sm">
-              No linked products
-            </p>
+            <p className="font-medium text-muted-foreground text-sm">No linked products</p>
             <p className="mt-1 max-w-[240px] text-muted-foreground/60 text-xs">
-              Items from the product library will appear here when added to this
-              vendor.
+              Items from the product library will appear here when added to this vendor.
             </p>
           </div>
         ) : (
@@ -47,11 +44,7 @@ export function VendorItems({ items }: VendorItemsProps) {
                 {/* Thumbnail */}
                 <div className="flex size-32 shrink-0 items-center justify-center overflow-hidden rounded border border-border/50 bg-background/50">
                   {item.coverImageUrl ? (
-                    <img
-                      src={item.coverImageUrl}
-                      alt={item.name}
-                      className="h-full w-full object-contain p-0.5"
-                    />
+                    <img src={item.coverImageUrl} alt={item.name} className="h-full w-full object-contain p-0.5" />
                   ) : (
                     <ShoppingBag className="size-5 text-muted-foreground/30" />
                   )}
@@ -61,7 +54,8 @@ export function VendorItems({ items }: VendorItemsProps) {
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/dashboard/library/${item.itemId}`}
-                    className="line-clamp-1 font-heading font-semibold text-sm transition-colors hover:text-primary hover:underline">
+                    className="line-clamp-1 font-heading font-semibold text-sm transition-colors hover:text-primary hover:underline"
+                  >
                     {item.name}
                   </Link>
                   <div className="mt-0.5 flex items-center gap-2">

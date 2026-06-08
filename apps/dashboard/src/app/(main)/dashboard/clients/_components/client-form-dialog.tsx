@@ -20,7 +20,7 @@ import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { formatPhone, formatTaxId, normalizeTaxId } from "@/lib/utils";
+import { formatPhone, formatTaxId, formatZip, normalizeTaxId } from "@/lib/utils";
 
 import { type ClientFormData, clientSchema, EMPTY_CLIENT_FORM } from "./client-constants";
 
@@ -129,8 +129,8 @@ export function ClientFormDialog({
               className="grid transition-all duration-300 ease-in-out"
               style={{ gridTemplateRows: isCompany ? "1fr" : "0fr" }}
             >
-              <div className="overflow-hidden">
-                <div className="grid grid-cols-2 gap-4 pb-4">
+              <div className="-mx-1 overflow-hidden px-1">
+                <div className="grid grid-cols-2 gap-4 pt-1 pb-4">
                   <Controller
                     control={control}
                     name="company"
@@ -263,7 +263,13 @@ export function ClientFormDialog({
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                     <Label className={LABEL_CLASS}>ZIP Code</Label>
-                    <Input {...field} aria-invalid={fieldState.invalid} />
+                    <Input
+                      {...field}
+                      inputMode="numeric"
+                      maxLength={5}
+                      aria-invalid={fieldState.invalid}
+                      onChange={(e) => field.onChange(formatZip(e.target.value))}
+                    />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}

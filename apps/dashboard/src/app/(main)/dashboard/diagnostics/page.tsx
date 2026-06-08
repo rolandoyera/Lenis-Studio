@@ -296,7 +296,7 @@ export default function DiagnosticsPage() {
                           <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                             Extracted Name
                           </span>
-                          <div className="flex h-5 items-center w-full overflow-hidden">
+                          <div className="flex h-5 w-full items-center overflow-hidden">
                             <span className="truncate font-semibold text-foreground text-sm">
                               {selectedRun.parsedData?.name || (
                                 <em className="text-muted-foreground/50">Not extracted</em>
