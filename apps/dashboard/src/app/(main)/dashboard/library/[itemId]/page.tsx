@@ -93,7 +93,13 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
         },
         item.itemId,
       );
-      const updated = { ...form.formData, imageUrls, coverImageUrl, coverImagePath, images };
+      const updated = {
+        ...form.formData,
+        imageUrls,
+        coverImageUrl,
+        coverImagePath,
+        images,
+      };
 
       // Perform replacement cleanup
       const oldPaths = [item.coverImagePath, ...(item.images || []).map((img) => img.path)].filter(
@@ -150,7 +156,7 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
         <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-          Fetching Catalog Specifications
+          Fetching Item Specifications
         </p>
       </div>
     );
@@ -184,8 +190,8 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       <LibraryItemFormDialog
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
-        title="Edit Item Specifications"
-        submitLabel="Save Specifications"
+        title="Edit Item"
+        submitLabel="Save Item"
         submitting={updatingCatalog}
         onSubmit={handleEditSubmit}
         form={form}

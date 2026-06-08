@@ -57,6 +57,7 @@
   --text-xs: 10px;
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
 }
 
 /* Default theme styles (used when no data-theme-preset is set or when 'default' is selected).
@@ -97,12 +98,12 @@ These serve as the fallback; there is no separate default.css file. */
   --font-sans: var(--font-geist);
   --font-mono: var(--font-geist-mono);
   --background: oklch(0.9818 0.0054 95.0986);
-  --foreground: oklch(0.3438 0.0269 95.7226);
+  --foreground: oklch(0 0.0269 95.7226);
 }
 
 .dark {
   --background: oklch(0.2679 0.0036 106.6427);
-  --foreground: oklch(0.8074 0.0142 93.0137);
+  --foreground: oklch(0.8574 0.0142 93.0137);
   --card: oklch(0.2679 0.0036 106.6427);
   --card-foreground: oklch(0.9818 0.0054 95.0986);
   --popover: oklch(0.3085 0.0035 106.6039);

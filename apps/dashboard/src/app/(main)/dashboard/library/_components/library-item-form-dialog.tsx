@@ -403,8 +403,7 @@ export function LibraryItemFormDialog({
               {title}
             </DialogTitle>
             <DialogDescription>
-              Input sourcing attributes, materials, dimensions, dynamic vendor links, and perform real-time cost
-              calculation logic.
+              Input sourcing attributes, materials, dimensions, dynamic vendor links, and more.
             </DialogDescription>
           </DialogHeader>
 

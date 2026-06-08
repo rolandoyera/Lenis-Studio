@@ -700,7 +700,7 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
       referer = undefined;
     }
 
-    const res = await fetch(url, {
+    let res = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -711,6 +711,20 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
       cache: "no-store",
       signal: AbortSignal.timeout(15000),
     });
+
+    if (!res.ok) {
+      console.warn(`[fetchImageBytes] Direct fetch failed (status ${res.status}). Retrying via images.weserv.nl...`);
+      const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+      res = await fetch(proxyUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(15000),
+      });
+    }
+
     if (!res.ok) {
       return {
         success: false,
@@ -733,6 +747,30 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
 
     return { success: true, base64: buffer.toString("base64"), contentType };
   } catch (error: unknown) {
+    try {
+      console.warn(`[fetchImageBytes] Direct fetch threw error. Retrying via images.weserv.nl...`, error);
+      const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+      const res = await fetch(proxyUrl, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(15000),
+      });
+      if (res.ok) {
+        const contentType = res.headers.get("content-type") ?? "image/jpeg";
+        if (contentType.startsWith("image/")) {
+          const buffer = Buffer.from(await res.arrayBuffer());
+          if (buffer.byteLength > 0 && buffer.byteLength <= MAX_MIRROR_BYTES) {
+            return { success: true, base64: buffer.toString("base64"), contentType };
+          }
+        }
+      }
+    } catch (fallbackError) {
+      console.error("[fetchImageBytes] Fallback proxy also failed:", fallbackError);
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unexpected error fetching the image.",

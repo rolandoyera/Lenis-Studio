@@ -1,4 +1,15 @@
-import { DM_Sans, Geist, Inter, Noto_Sans, Nunito_Sans, Outfit, Public_Sans, Raleway, Roboto } from "next/font/google";
+import {
+  DM_Sans,
+  Fraunces,
+  Geist,
+  Inter,
+  Noto_Sans,
+  Nunito_Sans,
+  Outfit,
+  Public_Sans,
+  Raleway,
+  Roboto,
+} from "next/font/google";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,6 +56,17 @@ const publicSans = Public_Sans({
   subsets: ["latin"],
   variable: "--font-public-sans",
 });
+
+// Global serif (variable font — full 100–900 weight axis, not part of the sans font picker)
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
+/** CSS variable className for the global serif, applied alongside `fontVars`. */
+export const serifFontVariable = fraunces.variable;
 
 export const fontRegistry = {
   geist: {
