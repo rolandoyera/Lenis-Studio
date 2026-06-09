@@ -272,8 +272,10 @@ export default function ProjectsPage() {
                       </div>
                     </div>
 
-                    <CardTitle className="line-clamp-1 font-heading font-semibold text-lg leading-tight transition-colors group-hover:text-primary">
-                      {project.name}
+                    <CardTitle className="line-clamp-1 font-heading font-semibold text-lg leading-tight transition-colors hover:text-primary">
+                      <Link href={`/dashboard/projects/${project.projectId}`} prefetch={false}>
+                        {project.name}
+                      </Link>
                     </CardTitle>
 
                     {parentClient ? (

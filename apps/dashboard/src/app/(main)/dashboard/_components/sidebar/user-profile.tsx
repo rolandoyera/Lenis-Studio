@@ -7,7 +7,6 @@ import { doc, setDoc } from "firebase/firestore";
 import { BadgeCheck, LogOut } from "lucide-react";
 
 import { useAuth } from "@/components/auth-context";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { db } from "@/lib/firebase";
 import { getInitials } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export function UserProfile() {
   const { user, profile, signOut } = useAuth();
@@ -37,18 +37,23 @@ export function UserProfile() {
   };
 
   if (!profile) {
-    return <div className="size-8 animate-pulse rounded-lg border border-border/20 bg-muted/60" />;
+    return (
+      <div className="size-8 animate-pulse rounded-lg border border-border/20 bg-muted/60" />
+    );
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="hover:cursor-pointer">
-        <Avatar className="size-9 rounded-lg">
-          <AvatarImage src={user?.photoURL || undefined} alt={profile.fullName} />
-          <AvatarFallback>{getInitials(profile.fullName)}</AvatarFallback>
-        </Avatar>
+        <Button size="icon" variant="secondary">
+          {getInitials(profile.fullName)}
+        </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="mt-2 min-w-56 space-y-1 rounded-lg" side="bottom" align="end" sideOffset={4}>
+      <DropdownMenuContent
+        className="mt-2 min-w-56 space-y-1 rounded-lg"
+        side="bottom"
+        align="end"
+        sideOffset={4}>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/profile" className="hover:cursor-pointer">

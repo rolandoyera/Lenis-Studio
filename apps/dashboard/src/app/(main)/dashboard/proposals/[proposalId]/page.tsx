@@ -1,61 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Image from "next/image";
 import { useParams } from "next/navigation";
 
-import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  type DragStartEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { closestCenter, DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { GripVertical, PanelRight, Plus, Trash2, X } from "lucide-react";
 
-import {
-  ArmchairIcon,
-  CoffeeTableIcon,
-  ConsoleTableIcon,
-  RugIcon,
-  SofaIcon,
-} from "@/components/icons/furniture-icons";
+import { ArmchairIcon, CoffeeTableIcon, ConsoleTableIcon, RugIcon, SofaIcon } from "@/components/icons/furniture-icons";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatCurrency } from "@/lib/utils";
+import { useSidebar } from "@/components/ui/sidebar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { cn, formatCurrency } from "@/lib/utils";
 
-const UNIT_TYPES = [
-  "Each",
-  "Per Ft",
-  "Per Sq Ft",
-  "Per Yd",
-  "Lump Sum",
-] as const;
+const UNIT_TYPES = ["Each", "Per Ft", "Per Sq Ft", "Per Yd", "Lump Sum"] as const;
 type UnitType = (typeof UNIT_TYPES)[number];
 
 interface LineItem {
@@ -90,8 +54,7 @@ const INITIAL_ITEMS: LineItem[] = [
     materials: "Leather & Brass",
     finishColor: "Cream",
     room: "Living Room",
-    description:
-      "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
+    description: "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
     dimensions: "168″ W × 77″ D × 35″ H",
     unitType: "Each",
     qty: 1,
@@ -105,8 +68,7 @@ const INITIAL_ITEMS: LineItem[] = [
     materials: "Leather & Brass",
     finishColor: "Cream",
     room: "Living Room",
-    description:
-      "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
+    description: "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
     dimensions: "168″ W × 77″ D × 35″ H",
     unitType: "Each",
     qty: 1,
@@ -127,98 +89,66 @@ interface SortableRowProps {
 }
 
 function SortableRow({ item, onDelete, renderIcon }: SortableRowProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
 
   // Apply the sort transform/transition to the row itself (the measured node) so the
   // dragged row stays perfectly column-aligned. When active, lift it above its neighbors.
   const style: React.CSSProperties = {
-    transform: transform
-      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
-      : undefined,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
-    ...(isDragging
-      ? {
-          position: "relative",
-          zIndex: 10,
-          background: "var(--surface)",
-          boxShadow: "0 12px 30px rgba(60,50,40,0.15)",
-        }
-      : {}),
   };
 
   return (
-    <TableRow ref={setNodeRef} style={style}>
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={cn(isDragging && "relative z-10 bg-white! shadow-[0_12px_30px_rgba(60,50,40,0.15)] dark:bg-white/20!")}
+    >
       {/* Grip Handle Cell */}
       <TableCell className="px-4 py-5">
         <div
           {...attributes}
           {...listeners}
-          className="drag-handle flex cursor-grab touch-none items-center justify-center p-1 text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing">
+          className="drag-handle flex cursor-grab touch-none items-center justify-center p-1 text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing"
+        >
           <GripVertical className="size-4" />
         </div>
       </TableCell>
       <TableCell className="px-4 py-5">
-        <div className="thumb rounded-lg size-14 bg-muted/50 border flex items-center justify-center shrink-0">
-          <span className="text-muted-foreground">
-            {renderIcon(item.iconType)}
-          </span>
+        <div className="thumb flex size-14 shrink-0 items-center justify-center rounded-lg border bg-muted/50">
+          <span className="text-muted-foreground">{renderIcon(item.iconType)}</span>
         </div>
       </TableCell>
       <TableCell className="px-4 py-5">
         <div className="flex items-center gap-3.5">
           <div>
-            <div className="font-serif text-sm text-foreground">
-              {item.subcategory}
-            </div>
-            {item.name && (
-              <div className="text-[12px] text-muted-foreground">
-                {item.name}
-              </div>
-            )}
+            <div className="font-serif text-foreground text-sm">{item.subcategory}</div>
+            {item.name && <div className="text-[12px] text-muted-foreground">{item.name}</div>}
           </div>
         </div>
       </TableCell>
       <TableCell className="px-4 py-5">
-        <span className="text-[12px] text-muted-foreground">
-          {item.materials || "—"}
-        </span>
+        <span className="text-[12px] text-muted-foreground">{item.materials ?? "—"}</span>
       </TableCell>
       <TableCell className="px-4 py-5">
-        <span className="text-[12px] text-muted-foreground">
-          {item.finishColor || "—"}
-        </span>
+        <span className="text-[12px] text-muted-foreground">{item.finishColor ?? "—"}</span>
       </TableCell>
       <TableCell className="px-4 py-5">
-        <p className="text-[12px] text-muted-foreground max-w-80 text-ellipsis">
-          {item.description || "—"}
-        </p>
+        <p className="max-w-80 text-ellipsis text-[12px] text-muted-foreground">{item.description ?? "—"}</p>
       </TableCell>
-      <TableCell
-        className="text-muted-foreground text-[12px]"
-        style={{ textAlign: "left" }}>
-        {item.dimensions || "—"}
+      <TableCell className="text-[12px] text-muted-foreground" style={{ textAlign: "left" }}>
+        {item.dimensions ?? "—"}
       </TableCell>
-      <TableCell
-        className="text-muted-foreground text-[12px]"
-        style={{ textAlign: "left" }}>
+      <TableCell className="text-[12px] text-muted-foreground" style={{ textAlign: "left" }}>
         {item.unitType}
       </TableCell>
-      <TableCell className="text-muted-foreground text-[12px] text-right">
-        {item.qty}
-      </TableCell>
-      <TableCell className="text-muted-foreground text-[12px] text-right">
+      <TableCell className="text-right text-[12px] text-muted-foreground">{item.qty}</TableCell>
+      <TableCell className="text-right text-[12px] text-muted-foreground">
         {formatCurrency(item.sellingPrice, { noDecimals: true })}
       </TableCell>
-      <TableCell className="text-muted-foreground text-[12px] text-right">
+      <TableCell className="text-right text-[12px] text-muted-foreground">
         {formatCurrency(item.sellingPrice * item.qty, { noDecimals: true })}
       </TableCell>
       {/* Action Delete Cell */}
@@ -228,7 +158,8 @@ function SortableRow({ item, onDelete, renderIcon }: SortableRowProps) {
           variant="secondary"
           size="icon"
           onClick={() => onDelete(item.id)}
-          className="opacity-20 transition-all bg-destructive/10 hover:text-destructive hover:opacity-100">
+          className="bg-destructive/10 opacity-20 transition-all hover:text-destructive hover:opacity-100"
+        >
           <Trash2 className="size-4" />
         </Button>
       </TableCell>
@@ -240,12 +171,7 @@ function SortableRow({ item, onDelete, renderIcon }: SortableRowProps) {
  * Reorder a single room's items within the flat list, keeping every room's slots
  * in place. Safe even when rooms are interleaved in the global array.
  */
-function reorderWithinRoom(
-  items: LineItem[],
-  room: string,
-  activeId: string,
-  overId: string,
-): LineItem[] {
+function reorderWithinRoom(items: LineItem[], room: string, activeId: string, overId: string): LineItem[] {
   const positions: number[] = [];
   items.forEach((it, idx) => {
     if (it.room === room) positions.push(idx);
@@ -267,46 +193,29 @@ interface RoomSectionProps {
   room: string;
   items: LineItem[];
   sensors: ReturnType<typeof useSensors>;
-  onDragStart: (event: DragStartEvent) => void;
   onDragEnd: (room: string, event: DragEndEvent) => void;
-  onDragCancel: () => void;
   onDelete: (id: string) => void;
   renderIcon: (type: LineItem["iconType"]) => React.ReactNode;
 }
 
 /** A single room: its own sortable table and subtotal footer. */
-function RoomSection({
-  room,
-  items,
-  sensors,
-  onDragStart,
-  onDragEnd,
-  onDragCancel,
-  onDelete,
-  renderIcon,
-}: RoomSectionProps) {
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.sellingPrice * item.qty,
-    0,
-  );
+function RoomSection({ room, items, sensors, onDragEnd, onDelete, renderIcon }: RoomSectionProps) {
+  const subtotal = items.reduce((sum, item) => sum + item.sellingPrice * item.qty, 0);
 
   return (
     <Card>
       <CardHeader className="border-b">
-        <Button type="button" className="w-fit ml-auto">
+        <Button type="button" className="ml-auto w-fit" variant="secondary">
           <Plus className="size-4" /> Add Line Item
         </Button>
       </CardHeader>
       <CardContent>
         {/* Section Header */}
-        <div className="flex items-center justify-between py-6 px-9 border-b border-border">
+        <div className="flex items-center justify-between border-border border-b px-9 py-6">
           <div className="flex items-baseline gap-4">
-            <span className="italic font-light text-2xl tracking-tight font-serif">
-              {room}
-            </span>
-            <span className="text-[11px] tracking-[0.14em] font-light">
-              {ROOM_DIMENSIONS[room] ??
-                `${items.length} ${items.length === 1 ? "item" : "items"}`}
+            <span className="font-light font-serif text-2xl italic tracking-tight">{room}</span>
+            <span className="font-light text-[11px] tracking-[0.14em]">
+              {ROOM_DIMENSIONS[room] ?? `${items.length} ${items.length === 1 ? "item" : "items"}`}
             </span>
           </div>
         </div>
@@ -315,12 +224,11 @@ function RoomSection({
           sensors={sensors}
           collisionDetection={closestCenter}
           modifiers={[restrictToVerticalAxis]}
-          onDragStart={onDragStart}
           onDragEnd={(event) => onDragEnd(room, event)}
-          onDragCancel={onDragCancel}>
+        >
           <Table>
             <TableHeader>
-              <TableRow className="text-xs tracking-widest uppercase py-3.5 px-4">
+              <TableRow className="px-4 py-3.5 text-xs uppercase tracking-widest">
                 <TableHead className="w-10" />
                 <TableHead className="w-16" />
                 <TableHead style={{ width: "180px" }}>Item</TableHead>
@@ -330,22 +238,15 @@ function RoomSection({
                 <TableHead style={{ width: "230px" }}>Dimensions</TableHead>
                 <TableHead style={{ width: "90px" }}>Unit</TableHead>
                 <TableHead className="w-10">Qty</TableHead>
-                <TableHead className="text-right w-20">Price</TableHead>
-                <TableHead className="text-right w-24">Total</TableHead>
+                <TableHead className="w-20 text-right">Price</TableHead>
+                <TableHead className="w-24 text-right">Total</TableHead>
                 <TableHead style={{ width: "50px" }} />
               </TableRow>
             </TableHeader>
-            <SortableContext
-              items={items.map((item) => item.id)}
-              strategy={verticalListSortingStrategy}>
+            <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
               <TableBody className="border-b-0">
                 {items.map((item) => (
-                  <SortableRow
-                    key={item.id}
-                    item={item}
-                    onDelete={onDelete}
-                    renderIcon={renderIcon}
-                  />
+                  <SortableRow key={item.id} item={item} onDelete={onDelete} renderIcon={renderIcon} />
                 ))}
               </TableBody>
             </SortableContext>
@@ -355,19 +256,13 @@ function RoomSection({
 
       <CardFooter className="flex items-center justify-end gap-18">
         <div className="text-right">
-          <Label className="font-light uppercase tracking-widest mb-1">
-            Items
-          </Label>
-          <div className="font-serif text-2xl font-light tabular-nums">
-            {items.length}
-          </div>
+          <Label className="mb-1 font-light uppercase tracking-widest">Items</Label>
+          <div className="font-light font-serif text-2xl tabular-nums">{items.length}</div>
         </div>
-        <div className="w-px h-9 bg-border" />
+        <div className="h-9 w-px bg-border" />
         <div className="text-right">
-          <Label className="font-light uppercase tracking-widest mb-1">
-            Section Total
-          </Label>
-          <div className="font-serif text-2xl font-light tabular-nums">
+          <Label className="mb-1 font-light uppercase tracking-widest">Section Total</Label>
+          <div className="font-light font-serif text-2xl tabular-nums">
             {formatCurrency(subtotal, { noDecimals: true })}
           </div>
         </div>
@@ -381,7 +276,55 @@ export default function ProposalDetailPage() {
   const proposalId = params?.proposalId as string;
 
   const [items, setItems] = useState<LineItem[]>(INITIAL_ITEMS);
-  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const { open, setOpen, openMobile, setOpenMobile, isMobile } = useSidebar();
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
+  const [wasLeftSidebarOpen, setWasLeftSidebarOpen] = useState(false);
+
+  const toggleRightSidebar = () => {
+    if (rightSidebarOpen) {
+      if (!isMobile && wasLeftSidebarOpen) {
+        setOpen(true);
+      }
+      setRightSidebarOpen(false);
+      setWasLeftSidebarOpen(false);
+    } else {
+      if (isMobile) {
+        if (openMobile) {
+          setOpenMobile(false);
+        }
+      } else {
+        if (open) {
+          setWasLeftSidebarOpen(true);
+          setOpen(false);
+        } else {
+          setWasLeftSidebarOpen(false);
+        }
+      }
+      setRightSidebarOpen(true);
+    }
+  };
+
+  const closeRightSidebar = () => {
+    if (!isMobile && wasLeftSidebarOpen) {
+      setOpen(true);
+    }
+    setRightSidebarOpen(false);
+    setWasLeftSidebarOpen(false);
+  };
+
+  // Enforce single active sidebar logic
+  useEffect(() => {
+    if (rightSidebarOpen) {
+      if (isMobile && openMobile) {
+        setRightSidebarOpen(false);
+        setWasLeftSidebarOpen(false);
+      } else if (!isMobile && open) {
+        setRightSidebarOpen(false);
+        setWasLeftSidebarOpen(false);
+      }
+    }
+  }, [open, openMobile, isMobile, rightSidebarOpen]);
 
   // Group items into rooms (preserving first-appearance order), then total everything.
   const rooms = useMemo(() => {
@@ -402,10 +345,7 @@ export default function ProposalDetailPage() {
     }));
   }, [items]);
 
-  const grandTotal = items.reduce(
-    (sum, item) => sum + item.sellingPrice * item.qty,
-    0,
-  );
+  const grandTotal = items.reduce((sum, item) => sum + item.sellingPrice * item.qty, 0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -415,22 +355,11 @@ export default function ProposalDetailPage() {
     }),
   );
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
   // Reordering is scoped to the room the drag started in.
   const handleDragEnd = (room: string, event: DragEndEvent) => {
     const { active, over } = event;
-    setActiveId(null);
     if (!over || active.id === over.id) return;
-    setItems((prev) =>
-      reorderWithinRoom(prev, room, active.id as string, over.id as string),
-    );
-  };
-
-  const handleDragCancel = () => {
-    setActiveId(null);
+    setItems((prev) => reorderWithinRoom(prev, room, active.id as string, over.id as string));
   };
 
   // CRUD actions
@@ -445,50 +374,50 @@ export default function ProposalDetailPage() {
 
   return (
     <div
-      data-content-padding="false"
-      className={`bg-card proposal-page-container min-h-screen w-full`}>
-      {activeId && <style>{`* { cursor: grabbing !important; }`}</style>}
-      <style>{`
-        .proposal-page-container {
-          --surface: #ffffff;
-          --surface-2: #f2efe9;
-          --border-strong: rgba(60,50,40,0.18);
-          --text-primary: #1a1714;
-          --text-secondary: #5a5248;
-          --text-tertiary: #9a9088;
-          --accent: #c8a97e;
-          --accent-pale: #f5ede0;
-          --accent-text: #7a5c30;
-          --warning-bg: #fdf3e3;
-          --warning-text: #8a5c1a;
-          --warning-border: #e8c878;
-          color: var(--text-primary);
-          padding: 48px 60px;
-          -webkit-font-smoothing: antialiased;
-        }
-        /* ── Room Section ── */
-        .room-section {
-          background: var(--surface);
-          border-radius: 16px;
-          overflow: hidden;
-          border: 0.5px solid var(--border);
-        }
-        .proposal-header { animation: fadeUp 0.4s ease both; }
-        .room-section    { animation: fadeUp 0.5s 0.1s ease both; }
-      `}</style>
+      data-right-sidebar-open={rightSidebarOpen && !isMobile ? "true" : "false"}
+      className="proposal-page-container relative h-full w-full bg-card transition-[padding-right] duration-200 ease-linear"
+      style={{
+        paddingRight: rightSidebarOpen && !isMobile ? "calc(var(--spacing) * 90)" : undefined,
+      }}
+    >
+      {/* Right Sidebar Toggle Button */}
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={toggleRightSidebar}
+        className="fixed top-[72px] right-6 z-50 h-9 w-9 border border-border bg-sidebar text-sidebar-foreground shadow-sm transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      >
+        {rightSidebarOpen ? <X className="size-4" /> : <PanelRight className="size-4" />}
+      </Button>
+
+      {/* Mobile Backdrop */}
+      {rightSidebarOpen && isMobile && (
+        <button
+          type="button"
+          aria-label="Close Sidebar"
+          className="fixed inset-0 z-40 border-none bg-background/80 outline-none backdrop-blur-sm lg:hidden"
+          onClick={closeRightSidebar}
+        />
+      )}
+
+      <aside
+        className={cn(
+          "fixed inset-y-0 right-0 z-40 flex w-90 transform flex-col border-border border-l bg-sidebar pt-14 text-sidebar-foreground shadow-sm transition-transform duration-200 ease-linear lg:top-[56px] lg:right-[9px] lg:bottom-[12px] lg:rounded-br-lg lg:pt-0",
+          rightSidebarOpen ? "translate-x-0" : "translate-x-full",
+        )}
+      >
+        <div className="flex h-12 shrink-0 items-center px-6">
+          <span className="font-light font-serif text-foreground text-lg italic">Actions</span>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">{/* Empty for the moment */}</div>
+      </aside>
 
       {/* Header */}
-      <header className="flex items-start justify-between mb-12">
+      <header className="mb-12 flex items-start justify-between">
         <div>
-          <div className="size-11 flex items-center justify-center mb-2">
+          <div className="mb-2 flex size-11 items-center justify-center">
             {/* Company Logo Here */}
-            <Image
-              src="/logo_sdg-S-only.svg"
-              alt="Logo"
-              width={54}
-              height={54}
-              className="dark:invert"
-            />
+            <Image src="/logo_sdg-S-only.svg" alt="Logo" width={54} height={54} className="dark:invert" />
           </div>
           <div className="text-foreground">Fallback Co. Name</div>
         </div>
@@ -502,7 +431,7 @@ export default function ProposalDetailPage() {
             <Label size="large">Address</Label>
             <span>123 Main St</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 -mt-2">
+          <div className="-mt-2 grid grid-cols-2 gap-2">
             <Label size="large" />
             <span>Toronto, ON 55555</span>
           </div>
@@ -524,14 +453,12 @@ export default function ProposalDetailPage() {
 
       {/* Rooms — one sortable table per room */}
       {rooms.length === 0 ? (
-        <div className="room-section flex flex-col items-center justify-center gap-3 px-4 py-16 text-center">
-          <p className="font-medium text-(--text-secondary) text-sm">
-            No line items yet
-          </p>
+        <div className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center">
+          <p className="font-medium text-(--text-secondary) text-sm">No line items yet</p>
           <p className="max-w-[280px] text-(--text-tertiary) text-xs">
             Use “Add Line Item” to start building out rooms for this proposal.
           </p>
-          <Button type="button" variant="default">
+          <Button type="button" variant="secondary">
             <Plus className="size-4" /> Add Line Item
           </Button>
         </div>
@@ -543,9 +470,7 @@ export default function ProposalDetailPage() {
               room={room}
               items={roomItems}
               sensors={sensors}
-              onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
-              onDragCancel={handleDragCancel}
               onDelete={handleDeleteItem}
               renderIcon={renderIcon}
             />

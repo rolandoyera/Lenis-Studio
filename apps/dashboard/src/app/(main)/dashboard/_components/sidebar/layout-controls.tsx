@@ -52,7 +52,7 @@ export function LayoutControls() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button size="icon">
+        <Button variant="secondary" size="icon">
           <Settings />
         </Button>
       </PopoverTrigger>

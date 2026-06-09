@@ -171,6 +171,20 @@ export async function deleteVendor(vendorOrId: Vendor | string): Promise<void> {
 
 // --- PROJECT HELPER HOOKS & FUNCTIONS ---
 
+export async function getProject(projectId: string): Promise<Project | null> {
+  try {
+    const docRef = doc(db, "projects", projectId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as Project;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    return null;
+  }
+}
+
 export async function getProjects(organizationId: string): Promise<Project[]> {
   try {
     console.log("[db.ts] getProjects called for org:", organizationId);
