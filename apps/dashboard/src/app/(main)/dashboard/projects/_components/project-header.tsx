@@ -2,14 +2,7 @@
 
 import Link from "next/link";
 
-import {
-  Calendar,
-  Edit3,
-  FolderKanban,
-  MoreVertical,
-  Trash2,
-  User,
-} from "lucide-react";
+import { Calendar, Edit3, FolderKanban, MoreVertical, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,8 +39,7 @@ export function ProjectHeader({
   if (client) {
     const firstName = client.firstName?.trim() || "";
     const lastName = client.lastName?.trim() || "";
-    clientName =
-      `${firstName} ${lastName}`.trim() || client.company || "Unnamed Client";
+    clientName = `${firstName} ${lastName}`.trim() || client.company || "Unnamed Client";
   }
 
   return (
@@ -70,7 +62,8 @@ export function ProjectHeader({
                       : project.status === "Completed"
                         ? "border border-blue-500/20 bg-blue-500/15 text-blue-500"
                         : "border border-amber-500/20 bg-amber-500/15 text-amber-500"
-                  }`}>
+                  }`}
+                >
                   {project.status}
                 </span>
               </div>
@@ -79,14 +72,13 @@ export function ProjectHeader({
                   <Link
                     href={`/dashboard/clients/${client.uid}`}
                     prefetch={false}
-                    className="flex items-center gap-1 hover:text-primary hover:underline">
+                    className="flex items-center gap-1 hover:text-primary hover:underline"
+                  >
                     <User className="size-3.5 text-muted-foreground/80" />
                     Client: {clientName}
                   </Link>
                 ) : (
-                  <span className="text-muted-foreground/60 italic">
-                    No Client Assigned
-                  </span>
+                  <span className="text-muted-foreground/60 italic">No Client Assigned</span>
                 )}
                 <span className="text-muted-foreground/30">•</span>
                 <span className="flex items-center gap-1">
@@ -122,10 +114,7 @@ export function ProjectHeader({
           </TooltipDropdownMenu>
         </div>
         {/* Tab group here */}
-        <Tabs
-          value={activeTab}
-          onValueChange={onTabChange}
-          className="w-full md:w-auto">
+        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full md:w-auto">
           <TabsList className="flex max-w-full flex-wrap gap-1.5">
             {PROJECT_TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>

@@ -34,16 +34,6 @@ The items in the room will prepopulate the proposal line items in the proposal p
    - This allows for customization of items for specific client projects (e.g., changing the price, adding project-specific notes, etc.).
 
 5. Room Item Properties
-   - Room items should have all the properties of the original library item, including:
-     - Name
-     - Description
-     - Category
-     - Sub-category (if applicable)
-     - Base price
-     - Vendor
-     - Images
-     - Notes
-     - Specifications
    - Room items can have additional properties specific to the project, such as:
      - User-defined name (if different from library name)
      - Custom description
@@ -83,3 +73,7 @@ The items in the room will prepopulate the proposal line items in the proposal p
    - Bulk editing of room items.
    - Emailing room layouts or item selections to clients.
    - Mobile-friendly interface for on-site selection viewing and editing.
+
+   --- Phase 1 ---
+
+   Begin with the room creation and adding items to rooms. Do NOT add the editing or deleting functionality yet. Also do NOT add the "Create Proposal" button yet. Do NOT add any of the future enhancements yet. Just the basics. We can use items in the mock-studio.ts to populate the rooms. Duplicate the items in LibraryItems to create a new mock for the room items.

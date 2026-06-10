@@ -15,7 +15,18 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage
 
 import { db, storage } from "@/lib/firebase";
 
-import type { Client, DiagnosticRun, LibraryItem, Organization, Project, Proposal, UserProfile, Vendor } from "./types";
+import type {
+  Client,
+  DiagnosticRun,
+  LibraryItem,
+  Organization,
+  Project,
+  ProjectRoom,
+  ProjectRoomItem,
+  Proposal,
+  UserProfile,
+  Vendor,
+} from "./types";
 
 // Helper to recursively strip undefined properties, as Firestore throws on undefined.
 function cleanUndefined<T>(obj: T): T {
@@ -204,14 +215,17 @@ export async function getProjects(organizationId: string): Promise<Project[]> {
   }
 }
 
+/** Build the denormalized single-line `address` from the discrete street/city/state/zip parts. */
+export function formatProjectAddress(parts: Pick<Project, "street" | "city" | "state" | "zip">): string {
+  return [parts.street, [parts.city, parts.state].filter(Boolean).join(", "), parts.zip].filter(Boolean).join(" ");
+}
+
 export async function addProject(project: Omit<Project, "projectId" | "createdAt">): Promise<Project> {
   const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
-  const address = [project.street, [project.city, project.state].filter(Boolean).join(", "), project.zip]
-    .filter(Boolean)
-    .join(" ");
+  const address = formatProjectAddress(project);
 
   let budget = project.budget;
-  if (budget && budget.trim() && !budget.startsWith("$")) {
+  if (budget?.trim() && !budget.startsWith("$")) {
     budget = `$${budget.trim()}`;
   }
 
@@ -226,7 +240,12 @@ export async function addProject(project: Omit<Project, "projectId" | "createdAt
   return newProject;
 }
 
-export async function updateProject(projectId: string, project: Partial<Project>): Promise<void> {
+/**
+ * Persists the partial update and returns the normalized fields that were written
+ * (with `budget` prefixed and the denormalized `address` rebuilt), so callers can
+ * apply an optimistic update that matches the stored document exactly.
+ */
+export async function updateProject(projectId: string, project: Partial<Project>): Promise<Partial<Project>> {
   const docRef = doc(db, "projects", projectId);
   const updatedProject: Partial<Project> = {
     ...project,
@@ -234,7 +253,7 @@ export async function updateProject(projectId: string, project: Partial<Project>
 
   if (project.budget !== undefined) {
     let budget = project.budget;
-    if (budget && budget.trim() && !budget.startsWith("$")) {
+    if (budget?.trim() && !budget.startsWith("$")) {
       budget = `$${budget.trim()}`;
     }
     updatedProject.budget = budget;
@@ -247,13 +266,11 @@ export async function updateProject(projectId: string, project: Partial<Project>
     project.zip !== undefined;
 
   if (hasAddressFields) {
-    const address = [project.street, [project.city, project.state].filter(Boolean).join(", "), project.zip]
-      .filter(Boolean)
-      .join(" ");
-    updatedProject.address = address;
+    updatedProject.address = formatProjectAddress(project);
   }
 
   await updateDoc(docRef, cleanUndefined(updatedProject));
+  return updatedProject;
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
@@ -633,4 +650,115 @@ export async function getOrganizationUsers(orgId: string): Promise<UserProfile[]
     console.error("Error fetching organization users:", error);
     return [];
   }
+}
+
+// --- PROJECT SELECTIONS TAB (ROOMS & ITEMS) HELPER FUNCTIONS ---
+
+export async function addProjectRoom(
+  room: Omit<ProjectRoom, "roomId" | "createdAt" | "updatedAt">,
+  customRoomId?: string,
+): Promise<ProjectRoom> {
+  const roomId = customRoomId ?? `room-${Math.random().toString(36).substr(2, 9)}`;
+  const newRoom: ProjectRoom = {
+    ...room,
+    roomId,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  await setDoc(doc(db, "projectRooms", roomId), cleanUndefined(newRoom));
+  return newRoom;
+}
+
+export async function seedMockRooms(projectId: string, organizationId: string): Promise<ProjectRoom[]> {
+  console.log(`[db.ts] Seeding mock rooms for project ${projectId} in org ${organizationId}`);
+  const { templateMockRooms, templateMockRoomItems } = await import("@/data/mock-studio");
+
+  const createdRooms: ProjectRoom[] = [];
+  const roomNameToIdMap = new Map<string, string>();
+
+  // Seed rooms
+  for (const tRoom of templateMockRooms) {
+    const roomId = `room-${Math.random().toString(36).substr(2, 9)}`;
+    const newRoom = await addProjectRoom(
+      {
+        projectId,
+        name: tRoom.name,
+        description: tRoom.description,
+      },
+      roomId,
+    );
+    createdRooms.push(newRoom);
+    roomNameToIdMap.set(tRoom.name, roomId);
+  }
+
+  // Seed items
+  for (const tItem of templateMockRoomItems) {
+    const targetRoomId = roomNameToIdMap.get(tItem.roomName);
+    if (!targetRoomId) continue;
+
+    // Remove temp roomName field, map to Firestore fields
+    const { roomName, ...itemFields } = tItem;
+    await addProjectRoomItem({
+      ...itemFields,
+      roomId: targetRoomId,
+      projectId,
+      organizationId,
+    });
+  }
+
+  return createdRooms.sort((a, b) => a.createdAt - b.createdAt);
+}
+
+export async function getProjectRooms(projectId: string, organizationId: string): Promise<ProjectRoom[]> {
+  try {
+    const collRef = collection(db, "projectRooms");
+    const q = query(collRef, where("projectId", "==", projectId));
+    const snapshot = await getDocs(q);
+    const rooms: ProjectRoom[] = [];
+    snapshot.forEach((docSnap) => {
+      rooms.push(docSnap.data() as ProjectRoom);
+    });
+
+    if (rooms.length === 0) {
+      // Automatic seeding of template mock rooms for the project on first check
+      const seeded = await seedMockRooms(projectId, organizationId);
+      return seeded;
+    }
+
+    return rooms.sort((a, b) => a.createdAt - b.createdAt);
+  } catch (error) {
+    console.error("Error fetching project rooms:", error);
+    return [];
+  }
+}
+
+export async function getProjectRoomItems(projectId: string): Promise<ProjectRoomItem[]> {
+  try {
+    const collRef = collection(db, "projectRoomItems");
+    const q = query(collRef, where("projectId", "==", projectId));
+    const snapshot = await getDocs(q);
+    const items: ProjectRoomItem[] = [];
+    snapshot.forEach((docSnap) => {
+      items.push(docSnap.data() as ProjectRoomItem);
+    });
+    return items.sort((a, b) => a.updatedAt - b.updatedAt);
+  } catch (error) {
+    console.error("Error fetching project room items:", error);
+    return [];
+  }
+}
+
+export async function addProjectRoomItem(
+  item: Omit<ProjectRoomItem, "roomItemId" | "createdAt" | "updatedAt">,
+  customRoomItemId?: string,
+): Promise<ProjectRoomItem> {
+  const roomItemId = customRoomItemId ?? `roomitem-${Math.random().toString(36).substr(2, 9)}`;
+  const newRoomItem: ProjectRoomItem = {
+    ...item,
+    roomItemId,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  await setDoc(doc(db, "projectRoomItems", roomItemId), cleanUndefined(newRoomItem));
+  return newRoomItem;
 }

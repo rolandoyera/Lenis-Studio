@@ -179,3 +179,49 @@ export interface UserProfile {
   location?: string;
   phone?: string;
 }
+
+export interface ProjectRoom {
+  roomId: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ProjectRoomItem {
+  roomItemId: string;
+  roomId: string;
+  projectId: string;
+  libraryItemId?: string; // Reference to original library item
+  organizationId: string;
+  name: string;
+  costType: "Product" | "Service" | "Labor" | "Shipping";
+  category: string;
+  subcategory?: string;
+  vendorId?: string;
+  sku?: string;
+  description?: string;
+  poDescription?: string;
+  tags?: string[];
+  unitType: "Each" | "SF" | "LF" | "Yard" | "Pieces";
+  finishColor?: string;
+  sourcingLink?: string;
+  manufacturer?: string;
+  materials?: string;
+  dimensions?: string;
+  internalNote?: string;
+  taxable: boolean;
+  unitCost: number;
+  msrp?: number;
+  markup: number;
+  sellingPrice: number;
+  imageUrls?: string[];
+  manualImageUrls?: string[];
+  coverImageUrl?: string;
+  coverImagePath?: string;
+  images?: Array<{ url: string; path: string }>;
+  quantity: number;
+  createdAt: number;
+  updatedAt: number;
+}

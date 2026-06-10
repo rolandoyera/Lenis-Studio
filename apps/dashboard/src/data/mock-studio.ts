@@ -1,4 +1,4 @@
-import type { Client, LibraryItem, Project, Vendor } from "@/lib/types";
+import type { Client, LibraryItem, Project, ProjectRoom, ProjectRoomItem, Vendor } from "@/lib/types";
 
 {
   /* THIS PAGE IS ONLY FOR TESTING DESIGN CONCEPTS AND YOU SHOULD NOT FOLLOW OR COPY ANY OF THE STRUCTURE BELOW  */
@@ -227,5 +227,85 @@ export const mockLibraryItems: LibraryItem[] = [
     ],
     manualImageUrls: [],
     updatedAt: 1780938512735,
+  },
+];
+
+export const templateMockRooms: Array<Pick<ProjectRoom, "name" | "description">> = [
+  {
+    name: "Living Room",
+    description: "Spacious area overlooking the ocean with limestone fireplace.",
+  },
+  {
+    name: "Kitchen",
+    description: "Warm minimalist layout with custom Calacatta viola marble island.",
+  },
+  {
+    name: "Master Bedroom",
+    description: "Main suite featuring soft lighting and walnut built-ins.",
+  },
+];
+
+export const templateMockRoomItems: Array<
+  Omit<ProjectRoomItem, "roomItemId" | "roomId" | "projectId" | "createdAt" | "updatedAt"> & { roomName: string }
+> = [
+  {
+    roomName: "Living Room",
+    organizationId: "org-demo",
+    libraryItemId: "item-j3wlehve4",
+    name: "Norah Dining Chair",
+    costType: "Product" as const,
+    category: "Furniture",
+    subcategory: "Seating",
+    sku: "30NRHNMDSNO",
+    description:
+      "Norah is upholstered in soft, textured performance fabric to withstand the spills and stains of everyday living.",
+    unitType: "Each" as const,
+    finishColor: "Nomad Snow",
+    sourcingLink: "https://www.arhaus.com/products/norah-dining-chair?variant=42007288119467",
+    manufacturer: "Arhaus",
+    materials: "Merino Pearl Performance Fabric",
+    dimensions: '25.5" W x 25.5" D x 32.25" H',
+    taxable: true,
+    unitCost: 620,
+    msrp: 620,
+    markup: 0,
+    sellingPrice: 620,
+    coverImagePath: "library/item-j3wlehve4/cover.jpg",
+    coverImageUrl:
+      "https://firebasestorage.googleapis.com/v0/b/sarvian-design-group-db.firebasestorage.app/o/library%2Fitem-j3wlehve4%2Fcover.jpg?alt=media&token=92e52cd7-7c62-471c-b8cc-33d84ecc3673",
+    imageUrls: [
+      "https://firebasestorage.googleapis.com/v0/b/sarvian-design-group-db.firebasestorage.app/o/library%2Fitem-j3wlehve4%2Fcover.jpg?alt=media&token=92e52cd7-7c62-471c-b8cc-33d84ecc3673",
+    ],
+    quantity: 6,
+  },
+  {
+    roomName: "Master Bedroom",
+    organizationId: "org-demo",
+    libraryItemId: "item-9dmrz1499",
+    name: "Astor Bed",
+    costType: "Product" as const,
+    category: "Furniture",
+    subcategory: "Beds",
+    sku: "45ASTCQNKT",
+    description:
+      "Celebrating craftsmanship with chic style, our Astor Collection features gorgeous reeded detailing and inset stone tops on case pieces. Offering timeless sophistication with its uniquely crafted curves, Astor creates a suite designed for dreaming.",
+    unitType: "Each" as const,
+    finishColor: "Chestnut",
+    sourcingLink: "https://www.arhaus.com/products/astor-bed?variant=44667236286635",
+    manufacturer: "Arhaus",
+    materials: "Oak veneers, solid oak wood",
+    dimensions: '65.5" W x 85.5" D x 48" H',
+    taxable: true,
+    unitCost: 4500,
+    msrp: 5300,
+    markup: 15,
+    sellingPrice: 5175,
+    coverImagePath: "library/item-9dmrz1499/cover.jpg",
+    coverImageUrl:
+      "https://firebasestorage.googleapis.com/v0/b/sarvian-design-group-db.firebasestorage.app/o/library%2Fitem-9dmrz1499%2Fcover.jpg?alt=media&token=fea806f8-a217-400e-ac04-b473dea558b2",
+    imageUrls: [
+      "https://firebasestorage.googleapis.com/v0/b/sarvian-design-group-db.firebasestorage.app/o/library%2Fitem-9dmrz1499%2Fcover.jpg?alt=media&token=fea806f8-a217-400e-ac04-b473dea558b2",
+    ],
+    quantity: 1,
   },
 ];
