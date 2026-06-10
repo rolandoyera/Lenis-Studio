@@ -20,6 +20,7 @@ import { formatPhone } from "@/lib/utils";
 
 import type { ClientFormData } from "./_components/client-constants";
 import { ClientFormDialog } from "./_components/client-form-dialog";
+import { getClientName } from "./_components/client-name";
 
 export default function ClientsPage() {
   const { profile, loading: authLoading } = useAuth();
@@ -88,25 +89,7 @@ export default function ClientsPage() {
     if (!client) return false;
     const term = searchQuery.toLowerCase();
 
-    let firstName = "";
-    if (typeof client.firstName === "string" && client.firstName.trim()) {
-      firstName = client.firstName.trim();
-    } else if (
-      typeof (client as { fullName?: string }).fullName === "string" &&
-      (client as { fullName?: string }).fullName?.trim()
-    ) {
-      firstName = (client as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
-    }
-
-    let lastName = "";
-    if (typeof client.lastName === "string" && client.lastName.trim()) {
-      lastName = client.lastName.trim();
-    } else if (
-      typeof (client as { fullName?: string }).fullName === "string" &&
-      (client as { fullName?: string }).fullName?.trim()
-    ) {
-      lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
-    }
+    const { firstName, lastName } = getClientName(client);
 
     const email = typeof client.email === "string" ? client.email : "";
     const company = typeof client.company === "string" ? client.company : "";
@@ -177,25 +160,7 @@ export default function ClientsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {filteredClients.map((client) => {
-              let firstName = "";
-              if (typeof client.firstName === "string" && client.firstName.trim()) {
-                firstName = client.firstName.trim();
-              } else if (
-                typeof (client as { fullName?: string }).fullName === "string" &&
-                (client as { fullName?: string }).fullName?.trim()
-              ) {
-                firstName = (client as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
-              }
-
-              let lastName = "";
-              if (typeof client.lastName === "string" && client.lastName.trim()) {
-                lastName = client.lastName.trim();
-              } else if (
-                typeof (client as { fullName?: string }).fullName === "string" &&
-                (client as { fullName?: string }).fullName?.trim()
-              ) {
-                lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
-              }
+              const { firstName, lastName } = getClientName(client);
 
               const clientProjects = projects.filter((p) => p.clientId === client.uid);
 

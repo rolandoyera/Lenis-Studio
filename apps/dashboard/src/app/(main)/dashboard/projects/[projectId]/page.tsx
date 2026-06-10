@@ -9,13 +9,25 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
-import { addProposal, deleteProject, getClients, getProject, getProposals, updateProject } from "@/lib/db";
+import { Card } from "@/components/ui/card";
+import {
+  addProposal,
+  deleteProject,
+  getClients,
+  getProject,
+  getProposals,
+  updateProject,
+} from "@/lib/db";
 import type { Client, Project, Proposal } from "@/lib/types";
 
 import { DeleteProjectDialog } from "../_components/delete-project-dialog";
-import { type ProjectFormData, projectToForm } from "../_components/project-constants";
-import { ProjectDetailHeader } from "../_components/project-detail-header";
+import {
+  type ProjectFormData,
+  type ProjectTab,
+  projectToForm,
+} from "../_components/project-constants";
 import { ProjectFormDialog } from "../_components/project-form-dialog";
+import { ProjectHeader } from "../_components/project-header";
 import { ProjectInformationCard } from "../_components/project-information-card";
 import { ProjectNotesCard } from "../_components/project-notes-card";
 import { ProjectProposalsCard } from "../_components/project-proposals-card";
@@ -34,6 +46,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ProjectTab>("overview");
 
   // Dialog States
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -63,7 +76,8 @@ export default function ProjectDetailPage({ params }: PageProps) {
         setProject(projectData);
         setClients(clientsData);
 
-        const parentClient = clientsData.find((c) => c.uid === projectData.clientId) || null;
+        const parentClient =
+          clientsData.find((c) => c.uid === projectData.clientId) || null;
         setClient(parentClient);
 
         // Filter proposals for this project
@@ -90,7 +104,11 @@ export default function ProjectDetailPage({ params }: PageProps) {
       };
 
       // Update address fields to match project update address conversion logic
-      const address = [data.street, [data.city, data.state].filter(Boolean).join(", "), data.zip]
+      const address = [
+        data.street,
+        [data.city, data.state].filter(Boolean).join(", "),
+        data.zip,
+      ]
         .filter(Boolean)
         .join(" ");
       if (address) {
@@ -171,26 +189,46 @@ export default function ProjectDetailPage({ params }: PageProps) {
     <>
       <PageTitle title={`${project.name} | Project Profile`} />
       <div className="flex w-full flex-col gap-6 pb-10">
-        <ProjectDetailHeader
+        <ProjectHeader
           project={project}
           client={client}
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab as ProjectTab)}
           onEdit={() => setIsEditOpen(true)}
           onRequestDelete={() => setIsDeleteOpen(true)}
         />
 
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          <div className="flex flex-col gap-6 lg:col-span-7">
-            <ProjectProposalsCard
-              proposals={proposals}
-              onAddProposal={handleAddProposal}
-              addingProposal={addingProposal}
-            />
-            <ProjectNotesCard project={project} onEdit={() => setIsEditOpen(true)} />
+        {/* Tab 1 Page Content - Project Overview */}
+        {activeTab === "overview" && (
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+            <div className="flex flex-col gap-6 lg:col-span-7">
+              <ProjectProposalsCard
+                proposals={proposals}
+                onAddProposal={handleAddProposal}
+                addingProposal={addingProposal}
+              />
+              <ProjectNotesCard
+                project={project}
+                onEdit={() => setIsEditOpen(true)}
+              />
+            </div>
+            <div className="flex flex-col gap-6 lg:col-span-5">
+              <ProjectInformationCard project={project} client={client} />
+            </div>
           </div>
-          <div className="flex flex-col gap-6 lg:col-span-5">
-            <ProjectInformationCard project={project} client={client} />
-          </div>
-        </div>
+        )}
+
+        {/* Tab 2 Page Content - Project Items */}
+        {activeTab === "selections" && <TabPlaceholder label="Selections" />}
+
+        {/* Tab 3 Page Content - Project Calendar */}
+        {activeTab === "calendar" && <TabPlaceholder label="Calendar" />}
+
+        {/* Tab 4 Page Content - Project Files */}
+        {activeTab === "files" && <TabPlaceholder label="Files" />}
+
+        {/* Tab 5 Page Content - Project Settings */}
+        {activeTab === "settings" && <TabPlaceholder label="Settings" />}
 
         <ProjectFormDialog
           open={isEditOpen}
@@ -211,5 +249,16 @@ export default function ProjectDetailPage({ params }: PageProps) {
         />
       </div>
     </>
+  );
+}
+
+function TabPlaceholder({ label }: { label: string }) {
+  return (
+    <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
+      <h3 className="font-semibold text-lg">{label} coming soon</h3>
+      <p className="mt-1 max-w-sm text-muted-foreground text-sm">
+        This section is not available yet.
+      </p>
+    </Card>
   );
 }

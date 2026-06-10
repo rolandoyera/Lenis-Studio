@@ -17,6 +17,7 @@ import type { ClientFormData } from "../_components/client-constants";
 import { ClientContactCard } from "../_components/client-contact-card";
 import { ClientDetailHeader } from "../_components/client-detail-header";
 import { ClientFormDialog } from "../_components/client-form-dialog";
+import { getClientName } from "../_components/client-name";
 import { ClientNotesCard } from "../_components/client-notes-card";
 import { ClientProjectsCard } from "../_components/client-projects-card";
 import { DeleteClientDialog } from "../_components/delete-client-dialog";
@@ -137,26 +138,7 @@ export default function ClientProfilePage({ params }: PageProps) {
 
   if (!client) return null;
 
-  let firstName = "";
-  if (typeof client.firstName === "string" && client.firstName.trim()) {
-    firstName = client.firstName.trim();
-  } else if (
-    typeof (client as { fullName?: string }).fullName === "string" &&
-    (client as { fullName?: string }).fullName?.trim()
-  ) {
-    firstName = (client as { fullName?: string }).fullName?.trim().split(" ")[0] || "";
-  }
-
-  let lastName = "";
-  if (typeof client.lastName === "string" && client.lastName.trim()) {
-    lastName = client.lastName.trim();
-  } else if (
-    typeof (client as { fullName?: string }).fullName === "string" &&
-    (client as { fullName?: string }).fullName?.trim()
-  ) {
-    lastName = (client as { fullName?: string }).fullName?.trim().split(" ").slice(1).join(" ") || "";
-  }
-
+  const { firstName, lastName } = getClientName(client);
   const clientName = `${firstName} ${lastName}`.trim() || "Unnamed Client";
 
   return (

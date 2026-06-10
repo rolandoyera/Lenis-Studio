@@ -5,6 +5,16 @@ import { formatCurrency, formatZip, isValidUsZip } from "@/lib/utils";
 
 export const PROJECT_STATUSES = ["Active", "Completed", "Paused"] as const;
 
+export const PROJECT_TABS = [
+  { value: "overview", label: "Overview" },
+  { value: "selections", label: "Selections" },
+  { value: "calendar", label: "Calendar" },
+  { value: "files", label: "Files" },
+  { value: "settings", label: "Settings" },
+] as const;
+
+export type ProjectTab = (typeof PROJECT_TABS)[number]["value"];
+
 export const projectSchema = z.object({
   clientId: z.string().min(1, "Please select a parent client."),
   name: z.string().min(1, "Project title is required."),
