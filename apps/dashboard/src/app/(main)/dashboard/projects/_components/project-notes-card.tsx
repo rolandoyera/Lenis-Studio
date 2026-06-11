@@ -14,23 +14,35 @@ interface ProjectNotesCardProps {
 export function ProjectNotesCard({ project, onEdit }: ProjectNotesCardProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+      <CardHeader className="flex flex-row items-center justify-between border-b">
         <CardTitle>
-          <FileText className="size-4.5 text-primary" />
+          <FileText className="icons" />
           Project Brief & Goals
         </CardTitle>
-        <Button variant="ghost" size="icon-sm" onClick={onEdit} className="text-muted-foreground hover:text-foreground">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onEdit}
+          className="text-muted-foreground hover:text-foreground">
           <Edit3 className="size-3.5" />
           <span className="sr-only">Edit Project Brief</span>
         </Button>
       </CardHeader>
       <CardContent className="pt-5 text-sm">
         {project.notes?.trim() ? (
-          <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">{project.notes}</p>
+          <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed">
+            {project.notes}
+          </p>
         ) : (
           <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
-            <p className="text-xs italic">No project briefs or goals recorded yet.</p>
-            <Button variant="link" size="sm" onClick={onEdit} className="mt-1 h-auto p-0 font-medium">
+            <p className="text-xs italic">
+              No project briefs or goals recorded yet.
+            </p>
+            <Button
+              variant="link"
+              size="sm"
+              onClick={onEdit}
+              className="mt-1 h-auto p-0 font-medium">
               Add Project Brief
             </Button>
           </div>

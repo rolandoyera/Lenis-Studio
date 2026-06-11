@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { H1 } from "@/components/ui/typography";
 import { addProject, getClients, getProjects, updateProject } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 import { EMPTY_PROJECT_FORM, type ProjectFormData, projectToForm } from "./_components/project-constants";
 import { ProjectFormDialog } from "./_components/project-form-dialog";
@@ -221,10 +222,13 @@ export default function ProjectsPage() {
                   <CardContent className="flex flex-col gap-3.5 pt-0 text-sm">
                     {/* Space & site details */}
                     <div className="flex flex-col gap-2 rounded-lg border border-muted/50 bg-muted/30 p-3">
-                      {project.budget && (
+                      {project.budget !== undefined && project.budget > 0 && (
                         <div className="flex items-center gap-2 text-muted-foreground text-xs">
                           <DollarSign className="size-3.5 shrink-0 text-emerald-500" />
-                          Budget Pool: <span className="font-semibold text-foreground/80">{project.budget}</span>
+                          Budget Pool:{" "}
+                          <span className="font-semibold text-foreground/80">
+                            {formatCurrency(project.budget, { noDecimals: true })}
+                          </span>
                         </div>
                       )}
                       {project.address && (

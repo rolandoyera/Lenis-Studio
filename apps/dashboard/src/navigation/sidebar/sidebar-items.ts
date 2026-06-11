@@ -10,6 +10,7 @@ import {
   Gauge,
   Globe,
   GraduationCap,
+  Hammer,
   Kanban,
   LayoutDashboard,
   ListTodo,
@@ -110,6 +111,11 @@ export const sidebarItems: NavGroup[] = [
         title: "Vendors",
         url: "/dashboard/vendors",
         icon: Forklift,
+      },
+      {
+        title: "Trades",
+        url: "/dashboard/trades",
+        icon: Hammer,
       },
       {
         title: "Proposals",

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { H3 } from "@/components/ui/typography";
 import type { Project } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 const STATUS_STYLES: Record<Project["status"], string> = {
   Active: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20",
@@ -20,12 +21,15 @@ interface ClientProjectsCardProps {
 }
 
 /** Associated project spaces grid with an "Initialize Project" entry point. */
-export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCardProps) {
+export function ClientProjectsCard({
+  projects,
+  onAddProject,
+}: ClientProjectsCardProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between border-border/30 border-b pb-4">
+      <CardHeader className="flex flex-row items-center justify-between border-b">
         <CardTitle>
-          <FolderKanban className="size-4.5 text-primary" />
+          <FolderKanban className="icons" />
           Projects
         </CardTitle>
         <Button variant="secondary" onClick={onAddProject}>
@@ -39,7 +43,8 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
             <FolderKanban className="mb-2 size-10 text-muted-foreground/30" />
             <h3 className="font-semibold text-sm">No projects created</h3>
             <p className="mt-1 max-w-xs text-muted-foreground text-xs">
-              Begin drafting budget pools, address details, and design briefs by setting up this client's first project.
+              Begin drafting budget pools, address details, and design briefs by
+              setting up this client's first project.
             </p>
             <Button onClick={onAddProject} className="mt-4">
               <Plus className="size-3.5" />
@@ -51,18 +56,22 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
             {projects.map((project) => (
               <div
                 key={project.projectId}
-                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4"
-              >
+                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4">
                 <div className="mt-1 flex items-center justify-between">
                   <H3 className="text-muted-foreground">{project.name}</H3>
-                  <Badge className={` ${STATUS_STYLES[project.status]}`}>{project.status}</Badge>
+                  <Badge className={` ${STATUS_STYLES[project.status]}`}>
+                    {project.status}
+                  </Badge>
                 </div>
 
                 <div className="flex flex-col gap-1.5 rounded-md border border-muted/30 bg-muted/20 p-2.5 text-muted-foreground text-xs">
-                  {project.budget && (
+                  {project.budget !== undefined && project.budget > 0 && (
                     <div className="flex items-center gap-1.5 font-medium text-foreground/80">
                       <DollarSign className="size-3.5 shrink-0 text-emerald-500" />
-                      Budget: <span className="font-semibold text-foreground/90">{project.budget}</span>
+                      Budget:{" "}
+                      <span className="font-semibold text-foreground/90">
+                        {formatCurrency(project.budget, { noDecimals: true })}
+                      </span>
                     </div>
                   )}
                   {project.address && (
@@ -81,11 +90,10 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
 
                 <div className="mt-1 flex items-center justify-end border-border/40 border-t pt-2.5">
                   <Link
-                    href={`/dashboard/proposals?projectId=${project.projectId}`}
+                    href={`/dashboard/projects/${project.projectId}`}
                     prefetch={false}
-                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline"
-                  >
-                    Configure Proposals →
+                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline">
+                    View Project
                   </Link>
                 </div>
               </div>

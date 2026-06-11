@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import type { Project } from "@/lib/types";
-import { formatCurrency, formatZip, isValidUsZip } from "@/lib/utils";
+import { formatZip, isValidUsZip } from "@/lib/utils";
 
 export const PROJECT_STATUSES = ["Active", "Completed", "Paused"] as const;
 
@@ -19,7 +19,7 @@ export const projectSchema = z.object({
   clientId: z.string().min(1, "Please select a parent client."),
   name: z.string().min(1, "Project title is required."),
   status: z.enum(PROJECT_STATUSES),
-  budget: z.string(),
+  budget: z.number().min(0, "Budget must be positive."),
   sameAsMain: z.boolean(),
   street: z.string(),
   city: z.string(),
@@ -34,7 +34,7 @@ export const EMPTY_PROJECT_FORM: ProjectFormData = {
   clientId: "",
   name: "",
   status: "Active",
-  budget: "",
+  budget: 0,
   sameAsMain: false,
   street: "",
   city: "",
@@ -51,15 +51,11 @@ export function projectToForm(project: Project): ProjectFormData {
       : !project.city && !project.state && !project.zip
         ? project.address
         : "";
-  const budgetDigits = (project.budget ?? "").toString().replace(/\D/g, "");
-  const budgetFormatted = budgetDigits
-    ? formatCurrency(Number(budgetDigits), { noDecimals: true, noSymbol: true })
-    : "";
   return {
     clientId: project.clientId,
     name: project.name,
     status: project.status,
-    budget: budgetFormatted,
+    budget: project.budget ?? 0,
     sameAsMain: project.sameAsMain ?? false,
     street: streetVal ?? "",
     city: project.city ?? "",

@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Client } from "@/lib/types";
-import { formatCurrency, formatZip } from "@/lib/utils";
+import { formatZip } from "@/lib/utils";
 
 import { EMPTY_PROJECT_FORM, PROJECT_STATUSES, type ProjectFormData, projectSchema } from "./project-constants";
 
@@ -169,12 +169,10 @@ export function ProjectFormDialog({
                       </InputGroupAddon>
                       <InputGroupInput
                         {...field}
+                        type="number"
                         aria-invalid={fieldState.invalid}
                         onChange={(e) => {
-                          const digits = e.target.value.replace(/\D/g, "");
-                          field.onChange(
-                            digits ? formatCurrency(Number(digits), { noDecimals: true, noSymbol: true }) : "",
-                          );
+                          field.onChange(e.target.value ? Number(e.target.value) : 0);
                         }}
                       />
                     </InputGroup>

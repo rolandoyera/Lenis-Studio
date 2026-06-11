@@ -90,7 +90,7 @@ export const mockProjects: Project[] = [
     zip: "90265",
     sameAsMain: false,
     status: "Active",
-    budget: "$450,000",
+    budget: 450000,
     notes:
       "Modern airy aesthetic, focusing heavily on warm limestone, custom viola marble fireplaces, and custom gold lighting.",
     createdAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
@@ -107,7 +107,7 @@ export const mockProjects: Project[] = [
     zip: "02840",
     sameAsMain: false,
     status: "Active",
-    budget: "$1,200,000",
+    budget: 1200000,
     notes:
       "Renovation of the grand hall, master bedroom suite, and external conservatory. Historic character preservation.",
     createdAt: Date.now() - 10 * 24 * 60 * 60 * 1000,

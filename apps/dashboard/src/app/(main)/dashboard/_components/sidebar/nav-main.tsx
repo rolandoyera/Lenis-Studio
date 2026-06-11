@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Building2, ChevronDown, ChevronRight, PlusCircleIcon, ShoppingBag, UserPlus } from "lucide-react";
+import { Building2, ChevronDown, ChevronRight, Hammer, PlusCircleIcon, ShoppingBag, UserPlus } from "lucide-react";
 
 import { useAuth } from "@/components/auth-context";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -221,6 +221,16 @@ export function NavMain({ items }: NavMainProps) {
                     >
                       <Building2 className="size-4 opacity-70" />
                       <span>Add Trade Vendor</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/trades?add=true"
+                      onClick={closeOnMobile}
+                      className="flex cursor-pointer items-center gap-2 py-2"
+                    >
+                      <Hammer className="size-4 opacity-70" />
+                      <span>Add Trade Profile</span>
                     </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

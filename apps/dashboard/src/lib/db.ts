@@ -26,6 +26,7 @@ import type {
   Proposal,
   UserProfile,
   Vendor,
+  Trade,
 } from "./types";
 
 // Helper to recursively strip undefined properties, as Firestore throws on undefined.
@@ -224,15 +225,9 @@ export async function addProject(project: Omit<Project, "projectId" | "createdAt
   const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
   const address = formatProjectAddress(project);
 
-  let budget = project.budget;
-  if (budget?.trim() && !budget.startsWith("$")) {
-    budget = `$${budget.trim()}`;
-  }
-
   const newProject: Project = {
     ...project,
     address: address || project.address,
-    budget,
     projectId,
     createdAt: Date.now(),
   };
@@ -250,14 +245,6 @@ export async function updateProject(projectId: string, project: Partial<Project>
   const updatedProject: Partial<Project> = {
     ...project,
   };
-
-  if (project.budget !== undefined) {
-    let budget = project.budget;
-    if (budget?.trim() && !budget.startsWith("$")) {
-      budget = `$${budget.trim()}`;
-    }
-    updatedProject.budget = budget;
-  }
 
   const hasAddressFields =
     project.street !== undefined ||
@@ -762,3 +749,56 @@ export async function addProjectRoomItem(
   await setDoc(doc(db, "projectRoomItems", roomItemId), cleanUndefined(newRoomItem));
   return newRoomItem;
 }
+
+// --- TRADES & SERVICES DATA HELPERS ---
+
+export async function getTrade(tradeId: string): Promise<Trade | null> {
+  try {
+    const docSnap = await getDoc(doc(db, "trades", tradeId));
+    if (!docSnap.exists()) return null;
+    return docSnap.data() as Trade;
+  } catch (error) {
+    console.error("Error fetching trade:", error);
+    return null;
+  }
+}
+
+export async function getTrades(organizationId: string): Promise<Trade[]> {
+  try {
+    const collRef = collection(db, "trades");
+    const q = query(collRef, where("organizationId", "==", organizationId));
+    const snapshot = await getDocs(q);
+    const trades: Trade[] = [];
+    snapshot.forEach((docSnap) => {
+      trades.push(docSnap.data() as Trade);
+    });
+    return trades.sort((a, b) => b.createdAt - a.createdAt);
+  } catch (error) {
+    console.error("Error fetching trades:", error);
+    return [];
+  }
+}
+
+export async function addTrade(
+  trade: Omit<Trade, "tradeId" | "createdAt">,
+  customTradeId?: string,
+): Promise<Trade> {
+  const tradeId = customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
+  const newTrade: Trade = {
+    ...trade,
+    tradeId,
+    createdAt: Date.now(),
+  };
+  await setDoc(doc(db, "trades", tradeId), cleanUndefined(newTrade));
+  return newTrade;
+}
+
+export async function updateTrade(tradeId: string, trade: Partial<Trade>): Promise<void> {
+  const docRef = doc(db, "trades", tradeId);
+  await updateDoc(docRef, cleanUndefined({ ...trade }));
+}
+
+export async function deleteTrade(tradeId: string): Promise<void> {
+  await deleteDoc(doc(db, "trades", tradeId));
+}
+

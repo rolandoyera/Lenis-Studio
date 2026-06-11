@@ -28,7 +28,7 @@ export interface Project {
   zip?: string;
   sameAsMain?: boolean;
   status: "Active" | "Completed" | "Paused";
-  budget?: string;
+  budget?: number;
   notes?: string;
   createdAt: number;
 }
@@ -225,3 +225,27 @@ export interface ProjectRoomItem {
   createdAt: number;
   updatedAt: number;
 }
+
+export interface Trade {
+  tradeId: string;
+  organizationId: string;
+  companyName: string;
+  tradeType: string;
+  tradeSubcategory?: string;
+  contactFirstName?: string;
+  contactLastName?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  licenseNumber?: string;
+  licenseExpirationDate?: string;
+  insurancePolicyNumber?: string;
+  insuranceProvider?: string;
+  insuranceExpirationDate?: string;
+  createdAt: number;
+}
+

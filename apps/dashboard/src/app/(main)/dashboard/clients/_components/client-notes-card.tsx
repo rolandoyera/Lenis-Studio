@@ -13,9 +13,9 @@ interface ClientNotesCardProps {
 export function ClientNotesCard({ client, onEdit }: ClientNotesCardProps) {
   return (
     <Card>
-      <CardHeader className="border-border/30 border-b pb-4">
+      <CardHeader className="border-b">
         <CardTitle>
-          <FileText className="size-4.5 text-primary" />
+          <FileText className="icons" />
           Design Brief & Studio Notes
         </CardTitle>
       </CardHeader>
@@ -27,13 +27,13 @@ export function ClientNotesCard({ client, onEdit }: ClientNotesCardProps) {
         ) : (
           <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
             <p className="text-xs italic">
-              No design briefs or billing guidelines draft logged for this client profile.
+              No design briefs or billing guidelines draft logged for this
+              client profile.
             </p>
             <Button
               onClick={onEdit}
               variant="outline"
-              className="mt-3 flex h-8 cursor-pointer items-center gap-1 px-3 py-1.5 text-xs"
-            >
+              className="mt-3 flex h-8 cursor-pointer items-center gap-1 px-3 py-1.5 text-xs">
               <Edit2 className="size-3" />
               Add Studio Notes
             </Button>

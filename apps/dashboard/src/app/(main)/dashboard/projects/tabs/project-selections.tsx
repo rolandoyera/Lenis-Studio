@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import {
+  DollarSign,
   FolderPlus,
   Home,
   LayoutGrid,
@@ -15,6 +17,7 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
+
 import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +40,6 @@ import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { H2 } from "@/components/ui/typography";
 import {
   addProjectRoom,
   getLibraryItems,
@@ -53,6 +55,7 @@ import type {
   Vendor,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+
 import { AddItemsDialog } from "./_tab_components/add-items-dialog";
 
 // ----------------------------------------------------
@@ -207,6 +210,11 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
     (acc, item) => acc + item.sellingPrice * item.quantity,
     0,
   );
+  const totalCostValue = roomItems.reduce(
+    (acc, item) => acc + (item.unitCost || 0) * item.quantity,
+    0,
+  );
+  const budgetRemaining = (project.budget || 0) - totalSelectedValue;
 
   if (loading || authLoading) {
     return (
@@ -222,13 +230,13 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
   return (
     <div className="fade-in flex w-full animate-in flex-col gap-6 duration-300">
       {/* Banner / Stat Bar */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <Card className="border-primary/10 bg-background/40 shadow-xs backdrop-blur-xs">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-6">
+        <Card>
           <CardHeader className="py-4">
             <CardDescription className="font-semibold text-xs uppercase tracking-wider">
               Total Rooms
             </CardDescription>
-            <CardTitle className="mt-1 flex items-center gap-2 font-bold text-3xl text-foreground">
+            <CardTitle className="mt-1 flex items-center gap-2 text-2xl text-foreground">
               <Home className="size-6 text-primary" />
               {rooms.length}
             </CardTitle>
@@ -239,18 +247,62 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
             <CardDescription className="font-semibold text-xs uppercase tracking-wider">
               Total Items
             </CardDescription>
-            <CardTitle className="mt-1 flex items-center gap-2 font-bold text-3xl text-foreground">
+            <CardTitle className="mt-1 flex items-center gap-2 text-2xl text-foreground">
               <ShoppingBag className="size-6 text-primary" />
               {totalItemCount}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="border-primary/10 bg-background/40 shadow-xs backdrop-blur-xs">
+          <CardHeader className="py-4">
+            <CardDescription className="font-semibold text-xs uppercase tracking-wider">
+              Budget
+            </CardDescription>
+            <CardTitle className="mt-1 flex items-center gap-2 text-2xl text-foreground">
+              <DollarSign className="size-6 text-primary" />
+              {project.budget
+                ? formatCurrency(project.budget, {
+                    noDecimals: true,
+                    noSymbol: true,
+                  })
+                : "0"}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="border-primary/10 bg-background/40 shadow-xs backdrop-blur-xs">
+          <CardHeader className="py-4">
+            <CardDescription className="font-semibold text-xs uppercase tracking-wider">
+              Budget Remaining
+            </CardDescription>
+            <CardTitle className="mt-1 flex items-center gap-2 text-2xl text-foreground">
+              <DollarSign className="size-6 text-primary" />
+              {formatCurrency(budgetRemaining, {
+                noDecimals: true,
+                noSymbol: true,
+              })}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="border-primary/10 bg-background/40 shadow-xs backdrop-blur-xs">
+          <CardHeader className="py-4">
+            <CardDescription className="font-semibold text-xs uppercase tracking-wider">
+              Total Cost
+            </CardDescription>
+            <CardTitle className="mt-1 flex items-center gap-2 text-2xl text-foreground">
+              <DollarSign className="size-6 text-primary" />
+              {formatCurrency(totalCostValue, {
+                noDecimals: true,
+                noSymbol: true,
+              })}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-primary bg-linear-to-br from-primary/5 to-primary/15">
           <CardHeader className="py-4">
             <CardDescription className="font-semibold text-primary/80 text-xs uppercase tracking-wider">
-              Total Retail Value
+              Total Retail
             </CardDescription>
-            <CardTitle className="mt-1 font-bold font-serif text-3xl text-primary">
+            <CardTitle className="mt-1 text-2xl text-primary">
               {formatCurrency(totalSelectedValue, { noDecimals: true })}
             </CardTitle>
           </CardHeader>
@@ -259,12 +311,12 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
 
       {/* Header controls */}
       <div className="flex items-center justify-between border-b pb-4">
-        <div>
-          <H2>Project Rooms</H2>
+        {/* <div>
+          <H2>Project Selections</H2>
           <p className="text-muted-foreground text-xs">
-            Manage client spaces and assign library specifications.
+            Manage and create spaces and items for your project.
           </p>
-        </div>
+        </div> */}
         <Button
           onClick={() => setIsRoomDialogOpen(true)}
           className="flex items-center gap-2 bg-primary">
@@ -284,12 +336,12 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
               <CardHeader className="border-b bg-muted/50 pt-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-1.5 font-semibold text-lg">
+                    <CardTitle>
                       <LayoutGrid className="icons" />
                       {room.name}
                     </CardTitle>
                     {room.description && (
-                      <CardDescription className="mt-1 line-clamp-2 text-xs">
+                      <CardDescription className="mt-1 line-clamp-2 ml-6.5">
                         {room.description}
                       </CardDescription>
                     )}
