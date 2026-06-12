@@ -1,0 +1,137 @@
+import { Ellipsis } from "lucide-react";
+
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { fetchAudienceData } from "@/server/analytics-actions";
+
+import { AnalyticsErrorToast } from "./analytics-error-toast";
+
+function ShareBarList({ items }: { items: { label: string; users: number; flagCode?: string }[] }) {
+  const total = items.reduce((sum, item) => sum + item.users, 0);
+
+  if (items.length === 0) {
+    return (
+      <div className="flex h-32 items-center justify-center text-muted-foreground text-sm">
+        No data available for this range.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {items.map((item) => {
+        const pct = total > 0 ? (item.users / total) * 100 : 0;
+
+        return (
+          <div key={item.label} className="flex flex-col gap-1">
+            <div className="flex h-5 items-center justify-between gap-3 text-sm">
+              <span className="flex min-w-0 items-center gap-2">
+                {item.flagCode && (
+                  <span
+                    aria-hidden="true"
+                    className={`flag:${item.flagCode} shrink-0 rounded-xs text-base ring-1 ring-foreground/10`}
+                  />
+                )}
+                <span className="truncate">{item.label}</span>
+              </span>
+              <span className="shrink-0 tabular-nums">
+                {item.users}
+                <span className="ml-2 text-muted-foreground text-xs">({pct.toFixed(0)}%)</span>
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-full rounded-full bg-primary/70" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const DEVICE_LABELS: Record<string, string> = {
+  desktop: "Desktop",
+  mobile: "Mobile",
+  tablet: "Tablet",
+  smarttv: "Smart TV",
+};
+
+const VISITOR_TYPE_LABELS: Record<string, string> = {
+  new: "New visitors",
+  returning: "Returning visitors",
+};
+
+export async function AudienceSection({ range }: { range?: string }) {
+  const result = await fetchAudienceData(range);
+
+  if (!result.success || !result.data) {
+    return (
+      <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-8 text-center text-muted-foreground ring-1 ring-foreground/10">
+        <AnalyticsErrorToast error={result.error} title="Audience Error" />
+        <span className="font-semibold text-foreground text-sm">Failed to load audience metrics</span>
+        <span className="max-w-md text-muted-foreground text-xs">
+          {result.error || "Please check your Google Analytics configuration settings."}
+        </span>
+      </div>
+    );
+  }
+
+  const { cities, devices, newVsReturning } = result.data;
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <Card className="md:col-span-1 lg:col-span-3">
+        <CardHeader>
+          <CardTitle className="font-normal">Top Cities</CardTitle>
+          <CardAction>
+            <Ellipsis className="size-4" />
+          </CardAction>
+        </CardHeader>
+        <CardContent>
+          <ShareBarList
+            items={cities.map((city) => ({
+              label: city.city,
+              users: city.users,
+              flagCode: city.countryId || undefined,
+            }))}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-col gap-4 md:col-span-1 lg:col-span-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-normal">Devices</CardTitle>
+            <CardAction>
+              <Ellipsis className="size-4" />
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <ShareBarList
+              items={devices.map((device) => ({
+                label: DEVICE_LABELS[device.device] || device.device,
+                users: device.users,
+              }))}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-normal">New vs Returning</CardTitle>
+            <CardAction>
+              <Ellipsis className="size-4" />
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <ShareBarList
+              items={newVsReturning.map((entry) => ({
+                label: VISITOR_TYPE_LABELS[entry.type] || entry.type,
+                users: entry.users,
+              }))}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

@@ -162,8 +162,8 @@ export const sidebarItems: NavGroup[] = [
         icon: Building2,
       },
       {
-        title: "Settings",
-        url: "/dashboard/settings",
+        title: "Company",
+        url: "/dashboard/company",
         icon: Cog,
       },
     ],

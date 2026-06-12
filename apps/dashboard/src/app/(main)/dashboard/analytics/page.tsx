@@ -1,12 +1,16 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { AcquisitionSection } from "./_components/acquisition-section";
 import { AnalyticsKpiStrip } from "./_components/analytics-kpi-strip";
 import { AnalyticsToolbar } from "./_components/analytics-toolbar";
+import { AudienceSection } from "./_components/audience-section";
+import { ConversionsSection } from "./_components/conversions-section";
 import { GA4ConnectionChecker } from "./_components/ga4-connection-checker";
+import { LandingPages } from "./_components/landing-pages";
 import { RealtimeVisitors } from "./_components/realtime-visitors";
 import { TopPages } from "./_components/top-pages";
 import { TopTrafficSources } from "./_components/top-traffic-sources";
-import { TrafficQuality } from "./_components/traffic-quality";
+import { TrafficTrend } from "./_components/traffic-trend";
 
 // Import this stylesheet in any page or component that renders country flag classes.
 import "@/styles/flag-icons/flags.css";
@@ -48,7 +52,7 @@ export default async function Page({ searchParams }: PageProps) {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <div className="md:col-span-1 lg:col-span-4">
-              <TrafficQuality />
+              <TrafficTrend range={range} />
             </div>
             <div className="md:col-span-1 lg:col-span-3">
               <RealtimeVisitors />
@@ -57,12 +61,31 @@ export default async function Page({ searchParams }: PageProps) {
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <div className="md:col-span-1 lg:col-span-4">
-              <TopPages />
+              <TopPages range={range} />
             </div>
             <div className="md:col-span-1 lg:col-span-3">
-              <TopTrafficSources />
+              <TopTrafficSources range={range} />
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="audience">
+          <AudienceSection range={range} />
+        </TabsContent>
+
+        <TabsContent value="acquisition">
+          <AcquisitionSection range={range} />
+        </TabsContent>
+
+        <TabsContent value="engagement">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <TopPages range={range} />
+            <LandingPages range={range} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="conversions">
+          <ConversionsSection range={range} />
         </TabsContent>
       </Tabs>
     </div>

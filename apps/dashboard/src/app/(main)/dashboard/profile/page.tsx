@@ -4,17 +4,34 @@ import { Suspense, useEffect, useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { updatePassword, updateProfile } from "firebase/auth";
+import { updateProfile } from "firebase/auth";
 import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
-import { Edit, Lock, Mail, MapPin, MoreVertical, Phone, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import {
+  Edit,
+  Mail,
+  MapPin,
+  MoreVertical,
+  Phone,
+  Sparkles,
+} from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -24,17 +41,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { db } from "@/lib/firebase";
-import { getInitials } from "@/lib/utils";
+import {
+  formatPhone,
+  getInitials,
+  isValidUsPhone,
+  isValidUsZip,
+} from "@/lib/utils";
 
 interface FirestoreProfile {
   fullName: string;
@@ -46,35 +70,36 @@ interface FirestoreProfile {
   status?: string;
 }
 
-function formatPhoneNumber(value: string) {
-  if (!value) return "";
-  const cleaned = value.replace(/\D/g, "");
-  if (cleaned.length === 0) return "";
+const profileSchema = z.object({
+  displayName: z.string().min(1, "Display name is required."),
+  fullName: z.string().min(1, "Full name is required."),
+  role: z.string().min(1, "Role is required."),
+  phone: z.union([
+    z
+      .string()
+      .refine(isValidUsPhone, "Enter a valid 10-digit US phone number."),
+    z.literal(""),
+  ]),
+  location: z.union([
+    z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
+    z.literal(""),
+  ]),
+});
 
-  if (cleaned.length <= 3) {
-    return `(${cleaned}`;
-  }
-  if (cleaned.length <= 6) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-  }
-  if (cleaned.length <= 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  }
-  return `+${cleaned.slice(0, cleaned.length - 10)} (${cleaned.slice(
-    cleaned.length - 10,
-    cleaned.length - 7,
-  )}) ${cleaned.slice(cleaned.length - 7, cleaned.length - 4)}-${cleaned.slice(cleaned.length - 4)}`;
-}
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 function ProfileContent() {
   const searchParams = useSearchParams();
   const profileUid = searchParams.get("uid");
   const router = useRouter();
-  const { user: currentUser, profile: loggedInProfile, loading: authLoading } = useAuth();
+  const {
+    user: currentUser,
+    profile: loggedInProfile,
+    loading: authLoading,
+  } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [savingGeneral, setSavingGeneral] = useState(false);
-  const [savingSecurity, setSavingSecurity] = useState(false);
 
   // General profile state
   const [displayName, setDisplayName] = useState("");
@@ -83,24 +108,45 @@ function ProfileContent() {
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
   const [email, setEmail] = useState("");
-  const [isReadOnly, setIsReadOnly] = useState(false);
   const [isRoleDisabled, setIsRoleDisabled] = useState(true);
   const [isSelf, setIsSelf] = useState(true);
   const [status, setStatus] = useState("Active");
-  const [loggedInUserRole, setLoggedInUserRole] = useState("Contributor");
   const [isResending, setIsResending] = useState(false);
+  const [loggedInUserRole, setLoggedInUserRole] = useState("Contributor");
 
   // Edit Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editDisplayName, setEditDisplayName] = useState("");
-  const [editFullName, setEditFullName] = useState("");
-  const [editRole, setEditRole] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editLocation, setEditLocation] = useState("");
 
-  // Security credentials state
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const profileForm = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      displayName: "",
+      fullName: "",
+      role: "Contributor",
+      phone: "",
+      location: "",
+    },
+  });
+
+  useEffect(() => {
+    if (isEditModalOpen) {
+      profileForm.reset({
+        displayName,
+        fullName,
+        role,
+        phone,
+        location,
+      });
+    }
+  }, [
+    isEditModalOpen,
+    displayName,
+    fullName,
+    role,
+    phone,
+    location,
+    profileForm,
+  ]);
 
   const handleResendInvite = async () => {
     if (!email) return;
@@ -161,13 +207,13 @@ function ProfileContent() {
     const loggedInRole = loggedInProfile.role;
 
     // Determine which UID to fetch
-    const activeUid = profileUid && profileUid !== currentUid ? profileUid : currentUid;
+    const activeUid =
+      profileUid && profileUid !== currentUid ? profileUid : currentUid;
     const isSelf = activeUid === currentUid;
     setIsSelf(isSelf);
 
     // Editable if it is their own profile OR if the logged-in user is an Admin
     const readOnly = !isSelf && loggedInRole !== "Admin";
-    setIsReadOnly(readOnly);
 
     // Role is editable ONLY if the logged-in user is an Admin AND it is someone else's profile!
     const isRoleEditable = loggedInRole === "Admin" && !isSelf;
@@ -189,16 +235,20 @@ function ProfileContent() {
           // Tenant isolation check
           const targetOrgId = data.organizationId || "org-demo";
           if (targetOrgId !== loggedInOrgId) {
-            toast.error("Access denied. User profile not found in your organization.");
+            toast.error(
+              "Access denied. User profile not found in your organization.",
+            );
             router.push("/dashboard/home");
             return;
           }
 
           setFullName(data.fullName || "");
           setRole(data.role || "Contributor");
-          setPhone(formatPhoneNumber(data.phone || ""));
+          setPhone(data.phone ? formatPhone(data.phone) : "");
           setLocation(data.location ? String(data.location) : "");
-          setDisplayName(data.displayName || (isSelf ? currentDisplayName : "") || "");
+          setDisplayName(
+            data.displayName || (isSelf ? currentDisplayName : "") || "",
+          );
           setEmail(data.email || "");
           setStatus(data.status || "Active");
         } else {
@@ -224,19 +274,21 @@ function ProfileContent() {
     void loadData();
   }, [profileUid, currentUser, loggedInProfile, authLoading, router]);
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveProfile = async (data: ProfileFormData) => {
     if (!currentUser) return;
 
     setSavingGeneral(true);
     try {
-      const activeUid = profileUid && profileUid !== currentUser.uid ? profileUid : currentUser.uid;
+      const activeUid =
+        profileUid && profileUid !== currentUser.uid
+          ? profileUid
+          : currentUser.uid;
       const isSelf = activeUid === currentUser.uid;
 
       // 1. Update Firebase Auth Profile (DisplayName) ONLY if editing self
       if (isSelf) {
         await updateProfile(currentUser, {
-          displayName: editDisplayName,
+          displayName: data.displayName,
         });
       }
 
@@ -245,11 +297,11 @@ function ProfileContent() {
       await setDoc(
         userDocRef,
         {
-          fullName: editFullName,
-          displayName: editDisplayName,
-          role: editRole,
-          phone: editPhone,
-          location: editLocation,
+          fullName: data.fullName,
+          displayName: data.displayName,
+          role: data.role,
+          phone: data.phone,
+          location: data.location,
           email: email, // save the profile's loaded email address
           updatedAt: new Date().toISOString(),
         },
@@ -257,51 +309,19 @@ function ProfileContent() {
       );
 
       // 3. Sync states
-      setFullName(editFullName);
-      setDisplayName(editDisplayName);
-      setRole(editRole);
-      setPhone(editPhone);
-      setLocation(editLocation);
+      setFullName(data.fullName);
+      setDisplayName(data.displayName);
+      setRole(data.role);
+      setPhone(data.phone);
+      setLocation(data.location);
 
       toast.success("Profile updated successfully!");
       setIsEditModalOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Profile update error:", error);
       toast.error("Failed to update profile. Please try again.");
     } finally {
       setSavingGeneral(false);
-    }
-  };
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentUser || isReadOnly) return;
-
-    if (!newPassword || newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-
-    setSavingSecurity(true);
-    try {
-      await updatePassword(currentUser, newPassword);
-      toast.success("Password updated successfully!");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (error: any) {
-      console.error("Password update error:", error);
-      if (error.code === "auth/requires-recent-login") {
-        toast.error("Please log out and log back in to perform this security action.");
-      } else {
-        toast.error("Failed to update password. Please try again.");
-      }
-    } finally {
-      setSavingSecurity(false);
     }
   };
 
@@ -316,18 +336,20 @@ function ProfileContent() {
     );
   }
 
-  const userInitials = getInitials(fullName || displayName || email || currentUser?.email || "U");
+  const userInitials = getInitials(
+    fullName || displayName || email || currentUser?.email || "U",
+  );
 
   return (
     <>
       <PageTitle title="Profile" />
       <div className="mx-auto max-w-5xl space-y-6 pb-10">
         {/* Profile Premium Header Banner Card */}
-        <div className="relative flex flex-col items-center gap-6 overflow-hidden rounded-3xl border bg-card p-6 shadow-sm md:flex-row md:p-8">
+        <Card className="relative flex flex-col items-center gap-6 p-6 md:flex-row">
           {/* Glow backdrop decorator */}
           <div className="pointer-events-none absolute top-0 right-0 -mt-20 -mr-20 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
 
-          <Avatar className="size-24 border-4 border-background shadow-lg md:size-28">
+          <Avatar className="size-24 border-4 border-background shadow-md md:size-28">
             <AvatarFallback className="bg-primary font-semibold text-3xl text-primary-foreground">
               {userInitials}
             </AvatarFallback>
@@ -335,7 +357,9 @@ function ProfileContent() {
 
           <div className="min-w-0 flex-1 space-y-2 text-center md:text-left">
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
-              <h1 className="truncate font-bold text-3xl tracking-tight">{fullName || "User Profile"}</h1>
+              <h1 className="truncate font-bold text-3xl tracking-tight">
+                {fullName || "User Profile"}
+              </h1>
               {role && (
                 <span className="inline-flex w-fit items-center gap-1 self-center rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary text-xs md:self-auto">
                   <Sparkles className="size-3" />
@@ -343,286 +367,287 @@ function ProfileContent() {
                 </span>
               )}
             </div>
-            <p className="max-w-lg truncate text-muted-foreground text-sm">{email}</p>
+            <p className="max-w-lg truncate text-muted-foreground text-sm">
+              {email}
+            </p>
           </div>
-        </div>
+        </Card>
 
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList
-            className={`grid h-13! w-full max-w-md rounded-xl bg-sidebar p-1.5 ${isSelf ? "grid-cols-2" : "grid-cols-1"}`}
-          >
-            <TabsTrigger value="general" className="flex items-center justify-center gap-2 rounded-lg">
-              <UserRound className="size-4" />
-              General Info
-            </TabsTrigger>
-            {isSelf && (
-              <TabsTrigger value="security" className="flex items-center justify-center gap-2 rounded-lg">
-                <Lock className="size-4" />
-                Security & Password
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="general" className="mt-6">
-            <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
-              <CardHeader className="border-b bg-muted/20 py-4">
-                <CardTitle>Profile Details</CardTitle>
-                <CardDescription>View or edit your profile information.</CardDescription>
-                {(isSelf || (!isSelf && loggedInUserRole === "Admin")) && (
-                  <CardAction>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-9 cursor-pointer rounded-full">
-                          <MoreVertical className="size-5" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="mt-1 w-48">
-                        <DropdownMenuItem
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            setEditDisplayName(displayName);
-                            setEditFullName(fullName);
-                            setEditRole(role);
-                            setEditPhone(phone);
-                            setEditLocation(location);
-                            setIsEditModalOpen(true);
-                          }}
-                          className="flex cursor-pointer items-center gap-2"
-                        >
-                          <Edit className="size-4" />
-                          Edit Profile
-                        </DropdownMenuItem>
-
-                        {!isSelf && loggedInUserRole === "Admin" && (
-                          <DropdownMenuItem
-                            onClick={handleResendInvite}
-                            disabled={status !== "Pending" || isResending}
-                            className={`flex items-center gap-2 ${
-                              status === "Pending" && !isResending ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-                            }`}
-                          >
-                            <Mail className="size-4" />
-                            {isResending ? "Resending..." : "Resend Invite"}
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </CardAction>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-6 p-6 md:p-8">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {/* Display Name */}
-                  <Field className="gap-1.5">
-                    <FieldLabel htmlFor="profile-displayName">Username / Display Name</FieldLabel>
-                    <div className="relative">
-                      <Input id="profile-displayName" value={displayName} disabled />
-                    </div>
-                  </Field>
-
-                  {/* Full Name */}
-                  <Field className="gap-1.5">
-                    <FieldLabel htmlFor="profile-fullName">Full Name</FieldLabel>
-                    <Input id="profile-fullName" value={fullName} disabled />
-                  </Field>
-
-                  {/* Role Selection Dropdown */}
-                  <Field className="gap-1.5">
-                    <FieldLabel htmlFor="profile-role">User Role</FieldLabel>
-                    <NativeSelect
-                      id="profile-role"
-                      className="w-full [&>select]:h-10 [&>select]:w-full"
-                      value={role}
-                      disabled
-                    >
-                      <NativeSelectOption value="Admin">Admin</NativeSelectOption>
-                      <NativeSelectOption value="Contributor">Contributor</NativeSelectOption>
-                    </NativeSelect>
-                  </Field>
-
-                  {/* Phone */}
-                  <Field className="gap-1.5">
-                    <FieldLabel htmlFor="profile-phone">Contact Phone</FieldLabel>
-                    <div className="relative flex items-center">
-                      <Phone className="absolute left-3 size-4 text-muted-foreground" />
-                      <Input id="profile-phone" className="pl-10" value={phone} disabled />
-                    </div>
-                  </Field>
-
-                  {/* Location */}
-                  <Field className="gap-1.5">
-                    <FieldLabel htmlFor="profile-location">Location</FieldLabel>
-                    <div className="relative flex items-center">
-                      <MapPin className="absolute left-3 size-4 text-muted-foreground" />
-                      <Input id="profile-location" className="pl-10" value={location} disabled />
-                    </div>
-                  </Field>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {isSelf && (
-            <TabsContent value="security" className="mt-6">
-              <form onSubmit={handleUpdatePassword}>
-                <Card className="overflow-hidden rounded-2xl border py-0 shadow-sm">
-                  <CardHeader className="border-b bg-muted/20 py-4">
-                    <CardTitle>Account Credentials</CardTitle>
-                    <CardDescription>Keep your administrator security tokens up to date.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6 p-6 md:p-8">
-                    <div className="flex items-start gap-4 rounded-xl border bg-muted/10 p-4 text-muted-foreground text-sm">
-                      <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
-                      <div>
-                        <p className="font-medium text-foreground">Password Security Policy</p>
-                        <p className="mt-0.5 font-light">
-                          Your password must contain at least 6 characters. If you have been signed in for a long
-                          duration, you may be asked to re-authenticate before modifying credential databases.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-2">
-                      {/* Email (Read Only) */}
-                      <Field className="gap-1.5">
-                        <FieldLabel htmlFor="security-email">Registered Email</FieldLabel>
-                        <div className="relative flex items-center">
-                          <Mail className="absolute left-3 size-4 text-muted-foreground" />
-                          <Input
-                            id="security-email"
-                            className="cursor-not-allowed bg-muted/50 pl-10"
-                            value={currentUser?.email || ""}
-                            disabled
-                            readOnly
-                          />
-                        </div>
-                      </Field>
-
-                      <div className="hidden md:block" />
-
-                      {/* New Password */}
-                      <Field className="gap-1.5">
-                        <FieldLabel htmlFor="security-newPassword">New Password</FieldLabel>
-                        <Input
-                          id="security-newPassword"
-                          type="password"
-                          placeholder="••••••••"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                        />
-                      </Field>
-
-                      {/* Confirm Password */}
-                      <Field className="gap-1.5">
-                        <FieldLabel htmlFor="security-confirmPassword">Confirm Password</FieldLabel>
-                        <Input
-                          id="security-confirmPassword"
-                          type="password"
-                          placeholder="••••••••"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                      </Field>
-                    </div>
-
-                    <div className="flex justify-end border-t pt-4">
-                      <Button type="submit" disabled={savingSecurity} className="min-w-[140px]">
-                        {savingSecurity ? "Updating..." : "Change Password"}
+        <div className="mt-6 w-full">
+          <Card className="py-0">
+            <CardHeader className="border-b bg-muted/50 py-4">
+              <CardTitle>Profile Details</CardTitle>
+              <CardDescription>
+                View or edit your profile information.
+              </CardDescription>
+              {(isSelf || (!isSelf && loggedInUserRole === "Admin")) && (
+                <CardAction>
+                  <TooltipDropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-9 cursor-pointer rounded-full">
+                        <MoreVertical className="size-5" />
+                        <span className="sr-only">Actions</span>
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </form>
-            </TabsContent>
-          )}
-        </Tabs>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="mt-1 w-48">
+                      <DropdownMenuItem
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="flex cursor-pointer items-center gap-2">
+                        <Edit className="size-4" />
+                        Edit Profile
+                      </DropdownMenuItem>
 
-        {/* Edit Profile Modal */}
-        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="sm:max-w-lg">
-            <form onSubmit={handleSaveProfile}>
-              <DialogHeader className="mb-4">
-                <DialogTitle>Edit Profile Details</DialogTitle>
-                <DialogDescription>Update your profile and contact information.</DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4 py-2">
+                      {!isSelf && loggedInUserRole === "Admin" && (
+                        <DropdownMenuItem
+                          onClick={handleResendInvite}
+                          disabled={status !== "Pending" || isResending}
+                          className={`flex items-center gap-2 ${
+                            status === "Pending" && !isResending
+                              ? "cursor-pointer"
+                              : "cursor-not-allowed opacity-50"
+                          }`}>
+                          <Mail className="size-4" />
+                          {isResending ? "Resending..." : "Resend Invite"}
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </TooltipDropdownMenu>
+                </CardAction>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-6 p-6 md:p-8">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Display Name */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="modal-displayName">Username / Display Name</FieldLabel>
-                  <Input
-                    id="modal-displayName"
-                    value={editDisplayName}
-                    onChange={(e) => setEditDisplayName(e.target.value)}
-                    required
-                  />
+                  <FieldLabel htmlFor="profile-displayName">
+                    Username / Display Name
+                  </FieldLabel>
+                  <div className="relative">
+                    <Input
+                      id="profile-displayName"
+                      value={displayName}
+                      disabled
+                    />
+                  </div>
                 </Field>
 
                 {/* Full Name */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="modal-fullName">Full Name</FieldLabel>
-                  <Input
-                    id="modal-fullName"
-                    value={editFullName}
-                    onChange={(e) => setEditFullName(e.target.value)}
-                    required
-                  />
+                  <FieldLabel htmlFor="profile-fullName">Full Name</FieldLabel>
+                  <Input id="profile-fullName" value={fullName} disabled />
                 </Field>
 
                 {/* Role Selection Dropdown */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="modal-role">User Role</FieldLabel>
+                  <FieldLabel htmlFor="profile-role">User Role</FieldLabel>
                   <NativeSelect
-                    id="modal-role"
+                    id="profile-role"
                     className="w-full [&>select]:h-10 [&>select]:w-full"
-                    value={editRole}
-                    onChange={(e) => setEditRole(e.target.value)}
-                    disabled={isRoleDisabled}
-                  >
+                    value={role}
+                    disabled>
                     <NativeSelectOption value="Admin">Admin</NativeSelectOption>
-                    <NativeSelectOption value="Contributor">Contributor</NativeSelectOption>
+                    <NativeSelectOption value="Contributor">
+                      Contributor
+                    </NativeSelectOption>
                   </NativeSelect>
                 </Field>
 
                 {/* Phone */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="modal-phone">Contact Phone</FieldLabel>
+                  <FieldLabel htmlFor="profile-phone">Contact Phone</FieldLabel>
                   <div className="relative flex items-center">
                     <Phone className="absolute left-3 size-4 text-muted-foreground" />
                     <Input
-                      id="modal-phone"
+                      id="profile-phone"
                       className="pl-10"
-                      value={editPhone}
-                      onChange={(e) => setEditPhone(formatPhoneNumber(e.target.value))}
+                      value={phone}
+                      disabled
                     />
                   </div>
                 </Field>
 
                 {/* Location */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="modal-location">Location</FieldLabel>
+                  <FieldLabel htmlFor="profile-location">Location</FieldLabel>
                   <div className="relative flex items-center">
                     <MapPin className="absolute left-3 size-4 text-muted-foreground" />
                     <Input
-                      id="modal-location"
+                      id="profile-location"
                       className="pl-10"
-                      placeholder="5-digit ZIP code"
-                      value={editLocation}
-                      onChange={(e) => {
-                        const clean = e.target.value.replace(/\D/g, "").slice(0, 5);
-                        setEditLocation(clean);
-                      }}
+                      value={location}
+                      disabled
                     />
                   </div>
                 </Field>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Edit Profile Modal */}
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <form onSubmit={profileForm.handleSubmit(handleSaveProfile)}>
+              <DialogHeader className="mb-4">
+                <DialogTitle>Edit Profile Details</DialogTitle>
+                <DialogDescription>
+                  Update your profile and contact information.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2">
+                {/* Display Name */}
+                <Controller
+                  control={profileForm.control}
+                  name="displayName"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="modal-displayName">
+                        Username / Display Name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="modal-displayName"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+
+                {/* Full Name */}
+                <Controller
+                  control={profileForm.control}
+                  name="fullName"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="modal-fullName">
+                        Full Name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="modal-fullName"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+
+                {/* Role Selection Dropdown */}
+                <Controller
+                  control={profileForm.control}
+                  name="role"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="modal-role">User Role</FieldLabel>
+                      <NativeSelect
+                        {...field}
+                        id="modal-role"
+                        className="w-full [&>select]:h-10 [&>select]:w-full"
+                        disabled={isRoleDisabled}>
+                        <NativeSelectOption value="Admin">
+                          Admin
+                        </NativeSelectOption>
+                        <NativeSelectOption value="Contributor">
+                          Contributor
+                        </NativeSelectOption>
+                      </NativeSelect>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+
+                {/* Phone */}
+                <Controller
+                  control={profileForm.control}
+                  name="phone"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="modal-phone">
+                        Contact Phone
+                      </FieldLabel>
+                      <div className="relative flex items-center">
+                        <Phone className="absolute left-3 size-4 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          id="modal-phone"
+                          className="pl-10"
+                          aria-invalid={fieldState.invalid}
+                          onChange={(e) =>
+                            field.onChange(formatPhone(e.target.value))
+                          }
+                        />
+                      </div>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+
+                {/* Location */}
+                <Controller
+                  control={profileForm.control}
+                  name="location"
+                  render={({ field, fieldState }) => (
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="modal-location">Location</FieldLabel>
+                      <div className="relative flex items-center">
+                        <MapPin className="absolute left-3 size-4 text-muted-foreground" />
+                        <Input
+                          {...field}
+                          id="modal-location"
+                          className="pl-10"
+                          placeholder="5-digit ZIP code"
+                          aria-invalid={fieldState.invalid}
+                          maxLength={5}
+                          onChange={(e) => {
+                            const clean = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 5);
+                            field.onChange(clean);
+                          }}
+                        />
+                      </div>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
 
               <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={savingGeneral} className="min-w-[120px]">
+                <Button
+                  type="submit"
+                  disabled={savingGeneral}
+                  className="min-w-[120px]">
                   {savingGeneral ? "Saving..." : "Save Changes"}
                 </Button>
               </DialogFooter>
@@ -644,8 +669,7 @@ export default function ProfilePage() {
             <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
           </div>
         </div>
-      }
-    >
+      }>
       <ProfileContent />
     </Suspense>
   );

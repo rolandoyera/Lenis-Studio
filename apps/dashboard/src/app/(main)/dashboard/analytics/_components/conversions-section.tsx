@@ -1,0 +1,213 @@
+import { Ellipsis } from "lucide-react";
+
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { type ConversionsData, fetchConversionsData } from "@/server/analytics-actions";
+
+import { AnalyticsErrorToast } from "./analytics-error-toast";
+import { KeyEventsChart } from "./key-events-chart";
+
+interface FunnelStep {
+  label: string;
+  count: number;
+}
+
+function FunnelSteps({ title, steps }: { title: string; steps: FunnelStep[] }) {
+  const maxCount = Math.max(...steps.map((s) => s.count), 1);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="font-medium text-sm">{title}</p>
+      {steps.map((step, index) => {
+        const prevCount = index > 0 ? steps[index - 1].count : null;
+        const stepRate = prevCount && prevCount > 0 ? `${((step.count / prevCount) * 100).toFixed(0)}%` : null;
+
+        return (
+          <div key={step.label} className="flex flex-col gap-1">
+            <div className="flex h-5 items-center justify-between text-sm">
+              <span className="text-muted-foreground">{step.label}</span>
+              <span className="tabular-nums">
+                {step.count}
+                {stepRate && <span className="ml-2 text-muted-foreground text-xs">({stepRate})</span>}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary/70"
+                style={{ width: `${(step.count / maxCount) * 100}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const LEAD_TYPES: { eventName: string; label: string }[] = [
+  { eventName: "contact_form_submit", label: "Contact form submissions" },
+  { eventName: "project_form_submit", label: "Project form submissions" },
+  { eventName: "phone_click", label: "Phone clicks" },
+  { eventName: "email_click", label: "Email clicks" },
+  { eventName: "whatsapp_click", label: "WhatsApp clicks" },
+];
+
+function LeadBreakdown({ eventCounts }: { eventCounts: ConversionsData["eventCounts"] }) {
+  const totalLeads = LEAD_TYPES.reduce((sum, t) => sum + (eventCounts[t.eventName] || 0), 0);
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-baseline gap-1">
+        <span className="text-2xl tabular-nums leading-none tracking-tight">{totalLeads}</span>
+        <span className="text-muted-foreground text-sm">total lead actions</span>
+      </div>
+      <div className="flex flex-col gap-3 pt-1">
+        {LEAD_TYPES.map((type) => {
+          const count = eventCounts[type.eventName] || 0;
+          const pct = totalLeads > 0 ? (count / totalLeads) * 100 : 0;
+
+          return (
+            <div key={type.eventName} className="flex flex-col gap-1">
+              <div className="flex h-5 items-center justify-between text-sm">
+                <span className="text-muted-foreground">{type.label}</span>
+                <span className="tabular-nums">{count}</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-full rounded-full bg-primary/70" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export async function ConversionsSection({ range }: { range?: string }) {
+  const result = await fetchConversionsData(range);
+
+  if (!result.success || !result.data) {
+    return (
+      <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-8 text-center text-muted-foreground ring-1 ring-foreground/10">
+        <AnalyticsErrorToast error={result.error} title="Conversions Error" />
+        <span className="font-semibold text-foreground text-sm">Failed to load conversion metrics</span>
+        <span className="max-w-md text-muted-foreground text-xs">
+          {result.error || "Please check your Google Analytics configuration settings."}
+        </span>
+      </div>
+    );
+  }
+
+  const { trend, channels, eventCounts } = result.data;
+  const hasKeyEvents = trend.some((point) => point.keyEvents > 0);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="md:col-span-1 lg:col-span-4">
+          <CardHeader>
+            <CardTitle className="font-normal">Key Events</CardTitle>
+            <CardAction>
+              <Ellipsis className="size-4" />
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            {hasKeyEvents ? (
+              <KeyEventsChart data={trend} />
+            ) : (
+              <div className="flex h-64 flex-col items-center justify-center gap-1 text-center text-muted-foreground text-sm">
+                <span>No key events recorded in this range.</span>
+                <span className="max-w-sm text-xs">
+                  Mark the lead events as key events in GA4 Admin → Events once they have fired (see ANALYTICS_TODO.md).
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-1 lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="font-normal">Lead Breakdown</CardTitle>
+            <CardAction>
+              <Ellipsis className="size-4" />
+            </CardAction>
+          </CardHeader>
+          <CardContent>
+            <LeadBreakdown eventCounts={eventCounts} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="md:col-span-1 lg:col-span-3">
+          <CardHeader>
+            <CardTitle className="font-normal">Form Funnels</CardTitle>
+            <CardAction>
+              <Ellipsis className="size-4" />
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-8">
+            <FunnelSteps
+              title="Project form"
+              steps={[
+                { label: "CTA clicks", count: eventCounts.project_button_click || 0 },
+                { label: "Submitted", count: eventCounts.project_form_submit || 0 },
+              ]}
+            />
+            <FunnelSteps
+              title="Contact drawer"
+              steps={[
+                { label: "Opened", count: eventCounts.contact_drawer_open || 0 },
+                { label: "Submitted", count: eventCounts.contact_form_submit || 0 },
+              ]}
+            />
+            <p className="text-muted-foreground text-xs">
+              Form starts (all forms): <span className="tabular-nums">{eventCounts.form_start || 0}</span>
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="gap-2 md:col-span-1 lg:col-span-4">
+          <CardHeader>
+            <CardTitle className="font-normal">Leads by Channel</CardTitle>
+            <CardAction>
+              <Ellipsis className="size-4" />
+            </CardAction>
+          </CardHeader>
+          <CardContent className="px-0">
+            <Table className="[&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
+              <TableHeader className="[&_tr]:border-border/50">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="h-8 font-normal">Channel</TableHead>
+                  <TableHead className="h-8 w-24 text-right font-normal">Sessions</TableHead>
+                  <TableHead className="h-8 w-24 text-right font-normal">Key Events</TableHead>
+                  <TableHead className="h-8 w-20 text-right font-normal">Conv Rate</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="[&_tr]:border-border/50">
+                {channels.length === 0 ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={4} className="h-32 py-4 text-center text-muted-foreground text-sm">
+                      No channel data available for this range.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  channels.map((row) => (
+                    <TableRow className="hover:bg-transparent" key={row.channel}>
+                      <TableCell className="py-4 font-medium">{row.channel}</TableCell>
+                      <TableCell className="text-right tabular-nums">{row.sessions}</TableCell>
+                      <TableCell className="text-right tabular-nums">{row.keyEvents}</TableCell>
+                      <TableCell className="text-right text-muted-foreground tabular-nums">
+                        {row.sessions > 0 ? `${((row.keyEvents / row.sessions) * 100).toFixed(1)}%` : "0.0%"}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

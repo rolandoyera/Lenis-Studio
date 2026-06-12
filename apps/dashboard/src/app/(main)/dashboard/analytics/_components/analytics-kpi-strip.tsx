@@ -26,7 +26,7 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
   }
 
   const { uniqueVisitors, visitors, pageviews, engagementRate, conversionRate } = result.data;
-  const labelText = result.label;
+  const labelText = result.comparisonLabel;
 
   return (
     <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
@@ -56,7 +56,7 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
 
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <span>
-                from <span className="text-foreground">{uniqueVisitors.previousValue}</span>
+                vs. <span className="text-foreground">{uniqueVisitors.previousValue}</span>
               </span>
               <span>•</span>
               <span>{labelText}</span>
@@ -89,7 +89,7 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
 
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <span>
-                from <span className="text-foreground">{visitors.previousValue}</span>
+                vs. <span className="text-foreground">{visitors.previousValue}</span>
               </span>
               <span>•</span>
               <span>{labelText}</span>
@@ -122,7 +122,7 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
 
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <span>
-                from <span className="text-foreground">{pageviews.previousValue}</span>
+                vs. <span className="text-foreground">{pageviews.previousValue}</span>
               </span>
               <span>•</span>
               <span>{labelText}</span>
@@ -155,7 +155,7 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
 
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <span>
-                from <span className="text-foreground">{engagementRate.previousValue}</span>
+                vs. <span className="text-foreground">{engagementRate.previousValue}</span>
               </span>
               <span>•</span>
               <span>{labelText}</span>
@@ -188,7 +188,7 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
 
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <span>
-                from <span className="text-foreground">{conversionRate.previousValue}</span>
+                vs. <span className="text-foreground">{conversionRate.previousValue}</span>
               </span>
               <span>•</span>
               <span>{labelText}</span>

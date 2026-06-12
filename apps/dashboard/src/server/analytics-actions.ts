@@ -204,36 +204,44 @@ export interface FetchKpiResult {
   data?: AnalyticsKpis;
   error?: string;
   label: string;
+  comparisonLabel: string;
 }
 
 function getDateRangesForRange(range: string): {
   current: { startDate: string; endDate: string };
   previous: { startDate: string; endDate: string };
   label: string;
+  comparisonLabel: string;
 } {
   const today = new Date();
   const formatDate = (date: Date) => date.toISOString().split("T")[0];
 
   let days = 28;
   let label = "last 4 weeks";
+  let comparisonLabel = "previous 4 weeks";
 
   if (range === "last-24-hours") {
     days = 1;
     label = "yesterday";
+    comparisonLabel = "previous day";
   } else if (range === "last-7-days") {
     days = 7;
     label = "last 7 days";
+    comparisonLabel = "previous 7 days";
   } else if (range === "last-4-weeks") {
     days = 28;
     label = "last 4 weeks";
+    comparisonLabel = "previous 4 weeks";
   } else if (range === "last-3-months") {
     days = 90;
     label = "last 3 months";
+    comparisonLabel = "previous 3 months";
   } else if (range === "year-to-date") {
     const startOfYear = new Date(today.getFullYear(), 0, 1);
     const diffTime = Math.abs(today.getTime() - startOfYear.getTime());
     days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
     label = "year to date";
+    comparisonLabel = "same period last year";
   }
 
   if (range === "year-to-date") {
@@ -249,6 +257,7 @@ function getDateRangesForRange(range: string): {
       current: { startDate: currentStartStr, endDate: currentEndStr },
       previous: { startDate: prevStartStr, endDate: prevEndStr },
       label: "year to date",
+      comparisonLabel: "same period last year",
     };
   }
 
@@ -271,6 +280,7 @@ function getDateRangesForRange(range: string): {
       endDate: formatDate(prevEnd),
     },
     label,
+    comparisonLabel,
   };
 }
 
@@ -295,6 +305,7 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
       success: false,
       error: "Google Analytics 4 is not configured in .env.local yet.",
       label: dateRanges.label,
+      comparisonLabel: dateRanges.comparisonLabel,
     };
   }
 
@@ -407,6 +418,7 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
         conversionRate: getKpiMetrics(currentData.sessionConversionRate, previousData.sessionConversionRate, true),
       },
       label: dateRanges.label,
+      comparisonLabel: dateRanges.comparisonLabel,
     };
   } catch (error: any) {
     console.error("Failed to fetch KPI data from GA4:", error);
@@ -414,6 +426,505 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
       success: false,
       error: error.message || "Failed to load GA4 KPI strip metrics.",
       label: dateRanges.label,
+      comparisonLabel: dateRanges.comparisonLabel,
     };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+function getConfiguredPropertyId(): string | null {
+  const propertyId = process.env.GA_PROPERTY_ID;
+  const clientId = process.env.GA_CLIENT_ID;
+  const clientSecret = process.env.GA_CLIENT_SECRET;
+  const refreshToken = process.env.GA_REFRESH_TOKEN;
+
+  if (
+    !propertyId ||
+    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
+    !clientId ||
+    !clientSecret ||
+    !refreshToken ||
+    refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
+  ) {
+    return null;
+  }
+  return propertyId;
+}
+
+const CONFIG_MISSING_ERROR = "Google Analytics 4 is not configured in .env.local yet.";
+
+function rangeToStartDate(range?: string): string {
+  if (range === "last-24-hours") return "1daysAgo";
+  if (range === "last-7-days") return "7daysAgo";
+  if (range === "last-3-months") return "90daysAgo";
+  if (range === "year-to-date") return `${new Date().getFullYear()}-01-01`;
+  return "28daysAgo";
+}
+
+function formatCount(val: number): string {
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1000) return `${(val / 1000).toFixed(1)}k`;
+  return val.toString();
+}
+
+// GA4 returns dates as YYYYMMDD and date-hours as YYYYMMDDHH.
+function formatTrendLabel(raw: string, hourly: boolean): string {
+  if (hourly) return `${raw.slice(8, 10)}:00`;
+  return `${raw.slice(4, 6)}/${raw.slice(6, 8)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Traffic trend (Overview)
+// ---------------------------------------------------------------------------
+
+export interface TrendPoint {
+  label: string;
+  activeUsers: number;
+  sessions: number;
+}
+
+export async function fetchTrafficTrend(
+  range?: string,
+): Promise<{ success: boolean; data: TrendPoint[]; error?: string }> {
+  const propertyId = getConfiguredPropertyId();
+  if (!propertyId) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
+
+  const hourly = range === "last-24-hours";
+  const dimension = hourly ? "dateHour" : "date";
+
+  try {
+    const client = getGA4Client();
+    const [response] = await client.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [{ startDate: rangeToStartDate(range), endDate: "today" }],
+      dimensions: [{ name: dimension }],
+      metrics: [{ name: "activeUsers" }, { name: "sessions" }],
+      orderBys: [{ dimension: { dimensionName: dimension } }],
+      limit: 200,
+    });
+
+    const data: TrendPoint[] = (response.rows || []).map((row) => ({
+      label: formatTrendLabel(row.dimensionValues?.[0]?.value || "", hourly),
+      activeUsers: parseInt(row.metricValues?.[0]?.value || "0", 10),
+      sessions: parseInt(row.metricValues?.[1]?.value || "0", 10),
+    }));
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("Failed to fetch traffic trend from GA4:", error);
+    return { success: false, data: [], error: error.message || "Failed to load GA4 traffic trend." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Traffic sources (Overview)
+// ---------------------------------------------------------------------------
+
+export interface TrafficSourceItem {
+  source: string;
+  visitors: number;
+  label: string;
+}
+
+export interface TrafficSourcesData {
+  channels: TrafficSourceItem[];
+  sources: TrafficSourceItem[];
+  campaigns: TrafficSourceItem[];
+}
+
+export async function fetchTrafficSources(
+  range?: string,
+): Promise<{ success: boolean; data?: TrafficSourcesData; error?: string }> {
+  const propertyId = getConfiguredPropertyId();
+  if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
+
+  try {
+    const client = getGA4Client();
+
+    const runFor = async (dimension: string): Promise<TrafficSourceItem[]> => {
+      const [response] = await client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate: rangeToStartDate(range), endDate: "today" }],
+        dimensions: [{ name: dimension }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 8,
+      });
+
+      return (response.rows || [])
+        .map((row) => {
+          const visitors = parseInt(row.metricValues?.[0]?.value || "0", 10);
+          return {
+            source: row.dimensionValues?.[0]?.value || "(unknown)",
+            visitors,
+            label: formatCount(visitors),
+          };
+        })
+        .filter((item) => item.source !== "(not set)")
+        .slice(0, 5);
+    };
+
+    const [channels, sources, campaigns] = await Promise.all([
+      runFor("sessionDefaultChannelGroup"),
+      runFor("sessionSource"),
+      runFor("sessionCampaignName"),
+    ]);
+
+    return { success: true, data: { channels, sources, campaigns } };
+  } catch (error: any) {
+    console.error("Failed to fetch traffic sources from GA4:", error);
+    return { success: false, error: error.message || "Failed to load GA4 traffic sources." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Realtime (Overview)
+// ---------------------------------------------------------------------------
+
+export interface RealtimeData {
+  total: number;
+  perMinute: { minute: number; visitors: number }[];
+  countries: { code: string; name: string; visitors: number }[];
+}
+
+export async function fetchRealtimeData(): Promise<{ success: boolean; data?: RealtimeData; error?: string }> {
+  const propertyId = getConfiguredPropertyId();
+  if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
+
+  try {
+    const client = getGA4Client();
+
+    const [[minuteResponse], [countryResponse]] = await Promise.all([
+      client.runRealtimeReport({
+        property: `properties/${propertyId}`,
+        dimensions: [{ name: "minutesAgo" }],
+        metrics: [{ name: "activeUsers" }],
+      }),
+      client.runRealtimeReport({
+        property: `properties/${propertyId}`,
+        dimensions: [{ name: "countryId" }, { name: "country" }],
+        metrics: [{ name: "activeUsers" }],
+      }),
+    ]);
+
+    // Build a full 30-minute series (oldest -> newest); GA4 omits empty minutes.
+    const byMinute = new Map<number, number>();
+    for (const row of minuteResponse.rows || []) {
+      const minutesAgo = parseInt(row.dimensionValues?.[0]?.value || "0", 10);
+      byMinute.set(minutesAgo, parseInt(row.metricValues?.[0]?.value || "0", 10));
+    }
+    const perMinute = Array.from({ length: 30 }, (_, i) => {
+      const minutesAgo = 29 - i;
+      return { minute: i + 1, visitors: byMinute.get(minutesAgo) || 0 };
+    });
+
+    const allCountries = (countryResponse.rows || []).map((row) => ({
+      code: row.dimensionValues?.[0]?.value || "",
+      name: row.dimensionValues?.[1]?.value || "Unknown",
+      visitors: parseInt(row.metricValues?.[0]?.value || "0", 10),
+    }));
+    const total = allCountries.reduce((sum, c) => sum + c.visitors, 0);
+    const countries = allCountries.sort((a, b) => b.visitors - a.visitors).slice(0, 4);
+
+    return { success: true, data: { total, perMinute, countries } };
+  } catch (error: any) {
+    console.error("Failed to fetch realtime data from GA4:", error);
+    return { success: false, error: error.message || "Failed to load GA4 realtime data." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Conversions tab
+// ---------------------------------------------------------------------------
+
+// Custom events sent by the marketing site (see ANALYTICS_TODO.md).
+const TRACKED_EVENTS = [
+  "project_button_click",
+  "contact_drawer_open",
+  "form_start",
+  "project_form_submit",
+  "contact_form_submit",
+  "phone_click",
+  "email_click",
+  "whatsapp_click",
+] as const;
+
+export interface ConversionsData {
+  trend: { label: string; keyEvents: number }[];
+  channels: { channel: string; sessions: number; keyEvents: number }[];
+  eventCounts: Record<string, number>;
+}
+
+export async function fetchConversionsData(
+  range?: string,
+): Promise<{ success: boolean; data?: ConversionsData; error?: string }> {
+  const propertyId = getConfiguredPropertyId();
+  if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
+
+  const hourly = range === "last-24-hours";
+  const trendDimension = hourly ? "dateHour" : "date";
+  const dateRanges = [{ startDate: rangeToStartDate(range), endDate: "today" }];
+
+  try {
+    const client = getGA4Client();
+
+    const [[trendResponse], [channelResponse], [eventsResponse]] = await Promise.all([
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: trendDimension }],
+        metrics: [{ name: "keyEvents" }],
+        orderBys: [{ dimension: { dimensionName: trendDimension } }],
+        limit: 200,
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "sessionDefaultChannelGroup" }],
+        metrics: [{ name: "sessions" }, { name: "keyEvents" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 8,
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            inListFilter: { values: [...TRACKED_EVENTS] },
+          },
+        },
+      }),
+    ]);
+
+    const trend = (trendResponse.rows || []).map((row) => ({
+      label: formatTrendLabel(row.dimensionValues?.[0]?.value || "", hourly),
+      keyEvents: parseInt(row.metricValues?.[0]?.value || "0", 10),
+    }));
+
+    const channels = (channelResponse.rows || []).map((row) => ({
+      channel: row.dimensionValues?.[0]?.value || "(unknown)",
+      sessions: parseInt(row.metricValues?.[0]?.value || "0", 10),
+      keyEvents: parseInt(row.metricValues?.[1]?.value || "0", 10),
+    }));
+
+    const eventCounts: Record<string, number> = {};
+    for (const eventName of TRACKED_EVENTS) eventCounts[eventName] = 0;
+    for (const row of eventsResponse.rows || []) {
+      const name = row.dimensionValues?.[0]?.value || "";
+      eventCounts[name] = parseInt(row.metricValues?.[0]?.value || "0", 10);
+    }
+
+    return { success: true, data: { trend, channels, eventCounts } };
+  } catch (error: any) {
+    console.error("Failed to fetch conversions data from GA4:", error);
+    return { success: false, error: error.message || "Failed to load GA4 conversions data." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Landing pages (Engagement tab)
+// ---------------------------------------------------------------------------
+
+export interface LandingPageItem {
+  path: string;
+  sessions: string;
+  keyEvents: number;
+  conversionRate: string;
+}
+
+export async function fetchLandingPages(
+  range?: string,
+): Promise<{ success: boolean; data: LandingPageItem[]; error?: string }> {
+  const propertyId = getConfiguredPropertyId();
+  if (!propertyId) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
+
+  try {
+    const client = getGA4Client();
+    const [response] = await client.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [{ startDate: rangeToStartDate(range), endDate: "today" }],
+      dimensions: [{ name: "landingPage" }],
+      metrics: [{ name: "sessions" }, { name: "keyEvents" }],
+      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+      limit: 10,
+    });
+
+    // GA4 can return an empty-string landing page (sessions with no recorded
+    // landing page); drop it along with "(not set)" so paths stay unique.
+    const data: LandingPageItem[] = (response.rows || [])
+      .filter((row) => {
+        const path = row.dimensionValues?.[0]?.value;
+        return path !== "(not set)" && path !== "" && path != null;
+      })
+      .map((row) => {
+        const sessions = parseInt(row.metricValues?.[0]?.value || "0", 10);
+        const keyEvents = parseInt(row.metricValues?.[1]?.value || "0", 10);
+        return {
+          path: row.dimensionValues?.[0]?.value as string,
+          sessions: formatCount(sessions),
+          keyEvents,
+          conversionRate: sessions > 0 ? `${((keyEvents / sessions) * 100).toFixed(1)}%` : "0.0%",
+        };
+      });
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error("Failed to fetch landing pages from GA4:", error);
+    return { success: false, data: [], error: error.message || "Failed to load GA4 landing pages." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Audience tab
+// ---------------------------------------------------------------------------
+
+export interface AudienceData {
+  cities: { city: string; countryId: string; users: number }[];
+  devices: { device: string; users: number }[];
+  newVsReturning: { type: string; users: number }[];
+}
+
+export async function fetchAudienceData(
+  range?: string,
+): Promise<{ success: boolean; data?: AudienceData; error?: string }> {
+  const propertyId = getConfiguredPropertyId();
+  if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
+
+  const dateRanges = [{ startDate: rangeToStartDate(range), endDate: "today" }];
+
+  try {
+    const client = getGA4Client();
+
+    const [[cityResponse], [deviceResponse], [newReturningResponse]] = await Promise.all([
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "city" }, { name: "countryId" }],
+        metrics: [{ name: "activeUsers" }],
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+        limit: 10,
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "deviceCategory" }],
+        metrics: [{ name: "activeUsers" }],
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "newVsReturning" }],
+        metrics: [{ name: "activeUsers" }],
+      }),
+    ]);
+
+    const cities = (cityResponse.rows || [])
+      .filter((row) => row.dimensionValues?.[0]?.value !== "(not set)")
+      .map((row) => ({
+        city: row.dimensionValues?.[0]?.value || "Unknown",
+        countryId: row.dimensionValues?.[1]?.value || "",
+        users: parseInt(row.metricValues?.[0]?.value || "0", 10),
+      }))
+      .slice(0, 8);
+
+    const devices = (deviceResponse.rows || []).map((row) => ({
+      device: row.dimensionValues?.[0]?.value || "unknown",
+      users: parseInt(row.metricValues?.[0]?.value || "0", 10),
+    }));
+
+    const newVsReturning = (newReturningResponse.rows || [])
+      .filter((row) => row.dimensionValues?.[0]?.value !== "(not set)")
+      .map((row) => ({
+        type: row.dimensionValues?.[0]?.value || "unknown",
+        users: parseInt(row.metricValues?.[0]?.value || "0", 10),
+      }));
+
+    return { success: true, data: { cities, devices, newVsReturning } };
+  } catch (error: any) {
+    console.error("Failed to fetch audience data from GA4:", error);
+    return { success: false, error: error.message || "Failed to load GA4 audience data." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Acquisition tab
+// ---------------------------------------------------------------------------
+
+export interface ChannelRow {
+  channel: string;
+  sessions: string;
+  users: string;
+  engagementRate: string;
+  keyEvents: number;
+}
+
+export interface SourceMediumRow {
+  source: string;
+  medium: string;
+  sessions: string;
+  keyEvents: number;
+}
+
+export interface AcquisitionData {
+  channels: ChannelRow[];
+  sourceMedium: SourceMediumRow[];
+}
+
+export async function fetchAcquisitionData(
+  range?: string,
+): Promise<{ success: boolean; data?: AcquisitionData; error?: string }> {
+  const propertyId = getConfiguredPropertyId();
+  if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
+
+  const dateRanges = [{ startDate: rangeToStartDate(range), endDate: "today" }];
+
+  try {
+    const client = getGA4Client();
+
+    const [[channelResponse], [sourceMediumResponse]] = await Promise.all([
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "sessionDefaultChannelGroup" }],
+        metrics: [{ name: "sessions" }, { name: "activeUsers" }, { name: "engagementRate" }, { name: "keyEvents" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 10,
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "sessionSource" }, { name: "sessionMedium" }],
+        metrics: [{ name: "sessions" }, { name: "keyEvents" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 10,
+      }),
+    ]);
+
+    const channels = (channelResponse.rows || []).map((row) => ({
+      channel: row.dimensionValues?.[0]?.value || "(unknown)",
+      sessions: formatCount(parseInt(row.metricValues?.[0]?.value || "0", 10)),
+      users: formatCount(parseInt(row.metricValues?.[1]?.value || "0", 10)),
+      engagementRate: `${(parseFloat(row.metricValues?.[2]?.value || "0") * 100).toFixed(1)}%`,
+      keyEvents: parseInt(row.metricValues?.[3]?.value || "0", 10),
+    }));
+
+    const sourceMedium = (sourceMediumResponse.rows || []).map((row) => ({
+      source: row.dimensionValues?.[0]?.value || "(unknown)",
+      medium: row.dimensionValues?.[1]?.value || "(unknown)",
+      sessions: formatCount(parseInt(row.metricValues?.[0]?.value || "0", 10)),
+      keyEvents: parseInt(row.metricValues?.[1]?.value || "0", 10),
+    }));
+
+    return { success: true, data: { channels, sourceMedium } };
+  } catch (error: any) {
+    console.error("Failed to fetch acquisition data from GA4:", error);
+    return { success: false, error: error.message || "Failed to load GA4 acquisition data." };
   }
 }
