@@ -2,16 +2,7 @@
 
 import Link from "next/link";
 
-import {
-  Building2,
-  DollarSign,
-  ExternalLink,
-  Mail,
-  MapPin,
-  Phone,
-  User,
-  Users,
-} from "lucide-react";
+import { Building2, DollarSign, ExternalLink, Mail, MapPin, Phone, User, Users } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -23,16 +14,12 @@ interface ProjectInformationCardProps {
   client: Client | null;
 }
 
-export function ProjectInformationCard({
-  project,
-  client,
-}: ProjectInformationCardProps) {
+export function ProjectInformationCard({ project, client }: ProjectInformationCardProps) {
   let clientName = "Unnamed Client";
   if (client) {
     const firstName = client.firstName?.trim() || "";
     const lastName = client.lastName?.trim() || "";
-    clientName =
-      `${firstName} ${lastName}`.trim() || client.company || "Unnamed Client";
+    clientName = `${firstName} ${lastName}`.trim() || client.company || "Unnamed Client";
   }
 
   return (
@@ -56,21 +43,13 @@ export function ProjectInformationCard({
                   {/* biome-ignore lint/nursery/useNullishCoalescing: truthy check for address fields */}
                   {(project.city || project.state || project.zip) && (
                     <span className="mt-0.5">
-                      {[
-                        project.city,
-                        [project.state, project.zip].filter(Boolean).join(" "),
-                      ]
+                      {[project.city, [project.state, project.zip].filter(Boolean).join(" ")]
                         .filter(Boolean)
                         .join(", ")}
                     </span>
                   )}
                   {(() => {
-                    const fullAddress = [
-                      project.street,
-                      project.city,
-                      project.state,
-                      project.zip,
-                    ]
+                    const fullAddress = [project.street, project.city, project.state, project.zip]
                       .filter(Boolean)
                       .join(", ");
                     return (
@@ -79,7 +58,8 @@ export function ProjectInformationCard({
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                        >
                           Google Maps
                           <ExternalLink className="size-3" />
                         </a>
@@ -89,9 +69,7 @@ export function ProjectInformationCard({
                 </div>
               </div>
             ) : (
-              <span className="text-muted-foreground text-xs italic">
-                No site address specified
-              </span>
+              <span className="text-muted-foreground text-xs italic">No site address specified</span>
             )}
           </div>
 
@@ -100,9 +78,7 @@ export function ProjectInformationCard({
               <Label className="mb-1">Budget Pool</Label>
               <div className="flex items-center gap-1.5 font-semibold text-foreground">
                 <DollarSign className="size-4 shrink-0 text-emerald-500" />
-                <span>
-                  {formatCurrency(project.budget, { noDecimals: true })}
-                </span>
+                <span>{formatCurrency(project.budget, { noDecimals: true })}</span>
               </div>
             </div>
           )}
@@ -122,7 +98,8 @@ export function ProjectInformationCard({
                 <Link
                   href={`/dashboard/clients/${client.uid}`}
                   prefetch={false}
-                  className="flex items-center gap-1.5 text-foreground hover:text-primary hover:underline">
+                  className="flex items-center gap-1.5 text-foreground hover:text-primary hover:underline"
+                >
                   <User className="size-4 shrink-0 text-primary" />
                   <span>{clientName}</span>
                 </Link>
@@ -133,11 +110,10 @@ export function ProjectInformationCard({
                   <Label className="mb-1">Email Address</Label>
                   <a
                     href={`mailto:${client.email}`}
-                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary">
+                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
+                  >
                     <Mail className="size-4 shrink-0 text-primary" />
-                    <span className="truncate group-hover:underline">
-                      {client.email}
-                    </span>
+                    <span className="truncate group-hover:underline">{client.email}</span>
                   </a>
                 </div>
               )}
@@ -147,19 +123,16 @@ export function ProjectInformationCard({
                   <Label className="mb-1">Phone Number</Label>
                   <a
                     href={`tel:${normalizePhone(client.phone)}`}
-                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary">
+                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
+                  >
                     <Phone className="size-4 shrink-0 text-primary" />
-                    <span className="group-hover:underline">
-                      {formatPhone(client.phone)}
-                    </span>
+                    <span className="group-hover:underline">{formatPhone(client.phone)}</span>
                   </a>
                 </div>
               )}
             </div>
           ) : (
-            <span className="text-muted-foreground text-xs italic">
-              No client profile assigned
-            </span>
+            <span className="text-muted-foreground text-xs italic">No client profile assigned</span>
           )}
         </div>
       </CardContent>

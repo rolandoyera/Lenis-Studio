@@ -15,6 +15,10 @@ export const PROJECT_TABS = [
 
 export type ProjectTab = (typeof PROJECT_TABS)[number]["value"];
 
+export function isProjectTab(value: string | null): value is ProjectTab {
+  return PROJECT_TABS.some((tab) => tab.value === value);
+}
+
 export const projectSchema = z.object({
   clientId: z.string().min(1, "Please select a parent client."),
   name: z.string().min(1, "Project title is required."),

@@ -1,12 +1,7 @@
 import { z } from "zod";
 
 import type { Trade } from "@/lib/types";
-import {
-  formatPhone,
-  formatZip,
-  isValidUsPhone,
-  isValidUsZip,
-} from "@/lib/utils";
+import { formatPhone, formatZip, isValidUsPhone, isValidUsZip } from "@/lib/utils";
 
 export function cleanTrailingSlash(url: string | undefined | null): string {
   if (!url) return "";
@@ -35,12 +30,7 @@ export const TRADE_TYPES = [
 
 export type TradeType = (typeof TRADE_TYPES)[number];
 
-export const CONTRACTOR_SUBCATEGORIES = [
-  "General Contractor",
-  "Pool Contractor",
-  "Glass Contractor",
-  "Other",
-] as const;
+export const CONTRACTOR_SUBCATEGORIES = ["General Contractor", "Pool Contractor", "Glass Contractor", "Other"] as const;
 
 export type ContractorSubcategory = (typeof CONTRACTOR_SUBCATEGORIES)[number];
 
@@ -53,11 +43,7 @@ export const INSTALLER_SUBCATEGORIES = [
 
 export type InstallerSubcategory = (typeof INSTALLER_SUBCATEGORIES)[number];
 
-export const FABRICATOR_SUBCATEGORIES = [
-  "Stone Fabricator",
-  "Metal Fabricator",
-  "Other",
-] as const;
+export const FABRICATOR_SUBCATEGORIES = ["Stone Fabricator", "Metal Fabricator", "Other"] as const;
 
 export type FabricatorSubcategory = (typeof FABRICATOR_SUBCATEGORIES)[number];
 
@@ -81,29 +67,13 @@ export const tradeSchema = z
     tradeSubcategory: z.string().optional(),
     contactFirstName: z.string().optional(),
     contactLastName: z.string().optional(),
-    email: z.union([
-      z.string().email("Please enter a valid email address."),
-      z.literal(""),
-    ]),
-    phone: z.union([
-      z
-        .string()
-        .refine(isValidUsPhone, "Enter a valid 10-digit US phone number."),
-      z.literal(""),
-    ]),
-    website: z
-      .union([z.string().url("Enter a valid website URL."), z.literal("")])
-      .transform(cleanTrailingSlash),
+    email: z.union([z.string().email("Please enter a valid email address."), z.literal("")]),
+    phone: z.union([z.string().refine(isValidUsPhone, "Enter a valid 10-digit US phone number."), z.literal("")]),
+    website: z.union([z.string().url("Enter a valid website URL."), z.literal("")]).transform(cleanTrailingSlash),
     street: z.string().optional(),
     city: z.string().optional(),
-    state: z
-      .string()
-      .max(2, "State abbreviation must be up to 2 characters.")
-      .optional(),
-    zip: z.union([
-      z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
-      z.literal(""),
-    ]),
+    state: z.string().max(2, "State abbreviation must be up to 2 characters.").optional(),
+    zip: z.union([z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."), z.literal("")]),
     licenseNumber: z.string().optional(),
     licenseExpirationDate: z.string().optional(),
     insurancePolicyNumber: z.string().optional(),
@@ -112,12 +82,7 @@ export const tradeSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.tradeType === "Contractors") {
-      if (
-        !data.tradeSubcategory ||
-        !(CONTRACTOR_SUBCATEGORIES as readonly string[]).includes(
-          data.tradeSubcategory,
-        )
-      ) {
+      if (!data.tradeSubcategory || !(CONTRACTOR_SUBCATEGORIES as readonly string[]).includes(data.tradeSubcategory)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Please select a valid contractor subcategory.",
@@ -125,12 +90,7 @@ export const tradeSchema = z
         });
       }
     } else if (data.tradeType === "Installers") {
-      if (
-        !data.tradeSubcategory ||
-        !(INSTALLER_SUBCATEGORIES as readonly string[]).includes(
-          data.tradeSubcategory,
-        )
-      ) {
+      if (!data.tradeSubcategory || !(INSTALLER_SUBCATEGORIES as readonly string[]).includes(data.tradeSubcategory)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Please select a valid installer subcategory.",
@@ -138,12 +98,7 @@ export const tradeSchema = z
         });
       }
     } else if (data.tradeType === "Fabricators") {
-      if (
-        !data.tradeSubcategory ||
-        !(FABRICATOR_SUBCATEGORIES as readonly string[]).includes(
-          data.tradeSubcategory,
-        )
-      ) {
+      if (!data.tradeSubcategory || !(FABRICATOR_SUBCATEGORIES as readonly string[]).includes(data.tradeSubcategory)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Please select a valid fabricator subcategory.",
@@ -151,12 +106,7 @@ export const tradeSchema = z
         });
       }
     } else if (data.tradeType === "Engineer") {
-      if (
-        !data.tradeSubcategory ||
-        !(ENGINEER_SUBCATEGORIES as readonly string[]).includes(
-          data.tradeSubcategory,
-        )
-      ) {
+      if (!data.tradeSubcategory || !(ENGINEER_SUBCATEGORIES as readonly string[]).includes(data.tradeSubcategory)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Please select a valid engineer subcategory.",

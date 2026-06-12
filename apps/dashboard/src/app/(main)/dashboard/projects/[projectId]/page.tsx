@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ import { addProposal, deleteProject, getClients, getProject, getProposals, updat
 import type { Client, Project, Proposal } from "@/lib/types";
 
 import { DeleteProjectDialog } from "../_components/delete-project-dialog";
-import { type ProjectFormData, type ProjectTab, projectToForm } from "../_components/project-constants";
+import { isProjectTab, type ProjectFormData, type ProjectTab, projectToForm } from "../_components/project-constants";
 import { ProjectFormDialog } from "../_components/project-form-dialog";
 import { ProjectHeader } from "../_components/project-header";
 import { ProjectInformationCard } from "../_components/project-information-card";
@@ -29,6 +29,7 @@ interface PageProps {
 export default function ProjectDetailPage({ params }: PageProps) {
   const { projectId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { profile, loading: authLoading } = useAuth();
 
   const [project, setProject] = useState<Project | null>(null);
@@ -36,7 +37,8 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<ProjectTab>("overview");
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<ProjectTab>(isProjectTab(tabParam) ? tabParam : "overview");
 
   // Dialog States
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -80,6 +82,13 @@ export default function ProjectDetailPage({ params }: PageProps) {
     }
     void loadProjectData();
   }, [projectId, router, profile, authLoading]);
+
+  const handleTabChange = (tab: ProjectTab) => {
+    setActiveTab(tab);
+    // Keep the URL in sync so refresh and copied links land on the same tab.
+    const url = tab === "overview" ? `/dashboard/projects/${projectId}` : `/dashboard/projects/${projectId}?tab=${tab}`;
+    window.history.replaceState(null, "", url);
+  };
 
   const handleEditSubmit = async (data: ProjectFormData) => {
     if (!project) return;
@@ -166,7 +175,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
           project={project}
           client={client}
           activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab as ProjectTab)}
+          onTabChange={(tab) => handleTabChange(tab as ProjectTab)}
           onEdit={() => setIsEditOpen(true)}
           onRequestDelete={() => setIsDeleteOpen(true)}
         />

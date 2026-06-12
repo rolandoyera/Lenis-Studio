@@ -21,23 +21,38 @@ import {
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { addOrganization } from "@/lib/db";
 import type { Organization } from "@/lib/types";
 
 // Schema for tenant creation form
 const createTenantSchema = z.object({
-  name: z.string().min(2, "Please enter an organization name (min 2 characters).").max(100),
+  name: z
+    .string()
+    .min(2, "Please enter an organization name (min 2 characters).")
+    .max(100),
   organizationId: z
     .string()
     .min(3, "Organization ID must be at least 3 characters.")
     .max(30)
-    .regex(/^[a-z0-9-]+$/, "ID can only contain lowercase letters, numbers, and hyphens (no spaces)."),
+    .regex(
+      /^[a-z0-9-]+$/,
+      "ID can only contain lowercase letters, numbers, and hyphens (no spaces).",
+    ),
   adminName: z
     .string()
     .min(2, "Please enter the admin's full name.")
     .max(100)
-    .refine((val) => val.trim().split(/\s+/).length >= 2, "Please enter both first and last name."),
+    .refine(
+      (val) => val.trim().split(/\s+/).length >= 2,
+      "Please enter both first and last name.",
+    ),
   adminEmail: z.string().email("Please enter a valid email address."),
   plan: z.enum(["Starter", "Pro", "Enterprise"]),
 });
@@ -51,20 +66,26 @@ interface CreateTenantDialogProps {
   onTenantCreated: (newOrg: Organization) => void;
 }
 
-export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }: CreateTenantDialogProps) {
+export function CreateTenantDialog({
+  open,
+  onOpenChange,
+  orgs,
+  onTenantCreated,
+}: CreateTenantDialogProps) {
   const [submitting, setSubmitting] = useState(false);
 
   // Form setup
-  const { control, handleSubmit, reset, setValue } = useForm<CreateTenantFormData>({
-    resolver: zodResolver(createTenantSchema),
-    defaultValues: {
-      name: "",
-      organizationId: "",
-      adminName: "",
-      adminEmail: "",
-      plan: "Pro",
-    },
-  });
+  const { control, handleSubmit, reset, setValue } =
+    useForm<CreateTenantFormData>({
+      resolver: zodResolver(createTenantSchema),
+      defaultValues: {
+        name: "",
+        organizationId: "",
+        adminName: "",
+        adminEmail: "",
+        plan: "Pro",
+      },
+    });
 
   // Reset form fields on dialog close
   useEffect(() => {
@@ -123,18 +144,21 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md bg-popover/98 backdrop-blur-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Building2 className="size-5 text-primary" />
             Provision Design Studio Tenant
           </DialogTitle>
           <DialogDescription>
-            Assign the new organization name, identifier slug, and the primary administrator email address.
+            Assign the new organization name, identifier slug, and the primary
+            administrator email address.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(handleCreateSubmit)} className="flex flex-col gap-4 py-2">
+        <form
+          onSubmit={handleSubmit(handleCreateSubmit)}
+          className="flex flex-col gap-4 py-2">
           {/* Organization Name */}
           <Controller
             control={control}
@@ -153,7 +177,9 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
                   }}
                   aria-invalid={fieldState.invalid}
                 />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -164,7 +190,9 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
             name="organizationId"
             render={({ field, fieldState }) => (
               <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="org-slug">Organization ID / URL Slug</FieldLabel>
+                <FieldLabel htmlFor="org-slug">
+                  Organization ID / URL Slug
+                </FieldLabel>
                 <Input
                   {...field}
                   id="org-slug"
@@ -172,20 +200,27 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
                   disabled={submitting}
                   aria-invalid={fieldState.invalid}
                   onChange={(e) => {
-                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                    const val = e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9-]/g, "");
                     field.onChange(val);
                   }}
                 />
                 <p className="text-[10px] text-muted-foreground/80 leading-normal">
-                  This identifier must be globally unique. Only lowercase letters, numbers, and hyphens are allowed.
+                  This identifier must be globally unique. Only lowercase
+                  letters, numbers, and hyphens are allowed.
                 </p>
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
 
           <DropdownMenuSeparator className="my-1" />
-          <h4 className="font-semibold text-primary/80 text-xs uppercase tracking-wider">Primary Administrator</h4>
+          <h4 className="font-semibold text-primary/80 text-xs uppercase tracking-wider">
+            Primary Administrator
+          </h4>
 
           {/* Admin Full Name */}
           <Controller
@@ -193,7 +228,9 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
             name="adminName"
             render={({ field, fieldState }) => (
               <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="org-admin-name">Administrator Full Name</FieldLabel>
+                <FieldLabel htmlFor="org-admin-name">
+                  Administrator Full Name
+                </FieldLabel>
                 <Input
                   {...field}
                   id="org-admin-name"
@@ -201,7 +238,9 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
                   disabled={submitting}
                   aria-invalid={fieldState.invalid}
                 />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -212,7 +251,9 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
             name="adminEmail"
             render={({ field, fieldState }) => (
               <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                <FieldLabel htmlFor="org-admin-email">Administrator Email Address</FieldLabel>
+                <FieldLabel htmlFor="org-admin-email">
+                  Administrator Email Address
+                </FieldLabel>
                 <Input
                   {...field}
                   id="org-admin-email"
@@ -220,7 +261,9 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
                   disabled={submitting}
                   aria-invalid={fieldState.invalid}
                 />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -232,8 +275,13 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
             render={({ field, fieldState }) => (
               <Field className="gap-1.5" data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="org-plan">Service Plan Tier</FieldLabel>
-                <Select value={field.value} onValueChange={field.onChange} disabled={submitting}>
-                  <SelectTrigger id="org-plan" aria-invalid={fieldState.invalid}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={submitting}>
+                  <SelectTrigger
+                    id="org-plan"
+                    aria-invalid={fieldState.invalid}>
                     <SelectValue placeholder="Select a plan tier" />
                   </SelectTrigger>
                   <SelectContent>
@@ -242,7 +290,9 @@ export function CreateTenantDialog({ open, onOpenChange, orgs, onTenantCreated }
                     <SelectItem value="Enterprise">Enterprise Plan</SelectItem>
                   </SelectContent>
                 </Select>
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
