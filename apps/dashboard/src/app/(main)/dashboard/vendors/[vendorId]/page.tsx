@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { deleteStorageFileByPath, deleteVendor, getVendor, getVendorLibraryItems, updateVendor } from "@/lib/db";
+import { deleteReplacedStorageFiles, deleteVendor, getVendor, getVendorLibraryItems, updateVendor } from "@/lib/db";
 import type { LibraryItem, Vendor } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
 import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
@@ -96,23 +96,14 @@ export default function VendorDetailPage({ params }: PageProps) {
         heroImagePath: mirrored.heroImagePath,
       };
 
-      // Perform replacement cleanup for logo & hero
-      const storagePathsToDelete: string[] = [];
-      if (vendor.logoPath && vendor.logoPath !== updatedData.logoPath) {
-        storagePathsToDelete.push(vendor.logoPath);
-      }
-      if (vendor.heroImagePath && vendor.heroImagePath !== updatedData.heroImagePath) {
-        storagePathsToDelete.push(vendor.heroImagePath);
-      }
-
-      if (storagePathsToDelete.length > 0) {
-        const deleteResults = await Promise.allSettled(storagePathsToDelete.map(deleteStorageFileByPath));
-        const failures = deleteResults.filter((r) => r.status === "rejected");
-        if (failures.length > 0) {
-          const error = (failures[0] as PromiseRejectedResult).reason;
-          toast.error(`Failed to clean up replaced brand images: ${error.message || error}`);
-          return; // Abort update if storage deletion fails (except object-not-found which is ignored internally)
-        }
+      try {
+        await deleteReplacedStorageFiles(
+          [vendor.logoPath, vendor.heroImagePath],
+          [updatedData.logoPath, updatedData.heroImagePath],
+        );
+      } catch (error) {
+        toast.error(`Failed to clean up replaced brand images: ${getErrorMessage(error, "Unknown error")}`);
+        return; // Abort update if storage deletion fails (except object-not-found which is ignored internally)
       }
 
       await updateVendor(vendor.vendorId, updatedData);

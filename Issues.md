@@ -4,7 +4,7 @@
 
 Scope: `apps/dashboard/src/app/(main)/dashboard/library`, `apps/dashboard/src/app/(main)/dashboard/vendors`, and related image helpers in `apps/dashboard/src/lib`.
 
-### 1. Image mirroring logic is duplicated between library and vendor helpers
+### 1. Image mirroring logic is duplicated between library and vendor helpers - Done
 
 - `apps/dashboard/src/lib/library-image-mirror.ts:7` and `apps/dashboard/src/lib/vendor-image-mirror.ts:6` both define the same Firebase-hosted URL check.
 - `apps/dashboard/src/lib/library-image-mirror.ts:11` and `apps/dashboard/src/lib/vendor-image-mirror.ts:10` both map content types to extensions.
@@ -15,7 +15,7 @@ Suggested fix: extract a shared low-level helper such as `mirrorExternalImageUrl
 
 Why it helps: this is repeated network/storage behavior, so future fixes to image content types, failed fetch handling, or Firebase URL detection only need to happen once.
 
-### 2. Storage cleanup after image replacement is repeated in detail pages
+### 2. Storage cleanup after image replacement is repeated in detail pages - Done
 
 - `apps/dashboard/src/app/(main)/dashboard/library/[itemId]/page.tsx:109` builds old image paths, compares them to new paths, then deletes removed files with `Promise.allSettled`.
 - `apps/dashboard/src/app/(main)/dashboard/vendors/[vendorId]/page.tsx:100` builds replaced logo/hero paths, then deletes them with `Promise.allSettled`.
@@ -24,7 +24,7 @@ Suggested fix: extract a small helper around `deleteStorageFileByPath`, for exam
 
 Why it helps: this reduces repeated storage cleanup code and makes partial delete failures easier to log consistently.
 
-### 3. Vendor social link formatting is duplicated between list and detail views
+### 3. Vendor social link formatting is duplicated between list and detail views - Done
 
 - `apps/dashboard/src/app/(main)/dashboard/vendors/page.tsx:217` defines `getDisplayUrl`.
 - `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-hero.tsx:26` defines another `getDisplayUrl`.

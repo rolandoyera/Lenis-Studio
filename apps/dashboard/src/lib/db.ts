@@ -157,6 +157,31 @@ export async function deleteStorageFileByPath(path: string): Promise<void> {
   }
 }
 
+function compactStoragePaths(paths: Array<string | null | undefined>): string[] {
+  return [...new Set(paths.filter((path): path is string => typeof path === "string" && path.trim().length > 0))];
+}
+
+export async function deleteStorageFilesByPath(paths: Array<string | null | undefined>): Promise<void> {
+  const storagePaths = compactStoragePaths(paths);
+  if (storagePaths.length === 0) return;
+
+  const results = await Promise.allSettled(storagePaths.map(deleteStorageFileByPath));
+  const failures = results.filter((r) => r.status === "rejected");
+  if (failures.length > 0) {
+    const error = (failures[0] as PromiseRejectedResult).reason;
+    throw new Error(error.message || String(error));
+  }
+}
+
+export async function deleteReplacedStorageFiles(
+  previousPaths: Array<string | null | undefined>,
+  nextPaths: Array<string | null | undefined>,
+): Promise<void> {
+  const nextPathSet = new Set(compactStoragePaths(nextPaths));
+  const pathsToDelete = compactStoragePaths(previousPaths).filter((path) => !nextPathSet.has(path));
+  await deleteStorageFilesByPath(pathsToDelete);
+}
+
 export async function deleteVendor(vendorOrId: Vendor | string): Promise<void> {
   let vendor: Vendor | null = null;
   if (typeof vendorOrId === "string") {

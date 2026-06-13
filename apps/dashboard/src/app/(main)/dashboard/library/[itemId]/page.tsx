@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import { deleteLibraryItem, deleteStorageFileByPath, getLibraryItem, getVendors, updateLibraryItem } from "@/lib/db";
+import { deleteLibraryItem, deleteReplacedStorageFiles, getLibraryItem, getVendors, updateLibraryItem } from "@/lib/db";
 import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
 
@@ -105,25 +105,14 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
         images,
       };
 
-      // Perform replacement cleanup
-      const oldPaths = [item.coverImagePath, ...(item.images || []).map((img) => img.path)].filter(
-        (p): p is string => typeof p === "string" && p.trim().length > 0,
-      );
-      const newPaths = new Set(
-        [updated.coverImagePath, ...(updated.images || []).map((img) => img.path)].filter(
-          (p): p is string => typeof p === "string" && p.trim().length > 0,
-        ),
-      );
-      const pathsToDelete = oldPaths.filter((p) => !newPaths.has(p));
-
-      if (pathsToDelete.length > 0) {
-        const deleteResults = await Promise.allSettled(pathsToDelete.map(deleteStorageFileByPath));
-        const failures = deleteResults.filter((r) => r.status === "rejected");
-        if (failures.length > 0) {
-          const error = (failures[0] as PromiseRejectedResult).reason;
-          toast.error(`Failed to clean up replaced product images: ${error.message || error}`);
-          return; // Abort saving if storage cleanup fails
-        }
+      try {
+        await deleteReplacedStorageFiles(
+          [item.coverImagePath, ...(item.images || []).map((img) => img.path)],
+          [updated.coverImagePath, ...(updated.images || []).map((img) => img.path)],
+        );
+      } catch (error) {
+        toast.error(`Failed to clean up replaced product images: ${getErrorMessage(error, "Unknown error")}`);
+        return; // Abort saving if storage cleanup fails
       }
 
       await updateLibraryItem(item.itemId, updated);

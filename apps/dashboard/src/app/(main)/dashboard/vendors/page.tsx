@@ -37,6 +37,7 @@ import {
   VendorFormDialog,
 } from "./_components/vendor-form-dialog";
 import { vendorGradient } from "./_components/vendor-gradient";
+import { getDisplayUrl, getVendorSocialHrefs } from "./_components/vendor-links";
 
 export default function VendorsPage() {
   const { profile, loading: authLoading } = useAuth();
@@ -214,34 +215,11 @@ export default function VendorsPage() {
   );
 }
 
-function getDisplayUrl(url: string | null): string {
-  if (!url) return "";
-  return url
-    .replace(/(^\w+:|^)\/\//, "") // Remove protocol
-    .replace(/^www\./, "") // Remove www.
-    .replace(/\/$/, ""); // Remove trailing slash
-}
-
-function formatSocialHref(url: string | undefined | null): string | null {
-  if (!url?.trim()) return null;
-  const trimmed = url.trim();
-  return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
-}
-
 function VendorCard({ vendor }: { vendor: Vendor }) {
   const initials = getInitials(vendor.name);
   const gradient = vendorGradient(vendor.name);
-  const websiteHref = vendor.website
-    ? vendor.website.startsWith("http")
-      ? vendor.website
-      : `https://${vendor.website}`
-    : null;
-
-  const instagramHref = formatSocialHref(vendor.instagram);
-  const pinterestHref = formatSocialHref(vendor.pinterest);
-  const facebookHref = formatSocialHref(vendor.facebook);
-  const youtubeHref = formatSocialHref(vendor.youtube);
-  const xTwitterHref = formatSocialHref(vendor.xTwitter);
+  const { websiteHref, instagramHref, pinterestHref, facebookHref, youtubeHref, xTwitterHref } =
+    getVendorSocialHrefs(vendor);
 
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden pt-0 transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">

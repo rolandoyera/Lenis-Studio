@@ -18,39 +18,16 @@ import { H1 } from "@/components/ui/typography";
 import type { Vendor } from "@/lib/types";
 
 import { vendorGradient } from "./vendor-gradient";
+import { getDisplayUrl, getVendorSocialHrefs } from "./vendor-links";
 
 interface VendorHeroProps {
   vendor: Vendor;
 }
 
-function getDisplayUrl(url: string | null): string {
-  if (!url) return "";
-  return url
-    .replace(/(^\w+:|^)\/\//, "") // Remove protocol
-    .replace(/^www\./, "") // Remove www.
-    .replace(/\/$/, ""); // Remove trailing slash
-}
-
-function formatSocialHref(url: string | undefined | null): string | null {
-  if (!url?.trim()) return null;
-  const trimmed = url.trim();
-  return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
-}
-
 export function VendorHero({ vendor }: VendorHeroProps) {
   const gradient = vendorGradient(vendor.name);
-
-  const websiteHref = vendor.website
-    ? vendor.website.startsWith("http")
-      ? vendor.website
-      : `https://${vendor.website}`
-    : null;
-
-  const instagramHref = formatSocialHref(vendor.instagram);
-  const pinterestHref = formatSocialHref(vendor.pinterest);
-  const facebookHref = formatSocialHref(vendor.facebook);
-  const youtubeHref = formatSocialHref(vendor.youtube);
-  const xTwitterHref = formatSocialHref(vendor.xTwitter);
+  const { websiteHref, instagramHref, pinterestHref, facebookHref, youtubeHref, xTwitterHref } =
+    getVendorSocialHrefs(vendor);
 
   return (
     <Card className="overflow-hidden pt-0">

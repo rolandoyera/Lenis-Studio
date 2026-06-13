@@ -1,29 +1,5 @@
 import { uploadLibraryImageBlob } from "@/lib/db";
-import { fetchImageBytes } from "@/server/ai-actions";
-
-/** Firebase Storage download URLs live on this host; images already here are left untouched. */
-const FIREBASE_STORAGE_HOST = "firebasestorage.googleapis.com";
-
-function isFirebaseHosted(url: string): boolean {
-  return url.includes(FIREBASE_STORAGE_HOST);
-}
-
-function extensionForContentType(contentType: string): string {
-  if (contentType.includes("png")) return "png";
-  if (contentType.includes("webp")) return "webp";
-  if (contentType.includes("gif")) return "gif";
-  if (contentType.includes("svg")) return "svg";
-  return "jpg";
-}
-
-function base64ToBlob(base64: string, contentType: string): Blob {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return new Blob([bytes], { type: contentType });
-}
+import { isFirebaseHosted, mirrorExternalImageUrl } from "@/lib/image-mirror";
 
 export interface MirrorResult {
   imageUrls: string[];
@@ -79,26 +55,18 @@ export async function mirrorExternalImagesToFirebase(
 
   await Promise.all(
     externals.map(async (url) => {
-      try {
-        const res = await fetchImageBytes(url);
-        if (res.success && res.base64 && res.contentType) {
-          const blob = base64ToBlob(res.base64, res.contentType);
-          const uploadRes = await uploadLibraryImageBlob(
-            blob,
-            itemId,
-            url === cover ? "cover" : "gallery",
-            undefined,
-            extensionForContentType(res.contentType),
-          );
-          mapping.set(url, uploadRes);
-          mirroredCount++;
-          return;
-        }
-      } catch (error) {
-        console.error(`[Image Mirror] Failed to mirror ${url}:`, error);
+      const result = await mirrorExternalImageUrl({
+        url,
+        upload: (blob, extension) =>
+          uploadLibraryImageBlob(blob, itemId, url === cover ? "cover" : "gallery", undefined, extension),
+        logPrefix: "Image Mirror",
+      });
+
+      mapping.set(url, result.image);
+      if (result.mirrored) {
+        mirroredCount++;
+        return;
       }
-      // Keep the original external URL on any failure (empty path)
-      mapping.set(url, { url, path: "" });
       failedCount++;
     }),
   );
