@@ -53,7 +53,6 @@ export async function getClient(uid: string): Promise<Client | null> {
 
 export async function getClients(organizationId: string): Promise<Client[]> {
   try {
-    console.log("[db.ts] getClients called for org:", organizationId);
     const collRef = collection(db, "clients");
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
@@ -106,7 +105,6 @@ export async function getVendor(vendorId: string): Promise<Vendor | null> {
 
 export async function getVendors(organizationId: string): Promise<Vendor[]> {
   try {
-    console.log("[db.ts] getVendors called for org:", organizationId);
     const collRef = collection(db, "vendors");
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
@@ -224,7 +222,6 @@ export async function getProject(projectId: string): Promise<Project | null> {
 
 export async function getProjects(organizationId: string): Promise<Project[]> {
   try {
-    console.log("[db.ts] getProjects called for org:", organizationId);
     const collRef = collection(db, "projects");
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
@@ -307,7 +304,6 @@ export async function getLibraryItem(itemId: string): Promise<LibraryItem | null
 
 export async function getLibraryItems(organizationId: string): Promise<LibraryItem[]> {
   try {
-    console.log("[db.ts] getLibraryItems called for org:", organizationId);
     const collRef = collection(db, "library");
     const q = query(collRef, where("organizationId", "==", organizationId));
     const filteredSnapshot = await getDocs(q);
@@ -682,7 +678,6 @@ export async function addProjectRoom(
 }
 
 export async function seedMockRooms(projectId: string, organizationId: string): Promise<ProjectRoom[]> {
-  console.log(`[db.ts] Seeding mock rooms for project ${projectId} in org ${organizationId}`);
   const { templateMockRooms, templateMockRoomItems } = await import("@/data/mock-studio");
 
   const createdRooms: ProjectRoom[] = [];

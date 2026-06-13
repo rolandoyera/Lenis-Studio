@@ -31,8 +31,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <Image
                   src={APP_CONFIG.image.src}
                   alt="Logo"
-                  width={isCollapsed ? 28 : 24}
-                  height={isCollapsed ? 28 : 24}
+                  width={isCollapsed ? 26 : 24}
+                  height={isCollapsed ? 26 : 24}
+                  style={{ width: isCollapsed ? 26 : 24, height: isCollapsed ? 26 : 24 }}
                   className="transition-all duration-200 dark:invert"
                 />
                 <span className="font-semibold font-serif text-2xl text-black dark:text-white">{APP_CONFIG.name}</span>

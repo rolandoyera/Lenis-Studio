@@ -42,8 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unsubscribeProfile = onSnapshot(
           profileRef,
           (snapshot) => {
-            if (snapshot.exists() && snapshot.data().organizationId) {
-              const data = snapshot.data();
+            const data = snapshot.data();
+            if (snapshot.exists() && data?.organizationId) {
               setProfile({
                 uid: firebaseUser.uid,
                 fullName: data.fullName || "User",
@@ -58,19 +58,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 phone: data.phone,
               });
               setClientCookie(ACTIVE_ORG_COOKIE, data.organizationId, 30);
-            } else {
-              // Access is invite-only: a profile without an organization is
-              // invalid and must never inherit another tenant's context.
-              if (snapshot.exists()) {
-                console.error("User profile is missing organizationId; treating session as unauthorized.");
-              }
-              setProfile(null);
-              deleteClientCookie(ACTIVE_ORG_COOKIE);
+              setLoading(false);
+              return;
             }
+
+            // A snapshot with pending local writes is an optimistic echo of our
+            // own merge write (e.g. AuthGuard's lastActive update) that fires
+            // before the full server document has loaded. It can be missing
+            // fields like organizationId, so it must never drive the
+            // authorization verdict — wait for the server-confirmed snapshot.
+            if (snapshot.metadata.hasPendingWrites) return;
+
+            // Access is invite-only: a server-confirmed profile without an
+            // organization is invalid and must never inherit another tenant's context.
+            if (snapshot.exists()) {
+              console.error("User profile is missing organizationId; treating session as unauthorized.");
+            }
+            setProfile(null);
+            deleteClientCookie(ACTIVE_ORG_COOKIE);
             setLoading(false);
           },
           (error) => {
-            console.error("Error listening to user profile:", error);
+            // permission-denied is expected as listeners tear down during sign-out;
+            // the auth token is already gone, so it is not a real error.
+            if ((error as { code?: string }).code !== "permission-denied") {
+              console.error("Error listening to user profile:", error);
+            }
             setLoading(false);
           },
         );

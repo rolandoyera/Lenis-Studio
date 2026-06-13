@@ -2,19 +2,23 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { Ellipsis, FileDown, RefreshCw } from "lucide-react";
+import { FileDown, MoreVertical, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function AnalyticsToolbar() {
   const router = useRouter();
@@ -46,29 +50,24 @@ export function AnalyticsToolbar() {
         </SelectContent>
       </Select>
 
-      <DropdownMenu>
+      <TooltipDropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="icon" variant="outline" aria-label="More analytics actions">
-            <Ellipsis />
+          <Button variant="ghost" size="icon">
+            <MoreVertical className="size-4" />
+            <span className="sr-only">Actions Menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Analytics actions</DropdownMenuLabel>
-            <DropdownMenuItem>
-              <FileDown />
-              Export report
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem>
-              <RefreshCw />
-              Refresh metrics
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem>
+            <FileDown />
+            Export report
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <RefreshCw />
+            Refresh metrics
+          </DropdownMenuItem>
         </DropdownMenuContent>
-      </DropdownMenu>
+      </TooltipDropdownMenu>
     </div>
   );
 }

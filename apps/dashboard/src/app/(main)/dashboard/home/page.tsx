@@ -5,6 +5,7 @@ import { WeatherWidget } from "../_components/weather-widget";
 import { MetricCards } from "./_components/metric-cards";
 import { PerformanceOverview } from "./_components/performance-overview";
 import { SubscriberOverview } from "./_components/subscriber-overview";
+import { H1 } from "@/components/ui/typography";
 
 export default function Page() {
   return (
@@ -12,10 +13,10 @@ export default function Page() {
       <PageTitle title="Overview" />
       <div className="@container/main flex flex-col gap-4 md:gap-6">
         <div className="mb-6 flex flex-col">
-          <h1 className="flex flex-wrap items-center gap-3 text-4xl tracking-tight">
+          <H1 className="flex flex-wrap items-center gap-3">
             <UserGreeting prefix="Hello" />
             <WeatherWidget />
-          </h1>
+          </H1>
           <p className="text-muted-foreground text-sm">Here's what's happening in the studio today.</p>
         </div>
         <MetricCards />
