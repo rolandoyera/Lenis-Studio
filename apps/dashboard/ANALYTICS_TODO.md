@@ -42,9 +42,10 @@ rename `GA_PROPERTY_ID` in `.env.local` and restart.
       `firestore.rules` + `storage.rules` (repo copies are the source of truth; paste into console
       to change). Spent migration scripts deleted; `dump-users.ts` kept but needs a `firebase-admin`
       port before next use.
-- [ ] **org-demo fallback cleanup:** `auth-context.tsx` / `auth-guard.tsx` still default broken or
-      uninvited profiles into `org-demo`. Decide whether to hard-fail instead. Never put real data
-      in org-demo.
+- [x] **Invite-only enforcement (2026-06-12):** uninvited signups now hard-fail (signed out with a
+      toast) instead of landing in `org-demo`; profiles missing an organizationId are treated as
+      unauthorized. `org-demo` remains as the SuperAdmin account's home org. Requires republishing
+      `firestore.rules` (selfProfileAllowed no longer permits the demo fallback).
 - [ ] **Stage 3:** tenant-page GA4 onboarding card — service-account email with copy button,
       property ID field validation, per-tenant "Test connection" button; onboarding checklist doc.
 - [ ] **Stage 4 (before clients log in):** verify Firebase ID tokens in server actions instead of

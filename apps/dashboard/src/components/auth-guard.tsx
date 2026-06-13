@@ -6,13 +6,14 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { format } from "date-fns";
 import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import { toast } from "sonner";
 
 import { db } from "@/lib/firebase";
 
 import { useAuth } from "./auth-context";
 
 export function AuthGuard({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -45,29 +46,23 @@ export function AuthGuard({ children }: { children: ReactNode }) {
             const pendingDocRef = doc(db, "users", emailKey);
             const pendingDocSnap = await getDoc(pendingDocRef);
 
-            if (pendingDocSnap.exists()) {
+            if (pendingDocSnap.exists() && pendingDocSnap.data().organizationId && pendingDocSnap.data().role) {
               const pendingData = pendingDocSnap.data();
               await setDoc(userDocRef, {
                 fullName: pendingData.fullName || user.displayName || "User",
                 email: emailKey,
-                role: pendingData.role || "Contributor",
-                organizationId: pendingData.organizationId || "org-demo",
+                role: pendingData.role,
+                organizationId: pendingData.organizationId,
                 status: "Active",
                 joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
                 lastActive: Date.now(),
               });
               await deleteDoc(pendingDocRef);
             } else {
-              // Fallback default user if signed up directly without invite
-              await setDoc(userDocRef, {
-                fullName: user.displayName || user.email?.split("@")[0] || "User",
-                email: emailKey,
-                role: "Contributor",
-                organizationId: "org-demo",
-                status: "Active",
-                joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
-                lastActive: Date.now(),
-              });
+              // Access is invite-only: an account without a profile or pending
+              // invite gets no organization and no session.
+              toast.error("This account has no invitation. Ask your administrator for an invite.");
+              await signOut();
             }
           }
         }
@@ -77,7 +72,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     };
 
     handleInviteConversion();
-  }, [user, loading]);
+  }, [user, loading, signOut]);
 
   // Keep active status updated on page navigation
   useEffect(() => {

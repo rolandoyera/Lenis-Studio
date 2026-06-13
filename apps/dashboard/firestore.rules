@@ -125,16 +125,13 @@ service cloud.firestore {
         return exists(/databases/$(database)/documents/users/$(request.auth.token.email));
       }
 
-      // Self-created profiles may never choose their own org or role:
-      // they either copy the pending invite exactly, or land in the demo org.
+      // Access is invite-only: a self-created profile must copy a pending
+      // invite for the requester's email exactly (org and role included).
       function selfProfileAllowed() {
-        return userId == request.auth.uid && (
-          (hasPendingInvite()
-            && request.resource.data.organizationId == pendingInvite().organizationId
-            && request.resource.data.role == pendingInvite().role)
-          || (request.resource.data.organizationId == 'org-demo'
-            && request.resource.data.role == 'Contributor')
-        );
+        return userId == request.auth.uid
+          && hasPendingInvite()
+          && request.resource.data.organizationId == pendingInvite().organizationId
+          && request.resource.data.role == pendingInvite().role;
       }
 
       // Admins create pending invites inside their org; SuperAdmins for any org

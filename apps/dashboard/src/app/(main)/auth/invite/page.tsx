@@ -136,6 +136,11 @@ function InviteContent() {
 
   const onSubmit = async (data: InviteFormData) => {
     if (!email) return;
+    // Access is invite-only: the pending doc must name the org and role.
+    if (!pendingData?.organizationId || !pendingData?.role) {
+      toast.error("This invitation is incomplete. Ask your administrator to send a new invite.");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -154,8 +159,8 @@ function InviteContent() {
         fullName: data.fullName.trim(),
         displayName: data.displayName.trim(),
         email: emailKey,
-        role: pendingData?.role || "Contributor",
-        organizationId: pendingData?.organizationId || "org-demo",
+        role: pendingData.role,
+        organizationId: pendingData.organizationId,
         location: data.location.trim(),
         phone: data.phone.trim(),
         status: "Active",

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { signOut as firebaseSignOut, onAuthStateChanged, type User } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         unsubscribeProfile = onSnapshot(
           profileRef,
           (snapshot) => {
-            if (snapshot.exists()) {
+            if (snapshot.exists() && snapshot.data().organizationId) {
               const data = snapshot.data();
               setProfile({
                 uid: firebaseUser.uid,
@@ -50,21 +50,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 displayName: data.displayName,
                 email: data.email || firebaseUser.email || "",
                 role: data.role || "Contributor",
-                organizationId: data.organizationId || "org-demo", // fallback to demo for safety
+                organizationId: data.organizationId,
                 status: data.status || "Active",
                 joinedDate: data.joinedDate || "",
                 lastActive: data.lastActive || 0,
                 location: data.location,
                 phone: data.phone,
               });
-              // Only the real org id may drive server-side tenant resolution —
-              // a profile missing its organizationId must not inherit another tenant's config.
-              if (data.organizationId) {
-                setClientCookie(ACTIVE_ORG_COOKIE, data.organizationId, 30);
-              } else {
-                deleteClientCookie(ACTIVE_ORG_COOKIE);
-              }
+              setClientCookie(ACTIVE_ORG_COOKIE, data.organizationId, 30);
             } else {
+              // Access is invite-only: a profile without an organization is
+              // invalid and must never inherit another tenant's context.
+              if (snapshot.exists()) {
+                console.error("User profile is missing organizationId; treating session as unauthorized.");
+              }
               setProfile(null);
               deleteClientCookie(ACTIVE_ORG_COOKIE);
             }
@@ -88,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     setLoading(true);
     try {
       await firebaseSignOut(auth);
@@ -97,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return (
     <AuthContext.Provider
