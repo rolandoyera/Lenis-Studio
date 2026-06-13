@@ -2,6 +2,7 @@
 
 import { Image, ShoppingBag } from "lucide-react";
 
+import { DashboardImage } from "@/components/dashboard-image";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import type { LibraryItem } from "@/lib/types";
@@ -26,7 +27,13 @@ export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGaller
       </CardHeader>
       <CardContent className="relative flex aspect-16/14.5 w-full items-center justify-center">
         {activeImage ? (
-          <img src={activeImage} alt={item.name} className="absolute inset-0 size-full object-contain px-2" />
+          <DashboardImage
+            src={activeImage}
+            alt={item.name}
+            loading="eager"
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-contain px-2"
+          />
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 p-8 text-muted-foreground/30">
             <ShoppingBag className="size-16" />
@@ -49,7 +56,7 @@ export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGaller
                 }`}
                 onClick={() => onSelectImage(url)}
               >
-                <img src={url} alt="thumbnail" className="size-full object-cover" />
+                <DashboardImage src={url} alt="thumbnail" sizes="64px" className="object-cover" />
               </button>
             ))}
           </div>

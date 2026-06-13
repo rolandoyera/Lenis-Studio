@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { ShoppingBag } from "lucide-react";
 
+import { DashboardImage } from "@/components/dashboard-image";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -42,9 +43,14 @@ export function VendorItems({ items }: VendorItemsProps) {
             {items.map((item) => (
               <div key={item.itemId} className="flex items-center gap-3 p-3">
                 {/* Thumbnail */}
-                <div className="flex size-32 shrink-0 items-center justify-center overflow-hidden rounded border border-border/50 bg-background/50">
+                <div className="relative flex size-32 shrink-0 items-center justify-center overflow-hidden rounded border border-border/50 bg-background/50">
                   {item.coverImageUrl ? (
-                    <img src={item.coverImageUrl} alt={item.name} className="h-full w-full object-contain p-0.5" />
+                    <DashboardImage
+                      src={item.coverImageUrl}
+                      alt={item.name}
+                      sizes="128px"
+                      className="object-contain p-0.5"
+                    />
                   ) : (
                     <ShoppingBag className="size-5 text-muted-foreground/30" />
                   )}

@@ -8,6 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
+import { DashboardImage } from "@/components/dashboard-image";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -315,9 +316,14 @@ export function AddItemsDialog({
                         onCheckedChange={() => toggleCatalogSelection(item.itemId)}
                         className="size-4.5 rounded"
                       />
-                      <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+                      <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
                         {item.coverImageUrl ? (
-                          <img src={item.coverImageUrl} alt={item.name} className="size-full object-cover" />
+                          <DashboardImage
+                            src={item.coverImageUrl}
+                            alt={item.name}
+                            sizes="48px"
+                            className="object-cover"
+                          />
                         ) : (
                           <ShoppingBag className="size-5 text-muted-foreground/30" />
                         )}

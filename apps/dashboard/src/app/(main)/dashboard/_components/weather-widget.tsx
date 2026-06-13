@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth-context";
+import { DashboardImage } from "@/components/dashboard-image";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getWeatherForLocation } from "@/server/weather-actions";
@@ -61,7 +62,7 @@ export function WeatherWidget() {
       }
     };
 
-    loadWeather();
+    void loadWeather();
   }, [profile, authLoading]);
 
   if (loading) {
@@ -106,12 +107,15 @@ export function WeatherWidget() {
       title={`Current weather in ${cityName}: ${conditionText}`}
       className="flex shrink-0 select-none items-center px-3 py-1 font-normal text-card-foreground text-sm normal-case tracking-normal"
     >
-      <img
-        src={iconUrl}
-        alt={conditionText}
-        className="size-14 shrink-0 object-contain drop-shadow-xs"
-        draggable={false}
-      />
+      <div className="relative size-14 shrink-0">
+        <DashboardImage
+          src={iconUrl}
+          alt={conditionText}
+          sizes="56px"
+          className="object-contain drop-shadow-xs"
+          draggable={false}
+        />
+      </div>
       <div className="flex min-w-0 flex-col text-left leading-normal">
         <div className="flex items-baseline gap-1">
           <span className="text-2xl text-foreground leading-none">{temp}°F</span>

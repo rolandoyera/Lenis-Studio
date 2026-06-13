@@ -8,6 +8,7 @@ import { Building2, Loader2, Mail, Phone, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
+import { DashboardImage } from "@/components/dashboard-image";
 import {
   FacebookIcon,
   GlobeIcon,
@@ -265,7 +266,12 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         className="detail-link relative flex h-56 w-full cursor-pointer items-center justify-center overflow-hidden"
       >
         {vendor.heroImageUrl ? (
-          <img src={vendor.heroImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <DashboardImage
+            src={vendor.heroImageUrl}
+            alt=""
+            sizes="(min-width: 1536px) 20vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover"
+          />
         ) : (
           <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
         )}
@@ -275,14 +281,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Logo or initials monogram */}
         <div className="relative flex size-12 items-center justify-center overflow-hidden">
           {vendor.logoUrl ? (
-            <img
-              src={vendor.logoUrl}
-              alt={vendor.name}
-              className="h-full w-full object-contain p-1"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.display = "none";
-              }}
-            />
+            <DashboardImage src={vendor.logoUrl} alt={vendor.name} sizes="48px" className="object-contain p-1" />
           ) : (
             <span className="select-none font-bold font-heading text-2xl text-foreground/80">
               {initials.slice(0, 2)}

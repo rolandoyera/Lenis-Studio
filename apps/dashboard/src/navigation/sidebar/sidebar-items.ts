@@ -1,6 +1,5 @@
 import {
   Activity,
-  Banknote,
   Building2,
   Calendar,
   ChartBar,
@@ -13,7 +12,6 @@ import {
   Hammer,
   Kanban,
   LayoutDashboard,
-  ListTodo,
   type LucideIcon,
   ReceiptText,
   ShoppingBag,
@@ -61,19 +59,9 @@ export const sidebarItems: NavGroup[] = [
         icon: ChartBar,
       },
       {
-        title: "Finance",
-        url: "/dashboard/finance",
-        icon: Banknote,
-      },
-      {
         title: "Analytics",
         url: "/dashboard/analytics",
         icon: Gauge,
-      },
-      {
-        title: "Productivity",
-        url: "/dashboard/productivity",
-        icon: ListTodo,
       },
       {
         title: "E-commerce",

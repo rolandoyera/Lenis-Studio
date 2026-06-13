@@ -2,6 +2,7 @@
 
 import { Tag } from "lucide-react";
 
+import { DashboardImage } from "@/components/dashboard-image";
 import {
   FacebookIcon,
   GlobeIcon,
@@ -68,10 +69,11 @@ export function VendorHero({ vendor }: VendorHeroProps) {
       {/* Banner: hero image → gradient fallback */}
       <div className="relative flex h-90 w-full items-end overflow-hidden">
         {vendor.heroImageUrl ? (
-          <img
+          <DashboardImage
             src={vendor.heroImageUrl}
             alt={`${vendor.name} banner`}
-            className="absolute inset-0 h-full w-full object-cover"
+            sizes="(min-width: 1024px) 75vw, 100vw"
+            className="object-cover"
           />
         ) : (
           <div className={`absolute inset-0 bg-linear-to-br ${gradient}`} />
@@ -91,8 +93,8 @@ export function VendorHero({ vendor }: VendorHeroProps) {
           <div className="flex flex-wrap items-center gap-5">
             <H1>{vendor.name}</H1>
             {vendor.logoUrl && (
-              <div className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-background shadow-xs">
-                <img src={vendor.logoUrl} alt={vendor.name} className="h-full w-full object-contain" />
+              <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-background shadow-xs">
+                <DashboardImage src={vendor.logoUrl} alt={vendor.name} sizes="32px" className="object-contain" />
               </div>
             )}
           </div>

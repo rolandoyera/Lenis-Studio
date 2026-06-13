@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import { useAuth } from "@/components/auth-context";
+import { DashboardImage } from "@/components/dashboard-image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -170,8 +171,8 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
   // Calculations for total quantities and values
   const totalItemCount = roomItems.length;
   const totalSelectedValue = roomItems.reduce((acc, item) => acc + item.sellingPrice * item.quantity, 0);
-  const totalCostValue = roomItems.reduce((acc, item) => acc + (item.unitCost || 0) * item.quantity, 0);
-  const budgetRemaining = (project.budget || 0) - totalSelectedValue;
+  const totalCostValue = roomItems.reduce((acc, item) => acc + (item.unitCost ?? 0) * item.quantity, 0);
+  const budgetRemaining = (project.budget ?? 0) - totalSelectedValue;
 
   if (loading || authLoading) {
     return (
@@ -298,9 +299,14 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
                           key={item.roomItemId}
                           className="flex items-center gap-3 p-4 transition-colors hover:bg-muted/20"
                         >
-                          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
+                          <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
                             {item.coverImageUrl ? (
-                              <img src={item.coverImageUrl} alt={item.name} className="size-full object-cover" />
+                              <DashboardImage
+                                src={item.coverImageUrl}
+                                alt={item.name}
+                                sizes="48px"
+                                className="object-cover"
+                              />
                             ) : (
                               <ShoppingBag className="size-5 text-muted-foreground/30" />
                             )}
