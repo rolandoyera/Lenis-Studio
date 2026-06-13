@@ -13,6 +13,9 @@ interface ClientContactCardProps {
 
 /** Contact credentials panel: email, phone, company, plus quick email/call actions. */
 export function ClientContactCard({ client }: ClientContactCardProps) {
+  const hasAddress = Boolean(client.street ?? client.city ?? client.state ?? client.zip);
+  const hasCityStateZip = Boolean(client.city ?? client.state ?? client.zip);
+
   return (
     <Card>
       <CardHeader className="border-border border-b">
@@ -25,14 +28,14 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
         <div className="grid grid-cols-1 gap-x-6 gap-y-6.5 text-sm sm:grid-cols-2">
           {/* Left column: company, tax, and address details */}
           <div className="flex flex-col gap-6.5">
-            {(client.street || client.city || client.state || client.zip) && (
+            {hasAddress && (
               <div className="flex flex-col gap-1">
                 <Label className="mb-1">Primary Address</Label>
                 <div className="flex items-start gap-1.5 text-foreground">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
                   <div className="flex flex-col">
                     {client.street && <span>{client.street}</span>}
-                    {(client.city || client.state || client.zip) && (
+                    {hasCityStateZip && (
                       <span className="mt-0.5">
                         {[client.city, [client.state, client.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
                       </span>

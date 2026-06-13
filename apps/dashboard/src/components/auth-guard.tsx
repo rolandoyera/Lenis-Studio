@@ -71,7 +71,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
       }
     };
 
-    handleInviteConversion();
+    void handleInviteConversion();
   }, [user, loading, signOut]);
 
   // Keep active status updated on page navigation
@@ -85,7 +85,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
         console.error("Error updating active status:", error);
       }
     };
-    updateActiveStatus();
+    void updateActiveStatus();
   }, [user, loading]);
 
   if (isAuthRoute) {

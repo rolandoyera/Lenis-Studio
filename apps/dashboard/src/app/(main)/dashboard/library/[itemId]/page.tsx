@@ -27,6 +27,10 @@ interface PageProps {
   params: Promise<{ itemId: string }>;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function LibraryItemDetailPage({ params }: PageProps) {
   const { itemId } = use(params);
   const router = useRouter();
@@ -127,9 +131,9 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       setIsEditOpen(false);
       setActivePreviewImage(coverImageUrl || imageUrls[0] || "");
       toast.success("Catalog item updated successfully!");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Failed to update library item details.");
+      toast.error(getErrorMessage(error, "Failed to update library item details."));
     } finally {
       setUpdatingCatalog(false);
     }
@@ -142,9 +146,9 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       await deleteLibraryItem(item);
       toast.success("Product successfully deleted from Global Library!");
       router.push("/dashboard/library");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Failed to delete product item.");
+      toast.error(getErrorMessage(error, "Failed to delete product item."));
     } finally {
       setDeletingCatalog(false);
       setIsDeleteAlertOpen(false);

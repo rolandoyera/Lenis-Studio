@@ -192,7 +192,7 @@ export function NavMain({ items }: NavMainProps) {
                     <ChevronDown className="ml-auto size-3.5 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-52 bg-popover/95 backdrop-blur-md">
+                <DropdownMenuContent align="start" className="w-52">
                   <DropdownMenuItem asChild>
                     <Link
                       href="/dashboard/library?add=true"

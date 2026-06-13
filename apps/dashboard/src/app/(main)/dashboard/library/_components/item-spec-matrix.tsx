@@ -12,7 +12,7 @@ import { withProtocol } from "./library-constants";
 /** Show the value, or a muted "N/A" placeholder when it is empty. */
 const na = (value?: string) => (value ? value : "N/A");
 
-function SpecField({ label, value }: { label: string; value: React.ReactNode }) {
+function SpecField({ label, value }: { label: string; value?: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5 bg-background p-4">
       <Label className="uppercase">{label}</Label>

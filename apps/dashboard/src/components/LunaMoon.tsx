@@ -30,13 +30,8 @@ export interface LunaMoonProps extends React.SVGProps<SVGSVGElement> {
   size?: number;
 }
 
-// Unique id per instance so multiple moons on a page never share a <mask>.
-let __lunaSeq = 0;
 function useLunaId() {
-  const react18Id = typeof (React as any).useId === "function" ? (React as any).useId() : null;
-  const fallback = React.useRef<string | undefined>(undefined);
-  if (!fallback.current) fallback.current = `luna-${++__lunaSeq}`;
-  return (react18Id || fallback.current).replace(/[:]/g, "");
+  return React.useId().replace(/[:]/g, "");
 }
 
 export default function LunaMoon({
@@ -127,13 +122,7 @@ export default function LunaMoon({
    Keyframes. Rendered once (guarded) so N moons share one <style>.
    ---------------------------------------------------------------- */
 function LunaStyles() {
-  return (
-    <style
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: LUNA_CSS }}
-      data-luna-styles=""
-    />
-  );
+  return <style data-luna-styles="">{LUNA_CSS}</style>;
 }
 
 const LUNA_CSS = `

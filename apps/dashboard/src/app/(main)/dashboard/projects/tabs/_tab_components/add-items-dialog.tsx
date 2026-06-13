@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Search, ShoppingBag } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, type Resolver, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
@@ -22,19 +22,19 @@ import { addLibraryItem, addProjectRoomItem } from "@/lib/db";
 import type { LibraryItem, ProjectRoom, ProjectRoomItem, Vendor } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
-import { CATEGORIES, SUBCATEGORIES, UNIT_TYPES } from "../../../library/_components/library-constants";
+import { CATEGORIES, COST_TYPES, SUBCATEGORIES, UNIT_TYPES } from "../../../library/_components/library-constants";
 
 // ----------------------------------------------------
 // Validation Schemas
 // ----------------------------------------------------
 const customItemSchema = z.object({
-  costType: z.enum(["Product", "Service", "Labor", "Shipping"]).default("Product"),
+  costType: z.enum(COST_TYPES).default("Product"),
   category: z.string().min(1, "Category is required."),
   subcategory: z.string().optional(),
   name: z.string().min(1, "Item name is required."),
   sku: z.string().optional(),
   sourcingLink: z.string().optional(),
-  unitType: z.string().min(1, "Unit type is required."),
+  unitType: z.enum(UNIT_TYPES, { error: "Unit type is required." }),
   unitCost: z.number().min(0, "Cost must be positive."),
   markup: z.number().min(0, "Markup must be positive."),
   sellingPrice: z.number().min(0, "Price must be positive."),
@@ -78,7 +78,7 @@ export function AddItemsDialog({
 
   // Form for Tab 2 (Custom Item)
   const customItemForm = useForm<CustomItemFormData>({
-    resolver: zodResolver(customItemSchema) as any,
+    resolver: zodResolver(customItemSchema) as Resolver<CustomItemFormData>,
     defaultValues: {
       costType: "Product",
       category: "Furniture",
@@ -194,12 +194,12 @@ export function AddItemsDialog({
         const globalItem = await addLibraryItem({
           organizationId,
           name: itemDetails.name,
-          costType: itemDetails.costType as any,
+          costType: itemDetails.costType,
           category: itemDetails.category,
           subcategory: itemDetails.subcategory,
           sku: itemDetails.sku,
           description: itemDetails.description,
-          unitType: itemDetails.unitType as any,
+          unitType: itemDetails.unitType,
           finishColor: "",
           sourcingLink: itemDetails.sourcingLink,
           manufacturer: "",
@@ -220,12 +220,12 @@ export function AddItemsDialog({
         roomId: room.roomId,
         libraryItemId,
         name: itemDetails.name,
-        costType: itemDetails.costType as any,
+        costType: itemDetails.costType,
         category: itemDetails.category,
         subcategory: itemDetails.subcategory,
         sku: itemDetails.sku,
         description: itemDetails.description,
-        unitType: itemDetails.unitType as any,
+        unitType: itemDetails.unitType,
         sourcingLink: itemDetails.sourcingLink,
         materials: itemDetails.materials,
         dimensions: itemDetails.dimensions,

@@ -7,6 +7,10 @@ import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
 import { getAdminDb } from "./firebase-admin";
 import { getGA4Client, hasGA4Credentials } from "./ga4";
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export interface GA4ConnectionResult {
   success: boolean;
   activeUsers?: number;
@@ -52,12 +56,12 @@ export async function testGA4Connection(): Promise<GA4ConnectionResult> {
       activeUsers,
       configMissing: false,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("GA4 Connection Test Failed:", error);
     return {
       success: false,
       configMissing: false,
-      error: error.message || "An unexpected error occurred while communicating with the GA4 API.",
+      error: getErrorMessage(error, "An unexpected error occurred while communicating with the GA4 API."),
     };
   }
 }
@@ -159,12 +163,12 @@ export async function fetchTopPagesData(
       success: true,
       data: items,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch top pages from GA4:", error);
     return {
       success: false,
       data: [],
-      error: error.message || "Failed to load GA4 top pages.",
+      error: getErrorMessage(error, "Failed to load GA4 top pages."),
     };
   }
 }
@@ -270,7 +274,7 @@ function getDateRangesForRange(range: string): {
 }
 
 export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
-  const activeRange = range || "last-4-weeks";
+  const activeRange = range ?? "last-4-weeks";
   const dateRanges = getDateRangesForRange(activeRange);
 
   const propertyId = await getConfiguredPropertyId();
@@ -395,11 +399,11 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
       label: dateRanges.label,
       comparisonLabel: dateRanges.comparisonLabel,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch KPI data from GA4:", error);
     return {
       success: false,
-      error: error.message || "Failed to load GA4 KPI strip metrics.",
+      error: getErrorMessage(error, "Failed to load GA4 KPI strip metrics."),
       label: dateRanges.label,
       comparisonLabel: dateRanges.comparisonLabel,
     };
@@ -498,9 +502,9 @@ export async function fetchTrafficTrend(
     }));
 
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch traffic trend from GA4:", error);
-    return { success: false, data: [], error: error.message || "Failed to load GA4 traffic trend." };
+    return { success: false, data: [], error: getErrorMessage(error, "Failed to load GA4 traffic trend.") };
   }
 }
 
@@ -559,9 +563,9 @@ export async function fetchTrafficSources(
     ]);
 
     return { success: true, data: { channels, sources, campaigns } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch traffic sources from GA4:", error);
-    return { success: false, error: error.message || "Failed to load GA4 traffic sources." };
+    return { success: false, error: getErrorMessage(error, "Failed to load GA4 traffic sources.") };
   }
 }
 
@@ -615,9 +619,9 @@ export async function fetchRealtimeData(): Promise<{ success: boolean; data?: Re
     const countries = allCountries.sort((a, b) => b.visitors - a.visitors).slice(0, 4);
 
     return { success: true, data: { total, perMinute, countries } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch realtime data from GA4:", error);
-    return { success: false, error: error.message || "Failed to load GA4 realtime data." };
+    return { success: false, error: getErrorMessage(error, "Failed to load GA4 realtime data.") };
   }
 }
 
@@ -706,9 +710,9 @@ export async function fetchConversionsData(
     }
 
     return { success: true, data: { trend, channels, eventCounts } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch conversions data from GA4:", error);
-    return { success: false, error: error.message || "Failed to load GA4 conversions data." };
+    return { success: false, error: getErrorMessage(error, "Failed to load GA4 conversions data.") };
   }
 }
 
@@ -759,9 +763,9 @@ export async function fetchLandingPages(
       });
 
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch landing pages from GA4:", error);
-    return { success: false, data: [], error: error.message || "Failed to load GA4 landing pages." };
+    return { success: false, data: [], error: getErrorMessage(error, "Failed to load GA4 landing pages.") };
   }
 }
 
@@ -832,9 +836,9 @@ export async function fetchAudienceData(
       }));
 
     return { success: true, data: { cities, devices, newVsReturning } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch audience data from GA4:", error);
-    return { success: false, error: error.message || "Failed to load GA4 audience data." };
+    return { success: false, error: getErrorMessage(error, "Failed to load GA4 audience data.") };
   }
 }
 
@@ -908,8 +912,8 @@ export async function fetchAcquisitionData(
     }));
 
     return { success: true, data: { channels, sourceMedium } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch acquisition data from GA4:", error);
-    return { success: false, error: error.message || "Failed to load GA4 acquisition data." };
+    return { success: false, error: getErrorMessage(error, "Failed to load GA4 acquisition data.") };
   }
 }

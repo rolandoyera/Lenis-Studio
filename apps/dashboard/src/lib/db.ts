@@ -24,9 +24,9 @@ import type {
   ProjectRoom,
   ProjectRoomItem,
   Proposal,
+  Trade,
   UserProfile,
   Vendor,
-  Trade,
 } from "./types";
 
 // Helper to recursively strip undefined properties, as Firestore throws on undefined.
@@ -147,8 +147,8 @@ export async function deleteStorageFileByPath(path: string): Promise<void> {
   try {
     const fileRef = ref(storage, path);
     await deleteObject(fileRef);
-  } catch (error: any) {
-    if (error && error.code === "storage/object-not-found") {
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === "storage/object-not-found") {
       console.warn(`File not found in storage (ignored): ${path}`);
       return;
     }
@@ -779,10 +779,7 @@ export async function getTrades(organizationId: string): Promise<Trade[]> {
   }
 }
 
-export async function addTrade(
-  trade: Omit<Trade, "tradeId" | "createdAt">,
-  customTradeId?: string,
-): Promise<Trade> {
+export async function addTrade(trade: Omit<Trade, "tradeId" | "createdAt">, customTradeId?: string): Promise<Trade> {
   const tradeId = customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
   const newTrade: Trade = {
     ...trade,
@@ -801,4 +798,3 @@ export async function updateTrade(tradeId: string, trade: Partial<Trade>): Promi
 export async function deleteTrade(tradeId: string): Promise<void> {
   await deleteDoc(doc(db, "trades", tradeId));
 }
-

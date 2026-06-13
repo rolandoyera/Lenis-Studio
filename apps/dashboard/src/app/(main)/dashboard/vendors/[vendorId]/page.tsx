@@ -35,6 +35,10 @@ interface PageProps {
   params: Promise<{ vendorId: string }>;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function VendorDetailPage({ params }: PageProps) {
   const { vendorId } = use(params);
   const router = useRouter();
@@ -115,9 +119,9 @@ export default function VendorDetailPage({ params }: PageProps) {
       setVendor({ ...vendor, ...updatedData });
       toast.success("Vendor updated successfully!");
       setIsEditOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
-      toast.error(error.message || "Failed to update vendor.");
+      toast.error(getErrorMessage(error, "Failed to update vendor."));
     }
   };
 
@@ -128,8 +132,8 @@ export default function VendorDetailPage({ params }: PageProps) {
       await deleteVendor(vendor);
       toast.success("Vendor deleted.");
       router.push("/dashboard/vendors");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete vendor.");
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Failed to delete vendor."));
       setDeleting(false);
     }
   };
@@ -251,7 +255,7 @@ export default function VendorDetailPage({ params }: PageProps) {
 
         {/* Sourcing Notes — full width */}
 
-        <Card className="md:col-span-2 min-h-40">
+        <Card className="min-h-40 md:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle>
               <FileText className="icons" />

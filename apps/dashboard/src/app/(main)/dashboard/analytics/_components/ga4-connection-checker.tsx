@@ -30,7 +30,7 @@ export function GA4ConnectionChecker() {
   }, []);
 
   useEffect(() => {
-    checkConnection();
+    void checkConnection();
   }, [checkConnection]);
 
   return (

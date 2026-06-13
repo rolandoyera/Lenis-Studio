@@ -137,6 +137,29 @@ export interface Proposal {
   createdAt: number;
 }
 
+export interface DiagnosticParsedData {
+  name?: string;
+  sku?: string;
+  category?: string;
+  subcategory?: string;
+  description?: string;
+  finishColor?: string;
+  manufacturer?: string;
+  materials?: string;
+  dimensions?: string;
+  msrp?: number;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  repPhone?: string;
+  repEmail?: string;
+  logoUrl?: string;
+  heroImageUrl?: string;
+  coverImageUrl?: string;
+  confidence?: Record<string, number>;
+}
+
 export interface DiagnosticRun {
   runId: string;
   type: "product" | "vendor";
@@ -144,7 +167,7 @@ export interface DiagnosticRun {
   scrapedMarkdown: string;
   prompt: string;
   rawResponse: string;
-  parsedData: any;
+  parsedData: DiagnosticParsedData;
   createdAt: number;
 }
 
@@ -248,4 +271,3 @@ export interface Trade {
   insuranceExpirationDate?: string;
   createdAt: number;
 }
-

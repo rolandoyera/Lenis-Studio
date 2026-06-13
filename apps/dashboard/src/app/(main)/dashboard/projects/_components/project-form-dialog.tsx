@@ -96,7 +96,7 @@ export function ProjectFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md lg:max-w-2xl">
+      <DialogContent className="sm:max-w-md lg:max-w-2xl">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
           <DialogHeader>
             <DialogTitle className="text-xl">{title}</DialogTitle>

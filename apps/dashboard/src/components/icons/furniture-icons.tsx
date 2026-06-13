@@ -35,6 +35,8 @@ const makeIcon = (paths: React.ReactNode, displayName: string) => {
 
     return (
       <svg
+        aria-hidden="true"
+        focusable="false"
         xmlns="http://www.w3.org/2000/svg"
         viewBox={viewBox}
         width={size}

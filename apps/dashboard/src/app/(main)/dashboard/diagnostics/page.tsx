@@ -499,6 +499,7 @@ export default function DiagnosticsPage() {
                             </span>
                             {selectedRun.parsedData?.logoUrl ? (
                               <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3">
+                                {/* biome-ignore lint/performance/noImgElement: diagnostics preview renders arbitrary scraped image URLs. */}
                                 <img
                                   src={selectedRun.parsedData.logoUrl}
                                   alt="Logo"
@@ -522,6 +523,7 @@ export default function DiagnosticsPage() {
                             </span>
                             {selectedRun.parsedData?.heroImageUrl || selectedRun.parsedData?.coverImageUrl ? (
                               <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3">
+                                {/* biome-ignore lint/performance/noImgElement: diagnostics preview renders arbitrary scraped image URLs. */}
                                 <img
                                   src={selectedRun.parsedData.heroImageUrl || selectedRun.parsedData.coverImageUrl}
                                   alt="Hero Showcase"

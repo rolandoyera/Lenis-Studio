@@ -92,7 +92,10 @@ async function fetchGeminiWithFallback(apiKey: string, body: string, signal: Abo
     }
   }
 
-  return { response: res!, modelUsed: primaryModel };
+  if (!res) {
+    throw new Error(`Primary model ${primaryModel} did not return a response.`);
+  }
+  return { response: res, modelUsed: primaryModel };
 }
 
 export interface AutofillResult {
@@ -1258,7 +1261,7 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
  * escapes raw newlines/tabs inside JSON string properties, and
  * removes trailing commas to ensure successful parsing.
  */
-function parseGeminiJson(rawText: string): any {
+function parseGeminiJson(rawText: string): unknown {
   let text = rawText.trim();
 
   // 1. Strip markdown code block wrapper if present
@@ -1326,7 +1329,7 @@ function cleanScrapedMarkdown(text: string): string {
  * or conversational text mistakenly placed in structured fields,
  * and truncate them to a reasonable length.
  */
-function sanitizeField(value: any, maxLength = 80, fieldName = "", allowParagraphs = false): string {
+function sanitizeField(value: unknown, maxLength = 80, fieldName = "", allowParagraphs = false): string {
   if (value === undefined || value === null) return "";
   const str = String(value).trim();
   if (str === "") return "";
@@ -1369,20 +1372,21 @@ function sanitizeField(value: any, maxLength = 80, fieldName = "", allowParagrap
   return str;
 }
 
-function sanitizeProductData(data: any): any {
-  if (!data) return {};
+function sanitizeProductData(data: unknown): NonNullable<AutofillResult["data"]> {
+  if (!data || typeof data !== "object") return { name: "Unnamed Product" };
+  const product = data as Record<string, unknown>;
 
-  const name = sanitizeField(data.name, 150, "name");
-  const sku = sanitizeField(data.sku, 50, "sku");
-  const category = sanitizeField(data.category, 50, "category");
-  const description = sanitizeField(data.description, 1000, "description", true);
-  const finishColor = sanitizeField(data.finishColor, 80, "finishColor");
-  const manufacturer = sanitizeField(data.manufacturer, 100, "manufacturer");
-  const materials = sanitizeField(data.materials, 150, "materials");
-  const dimensions = sanitizeField(data.dimensions, 100, "dimensions");
+  const name = sanitizeField(product.name, 150, "name");
+  const sku = sanitizeField(product.sku, 50, "sku");
+  const category = sanitizeField(product.category, 50, "category");
+  const description = sanitizeField(product.description, 1000, "description", true);
+  const finishColor = sanitizeField(product.finishColor, 80, "finishColor");
+  const manufacturer = sanitizeField(product.manufacturer, 100, "manufacturer");
+  const materials = sanitizeField(product.materials, 150, "materials");
+  const dimensions = sanitizeField(product.dimensions, 100, "dimensions");
 
   return {
-    ...data,
+    ...product,
     name: name || "Unnamed Product",
     sku,
     category,
@@ -1394,28 +1398,29 @@ function sanitizeProductData(data: any): any {
   };
 }
 
-function sanitizeVendorData(data: any): any {
-  if (!data) return {};
+function sanitizeVendorData(data: unknown): NonNullable<VendorAutofillResult["data"]> {
+  if (!data || typeof data !== "object") return {};
+  const vendor = data as Record<string, unknown>;
 
-  const name = sanitizeField(data.name, 150, "name");
-  const category = sanitizeField(data.category, 50, "category");
-  const description = sanitizeField(data.description, 1000, "description", true);
-  const street = sanitizeField(data.street, 150, "street");
-  const city = sanitizeField(data.city, 80, "city");
-  const state = sanitizeField(data.state, 30, "state");
-  const zip = sanitizeField(data.zip, 20, "zip");
-  const repPhone = sanitizeField(data.repPhone, 40, "repPhone");
-  const repEmail = sanitizeField(data.repEmail, 80, "repEmail");
-  const logoUrl = sanitizeField(data.logoUrl, 1000, "logoUrl", true);
-  const heroImageUrl = sanitizeField(data.heroImageUrl, 1000, "heroImageUrl", true);
-  const instagram = sanitizeField(data.instagram, 500, "instagram", true);
-  const pinterest = sanitizeField(data.pinterest, 500, "pinterest", true);
-  const facebook = sanitizeField(data.facebook, 500, "facebook", true);
-  const youtube = sanitizeField(data.youtube, 500, "youtube", true);
-  const xTwitter = sanitizeField(data.xTwitter, 500, "xTwitter", true);
+  const name = sanitizeField(vendor.name, 150, "name");
+  const category = sanitizeField(vendor.category, 50, "category");
+  const description = sanitizeField(vendor.description, 1000, "description", true);
+  const street = sanitizeField(vendor.street, 150, "street");
+  const city = sanitizeField(vendor.city, 80, "city");
+  const state = sanitizeField(vendor.state, 30, "state");
+  const zip = sanitizeField(vendor.zip, 20, "zip");
+  const repPhone = sanitizeField(vendor.repPhone, 40, "repPhone");
+  const repEmail = sanitizeField(vendor.repEmail, 80, "repEmail");
+  const logoUrl = sanitizeField(vendor.logoUrl, 1000, "logoUrl", true);
+  const heroImageUrl = sanitizeField(vendor.heroImageUrl, 1000, "heroImageUrl", true);
+  const instagram = sanitizeField(vendor.instagram, 500, "instagram", true);
+  const pinterest = sanitizeField(vendor.pinterest, 500, "pinterest", true);
+  const facebook = sanitizeField(vendor.facebook, 500, "facebook", true);
+  const youtube = sanitizeField(vendor.youtube, 500, "youtube", true);
+  const xTwitter = sanitizeField(vendor.xTwitter, 500, "xTwitter", true);
 
   return {
-    ...data,
+    ...vendor,
     name: name || "Unnamed Vendor",
     category,
     description,

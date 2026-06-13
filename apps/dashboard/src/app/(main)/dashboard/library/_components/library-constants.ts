@@ -108,7 +108,7 @@ export const SUBCATEGORIES: Record<string, string[]> = {
 };
 
 /** Shape of the shared Add/Edit library item form (everything persisted except server-managed keys). */
-export type LibraryItemFormData = Omit<LibraryItem, "itemId" | "updatedAt" | "tags" | "organizationId">;
+export type LibraryItemFormData = z.infer<typeof libraryItemSchema>;
 
 /** Pristine form values used when creating a new item or resetting the form. */
 export const EMPTY_LIBRARY_ITEM_FORM: LibraryItemFormData = {

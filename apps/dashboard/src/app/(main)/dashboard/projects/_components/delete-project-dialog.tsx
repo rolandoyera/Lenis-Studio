@@ -33,7 +33,7 @@ export function DeleteProjectDialog({
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription className="text-sm mt-4">
+          <AlertDialogDescription className="mt-4 text-sm">
             This action cannot be undone. This will permanently delete the project{" "}
             <span className="font-medium text-foreground">{projectName}</span>.
             <span className="mt-2 block font-medium text-amber-600">

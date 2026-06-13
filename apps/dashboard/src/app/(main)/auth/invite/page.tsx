@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { auth, db } from "@/lib/firebase";
+import { formatPhone, isValidUsPhone } from "@/lib/utils";
 
 const inviteFormSchema = z
   .object({
@@ -35,10 +36,7 @@ const inviteFormSchema = z
     phone: z
       .string()
       .min(1, "Please enter your phone number.")
-      .refine((val) => {
-        const digits = val.replace(/\D/g, "");
-        return digits.length === 10;
-      }, "Please enter a valid 10-digit US phone number."),
+      .refine(isValidUsPhone, "Please enter a valid 10-digit US phone number."),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters.")
@@ -53,29 +51,18 @@ const inviteFormSchema = z
     path: ["confirmPassword"],
   });
 
-function formatPhoneNumber(value: string) {
-  if (!value) return "";
-  let cleaned = value.replace(/\D/g, "");
+type InviteFormData = z.infer<typeof inviteFormSchema>;
 
-  // If it starts with 1 and is 11 digits (e.g. +1 US country code autofill), strip the leading 1
-  if (cleaned.length === 11 && cleaned.startsWith("1")) {
-    cleaned = cleaned.slice(1);
-  }
-
-  // Limit to exactly 10 digits
-  cleaned = cleaned.slice(0, 10);
-  if (cleaned.length === 0) return "";
-
-  if (cleaned.length <= 3) {
-    return `(${cleaned}`;
-  }
-  if (cleaned.length <= 6) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3)}`;
-  }
-  return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+interface PendingInviteData {
+  fullName?: string;
+  organizationId?: string;
+  role?: string;
+  status?: string;
 }
 
-type InviteFormData = z.infer<typeof inviteFormSchema>;
+function hasFirebaseCode(error: unknown, code: string) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
 
 function InviteContent() {
   const router = useRouter();
@@ -84,7 +71,7 @@ function InviteContent() {
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [isValid, setIsValid] = useState(false);
-  const [pendingData, setPendingData] = useState<any>(null);
+  const [pendingData, setPendingData] = useState<PendingInviteData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -112,7 +99,7 @@ function InviteContent() {
         const docRef = doc(db, "users", email.trim().toLowerCase());
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().status === "Pending") {
-          const data = docSnap.data();
+          const data = docSnap.data() as PendingInviteData;
           setPendingData(data);
           setIsValid(true);
           reset({
@@ -131,7 +118,7 @@ function InviteContent() {
       }
     };
 
-    verifyInvite();
+    void verifyInvite();
   }, [email, reset]);
 
   const onSubmit = async (data: InviteFormData) => {
@@ -173,10 +160,10 @@ function InviteContent() {
 
       toast.success("Account created and activated successfully!");
       router.push("/dashboard");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Setup error:", e);
       let errorMsg = "Failed to create account. Please try again.";
-      if (e.code === "auth/email-already-in-use") {
+      if (hasFirebaseCode(e, "auth/email-already-in-use")) {
         errorMsg = "An account with this email address already exists.";
       }
       toast.error(errorMsg);
@@ -314,7 +301,7 @@ function InviteContent() {
                 aria-invalid={fieldState.invalid}
                 placeholder="(555) 555-5555"
                 onChange={(e) => {
-                  const formatted = formatPhoneNumber(e.target.value);
+                  const formatted = formatPhone(e.target.value);
                   field.onChange(formatted);
                 }}
               />

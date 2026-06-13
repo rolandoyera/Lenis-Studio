@@ -18,7 +18,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export function useLibraryItemForm() {
   const rhfForm = useForm<LibraryItemFormData>({
-    resolver: zodResolver(libraryItemSchema) as any,
+    resolver: zodResolver(libraryItemSchema),
     defaultValues: EMPTY_LIBRARY_ITEM_FORM,
   });
 
@@ -32,8 +32,11 @@ export function useLibraryItemForm() {
     (updater: LibraryItemFormData | ((prev: LibraryItemFormData) => LibraryItemFormData)) => {
       const current = rhfForm.getValues();
       const next = typeof updater === "function" ? updater(current) : updater;
+      const setFormValue = <K extends keyof LibraryItemFormData>(key: K, value: LibraryItemFormData[K]) => {
+        rhfForm.setValue(key, value, { shouldDirty: true });
+      };
       (Object.keys(next) as (keyof LibraryItemFormData)[]).forEach((key) => {
-        rhfForm.setValue(key, next[key] as any, { shouldDirty: true });
+        setFormValue(key, next[key] as never);
       });
     },
     [rhfForm],

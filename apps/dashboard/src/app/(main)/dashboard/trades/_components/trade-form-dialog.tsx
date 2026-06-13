@@ -78,7 +78,7 @@ export function TradeFormDialog({ open, onOpenChange, mode, initialData, tradeId
         if (!isSubmitting) onOpenChange(v);
       }}
     >
-      <DialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-3xl">
+      <DialogContent className="sm:max-w-3xl">
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate autoComplete="off">
           <DialogHeader>
             <DialogTitle className="text-xl">

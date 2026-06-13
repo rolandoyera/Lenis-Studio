@@ -25,7 +25,7 @@ interface DeleteClientDialogProps {
 export function DeleteClientDialog({ open, onOpenChange, clientName, deleting, onConfirm }: DeleteClientDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-popover/95 backdrop-blur-md sm:max-w-md">
+      <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription className="text-sm">

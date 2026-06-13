@@ -195,6 +195,7 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
         index === 0 ? "scale-102 border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50"
       }`}
     >
+      {/* biome-ignore lint/performance/noImgElement: sortable preview uses dynamic local/external image URLs. */}
       <img
         src={url}
         alt={`Thumbnail ${index + 1}`}
@@ -962,6 +963,7 @@ export function LibraryItemFormDialog({
                       </div>
                     ) : formData.coverImageUrl ? (
                       <>
+                        {/* biome-ignore lint/performance/noImgElement: form preview uses dynamic local/external image URLs. */}
                         <img
                           src={formData.coverImageUrl}
                           alt="Primary Preview"
@@ -1046,6 +1048,7 @@ export function LibraryItemFormDialog({
                         <DragOverlay adjustScale={true}>
                           {activeId ? (
                             <div className="relative aspect-square scale-102 cursor-grabbing overflow-hidden rounded-md border border-primary bg-background opacity-90 shadow-2xl">
+                              {/* biome-ignore lint/performance/noImgElement: drag overlay preview uses the active dynamic image URL. */}
                               <img
                                 src={activeId}
                                 alt="Dragging preview"

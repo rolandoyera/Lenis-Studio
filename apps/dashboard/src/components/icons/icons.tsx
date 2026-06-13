@@ -21,6 +21,8 @@ const InstagramIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -70,6 +72,8 @@ const PinterestIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -119,6 +123,8 @@ const YoutubeIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -168,6 +174,8 @@ const FacebookIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -221,6 +229,8 @@ const GlobeIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -270,6 +280,8 @@ const XTwitterIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -323,6 +335,8 @@ const EditIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}
@@ -377,6 +391,8 @@ const TrashIcon = ({
 
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       xmlns="http://www.w3.org/2000/svg"
       viewBox={viewBox}
       width={size}

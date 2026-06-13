@@ -104,8 +104,9 @@ export async function mirrorExternalImagesToFirebase(
   );
 
   const resolve = (urlStr: string): { url: string; path: string } => {
-    if (mapping.has(urlStr)) {
-      return mapping.get(urlStr)!;
+    const mirrored = mapping.get(urlStr);
+    if (mirrored) {
+      return mirrored;
     }
     const path = urlToPathMap.get(urlStr) || "";
     return { url: urlStr, path };

@@ -46,7 +46,7 @@ export function ProjectHeader({
     <>
       <HeaderBackLink href="/dashboard/projects" />
 
-      <div className="flex flex-col gap-4 border-b pb-6 md:flex-row md:items-center justify-between">
+      <div className="flex flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
         <div className="flex flex-col gap-16 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-xs">

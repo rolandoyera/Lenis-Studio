@@ -1,7 +1,7 @@
-import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { type FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
+import { type Auth, getAuth } from "firebase/auth";
+import { type Firestore, getFirestore } from "firebase/firestore";
+import { type FirebaseStorage, getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -15,10 +15,10 @@ const firebaseConfig = {
 // Initialize Firebase for SSR / Client-side safely
 const hasValidConfig = typeof window !== "undefined" || !!firebaseConfig.apiKey;
 
-let app: any = null;
-let auth: any = {} as any;
-let db: any = {} as any;
-let storage: any = {} as any;
+let app: FirebaseApp | null = null;
+let auth = null as unknown as Auth;
+let db = null as unknown as Firestore;
+let storage = null as unknown as FirebaseStorage;
 
 if (hasValidConfig) {
   try {

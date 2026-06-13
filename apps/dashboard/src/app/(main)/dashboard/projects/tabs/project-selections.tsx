@@ -65,7 +65,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
 
   // Form setups
   const roomForm = useForm<RoomFormData>({
-    resolver: zodResolver(roomSchema) as any,
+    resolver: zodResolver(roomSchema),
     defaultValues: { name: "", description: "" },
   });
 
@@ -192,7 +192,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
         <Card>
           <CardHeader className="py-0">
             <CardDescription className="text-xs uppercase tracking-wider">Total Sections</CardDescription>
-            <CardTitle className="mt-1 flex items-center gap-2 text-xl text-foreground">
+            <CardTitle className="mt-1 flex items-center gap-2 text-foreground text-xl">
               <Home className="icons" />
               {rooms.length}
             </CardTitle>
@@ -201,7 +201,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
         <Card>
           <CardHeader className="py-0">
             <CardDescription className="text-xs uppercase tracking-wider">Total Items</CardDescription>
-            <CardTitle className="mt-1 flex items-center gap-2 text-xl text-foreground">
+            <CardTitle className="mt-1 flex items-center gap-2 text-foreground text-xl">
               <ShoppingBag className="icons" />
               {totalItemCount}
             </CardTitle>
@@ -210,7 +210,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
         <Card>
           <CardHeader className="py-0">
             <CardDescription className="text-xs uppercase tracking-wider">Budget</CardDescription>
-            <CardTitle className="mt-1 flex items-center gap-2 text-xl text-foreground">
+            <CardTitle className="mt-1 flex items-center gap-2 text-foreground text-xl">
               <DollarSign className="icons" />
               {project.budget
                 ? formatCurrency(project.budget, {
@@ -224,7 +224,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
         <Card>
           <CardHeader className="py-0">
             <CardDescription className="text-xs uppercase tracking-wider">Budget Remaining</CardDescription>
-            <CardTitle className="mt-1 flex items-center gap-2 text-xl text-foreground">
+            <CardTitle className="mt-1 flex items-center gap-2 text-foreground text-xl">
               <DollarSign className="icons" />
               {formatCurrency(budgetRemaining, {
                 noDecimals: true,
@@ -236,7 +236,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
         <Card>
           <CardHeader className="py-0">
             <CardDescription className="text-xs uppercase tracking-wider">Total Cost</CardDescription>
-            <CardTitle className="mt-1 flex items-center gap-2 text-xl text-foreground">
+            <CardTitle className="mt-1 flex items-center gap-2 text-foreground text-xl">
               <DollarSign className="icons" />
               {formatCurrency(totalCostValue, {
                 noDecimals: true,
@@ -248,7 +248,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
         <Card className="border-primary bg-linear-to-br from-primary/5 to-primary/15">
           <CardHeader className="py-0">
             <CardDescription className="text-primary text-xs uppercase tracking-wider">Total Retail</CardDescription>
-            <CardTitle className="mt-1 text-xl text-primary">
+            <CardTitle className="mt-1 text-primary text-xl">
               <DollarSign className="icons" />
               {formatCurrency(totalSelectedValue, {
                 noDecimals: true,
@@ -273,7 +273,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
                       {room.name}
                     </CardTitle>
                     {room.description && (
-                      <CardDescription className="mt-1 line-clamp-2 ml-6.5">{room.description}</CardDescription>
+                      <CardDescription className="mt-1 ml-6.5 line-clamp-2">{room.description}</CardDescription>
                     )}
                   </div>
 

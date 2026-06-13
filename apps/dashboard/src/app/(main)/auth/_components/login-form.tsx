@@ -21,6 +21,10 @@ const formSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
 
+function hasFirebaseCode(error: unknown, code: string) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -38,16 +42,16 @@ export function LoginForm() {
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       let errorMessage = "Failed to sign in. Please check your credentials.";
       if (
-        error.code === "auth/invalid-credential" ||
-        error.code === "auth/wrong-password" ||
-        error.code === "auth/user-not-found"
+        hasFirebaseCode(error, "auth/invalid-credential") ||
+        hasFirebaseCode(error, "auth/wrong-password") ||
+        hasFirebaseCode(error, "auth/user-not-found")
       ) {
         errorMessage = "Invalid email or password.";
-      } else if (error.code === "auth/too-many-requests") {
+      } else if (hasFirebaseCode(error, "auth/too-many-requests")) {
         errorMessage = "Too many failed attempts. Please try again later.";
       }
       toast.error(errorMessage);

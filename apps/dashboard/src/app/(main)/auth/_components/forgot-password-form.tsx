@@ -19,6 +19,10 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
 });
 
+function hasFirebaseCode(error: unknown, code: string) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
 export function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -36,12 +40,12 @@ export function ForgotPasswordForm() {
       await sendPasswordResetEmail(auth, data.email);
       toast.success("Password reset email sent!");
       setIsSent(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Password recovery error:", error);
       let errorMessage = "Failed to send password reset email. Please try again.";
-      if (error.code === "auth/user-not-found") {
+      if (hasFirebaseCode(error, "auth/user-not-found")) {
         errorMessage = "No account found with this email address.";
-      } else if (error.code === "auth/invalid-email") {
+      } else if (hasFirebaseCode(error, "auth/invalid-email")) {
         errorMessage = "Invalid email address format.";
       }
       toast.error(errorMessage);
