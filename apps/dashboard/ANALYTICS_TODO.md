@@ -35,8 +35,9 @@ rename `GA_PROPERTY_ID` in `.env.local` and restart.
       `firebase-admin` (`FIREBASE_SERVICE_ACCOUNT_KEY` env). With an org cookie there is NO env
       fallback (tenants can't see each other's data); env `GA_PROPERTY_ID` applies only without org
       context. SDG property ID is now set on org-sarvian's tenant config.
-- [ ] **Vercel env swap for production:** add `GA_SERVICE_ACCOUNT_KEY` + `FIREBASE_SERVICE_ACCOUNT_KEY`,
-      remove `GA_CLIENT_ID`/`GA_CLIENT_SECRET`/`GA_REFRESH_TOKEN`, redeploy.
+- [x] **Vercel env swap (2026-06-12):** `GA_SERVICE_ACCOUNT_KEY` + `FIREBASE_SERVICE_ACCOUNT_KEY` added
+      (legacy `GA_CLIENT_*`/`GA_REFRESH_TOKEN` vars removable); local JSON key files deleted —
+      regenerate from the consoles if ever needed. Takes effect on next deploy.
 - [x] **Firestore security rules (published 2026-06-12, smoke-tested):** org-scoped rules live in
       `firestore.rules` + `storage.rules` (repo copies are the source of truth; paste into console
       to change). Spent migration scripts deleted; `dump-users.ts` kept but needs a `firebase-admin`
