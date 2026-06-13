@@ -1,0 +1,186 @@
+rules_version = '2';
+
+// Org-scoped rules for the SDG CRM (replaces the expiring test-mode rules).
+// Paste into Firebase console -> Firestore Database -> Rules -> Publish.
+//
+// Model: every signed-in user has a profile at users/{uid} carrying
+// organizationId and role (SuperAdmin | Admin | Contributor). Data documents
+// carry an organizationId field and are only visible inside that org.
+// The firebase-admin SDK (server actions) bypasses these rules entirely.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // The requester's own profile document (one cached read per request).
+    function me() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function userOrg() {
+      return me().organizationId;
+    }
+
+    function isAdmin() {
+      return me().role in ['Admin', 'SuperAdmin'];
+    }
+
+    function isSuperAdmin() {
+      return me().role == 'SuperAdmin';
+    }
+
+    // Org of a project document, for collections that only carry projectId.
+    function projectOrg(projectId) {
+      return get(/databases/$(database)/documents/projects/$(projectId)).data.organizationId;
+    }
+
+    // Shared shape for org-partitioned data collections.
+    function readsOwnOrg() {
+      return isSignedIn() && resource.data.organizationId == userOrg();
+    }
+
+    function createsInOwnOrg() {
+      return isSignedIn() && request.resource.data.organizationId == userOrg();
+    }
+
+    function updatesInOwnOrg() {
+      return isSignedIn()
+        && resource.data.organizationId == userOrg()
+        && request.resource.data.organizationId == resource.data.organizationId;
+    }
+
+    match /clients/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg();
+      allow update: if updatesInOwnOrg();
+    }
+
+    match /vendors/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg();
+      allow update: if updatesInOwnOrg();
+    }
+
+    match /projects/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg();
+      allow update: if updatesInOwnOrg();
+    }
+
+    match /library/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg();
+      allow update: if updatesInOwnOrg();
+    }
+
+    match /proposals/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg();
+      allow update: if updatesInOwnOrg();
+    }
+
+    match /trades/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg();
+      allow update: if updatesInOwnOrg();
+    }
+
+    // Rooms have no organizationId field; their org is the parent project's.
+    // Queries must filter on projectId (the app always does).
+    match /projectRooms/{id} {
+      allow read, update, delete: if isSignedIn() && projectOrg(resource.data.projectId) == userOrg();
+      allow create: if isSignedIn() && projectOrg(request.resource.data.projectId) == userOrg();
+    }
+
+    // Items are also queried by projectId, so the parent project drives access here too.
+    match /projectRoomItems/{id} {
+      allow read, update, delete: if isSignedIn() && projectOrg(resource.data.projectId) == userOrg();
+      allow create: if isSignedIn()
+        && projectOrg(request.resource.data.projectId) == userOrg()
+        && request.resource.data.organizationId == userOrg();
+    }
+
+    match /users/{userId} {
+      // The invite page verifies pending invites before the visitor has an account.
+      // Exposes only invite docs (name/role/org) to someone who knows the exact email.
+      allow get: if resource.data.status == 'Pending'
+        || (isSignedIn() && (
+          userId == request.auth.uid
+          || userId == request.auth.token.email
+          || resource.data.organizationId == userOrg()
+          || isSuperAdmin()
+        ));
+
+      allow list: if isSignedIn() && (resource.data.organizationId == userOrg() || isSuperAdmin());
+
+      // A pending invite doc for the requester's own email address.
+      function pendingInvite() {
+        return get(/databases/$(database)/documents/users/$(request.auth.token.email)).data;
+      }
+
+      function hasPendingInvite() {
+        return exists(/databases/$(database)/documents/users/$(request.auth.token.email));
+      }
+
+      // Self-created profiles may never choose their own org or role:
+      // they either copy the pending invite exactly, or land in the demo org.
+      function selfProfileAllowed() {
+        return userId == request.auth.uid && (
+          (hasPendingInvite()
+            && request.resource.data.organizationId == pendingInvite().organizationId
+            && request.resource.data.role == pendingInvite().role)
+          || (request.resource.data.organizationId == 'org-demo'
+            && request.resource.data.role == 'Contributor')
+        );
+      }
+
+      // Admins create pending invites inside their org; SuperAdmins for any org
+      // (tenant onboarding creates the new org's first Admin invite).
+      function inviteCreationAllowed() {
+        return request.resource.data.status == 'Pending'
+          && (isSuperAdmin() || (isAdmin() && request.resource.data.organizationId == userOrg()));
+      }
+
+      allow create: if isSignedIn() && (selfProfileAllowed() || inviteCreationAllowed());
+
+      // Own profile edits (uid- or legacy email-keyed) must not touch role/org.
+      allow update: if isSignedIn() && (
+        ((userId == request.auth.uid || userId == request.auth.token.email)
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'organizationId']))
+        || (isAdmin()
+          && resource.data.organizationId == userOrg()
+          && request.resource.data.organizationId == resource.data.organizationId)
+        || isSuperAdmin()
+      );
+
+      // Users clean up their own pending invite after activation;
+      // Admins manage users inside their org.
+      allow delete: if isSignedIn() && (
+        userId == request.auth.token.email
+        || (isAdmin() && resource.data.organizationId == userOrg())
+        || isSuperAdmin()
+      );
+    }
+
+    match /organizations/{orgId} {
+      // Members may read their own org (e.g. plan/config); only SuperAdmins see all.
+      allow get: if isSignedIn() && (orgId == userOrg() || isSuperAdmin());
+      allow list, create, update, delete: if isSignedIn() && isSuperAdmin();
+    }
+
+    // Outbox for the Trigger Email extension: write-only from the app.
+    match /mail/{mailId} {
+      allow create: if isSignedIn();
+    }
+
+    // Internal diagnostics runs (no org partition; dev tooling).
+    match /code/{runId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Everything else: denied by default.
+  }
+}

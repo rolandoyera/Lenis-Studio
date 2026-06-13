@@ -5,7 +5,9 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from "
 import { signOut as firebaseSignOut, onAuthStateChanged, type User } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 
+import { deleteClientCookie, setClientCookie } from "@/lib/cookie.client";
 import { auth, db } from "@/lib/firebase";
+import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
 import type { UserProfile } from "@/lib/types";
 
 interface AuthContextType {
@@ -55,8 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 location: data.location,
                 phone: data.phone,
               });
+              // Only the real org id may drive server-side tenant resolution —
+              // a profile missing its organizationId must not inherit another tenant's config.
+              if (data.organizationId) {
+                setClientCookie(ACTIVE_ORG_COOKIE, data.organizationId, 30);
+              } else {
+                deleteClientCookie(ACTIVE_ORG_COOKIE);
+              }
             } else {
               setProfile(null);
+              deleteClientCookie(ACTIVE_ORG_COOKIE);
             }
             setLoading(false);
           },
@@ -67,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
       } else {
         setProfile(null);
+        deleteClientCookie(ACTIVE_ORG_COOKIE);
         setLoading(false);
       }
     });

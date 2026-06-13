@@ -4,7 +4,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { cn } from "@/lib/utils";
 import { fetchRealtimeData } from "@/server/analytics-actions";
 
-import { AnalyticsErrorToast } from "./analytics-error-toast";
+import { AnalyticsSetupRequired } from "./analytics-setup-required";
 import { RealtimeChart } from "./realtime-chart";
 
 export async function RealtimeVisitors() {
@@ -19,9 +19,8 @@ export async function RealtimeVisitors() {
             <Ellipsis className="size-4" />
           </CardAction>
         </CardHeader>
-        <CardContent className="flex h-64 flex-col items-center justify-center gap-1 text-center text-muted-foreground text-sm">
-          <AnalyticsErrorToast error={result.error} title="Realtime Visitors Error" />
-          {result.error || "No realtime data available."}
+        <CardContent>
+          <AnalyticsSetupRequired error={result.error} title="Realtime Visitors Error" className="h-64" />
         </CardContent>
       </Card>
     );

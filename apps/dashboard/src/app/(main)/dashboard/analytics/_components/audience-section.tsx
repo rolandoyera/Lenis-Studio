@@ -3,7 +3,7 @@ import { Ellipsis } from "lucide-react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchAudienceData } from "@/server/analytics-actions";
 
-import { AnalyticsErrorToast } from "./analytics-error-toast";
+import { AnalyticsSetupRequired } from "./analytics-setup-required";
 
 function ShareBarList({ items }: { items: { label: string; users: number; flagCode?: string }[] }) {
   const total = items.reduce((sum, item) => sum + item.users, 0);
@@ -65,12 +65,8 @@ export async function AudienceSection({ range }: { range?: string }) {
 
   if (!result.success || !result.data) {
     return (
-      <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-8 text-center text-muted-foreground ring-1 ring-foreground/10">
-        <AnalyticsErrorToast error={result.error} title="Audience Error" />
-        <span className="font-semibold text-foreground text-sm">Failed to load audience metrics</span>
-        <span className="max-w-md text-muted-foreground text-xs">
-          {result.error || "Please check your Google Analytics configuration settings."}
-        </span>
+      <div className="rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
+        <AnalyticsSetupRequired error={result.error} title="Audience Error" className="min-h-[200px]" />
       </div>
     );
   }

@@ -29,6 +29,10 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# service account credentials — never commit
+designer-crm-key.json
+*service-account*.json
+
 # vercel
 .vercel
 

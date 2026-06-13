@@ -4,7 +4,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchTrafficSources } from "@/server/analytics-actions";
 
-import { AnalyticsErrorToast } from "./analytics-error-toast";
+import { AnalyticsSetupRequired } from "./analytics-setup-required";
 import { TrafficSourceBarChart } from "./traffic-source-chart";
 
 export async function TopTrafficSources({ range }: { range?: string }) {
@@ -21,10 +21,7 @@ export async function TopTrafficSources({ range }: { range?: string }) {
 
       <CardContent className="px-0">
         {!result.success || !result.data ? (
-          <div className="flex h-64 flex-col items-center justify-center gap-1 px-4 text-center text-muted-foreground text-sm">
-            <AnalyticsErrorToast error={result.error} title="Traffic Sources Error" />
-            {result.error || "No traffic source data available."}
-          </div>
+          <AnalyticsSetupRequired error={result.error} title="Traffic Sources Error" className="h-64" />
         ) : (
           <Tabs defaultValue="channels" className="flex flex-col gap-3">
             <TabsList className="w-full justify-start border-b px-2.5" variant="line">

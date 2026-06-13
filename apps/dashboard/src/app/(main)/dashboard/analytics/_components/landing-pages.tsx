@@ -4,7 +4,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fetchLandingPages } from "@/server/analytics-actions";
 
-import { AnalyticsErrorToast } from "./analytics-error-toast";
+import { AnalyticsSetupRequired } from "./analytics-setup-required";
 
 export async function LandingPages({ range }: { range?: string }) {
   const result = await fetchLandingPages(range);
@@ -29,11 +29,16 @@ export async function LandingPages({ range }: { range?: string }) {
             </TableRow>
           </TableHeader>
           <TableBody className="[&_tr]:border-border/50">
-            {!result.success || result.data.length === 0 ? (
+            {!result.success ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={4} className="py-4">
+                  <AnalyticsSetupRequired error={result.error} title="Landing Pages Error" className="min-h-32" />
+                </TableCell>
+              </TableRow>
+            ) : result.data.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={4} className="h-32 py-4 text-center text-muted-foreground text-sm">
-                  <AnalyticsErrorToast error={result.error} title="Landing Pages Error" />
-                  {result.error || "No landing page data available."}
+                  No landing page data available.
                 </TableCell>
               </TableRow>
             ) : (

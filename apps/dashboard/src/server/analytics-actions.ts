@@ -1,6 +1,11 @@
-"use server";
+﻿"use server";
 
-import { getGA4Client } from "./ga4";
+import { cookies } from "next/headers";
+
+import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
+
+import { getAdminDb } from "./firebase-admin";
+import { getGA4Client, hasGA4Credentials } from "./ga4";
 
 export interface GA4ConnectionResult {
   success: boolean;
@@ -10,23 +15,13 @@ export interface GA4ConnectionResult {
 }
 
 export async function testGA4Connection(): Promise<GA4ConnectionResult> {
-  const propertyId = process.env.GA_PROPERTY_ID;
-  const clientId = process.env.GA_CLIENT_ID;
-  const clientSecret = process.env.GA_CLIENT_SECRET;
-  const refreshToken = process.env.GA_REFRESH_TOKEN;
+  const propertyId = await getConfiguredPropertyId();
 
-  if (
-    !propertyId ||
-    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
-    !clientId ||
-    !clientSecret ||
-    !refreshToken ||
-    refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
-  ) {
+  if (!propertyId) {
     return {
       success: false,
       configMissing: true,
-      error: "Google Analytics 4 OAuth environment variables are not fully configured in .env.local yet.",
+      error: CONFIG_MISSING_ERROR,
     };
   }
 
@@ -77,20 +72,10 @@ export interface TopPageItem {
 export async function fetchTopPagesData(
   range?: string,
 ): Promise<{ success: boolean; data: TopPageItem[]; error?: string }> {
-  const propertyId = process.env.GA_PROPERTY_ID;
-  const clientId = process.env.GA_CLIENT_ID;
-  const clientSecret = process.env.GA_CLIENT_SECRET;
-  const refreshToken = process.env.GA_REFRESH_TOKEN;
+  const propertyId = await getConfiguredPropertyId();
 
-  if (
-    !propertyId ||
-    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
-    !clientId ||
-    !clientSecret ||
-    !refreshToken ||
-    refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
-  ) {
-    return { success: false, data: [], error: "Config missing" };
+  if (!propertyId) {
+    return { success: false, data: [], error: CONFIG_MISSING_ERROR };
   }
 
   // Map range to GA4 date string
@@ -288,22 +273,12 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
   const activeRange = range || "last-4-weeks";
   const dateRanges = getDateRangesForRange(activeRange);
 
-  const propertyId = process.env.GA_PROPERTY_ID;
-  const clientId = process.env.GA_CLIENT_ID;
-  const clientSecret = process.env.GA_CLIENT_SECRET;
-  const refreshToken = process.env.GA_REFRESH_TOKEN;
+  const propertyId = await getConfiguredPropertyId();
 
-  if (
-    !propertyId ||
-    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
-    !clientId ||
-    !clientSecret ||
-    !refreshToken ||
-    refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
-  ) {
+  if (!propertyId) {
     return {
       success: false,
-      error: "Google Analytics 4 is not configured in .env.local yet.",
+      error: CONFIG_MISSING_ERROR,
       label: dateRanges.label,
       comparisonLabel: dateRanges.comparisonLabel,
     };
@@ -435,22 +410,32 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-function getConfiguredPropertyId(): string | null {
-  const propertyId = process.env.GA_PROPERTY_ID;
-  const clientId = process.env.GA_CLIENT_ID;
-  const clientSecret = process.env.GA_CLIENT_SECRET;
-  const refreshToken = process.env.GA_REFRESH_TOKEN;
+/**
+ * Resolves the GA4 property for the current request's tenant.
+ *
+ * With an active-organization cookie, only that org's `config.gaPropertyId`
+ * counts â€” no env fallback, so one tenant can never see another's data.
+ * Without org context, the global GA_PROPERTY_ID env var applies.
+ */
+async function getConfiguredPropertyId(): Promise<string | null> {
+  if (!hasGA4Credentials()) return null;
 
-  if (
-    !propertyId ||
-    propertyId === "YOUR_GA4_PROPERTY_ID_HERE" ||
-    !clientId ||
-    !clientSecret ||
-    !refreshToken ||
-    refreshToken === "PASTE_YOUR_REFRESH_TOKEN_HERE"
-  ) {
-    return null;
+  const cookieStore = await cookies();
+  const organizationId = cookieStore.get(ACTIVE_ORG_COOKIE)?.value;
+
+  if (organizationId) {
+    try {
+      const orgSnap = await getAdminDb().collection("organizations").doc(organizationId).get();
+      const gaPropertyId = orgSnap.exists ? (orgSnap.data()?.config?.gaPropertyId as string | undefined) : undefined;
+      return gaPropertyId?.trim() ? gaPropertyId.trim() : null;
+    } catch (error) {
+      console.error("Failed to resolve organization GA4 property:", error);
+      return null;
+    }
   }
+
+  const propertyId = process.env.GA_PROPERTY_ID;
+  if (!propertyId || propertyId === "YOUR_GA4_PROPERTY_ID_HERE") return null;
   return propertyId;
 }
 
@@ -489,7 +474,7 @@ export interface TrendPoint {
 export async function fetchTrafficTrend(
   range?: string,
 ): Promise<{ success: boolean; data: TrendPoint[]; error?: string }> {
-  const propertyId = getConfiguredPropertyId();
+  const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
 
   const hourly = range === "last-24-hours";
@@ -538,7 +523,7 @@ export interface TrafficSourcesData {
 export async function fetchTrafficSources(
   range?: string,
 ): Promise<{ success: boolean; data?: TrafficSourcesData; error?: string }> {
-  const propertyId = getConfiguredPropertyId();
+  const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
 
   try {
@@ -591,7 +576,7 @@ export interface RealtimeData {
 }
 
 export async function fetchRealtimeData(): Promise<{ success: boolean; data?: RealtimeData; error?: string }> {
-  const propertyId = getConfiguredPropertyId();
+  const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
 
   try {
@@ -661,7 +646,7 @@ export interface ConversionsData {
 export async function fetchConversionsData(
   range?: string,
 ): Promise<{ success: boolean; data?: ConversionsData; error?: string }> {
-  const propertyId = getConfiguredPropertyId();
+  const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
 
   const hourly = range === "last-24-hours";
@@ -741,7 +726,7 @@ export interface LandingPageItem {
 export async function fetchLandingPages(
   range?: string,
 ): Promise<{ success: boolean; data: LandingPageItem[]; error?: string }> {
-  const propertyId = getConfiguredPropertyId();
+  const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
 
   try {
@@ -793,7 +778,7 @@ export interface AudienceData {
 export async function fetchAudienceData(
   range?: string,
 ): Promise<{ success: boolean; data?: AudienceData; error?: string }> {
-  const propertyId = getConfiguredPropertyId();
+  const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
 
   const dateRanges = [{ startDate: rangeToStartDate(range), endDate: "today" }];
@@ -880,7 +865,7 @@ export interface AcquisitionData {
 export async function fetchAcquisitionData(
   range?: string,
 ): Promise<{ success: boolean; data?: AcquisitionData; error?: string }> {
-  const propertyId = getConfiguredPropertyId();
+  const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
 
   const dateRanges = [{ startDate: rangeToStartDate(range), endDate: "today" }];

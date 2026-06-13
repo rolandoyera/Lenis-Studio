@@ -24,7 +24,7 @@ export default async function Page({ searchParams }: PageProps) {
   const range = (resolvedSearchParams.range as string) || "last-24-hours";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div className="space-y-1">
         <h1 className="text-3xl tracking-tight">Analytics</h1>
         <p className="text-muted-foreground text-sm">
@@ -32,7 +32,9 @@ export default async function Page({ searchParams }: PageProps) {
         </p>
       </div>
 
-      <GA4ConnectionChecker />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <GA4ConnectionChecker />
+      </div>
 
       <Tabs defaultValue="overview" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -47,10 +49,10 @@ export default async function Page({ searchParams }: PageProps) {
           <AnalyticsToolbar />
         </div>
 
-        <TabsContent value="overview" className="flex flex-col gap-4">
+        <TabsContent value="overview" className="flex flex-col gap-6">
           <AnalyticsKpiStrip range={range} />
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
             <div className="md:col-span-1 lg:col-span-4">
               <TrafficTrend range={range} />
             </div>
@@ -59,7 +61,7 @@ export default async function Page({ searchParams }: PageProps) {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
             <div className="md:col-span-1 lg:col-span-4">
               <TopPages range={range} />
             </div>
@@ -78,7 +80,7 @@ export default async function Page({ searchParams }: PageProps) {
         </TabsContent>
 
         <TabsContent value="engagement">
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
             <TopPages range={range} />
             <LandingPages range={range} />
           </div>

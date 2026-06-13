@@ -4,7 +4,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { type ConversionsData, fetchConversionsData } from "@/server/analytics-actions";
 
-import { AnalyticsErrorToast } from "./analytics-error-toast";
+import { AnalyticsSetupRequired } from "./analytics-setup-required";
 import { KeyEventsChart } from "./key-events-chart";
 
 interface FunnelStep {
@@ -88,12 +88,8 @@ export async function ConversionsSection({ range }: { range?: string }) {
 
   if (!result.success || !result.data) {
     return (
-      <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-8 text-center text-muted-foreground ring-1 ring-foreground/10">
-        <AnalyticsErrorToast error={result.error} title="Conversions Error" />
-        <span className="font-semibold text-foreground text-sm">Failed to load conversion metrics</span>
-        <span className="max-w-md text-muted-foreground text-xs">
-          {result.error || "Please check your Google Analytics configuration settings."}
-        </span>
+      <div className="rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
+        <AnalyticsSetupRequired error={result.error} title="Conversions Error" className="min-h-[200px]" />
       </div>
     );
   }

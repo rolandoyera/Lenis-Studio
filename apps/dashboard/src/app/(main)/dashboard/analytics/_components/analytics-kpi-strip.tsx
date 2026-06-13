@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchKpiData } from "@/server/analytics-actions";
 
-import { AnalyticsErrorToast } from "./analytics-error-toast";
+import { AnalyticsSetupRequired } from "./analytics-setup-required";
 
 interface AnalyticsKpiStripProps {
   range?: string;
@@ -15,12 +15,8 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
 
   if (!result.success || !result.data) {
     return (
-      <div className="flex min-h-[140px] flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-card p-8 text-center text-muted-foreground ring-1 ring-foreground/10">
-        <AnalyticsErrorToast error={result.error} title="Analytics KPI Error" />
-        <span className="font-semibold text-foreground text-sm">Failed to load live metrics</span>
-        <span className="max-w-md text-muted-foreground text-xs">
-          {result.error || "Please check your Google Analytics configuration settings."}
-        </span>
+      <div className="rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
+        <AnalyticsSetupRequired error={result.error} title="Analytics KPI Error" className="min-h-[140px]" />
       </div>
     );
   }

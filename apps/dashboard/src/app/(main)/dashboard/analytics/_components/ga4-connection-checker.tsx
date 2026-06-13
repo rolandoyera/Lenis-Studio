@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AlertCircle, CheckCircle2, Loader2, RefreshCw } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { type GA4ConnectionResult, testGA4Connection } from "@/server/analytics-actions";
 
 export function GA4ConnectionChecker() {
@@ -32,7 +34,7 @@ export function GA4ConnectionChecker() {
   }, [checkConnection]);
 
   return (
-    <div className="mb-4 rounded-xl border bg-card p-4 shadow-sm ring-1 ring-foreground/5">
+    <Card className="p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           {loading ? (
@@ -49,50 +51,13 @@ export function GA4ConnectionChecker() {
             </div>
           )}
 
-          <div>
-            <h3 className="flex items-center gap-2 font-medium text-sm leading-none">
-              GA4 Integration Status
-              {!loading && (
-                <span
-                  className={`rounded-full px-1.5 py-0.5 font-bold text-[10px] uppercase tracking-wider ${
-                    result?.success
-                      ? "bg-green-500/10 text-green-700 dark:text-green-300"
-                      : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
-                  }`}
-                >
-                  {result?.success ? "Connected" : "Setup Required"}
-                </span>
-              )}
-            </h3>
-
-            <p className="mt-1.5 max-w-xl text-muted-foreground text-xs leading-normal">
-              {loading && "Testing connection to Google Analytics 4 API..."}
-
-              {!loading && result?.success && (
-                <>
-                  Successfully connected to the Google Analytics Data API! Found{" "}
-                  <strong className="text-foreground">{result.activeUsers} active users</strong> in the last 7 days.
-                </>
-              )}
-
-              {!loading && !result?.success && result?.configMissing && (
-                <>
-                  Credentials missing. Add{" "}
-                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_PROPERTY_ID</code>,{" "}
-                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_CLIENT_ID</code>,{" "}
-                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_CLIENT_SECRET</code>, and{" "}
-                  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">GA_REFRESH_TOKEN</code> inside
-                  your <code className="font-semibold text-foreground">.env.local</code>.
-                </>
-              )}
-
-              {!loading && !result?.success && !result?.configMissing && (
-                <>
-                  Connection failed: <span className="font-mono text-[11px] text-destructive">{result?.error}</span>.
-                  Make sure your Google Account has read access to the specified Property ID.
-                </>
-              )}
-            </p>
+          <div className="flex flex-col gap-3">
+            <h3 className="font-medium text-sm leading-none">Analytics Connection</h3>
+            {!loading && (
+              <Badge variant={result?.success ? "success" : "warning"} className={`w-fit`}>
+                {result?.success ? "Connected" : "Setup Required"}
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -103,6 +68,6 @@ export function GA4ConnectionChecker() {
           </Button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
