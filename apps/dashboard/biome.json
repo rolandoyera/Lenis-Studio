@@ -6,11 +6,11 @@
     "useIgnoreFile": true
   },
   "assist": {
-    "enabled": true,
+    "enabled": false,
     "actions": {
       "source": {
         "organizeImports": {
-          "level": "on",
+          "level": "off",
           "options": {
             "groups": [
               "react",
