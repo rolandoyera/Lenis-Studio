@@ -1,80 +1,89 @@
 # Issues
 
-Audit scope: `apps/dashboard` redundancies and inconsistencies. No application code was changed.
+## Library + Vendors Simplification Pass
 
-## Higher Priority
+Scope: `apps/dashboard/src/app/(main)/dashboard/library`, `apps/dashboard/src/app/(main)/dashboard/vendors`, and related image helpers in `apps/dashboard/src/lib`.
 
-### Profile settings form bypasses the app's form standards
+### 1. Image mirroring logic is duplicated between library and vendor helpers
 
-- `apps/dashboard/src/app/(main)/dashboard/profile/page.tsx:80` through `apps/dashboard/src/app/(main)/dashboard/profile/page.tsx:103` keeps profile and password form values in individual `useState` calls instead of React Hook Form.
-- `apps/dashboard/src/app/(main)/dashboard/profile/page.tsx:468` and `apps/dashboard/src/app/(main)/dashboard/profile/page.tsx:544` submit plain forms through local handlers instead of RHF + Zod.
-- `apps/dashboard/src/app/(main)/dashboard/profile/page.tsx:49` defines a local `formatPhoneNumber`, and `apps/dashboard/src/app/(main)/dashboard/profile/page.tsx:597` uses it in `onChange`, bypassing shared `formatPhone`.
+- `apps/dashboard/src/lib/library-image-mirror.ts:7` and `apps/dashboard/src/lib/vendor-image-mirror.ts:6` both define the same Firebase-hosted URL check.
+- `apps/dashboard/src/lib/library-image-mirror.ts:11` and `apps/dashboard/src/lib/vendor-image-mirror.ts:10` both map content types to extensions.
+- `apps/dashboard/src/lib/library-image-mirror.ts:19` and `apps/dashboard/src/lib/vendor-image-mirror.ts:18` both convert base64 image payloads into `Blob`s.
+- Both helpers call `fetchImageBytes`, convert the response, upload to Firebase, preserve already-hosted URLs, and track failures.
 
-Why it matters: this is inconsistent with the project rule that new forms should use RHF, `Controller`, and Zod, and phone fields should use the shared helpers in `@/lib/utils`.
+Suggested fix: extract a shared low-level helper such as `mirrorExternalImageUrl` or `mirrorExternalImages` that accepts the upload function and destination metadata. Keep library/vendor-specific shape mapping in the current files, but move the fetch/base64/Firebase-hosted/extension behavior into one place.
 
-### Invite acceptance duplicates phone validation and formatting
+Why it helps: this is repeated network/storage behavior, so future fixes to image content types, failed fetch handling, or Firebase URL detection only need to happen once.
 
-- `apps/dashboard/src/app/(main)/auth/invite/page.tsx:35` validates phone values with local digit checks.
-- `apps/dashboard/src/app/(main)/auth/invite/page.tsx:56` defines another local `formatPhoneNumber`.
-- `apps/dashboard/src/app/(main)/auth/invite/page.tsx:312` formats the phone field with that local helper.
+### 2. Storage cleanup after image replacement is repeated in detail pages
 
-Why it matters: the shared phone helper already handles leading US country code normalization and display formatting. This duplicate logic can drift from the rest of the CRM forms.
+- `apps/dashboard/src/app/(main)/dashboard/library/[itemId]/page.tsx:109` builds old image paths, compares them to new paths, then deletes removed files with `Promise.allSettled`.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/[vendorId]/page.tsx:100` builds replaced logo/hero paths, then deletes them with `Promise.allSettled`.
 
-### Product/vendor scraping fetches are not consistently marked `no-store`
+Suggested fix: extract a small helper around `deleteStorageFileByPath`, for example `deleteReplacedStoragePaths(oldPaths, newPaths)` or `deleteStoragePaths(paths, label)`. Keep the library/vendor rules local, but share the deletion loop and warning behavior.
 
-- `apps/dashboard/src/server/weather-actions.ts:19` uses `cache: "no-store"` as expected.
-- `apps/dashboard/src/server/ai-actions.ts:302` fetches raw product HTML without `cache: "no-store"`.
-- `apps/dashboard/src/server/ai-actions.ts:309` and `apps/dashboard/src/server/ai-actions.ts:989` use `next: { revalidate: 0 }` for Jina Reader fetches instead of the explicit `cache: "no-store"` pattern used elsewhere.
-- `apps/dashboard/src/server/ai-actions.ts:985` fetches vendor homepage HTML without `cache: "no-store"`.
+Why it helps: this reduces repeated storage cleanup code and makes partial delete failures easier to log consistently.
 
-Why it matters: the code has two cache-control styles for scraping flows. The repo instructions specifically call out stale scraping/weather cache states and ask for explicit `cache: "no-store"`.
+### 3. Vendor social link formatting is duplicated between list and detail views
 
-## Redundancies
+- `apps/dashboard/src/app/(main)/dashboard/vendors/page.tsx:217` defines `getDisplayUrl`.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-hero.tsx:26` defines another `getDisplayUrl`.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/page.tsx:225` defines `formatSocialHref`.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-hero.tsx:34` defines another `formatSocialHref`.
+- Both files then compute `websiteHref`, `instagramHref`, `pinterestHref`, `facebookHref`, `youtubeHref`, and `xTwitterHref`.
 
-### `home` and `default` dashboard sections appear duplicated
+Suggested fix: move these into a local vendor helper, such as `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-links.ts`, with `formatSocialHref`, `getDisplayUrl`, and possibly `getVendorSocialLinks(vendor)`.
 
-- `apps/dashboard/src/app/(main)/dashboard/home/page.tsx:5` through `apps/dashboard/src/app/(main)/dashboard/home/page.tsx:9` imports and renders the same component set as `apps/dashboard/src/app/(main)/dashboard/default/page.tsx:1` through `apps/dashboard/src/app/(main)/dashboard/default/page.tsx:5`.
-- Both folders duplicate `MetricCards`, `PerformanceOverview`, `SubscriberOverview`, `data.json`, and `recent-customers-table` modules. Examples:
-  - `apps/dashboard/src/app/(main)/dashboard/home/_components/metric-cards.tsx:6`
-  - `apps/dashboard/src/app/(main)/dashboard/default/_components/metric-cards.tsx:6`
-  - `apps/dashboard/src/app/(main)/dashboard/home/_components/performance-overview.tsx:232`
-  - `apps/dashboard/src/app/(main)/dashboard/default/_components/performance-overview.tsx:232`
-  - `apps/dashboard/src/app/(main)/dashboard/home/_components/recent-customers-table/table.tsx:71`
-  - `apps/dashboard/src/app/(main)/dashboard/default/_components/recent-customers-table/table.tsx:71`
+Why it helps: the list and detail views will format external links the same way, and the repeated social link block becomes easier to scan.
 
-Why it matters: any change to the default dashboard can drift between two route trees unless the duplication is intentional.
+### 4. Library form still has a compatibility state wrapper around React Hook Form
 
-### Vendor gradient helper is duplicated
+- `apps/dashboard/src/app/(main)/dashboard/library/_components/use-library-item-form.ts:26` derives `formData` from `rhfForm.watch()`.
+- `apps/dashboard/src/app/(main)/dashboard/library/_components/use-library-item-form.ts:29` labels `setFormData` as a compatibility setter.
+- `apps/dashboard/src/app/(main)/dashboard/library/_components/library-item-form-dialog.tsx:280` consumes `{ formData, setFormData }`.
+- The dialog still calls `setFormData` in many places, including `apps/dashboard/src/app/(main)/dashboard/library/_components/library-item-form-dialog.tsx:438`, `:489`, `:541`, `:636`, `:664`, `:722`, `:748`, `:777`, `:803`, `:830`, and `:866`.
 
-- `apps/dashboard/src/app/(main)/dashboard/vendors/page.tsx:40` defines `CARD_GRADIENTS` and `apps/dashboard/src/app/(main)/dashboard/vendors/page.tsx:50` defines `vendorGradient`.
-- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-hero.tsx:23` defines the same gradient list and `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-hero.tsx:33` defines another `vendorGradient`.
+Suggested fix: retire this gradually. First move simple fields to direct RHF `Controller` or `setValue` usage, then keep custom helper methods only for multi-field behaviors like pricing calculation, image ordering, and AI-applied fields.
 
-Why it matters: the vendor list and vendor detail hero can visually drift if one list is updated and the other is missed.
+Why it helps: the form is already RHF-based, but the compatibility wrapper keeps the older object-state mental model alive. Removing it should make validation, dirty state, and field updates easier to reason about.
 
-### Register form looks like an orphaned/demo component
+### 5. Image picker/upload UI has enough overlap to justify small shared pieces
 
-- `apps/dashboard/src/app/(main)/auth/_components/register-form.tsx:23` exports `RegisterForm`, but repo search did not find an import/use outside the file.
-- `apps/dashboard/src/app/(main)/auth/_components/register-form.tsx:34` shows a toast saying "You submitted the following values".
-- `apps/dashboard/src/app/(main)/auth/_components/register-form.tsx:37` renders `JSON.stringify(data, null, 2)` into that toast.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-form-dialog.tsx:55` keeps separate candidate selection state for logo and hero images.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-form-dialog.tsx:93`, `:128`, `:454`, and `:515` render image previews directly with repeated `<img>` blocks.
+- `apps/dashboard/src/app/(main)/dashboard/library/_components/library-item-form-dialog.tsx:199`, `:967`, and `:1052` render similar image preview tiles.
+- The library dialog also owns sortable gallery behavior around `apps/dashboard/src/app/(main)/dashboard/library/_components/library-item-form-dialog.tsx:991` and `:998`.
 
-Why it matters: this appears to be scaffold/demo behavior rather than production auth behavior, and it creates confusion around invite-only user setup.
+Suggested fix: do not extract the drag-and-drop gallery yet. Start smaller with shared presentational pieces like `ImagePreviewTile`, `ImageUploadButton`, or `ImageCandidateGrid`, then use them from both vendor and library forms.
 
-## Consistency Notes
+Why it helps: this trims repeated preview markup without forcing vendor logo/hero selection and library sortable galleries into one over-general abstraction.
 
-### Library item form suppresses resolver typing
+### 6. Vendor creation schemas are split between full vendor and quick vendor flows
 
-- `apps/dashboard/src/app/(main)/dashboard/library/_components/use-library-item-form.ts:21` casts `zodResolver(libraryItemSchema)` to `any`.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-constants.ts:30` defines the full `vendorSchema`.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-constants.ts:57` defines `EMPTY_VENDOR_FORM`.
+- `apps/dashboard/src/app/(main)/dashboard/library/_components/quick-vendor-dialog.tsx:27` defines a separate `quickVendorSchema`.
+- `apps/dashboard/src/app/(main)/dashboard/library/_components/quick-vendor-dialog.tsx:34` defines a separate quick-vendor empty value.
 
-Why it matters: other forms wire the Zod resolver without suppressing type checks. This may be hiding a real schema/type mismatch in the most complex catalog form.
+Suggested fix: derive quick vendor validation from the shared vendor schema where practical, for example `vendorSchema.pick({ name: true, website: true })`, or move the quick schema/defaults into the vendor constants module.
 
-### Modal/dialog visual overrides are applied ad hoc
+Why it helps: vendor name and website cleanup rules stay consistent between creating a vendor from the vendor page and creating one inline from the library form.
 
-- Several feature dialogs override the shared dialog surface with `bg-popover/95` or `bg-popover/98` plus `backdrop-blur-md`, including:
-  - `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-form-dialog.tsx:67`
-  - `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-form-dialog.tsx:322`
-  - `apps/dashboard/src/app/(main)/dashboard/projects/_components/project-form-dialog.tsx:99`
-  - `apps/dashboard/src/app/(main)/dashboard/library/_components/quick-vendor-dialog.tsx:84`
-  - `apps/dashboard/src/app/(main)/dashboard/tenants/_components/create-tenant-dialog.tsx:126`
+### 7. The main form dialogs are large enough to split by section
 
-Why it matters: the app already has shared dialog styling in `components/ui/dialog.tsx`. Repeating surface overrides in feature code weakens the design-system rule to use existing components and theme utilities first.
+- `apps/dashboard/src/app/(main)/dashboard/library/_components/library-item-form-dialog.tsx` is 1085 lines.
+- `apps/dashboard/src/app/(main)/dashboard/vendors/_components/vendor-form-dialog.tsx` is 859 lines.
 
+Suggested fix: split along already-visible UI boundaries instead of creating generic abstractions. Good candidates are image/media section, core details, pricing/spec fields, AI autofill controls, and vendor contact/social fields.
+
+Why it helps: smaller section components would make later changes safer, especially around image handling and RHF field wiring.
+
+## Suggested Order
+
+1. Extract vendor link helpers. This is low risk and localized.
+2. Extract shared image mirroring primitives. This removes repeated network/storage code with a clear behavioral boundary.
+3. Extract storage deletion helper. Keep deletion warnings consistent.
+4. Simplify quick vendor schema/defaults against shared vendor constants.
+5. Split small image preview/candidate UI pieces.
+6. Gradually remove the library form compatibility `setFormData` wrapper.
+7. Split the large dialogs after the smaller helpers are in place.
