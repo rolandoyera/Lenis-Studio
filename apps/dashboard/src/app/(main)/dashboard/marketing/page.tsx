@@ -1,14 +1,7 @@
 import { Settings2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
 import { CustomerReviews } from "./_components/customer-reviews";
@@ -26,10 +19,7 @@ export default function Page() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <PageTitle title="Marketing" />
-        <PageHeader
-          title="Marketing"
-          description="How clients discover and interact with your brand."
-        />
+        <PageHeader title="Marketing" description="How clients discover and interact with your brand." />
 
         <div className="flex flex-wrap items-end justify-end gap-2 lg:w-fit">
           <Select defaultValue="this-month">

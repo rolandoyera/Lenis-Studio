@@ -11,14 +11,7 @@ import {
   DropdownMenuTrigger,
   TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function AnalyticsToolbar() {
   const router = useRouter();

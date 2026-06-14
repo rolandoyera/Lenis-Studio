@@ -58,6 +58,7 @@
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
   --font-serif: var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
+  --font-lora: var(--font-lora);
 }
 
 /* Default theme styles (used when no data-theme-preset is set or when 'default' is selected).
@@ -222,6 +223,9 @@ These serve as the fallback; there is no separate default.css file. */
   html[data-font="outfit"] body {
     --font-sans: var(--font-outfit);
   }
+  html[data-font="lora"] body {
+    --font-sans: var(--font-lora);
+  }
   html[data-font="geistMono"] body {
     --font-sans: var(--font-geist-mono);
   }
@@ -258,4 +262,39 @@ html {
 
 .disable-transitions * {
   transition: none !important;
+}
+
+/* Auth (home <-> login) view transitions. The shared `auth-image`/`auth-brand`
+   elements morph automatically; the login form slides up on enter. */
+/* Image + brand slide/morph duration (scoped so it can't affect the form). */
+::view-transition-group(auth-image),
+::view-transition-group(auth-brand) {
+  animation-duration: 600ms;
+}
+
+/* The login form slides up whenever it mounts — on a direct visit, and after the
+   home -> login transition (delayed so it follows the image slide). */
+.auth-form-enter {
+  animation: 400ms ease-out 150ms both auth-slide-up;
+}
+
+@keyframes auth-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  .auth-form-enter {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
 }

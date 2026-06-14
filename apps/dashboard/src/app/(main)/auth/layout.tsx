@@ -1,33 +1,50 @@
 import type { ReactNode } from "react";
 
+import { ViewTransition } from "react";
+
 import Image from "next/image";
 
 import { APP_CONFIG } from "@/config/app-config";
 
+import { AuthBackdrop } from "./_components/auth-backdrop";
+
 export default function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <main className="bg-sidebar">
-      <div className="grid h-dvh justify-center p-2 lg:grid-cols-2">
-        <div className="relative order-2 hidden h-full flex-col items-center justify-center overflow-hidden rounded-3xl text-center shadow-lg lg:flex">
-          {/* Blurred Background Image with scale to prevent edge bleeding */}
-          <Image
-            src="/sarvian-design-group.jpg"
-            alt="Lenis Studio"
-            fill
-            priority
-            className="pointer-events-none scale-105 select-none object-cover blur-[2px]"
-          />
-          {/* Dark Overlay for premium high contrast */}
-          <div className="absolute inset-0 z-0 bg-black/60" />
-
-          {/* Branding Content on top */}
-          <div className="relative z-10 flex flex-col items-center space-y-4 px-10 text-white">
-            <Image src={APP_CONFIG.image.src} className="drop-shadow-sm invert" alt="Logo" width={220} height={220} />
-            <h1 className="font-medium text-5xl font-serif tracking-tight drop-shadow-md">{APP_CONFIG.name}</h1>
-            <p className="font-light text-sm text-white tracking-widest drop-shadow-sm">Design. Build. Repeat.</p>
+      <div className="relative grid h-dvh justify-center overflow-hidden p-2 lg:grid-cols-2">
+        {/* Image, left column. Shares `auth-image` with the home screen so it slides
+            in from the right during the home -> login transition. */}
+        <ViewTransition name="auth-image">
+          <div className="relative order-1 hidden h-full overflow-hidden rounded-3xl shadow-lg lg:block">
+            <AuthBackdrop overlayClassName="bg-black/60" />
           </div>
+        </ViewTransition>
+
+        {/* Brand, pinned over the left half. Shares `auth-brand` with home: it stays in
+            place and recolors to white as the image arrives behind it. */}
+        <ViewTransition name="auth-brand">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-1/2 flex-col items-center justify-center px-10 text-center text-white lg:flex">
+            <div className="size-44 mb-8">
+              <Image
+                src={APP_CONFIG.image.src}
+                className="drop-shadow-sm invert"
+                alt="Logo"
+                width={180}
+                height={180}
+                style={{ width: "auto", height: "auto" }}
+                priority
+              />
+            </div>
+            <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">{APP_CONFIG.name}</h1>
+            <p className="font-light text-base text-white tracking-widest drop-shadow-sm">Design. Build. Repeat.</p>
+          </div>
+        </ViewTransition>
+
+        {/* Form, right column. Slides up on mount (`auth-form-enter`) so it animates on a
+            direct visit too, not only when arriving via the home -> login transition. */}
+        <div className="auth-form-enter relative order-2 flex h-full items-center justify-center">
+          {children}
         </div>
-        <div className="relative order-1 flex h-full items-center justify-center">{children}</div>
       </div>
     </main>
   );

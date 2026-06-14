@@ -21,23 +21,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { addProject, getClients, getProjects, updateProject } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
-import {
-  EMPTY_PROJECT_FORM,
-  type ProjectFormData,
-  projectToForm,
-} from "./_components/project-constants";
+import { EMPTY_PROJECT_FORM, type ProjectFormData, projectToForm } from "./_components/project-constants";
 import { ProjectFormDialog } from "./_components/project-form-dialog";
 import PageHeader from "@/components/page-header";
 
@@ -59,10 +49,7 @@ export default function ProjectsPage() {
     const orgId = profile.organizationId;
     async function loadData() {
       try {
-        const [projectsData, clientsData] = await Promise.all([
-          getProjects(orgId),
-          getClients(orgId),
-        ]);
+        const [projectsData, clientsData] = await Promise.all([getProjects(orgId), getClients(orgId)]);
         setProjects(projectsData);
         setClients(clientsData);
       } catch (error) {
@@ -77,9 +64,7 @@ export default function ProjectsPage() {
 
   const handleOpenAdd = () => {
     if (clients.length === 0) {
-      toast.warning(
-        "Please create a client profile before adding a design project.",
-      );
+      toast.warning("Please create a client profile before adding a design project.");
       return;
     }
     setEditingProject(null);
@@ -91,16 +76,9 @@ export default function ProjectsPage() {
     setSubmitting(true);
     try {
       if (editingProject) {
-        const updatedFields = await updateProject(
-          editingProject.projectId,
-          data,
-        );
+        const updatedFields = await updateProject(editingProject.projectId, data);
         setProjects((prev) =>
-          prev.map((p) =>
-            p.projectId === editingProject.projectId
-              ? { ...p, ...updatedFields }
-              : p,
-          ),
+          prev.map((p) => (p.projectId === editingProject.projectId ? { ...p, ...updatedFields } : p)),
         );
         toast.success("Project specifications updated successfully!");
       } else {
@@ -124,9 +102,7 @@ export default function ProjectsPage() {
     if (!project) return false;
     const parentClient = clients.find((c) => c.uid === project.clientId);
 
-    const clientName = parentClient
-      ? `${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim()
-      : "";
+    const clientName = parentClient ? `${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim() : "";
     const term = searchQuery.toLowerCase();
 
     return (
@@ -142,10 +118,7 @@ export default function ProjectsPage() {
       <PageTitle title="Projects" />
       <div className="flex w-full flex-col gap-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <PageHeader
-            title="Projects"
-            description="Manage and track your projects."
-          />
+          <PageHeader title="Projects" description="Manage and track your projects." />
 
           {clients.length === 0 ? (
             <Link href="/dashboard/clients" prefetch={false}>
@@ -157,7 +130,8 @@ export default function ProjectsPage() {
           ) : (
             <Button
               onClick={handleOpenAdd}
-              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
+              className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
+            >
               <Plus className="size-4" />
               Start Project
             </Button>
@@ -179,9 +153,7 @@ export default function ProjectsPage() {
         {loading ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
             <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-              Loading Project spaces
-            </p>
+            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Project spaces</p>
           </div>
         ) : filteredProjects.length === 0 ? (
           <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
@@ -193,9 +165,7 @@ export default function ProjectsPage() {
                 : "Get started by initializing your first client project space (e.g. Master Living Room Renovation)."}
             </p>
             {!searchQuery && clients.length > 0 && (
-              <Button
-                onClick={handleOpenAdd}
-                className="mt-4 flex items-center gap-2">
+              <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
                 Initialize Project Space
               </Button>
@@ -204,14 +174,10 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => {
-              const parentClient = clients.find(
-                (c) => c.uid === project.clientId,
-              );
+              const parentClient = clients.find((c) => c.uid === project.clientId);
 
               return (
-                <Card
-                  key={project.projectId}
-                  className="group relative overflow-hidden">
+                <Card key={project.projectId} className="group relative overflow-hidden">
                   <CardHeader className="flex flex-col gap-1.5 pb-3">
                     <div className="flex items-center justify-between gap-2">
                       <span
@@ -221,15 +187,14 @@ export default function ProjectsPage() {
                             : project.status === "Completed"
                               ? "border border-blue-500/20 bg-blue-500/15 text-blue-500"
                               : "border border-amber-500/20 bg-amber-500/15 text-amber-500"
-                        }`}>
+                        }`}
+                      >
                         {project.status}
                       </span>
                     </div>
 
                     <CardTitle className="line-clamp-1 font-heading font-semibold text-lg leading-tight transition-colors hover:text-primary">
-                      <Link
-                        href={`/dashboard/projects/${project.projectId}`}
-                        prefetch={false}>
+                      <Link href={`/dashboard/projects/${project.projectId}`} prefetch={false}>
                         {project.name}
                       </Link>
                     </CardTitle>
@@ -239,8 +204,7 @@ export default function ProjectsPage() {
                         <User className="size-3 shrink-0 text-muted-foreground/60" />
                         Client:{" "}
                         <span className="font-medium text-foreground/80">
-                          {`${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim() ||
-                            "Unnamed Client"}
+                          {`${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim() || "Unnamed Client"}
                         </span>
                       </CardDescription>
                     ) : (
@@ -288,7 +252,8 @@ export default function ProjectsPage() {
                       <Link
                         href={`/dashboard/proposals?projectId=${project.projectId}`}
                         prefetch={false}
-                        className="group/btn flex items-center gap-0.5 font-semibold text-primary hover:underline">
+                        className="group/btn flex items-center gap-0.5 font-semibold text-primary hover:underline"
+                      >
                         View Proposals
                         <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-0.5" />
                       </Link>
@@ -308,9 +273,7 @@ export default function ProjectsPage() {
           submitting={submitting}
           clients={clients}
           initialData={
-            editingProject
-              ? projectToForm(editingProject)
-              : { ...EMPTY_PROJECT_FORM, clientId: clients[0]?.uid ?? "" }
+            editingProject ? projectToForm(editingProject) : { ...EMPTY_PROJECT_FORM, clientId: clients[0]?.uid ?? "" }
           }
           onSubmit={handleSubmitProject}
         />

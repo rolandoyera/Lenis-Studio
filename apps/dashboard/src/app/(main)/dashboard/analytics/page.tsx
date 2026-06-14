@@ -28,10 +28,7 @@ export default async function Page({ searchParams }: PageProps) {
   return (
     <div className="flex flex-col gap-6">
       <PageTitle title="Analytics" />
-      <PageHeader
-        title="Analytics"
-        description="Remove the guesswork and follow the data."
-      />
+      <PageHeader title="Analytics" description="Remove the guesswork and follow the data." />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <GA4ConnectionChecker />
       </div>

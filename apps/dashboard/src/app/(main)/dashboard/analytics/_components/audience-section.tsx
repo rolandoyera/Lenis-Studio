@@ -4,11 +4,7 @@ import { fetchAudienceData } from "@/server/analytics-actions";
 import { AnalyticsSetupRequired } from "./analytics-setup-required";
 import { Label } from "@/components/ui/label";
 
-function ShareBarList({
-  items,
-}: {
-  items: { label: string; users: number; flagCode?: string }[];
-}) {
+function ShareBarList({ items }: { items: { label: string; users: number; flagCode?: string }[] }) {
   const total = items.reduce((sum, item) => sum + item.users, 0);
 
   if (items.length === 0) {
@@ -38,16 +34,11 @@ function ShareBarList({
               </span>
               <span className="shrink-0 tabular-nums">
                 {item.users}
-                <span className="ml-2 text-muted-foreground text-xs">
-                  ({pct.toFixed(0)}%)
-                </span>
+                <span className="ml-2 text-muted-foreground text-xs">({pct.toFixed(0)}%)</span>
               </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary/70"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-full rounded-full bg-primary/70" style={{ width: `${pct}%` }} />
             </div>
           </div>
         );
@@ -74,11 +65,7 @@ export async function AudienceSection({ range }: { range?: string }) {
   if (!result.success || !result.data) {
     return (
       <div className="rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
-        <AnalyticsSetupRequired
-          error={result.error}
-          title="Audience Error"
-          className="min-h-[200px]"
-        />
+        <AnalyticsSetupRequired error={result.error} title="Audience Error" className="min-h-[200px]" />
       </div>
     );
   }

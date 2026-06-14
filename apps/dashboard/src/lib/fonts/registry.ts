@@ -3,6 +3,7 @@ import {
   Fraunces,
   Geist,
   Inter,
+  Lora,
   Noto_Sans,
   Nunito_Sans,
   Outfit,
@@ -57,6 +58,12 @@ const publicSans = Public_Sans({
   variable: "--font-public-sans",
 });
 
+const lora = Lora({
+  subsets: ["latin"],
+  variable: "--font-lora",
+  style: ["normal", "italic"],
+});
+
 // Global serif (variable font — full 100–900 weight axis, not part of the sans font picker)
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -104,6 +111,10 @@ export const fontRegistry = {
   outfit: {
     label: "Outfit",
     font: outfit,
+  },
+  lora: {
+    label: "Lora",
+    font: lora,
   },
 } as const;
 

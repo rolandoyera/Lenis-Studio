@@ -135,14 +135,14 @@ export function MetricCards() {
             </div>
           ) : (
             <div className="flex h-5 ml-auto">
-
               <Link
                 href="/dashboard/projects"
                 prefetch={false}
                 className="flex items-center gap-1 font-medium text-primary text-sm"
               >
-                <Button variant="link">View projects   <ArrowRight className="size-3" /></Button>
-              
+                <Button variant="link">
+                  View projects <ArrowRight className="size-3" />
+                </Button>
               </Link>
             </div>
           )}

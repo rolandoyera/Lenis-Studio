@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  experimental: {
+    // Enables React's <ViewTransition> integration so route navigations animate
+    // shared elements (the auth image/logo) across the home <-> login transition.
+    viewTransition: true,
+  },
   images: {
     remotePatterns: [
       {
