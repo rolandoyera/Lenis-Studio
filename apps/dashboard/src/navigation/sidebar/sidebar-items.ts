@@ -13,6 +13,7 @@ import {
   Kanban,
   LayoutDashboard,
   type LucideIcon,
+  Megaphone,
   ReceiptText,
   ShoppingBag,
   Users,
@@ -57,6 +58,11 @@ export const sidebarItems: NavGroup[] = [
         title: "CRM",
         url: "/dashboard/crm",
         icon: ChartBar,
+      },
+      {
+        title: "Marketing",
+        url: "/dashboard/marketing",
+        icon: Megaphone,
       },
       {
         title: "Analytics",

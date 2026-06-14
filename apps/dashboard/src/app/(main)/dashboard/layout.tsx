@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 import { LayoutControls } from "./_components/sidebar/layout-controls";
@@ -12,7 +16,9 @@ import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { UserProfile } from "./_components/sidebar/user-profile";
 
-export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function Layout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
@@ -23,17 +29,18 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         {
           "--sidebar-width": "calc(var(--spacing) * 68)",
         } as React.CSSProperties
-      }
-    >
+      }>
       <AppSidebar variant="inset" collapsible="icon" />
-      <SidebarInset className={cn("peer-data-[variant=inset]:border", "[--dashboard-header-height:--spacing(12)]")}>
+      <SidebarInset
+        className={cn(
+          "peer-data-[variant=inset]:border",
+          "[--dashboard-header-height:--spacing(12)]",
+        )}>
         <header
           className={cn(
             "flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
-            // Sticky navbar: blur, background, z-index, and rounded corners stay consistent across all SidebarVariant layouts.
             "sticky top-0 z-50 overflow-hidden rounded-t-[inherit] bg-background/50 backdrop-blur-md",
-          )}
-        >
+          )}>
           <div className="flex w-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-1 lg:gap-2">
               <SidebarTrigger className="-ml-1" />

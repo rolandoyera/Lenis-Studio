@@ -5,11 +5,15 @@ interface H1Props {
   className?: string;
 }
 
+export function P({ children, className }: H1Props) {
+  return <p className={cn("text-sm", className)}>{children}</p>;
+}
+
 export function H1({ children, className }: H1Props) {
   return (
     <h1
       className={cn(
-        "scroll-m-20 text-3xl font-semibold tracking-tight text-balance",
+        "scroll-m-20 text-3xl font-medium tracking-tight text-balance",
         className,
       )}>
       {children}
@@ -21,7 +25,7 @@ export function H2({ children, className }: H1Props) {
   return (
     <h2
       className={cn(
-        "scroll-m-20 text-2xl font-semibold tracking-tight",
+        "scroll-m-20 text-2xl font-medium tracking-tight",
         className,
       )}>
       {children}
@@ -33,7 +37,7 @@ export function H3({ children, className }: H1Props) {
   return (
     <h3
       className={cn(
-        "scroll-m-20 text-lg font-semibold tracking-tight",
+        "scroll-m-20 text-lg font-medium tracking-tight",
         className,
       )}>
       {children}

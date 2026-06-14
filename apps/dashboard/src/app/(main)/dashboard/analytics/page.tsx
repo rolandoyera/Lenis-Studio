@@ -14,6 +14,8 @@ import { TrafficTrend } from "./_components/traffic-trend";
 
 // Import this stylesheet in any page or component that renders country flag classes.
 import "@/styles/flag-icons/flags.css";
+import PageHeader from "@/components/page-header";
+import { PageTitle } from "@/components/page-title-updater";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -25,18 +27,16 @@ export default async function Page({ searchParams }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground text-sm">
-          Monitor traffic, engagement, and conversion performance in one view.
-        </p>
-      </div>
-
+      <PageTitle title="Analytics" />
+      <PageHeader
+        title="Analytics"
+        description="Remove the guesswork and follow the data."
+      />
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         <GA4ConnectionChecker />
       </div>
 
-      <Tabs defaultValue="overview" className="flex flex-col gap-4">
+      <Tabs defaultValue="overview" className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <TabsList className="gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>

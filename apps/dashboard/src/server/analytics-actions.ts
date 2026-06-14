@@ -775,6 +775,7 @@ export async function fetchLandingPages(
 
 export interface AudienceData {
   cities: { city: string; countryId: string; users: number }[];
+  countries: { country: string; countryId: string; users: number }[];
   devices: { device: string; users: number }[];
   newVsReturning: { type: string; users: number }[];
 }
@@ -790,11 +791,19 @@ export async function fetchAudienceData(
   try {
     const client = getGA4Client();
 
-    const [[cityResponse], [deviceResponse], [newReturningResponse]] = await Promise.all([
+    const [[cityResponse], [countryResponse], [deviceResponse], [newReturningResponse]] = await Promise.all([
       client.runReport({
         property: `properties/${propertyId}`,
         dateRanges,
         dimensions: [{ name: "city" }, { name: "countryId" }],
+        metrics: [{ name: "activeUsers" }],
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+        limit: 10,
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "country" }, { name: "countryId" }],
         metrics: [{ name: "activeUsers" }],
         orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
         limit: 10,
@@ -823,6 +832,15 @@ export async function fetchAudienceData(
       }))
       .slice(0, 8);
 
+    const countries = (countryResponse.rows || [])
+      .filter((row) => row.dimensionValues?.[0]?.value !== "(not set)")
+      .map((row) => ({
+        country: row.dimensionValues?.[0]?.value || "Unknown",
+        countryId: row.dimensionValues?.[1]?.value || "",
+        users: parseInt(row.metricValues?.[0]?.value || "0", 10),
+      }))
+      .slice(0, 8);
+
     const devices = (deviceResponse.rows || []).map((row) => ({
       device: row.dimensionValues?.[0]?.value || "unknown",
       users: parseInt(row.metricValues?.[0]?.value || "0", 10),
@@ -835,7 +853,7 @@ export async function fetchAudienceData(
         users: parseInt(row.metricValues?.[0]?.value || "0", 10),
       }));
 
-    return { success: true, data: { cities, devices, newVsReturning } };
+    return { success: true, data: { cities, countries, devices, newVsReturning } };
   } catch (error: unknown) {
     console.error("Failed to fetch audience data from GA4:", error);
     return { success: false, error: getErrorMessage(error, "Failed to load GA4 audience data.") };
