@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getMetaConnection } from "@/server/meta-actions";
 
+import { InstagramDemographics } from "./_components/instagram-demographics";
 import { InstagramKpiStrip } from "./_components/instagram-kpi-strip";
 import { InstagramReachTrend } from "./_components/instagram-reach-trend";
 import { InstagramRecentPosts } from "./_components/instagram-recent-posts";
@@ -68,6 +69,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
           <div className="grid gap-6 lg:grid-cols-2">
             <InstagramReachTrend range={range} />
             <InstagramRecentPosts />
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <h2 className="font-medium text-sm">Audience</h2>
+            <InstagramDemographics />
           </div>
         </>
       )}

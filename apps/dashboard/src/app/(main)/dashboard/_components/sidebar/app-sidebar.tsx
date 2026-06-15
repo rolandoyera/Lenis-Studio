@@ -26,17 +26,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="group-data-[collapsible=icon]:p-0.5!">
+            <SidebarMenuButton
+              asChild
+              className="group-data-[collapsible=icon]:p-0.5!">
               <Link prefetch={false} href="/dashboard/home">
                 <Image
                   src={APP_CONFIG.image.src}
                   alt="Logo"
                   width={isCollapsed ? 26 : 24}
                   height={isCollapsed ? 26 : 24}
-                  style={{ width: isCollapsed ? 26 : 24, height: isCollapsed ? 26 : 24 }}
+                  style={{
+                    width: isCollapsed ? 26 : 24,
+                    height: isCollapsed ? 26 : 24,
+                  }}
                   className="transition-all duration-200 dark:invert"
                 />
-                <span className="font-semibold font-serif text-2xl text-black dark:text-white">{APP_CONFIG.name}</span>
+                <span className="font-semibold font-lora text-2xl text-black dark:text-white">
+                  {APP_CONFIG.name}
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

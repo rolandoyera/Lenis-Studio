@@ -10,7 +10,9 @@ import type { MetaIntegrationConfig, MetaPendingPage } from "@/types/meta";
 
 import { getAdminDb } from "./firebase-admin";
 import {
+  type DemographicItem,
   fetchAccountKpis,
+  fetchFollowerDemographics,
   fetchInstagramProfile,
   fetchPages,
   fetchReachTrend,
@@ -181,6 +183,38 @@ export async function fetchInstagramMedia(): Promise<{
   } catch (error) {
     console.error("Failed to fetch Instagram media:", error);
     return { success: false, data: [], error: error instanceof Error ? error.message : "Failed to load posts." };
+  }
+}
+
+export interface InstagramDemographics {
+  cities: DemographicItem[];
+  countries: DemographicItem[];
+  age: DemographicItem[];
+  gender: DemographicItem[];
+}
+
+/** Follower demographics (city, country, age, gender). Empty until the account has 100+ followers. */
+export async function fetchInstagramDemographics(): Promise<{
+  success: boolean;
+  data?: InstagramDemographics;
+  error?: string;
+}> {
+  const organizationId = await getActiveOrgId();
+  if (!organizationId) return { success: false, error: NOT_CONNECTED };
+  const creds = await getStoredMetaCreds(organizationId);
+  if (!creds) return { success: false, error: NOT_CONNECTED };
+
+  try {
+    const [cities, countries, age, gender] = await Promise.all([
+      fetchFollowerDemographics(creds, "city"),
+      fetchFollowerDemographics(creds, "country"),
+      fetchFollowerDemographics(creds, "age"),
+      fetchFollowerDemographics(creds, "gender"),
+    ]);
+    return { success: true, data: { cities, countries, age, gender } };
+  } catch (error) {
+    console.error("Failed to fetch Instagram demographics:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to load demographics." };
   }
 }
 

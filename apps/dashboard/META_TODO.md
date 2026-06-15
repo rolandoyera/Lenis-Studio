@@ -74,10 +74,10 @@ their Facebook password, revokes the app, or Meta forces a refresh — see the r
       **Standard Access** is enough for testing on our own account in dev mode; App Review is
       only needed later for clients' accounts. Connect is broken until this is enabled (we chose
       to keep the scope in rather than revert). Then reconnect — no code change needed.
-- [ ] **TEMP probe route — delete after use:** `src/app/api/integrations/meta/probe/route.ts`
-      dumps raw Graph responses (account insights classic + total_value, follower_count,
-      demographics, media list, per-media insights) for the active org. Bypasses normal auth;
-      remove once we've confirmed which metrics this account returns.
+- [x] **TEMP probe route — DELETED (2026-06-14):** served its purpose (confirmed account
+      insights, follower_count, follower_demographics, media list, and per-media insights all
+      return real data on org-sarvian). Removed because it bypassed auth and echoed the page token.
+      To test reached/engaged demographics later, add a fresh minimal probe at that point.
 - [x] **Instagram analytics — first cut (2026-06-14):** built into `/dashboard/marketing`.
       Server actions `fetchInstagramKpis` / `fetchInstagramReachTrend` / `fetchInstagramMedia`
       in `meta-actions.ts` (Graph calls in `meta-graph.ts`) power a KPI strip (reach, views,
@@ -86,17 +86,60 @@ their Facebook password, revokes the app, or Meta forces a refresh — see the r
       errors so the UI shows a real message. Page gates on `getMetaConnection()` (connect prompt
       when not linked). NOTE: the old ecommerce mock components in `marketing/_components/`
       (KpiStrip, StoreTraffic, RecentOrders, etc.) are now unused — safe to delete.
-- [ ] **Per-post insights:** posts table currently shows likes/comments from the media list.
-      Add per-post reach/saves (extra Graph call per post), handling the "posted before business
-      conversion" error (subcode 2108006) gracefully — see probe findings.
-- [ ] **Follower growth + demographics:** deferred until the account has 100+ followers (Meta
-      minimum for demographics). `follower_count` returns empty for now too. Add behind an empty
-      state when there's data.
+- [ ] **Per-post insights — CONFIRMED working on active accounts (org-sarvian probe 2026-06-14):**
+      per-media insights return `reach, views, saved, likes, comments, shares, total_interactions`
+      (e.g. a carousel: reach 48, views 124, likes 7). One Graph call per post. The "posted before
+      business conversion" error (subcode 2108006) was specific to lenisvisuals' pre-conversion
+      post — still handle it gracefully (skip/—) since some posts will hit it. Would turn the
+      recent-posts table from likes/comments into Reach / Views / Saves / Interactions columns.
+- [ ] **Post thumbnails in the recent-posts table:** add `media_url,thumbnail_url` to the
+      `fetchRecentMedia` fields, pick per media_type (IMAGE→media_url, VIDEO/REELS→thumbnail_url,
+      CAROUSEL_ALBUM→fetch children[0] or placeholder), render a small fixed-size plain `<img>`
+      (not next/image — the URLs are signed/expiring across many CDN subdomains). Re-fetched each
+      load, never stored.
+- [x] **Audience demographics (2026-06-14):** `fetchInstagramDemographics` pulls city, country,
+      age, and gender follower breakdowns (`follower_demographics`, lifetime, total_value), shown
+      as an Audience section on the marketing page. Empty state explains the 100-follower minimum.
+      Built against org-sarvian (281 followers) which clears that threshold.
+- [ ] **Follower growth chart — CONFIRMED returns data (org-sarvian probe 2026-06-14):**
+      `follower_count` (period=day) returns daily net-new followers (e.g. +1 on Jun 4, +1 on Jun 8).
+      Empty only for the tiny lenisvisuals account. Add as a daily/cumulative trend beside reach.
 - [ ] **Analytics UI:** charts/cards for the above, matching the GA4 dashboard look.
 - [ ] **Pending-token cleanup (minor):** if a user reaches the picker but never selects, the
       `secrets/metaPending` user token lingers until they reconnect (which overwrites it) or
       disconnect. Harmless and server-only, but could be swept on a TTL or cleared on the
       company page if we want it tidy.
+
+## Audience / demographics — everything available (for review)
+
+What Instagram exposes about audiences, so you can pick what to surface. "Followers" data is
+lifetime; "reached" / "engaged" data needs a timeframe and only returns when there's recent
+activity. All breakdowns come back as `{ dimension_values, value }` lists via the insights API.
+
+**Already built — follower demographics** (`follower_demographics`, lifetime):
+- [x] City, Country, Age, Gender (the complete set of follower breakdowns — nothing more exists
+      for followers). Currently capped to **top 6 per card**.
+
+**Available to add — same four cuts, different people:**
+- [ ] **Reached audience demographics** (`reached_audience_demographics`): city / country / age /
+      gender of accounts you *reached* (followers + non-followers who saw content). Needs a
+      `timeframe` (last_14_days | last_30_days | last_90_days | prev_month | this_month |
+      this_week). Answers "who am I reaching?"
+- [ ] **Engaged audience demographics** (`engaged_audience_demographics`): same four cuts for
+      accounts that *engaged* (liked / commented / saved). Same `timeframe` requirement. Answers
+      "who actually interacts?"
+- [ ] **PROBE FIRST:** both of the above depend on recent activity and may return empty for a
+      low-activity account. Hit the probe (as org-sarvian) to confirm real data before building
+      cards that could be blank.
+
+**Granularity / display tweaks (cheap):**
+- [ ] **Combined breakdowns:** request `breakdown=age,gender` in one call to get cross-cuts like
+      "women 25-34" instead of separate Age and Gender cards.
+- [ ] **Show full lists:** drop the top-6 cap to display every city / country / bucket.
+
+**Not available (so we don't chase it):**
+- Language / locale breakdown — the old `audience_locale` metric is deprecated; no replacement.
+- Gender is only M / F / U (no finer split); age uses fixed buckets (13-17 … 65+).
 
 ## Notes
 

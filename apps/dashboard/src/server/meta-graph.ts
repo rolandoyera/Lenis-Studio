@@ -236,6 +236,40 @@ export async function fetchReachTrend(creds: StoredMetaCreds, since: number, unt
   return values.map((v) => ({ label: formatDayLabel(v.end_time ?? ""), reach: v.value ?? 0 }));
 }
 
+export interface DemographicItem {
+  label: string;
+  value: number;
+}
+
+/**
+ * Follower demographics for one breakdown dimension (city | country | age | gender),
+ * sorted by follower count. Requires the account to have 100+ followers — below that
+ * the API returns an empty list (handled by callers), not an error.
+ */
+export async function fetchFollowerDemographics(
+  creds: StoredMetaCreds,
+  breakdown: "city" | "country" | "age" | "gender",
+): Promise<DemographicItem[]> {
+  const json = await graphJson(
+    `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
+      metric: "follower_demographics",
+      period: "lifetime",
+      metric_type: "total_value",
+      breakdown,
+      access_token: creds.token,
+    })}`,
+  );
+
+  const node = (json.data ?? [])[0] as
+    | { total_value?: { breakdowns?: { results?: { dimension_values?: string[]; value?: number }[] }[] } }
+    | undefined;
+  const results = node?.total_value?.breakdowns?.[0]?.results ?? [];
+
+  return results
+    .map((r) => ({ label: (r.dimension_values ?? []).join(", "), value: r.value ?? 0 }))
+    .sort((a, b) => b.value - a.value);
+}
+
 /** Recent media with engagement counts. */
 export async function fetchRecentMedia(creds: StoredMetaCreds, limit = 10): Promise<IgMediaItem[]> {
   const json = await graphJson(
