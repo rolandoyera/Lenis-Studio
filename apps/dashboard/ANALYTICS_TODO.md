@@ -10,9 +10,15 @@ What's left is deployment + GA4 Admin configuration, then one small code follow-
 ## Remaining tasks
 
 - [x] **Deploy the oshrat site** with the tracking events (deployed 2026-06-11).
-- [ ] **Mark key events** in GA4 Admin → Events: `contact_form_submit`, `project_form_submit`, `phone_click`, `email_click`, `whatsapp_click`.
+- [ ] **Mark key events** in GA4 Admin → Events: `contact_form_submit` ✅, `project_form_submit` ✅, `phone_click`, `email_click`, `whatsapp_click`.
+      `contact_form_submit` + `project_form_submit` marked (2026-06-15). The three click events fire in Realtime but
+      hadn't appeared in the Recent events list yet — star them there once they show (~few hrs–24h).
       Leave `project_button_click`, `contact_drawer_open`, and `form_start` as regular events — they are funnel steps, not leads.
       Note: events appear in the Admin list only after they have fired at least once in production.
+- [ ] **Exclude internal (own) traffic** in GA4 so testing/self-visits don't pollute data:
+      Admin → Data streams → Website → Configure tag settings → Show all → Define internal traffic (rule matching own
+      public IP, `traffic_type=internal`), then Admin → Data filters → set the "Internal Traffic" filter to Active.
+      Not retroactive (today's test clicks remain); test the filter before activating. Re-check if ISP IP is dynamic.
 - [ ] **Verify** the KPI strip's conversion rate becomes non-zero and the Conversions tab populates.
 - [ ] **Register `form_type` custom dimension** in GA4 Admin → Custom definitions (event-scoped, event parameter `form_type`).
 - [ ] **Code follow-up (after the dimension exists ~24h):** query `customEvent:form_type` in `fetchConversionsData` to split `form_start` per form, and add it as the middle step in both Form Funnels (open → started → submitted). Currently shown as a combined count under the funnels.
