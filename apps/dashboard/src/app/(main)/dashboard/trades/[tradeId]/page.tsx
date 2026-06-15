@@ -58,7 +58,7 @@ interface PageProps {
 export default function TradeDetailPage({ params }: PageProps) {
   const { tradeId } = use(params);
   const router = useRouter();
-  const { profile, loading: authLoading } = useAuth();
+  const { organizationId, loading: authLoading } = useAuth();
 
   const [trade, setTrade] = useState<Trade | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,8 +67,8 @@ export default function TradeDetailPage({ params }: PageProps) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     async function load() {
       try {
@@ -86,7 +86,7 @@ export default function TradeDetailPage({ params }: PageProps) {
       }
     }
     void load();
-  }, [tradeId, router, profile, authLoading]);
+  }, [tradeId, router, organizationId, authLoading]);
 
   const handleEdit = async (data: TradeFormData) => {
     if (!trade) return;

@@ -42,7 +42,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export default function VendorDetailPage({ params }: PageProps) {
   const { vendorId } = use(params);
   const router = useRouter();
-  const { profile, loading: authLoading } = useAuth();
+  const { organizationId, loading: authLoading } = useAuth();
 
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [items, setItems] = useState<LibraryItem[]>([]);
@@ -52,8 +52,8 @@ export default function VendorDetailPage({ params }: PageProps) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
     async function load() {
       try {
         const [vendorData, itemsData] = await Promise.all([
@@ -74,7 +74,7 @@ export default function VendorDetailPage({ params }: PageProps) {
       }
     }
     void load();
-  }, [vendorId, router, profile, authLoading]);
+  }, [vendorId, router, organizationId, authLoading]);
 
   const handleEdit = async (data: VendorFormData) => {
     if (!vendor) return;

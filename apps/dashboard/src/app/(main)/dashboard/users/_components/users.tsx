@@ -58,7 +58,7 @@ const addUserSchema = z.object({
 type AddUserFormData = z.infer<typeof addUserSchema>;
 
 export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, uid, organizationId, role, loading: authLoading } = useAuth();
   const [dbUsers, setDbUsers] = React.useState<UserRow[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const router = useRouter();
@@ -151,20 +151,20 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
 
   React.useEffect(() => {
     if (authLoading) return;
-    if (!profile) {
+    if (!uid) {
       router.push("/auth/login");
       return;
     }
-    if (profile.role !== "Admin" && profile.role !== "SuperAdmin") {
+    if (role !== "Admin" && role !== "SuperAdmin") {
       toast.error("Access denied. Administrator privileges required.");
       router.push("/dashboard/home");
     }
-  }, [profile, authLoading, router]);
+  }, [uid, role, authLoading, router]);
 
   React.useEffect(() => {
-    if (authLoading || !profile) return;
+    if (authLoading || !organizationId) return;
 
-    const q = query(collection(db, "users"), where("organizationId", "==", profile.organizationId));
+    const q = query(collection(db, "users"), where("organizationId", "==", organizationId));
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -203,7 +203,7 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
     );
 
     return () => unsubscribe();
-  }, [profile, authLoading]);
+  }, [organizationId, authLoading]);
 
   const [rowSelection, setRowSelection] = React.useState({});
   const [sorting, setSorting] = React.useState<SortingState>([{ id: "joinedDate", desc: true }]);

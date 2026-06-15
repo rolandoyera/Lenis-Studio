@@ -24,7 +24,7 @@ import { useLibraryItemForm } from "./_components/use-library-item-form";
 import PageHeader from "@/components/page-header";
 
 export default function LibraryPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,14 +38,16 @@ export default function LibraryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [isVendorDialogOpen, setIsVendorDialogOpen] = useState(false);
 
-  // Fetch Items & Vendors on Mount
+  // Fetch Items & Vendors on Mount. Keyed on the stable `organizationId` string
+  // rather than the `profile` object, whose identity churns on every onSnapshot/
+  // lastActive update and would otherwise refetch the whole catalog on each heartbeat.
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const id = organizationId; // narrowed to string for use inside the async closure
 
     async function loadData() {
       try {
-        const [itemsData, vendorsData] = await Promise.all([getLibraryItems(orgId), getVendors(orgId)]);
+        const [itemsData, vendorsData] = await Promise.all([getLibraryItems(id), getVendors(id)]);
         setItems(itemsData);
         setVendors(vendorsData);
 
@@ -69,7 +71,7 @@ export default function LibraryPage() {
       }
     }
     void loadData();
-  }, [profile, authLoading, form.reset]);
+  }, [organizationId, authLoading, form.reset]);
 
   const handleOpenAdd = () => {
     form.reset();

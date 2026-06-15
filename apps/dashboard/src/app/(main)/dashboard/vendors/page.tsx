@@ -40,7 +40,7 @@ import { vendorGradient } from "./_components/vendor-gradient";
 import { getDisplayUrl, getVendorSocialHrefs } from "./_components/vendor-links";
 
 export default function VendorsPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,8 +50,8 @@ export default function VendorsPage() {
   const handleOpenAdd = () => setIsAddOpen(true);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const id = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -65,7 +65,7 @@ export default function VendorsPage() {
 
     async function loadData() {
       try {
-        const data = await getVendors(orgId);
+        const data = await getVendors(id);
         setVendors(data);
       } catch {
         toast.error("Failed to fetch vendors from database.");
@@ -74,7 +74,7 @@ export default function VendorsPage() {
       }
     }
     void loadData();
-  }, [profile, authLoading]);
+  }, [organizationId, authLoading]);
 
   const handleAdd = async (data: VendorFormData, customVendorId?: string) => {
     if (!profile) return;

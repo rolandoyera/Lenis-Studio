@@ -7,29 +7,8 @@ import { Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
-
+import { formatPhone } from "@/lib/utils";
 import type { OpportunityRow } from "./schema";
-
-const healthStripSlots = Array.from({ length: 18 }, (_, index) => ({
-  id: `strip-${index + 1}`,
-  threshold: index + 1,
-}));
-
-function getHealthScore(health: OpportunityRow["health"]) {
-  switch (health) {
-    case "On Track":
-      return 18;
-    case "Needs Review":
-      return 11;
-    case "At Risk":
-      return 7;
-    case "On Hold":
-      return 4;
-    default:
-      return 0;
-  }
-}
 
 export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
   {
@@ -45,21 +24,36 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
       <Checkbox
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label={`Select ${row.original.account}`}
+        aria-label={`Select ${row.original.referrer}`}
       />
     ),
     enableHiding: false,
   },
   {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <div className="text-sm tracking-tight">{row.original.id}</div>,
+    id: "name",
+    header: "Name",
+    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    cell: ({ row }) => (
+      <div className="font-medium text-sm">
+        {row.original.firstName} {row.original.lastName}
+      </div>
+    ),
     enableHiding: false,
   },
   {
-    accessorKey: "account",
-    header: "Account",
-    cell: ({ row }) => <div className="font-medium text-sm">{row.original.account}</div>,
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }) => <div className="text-muted-foreground text-sm">{row.original.email}</div>,
+  },
+  {
+    accessorKey: "phone",
+    header: "Phone",
+    cell: ({ row }) => <div className="text-sm tabular-nums">{formatPhone(row.original.phone)}</div>,
+  },
+  {
+    accessorKey: "referrer",
+    header: "Referrer",
+    cell: ({ row }) => <div className="font-medium text-sm">{row.original.referrer}</div>,
   },
   {
     accessorKey: "stage",
@@ -76,25 +70,7 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
     header: "Priority",
     cell: ({ row }) => <div className="text-sm">{row.original.priority}</div>,
   },
-  {
-    accessorKey: "health",
-    header: "Health",
-    cell: ({ row }) => (
-      <div className="flex items-end gap-0.5" title={row.original.health}>
-        <span className="sr-only">{row.original.health}</span>
-        {healthStripSlots.map((slot) => (
-          <div
-            key={`${row.original.id}-${slot.id}`}
-            className={cn(
-              "h-5 w-1 rounded-full",
-              slot.threshold <= getHealthScore(row.original.health) ? "bg-green-500/85" : "bg-green-500/15",
-            )}
-          />
-        ))}
-      </div>
-    ),
-    filterFn: "equalsString",
-  },
+
   {
     accessorKey: "value",
     header: "Value",

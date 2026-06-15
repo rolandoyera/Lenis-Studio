@@ -13,6 +13,15 @@ import type { UserProfile } from "@/lib/types";
 interface AuthContextType {
   user: User | null;
   profile: UserProfile | null;
+  /**
+   * Stable primitive projections of `profile`. Prefer these in effect dependency
+   * arrays: unlike the `profile` object (whose identity changes on every profile
+   * onSnapshot/lastActive update), these only change when their value changes, so
+   * an effect keyed on `organizationId` won't refetch on each heartbeat.
+   */
+  organizationId: string | null;
+  uid: string | null;
+  role: UserProfile["role"] | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -116,6 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         profile,
+        organizationId: profile?.organizationId ?? null,
+        uid: profile?.uid ?? null,
+        role: profile?.role ?? null,
         loading,
         signOut: handleSignOut,
       }}

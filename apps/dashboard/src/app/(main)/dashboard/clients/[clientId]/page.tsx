@@ -29,7 +29,7 @@ interface PageProps {
 export default function ClientProfilePage({ params }: PageProps) {
   const { clientId } = use(params);
   const router = useRouter();
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
 
   const [client, setClient] = useState<Client | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -43,8 +43,8 @@ export default function ClientProfilePage({ params }: PageProps) {
   const [addingProject, setAddingProject] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     async function loadClientData() {
       try {
@@ -66,7 +66,7 @@ export default function ClientProfilePage({ params }: PageProps) {
       }
     }
     void loadClientData();
-  }, [clientId, router, profile, authLoading]);
+  }, [clientId, router, organizationId, authLoading]);
 
   const handleEditSubmit = async (data: ClientFormData) => {
     if (!client) return;

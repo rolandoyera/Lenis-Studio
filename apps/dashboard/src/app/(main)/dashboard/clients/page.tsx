@@ -22,7 +22,7 @@ import { getClientName } from "./_components/client-name";
 import PageHeader from "@/components/page-header";
 
 export default function ClientsPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,8 +32,8 @@ export default function ClientsPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -57,7 +57,7 @@ export default function ClientsPage() {
       }
     }
     void loadData();
-  }, [profile, authLoading]);
+  }, [organizationId, authLoading]);
 
   const handleAddSubmit = async (data: ClientFormData) => {
     if (!profile) return;

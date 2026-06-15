@@ -38,7 +38,7 @@ const TABS = [
 ];
 
 export default function DiagnosticsPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { uid, role, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [runs, setRuns] = useState<DiagnosticRun[]>([]);
@@ -50,15 +50,15 @@ export default function DiagnosticsPage() {
   // Access check & redirect
   useEffect(() => {
     if (authLoading) return;
-    if (!profile) {
+    if (!uid) {
       router.push("/auth/login");
       return;
     }
-    if (profile.role !== "SuperAdmin") {
+    if (role !== "SuperAdmin") {
       toast.error("Access denied. SuperAdmin privileges required.");
       router.push("/dashboard/home");
     }
-  }, [profile, authLoading, router]);
+  }, [uid, role, authLoading, router]);
 
   // Fetch runs on mount
   const loadRuns = useCallback(async (silent = false) => {
@@ -124,7 +124,7 @@ export default function DiagnosticsPage() {
     });
   };
 
-  if (authLoading || profile?.role !== "SuperAdmin") {
+  if (authLoading || role !== "SuperAdmin") {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">
         <div className="relative flex flex-col items-center gap-4">

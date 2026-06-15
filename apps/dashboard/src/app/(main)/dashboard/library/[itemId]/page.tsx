@@ -34,7 +34,7 @@ function getErrorMessage(error: unknown, fallback: string) {
 export default function LibraryItemDetailPage({ params }: PageProps) {
   const { itemId } = use(params);
   const router = useRouter();
-  const { profile, loading: authLoading } = useAuth();
+  const { organizationId, loading: authLoading } = useAuth();
 
   const [item, setItem] = useState<LibraryItem | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -51,14 +51,14 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
 
   // Fetch single catalog item & list of vendors on mount
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const id = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     async function loadData() {
       try {
-        const [itemData, vendorsData] = await Promise.all([getLibraryItem(itemId), getVendors(orgId)]);
+        const [itemData, vendorsData] = await Promise.all([getLibraryItem(itemId), getVendors(id)]);
 
-        if (!itemData || itemData.organizationId !== orgId) {
+        if (!itemData || itemData.organizationId !== id) {
           toast.error("Product catalog item not found.");
           router.push("/dashboard/library");
           return;
@@ -75,7 +75,7 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       }
     }
     void loadData();
-  }, [itemId, router, profile, authLoading]);
+  }, [itemId, router, organizationId, authLoading]);
 
   const handleOpenEdit = () => {
     if (!item) return;

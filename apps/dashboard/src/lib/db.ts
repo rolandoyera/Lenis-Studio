@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
+import { trace } from "@/lib/db-trace";
 import { db, storage } from "@/lib/firebase";
 
 import type {
@@ -39,12 +40,20 @@ function cleanUndefined<T>(obj: T): T {
 
 export async function getClient(uid: string): Promise<Client | null> {
   try {
-    const docRef = doc(db, "clients", uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as Client;
-    }
-    return null;
+    return await trace(
+      "clients",
+      "READ",
+      "getClient",
+      async () => {
+        const docRef = doc(db, "clients", uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data() as Client;
+        }
+        return null;
+      },
+      (c) => (c ? uid : "not found"),
+    );
   } catch (error) {
     console.error("Error fetching client:", error);
     return null;
@@ -53,16 +62,24 @@ export async function getClient(uid: string): Promise<Client | null> {
 
 export async function getClients(organizationId: string): Promise<Client[]> {
   try {
-    const collRef = collection(db, "clients");
-    const q = query(collRef, where("organizationId", "==", organizationId));
-    const filteredSnapshot = await getDocs(q);
+    return await trace(
+      "clients",
+      "READ",
+      "getClients",
+      async () => {
+        const collRef = collection(db, "clients");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const filteredSnapshot = await getDocs(q);
 
-    const clients: Client[] = [];
-    filteredSnapshot.forEach((doc) => {
-      clients.push(doc.data() as Client);
-    });
+        const clients: Client[] = [];
+        filteredSnapshot.forEach((doc) => {
+          clients.push(doc.data() as Client);
+        });
 
-    return clients.sort((a, b) => b.createdAt - a.createdAt);
+        return clients.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (c) => `${c.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching clients:", error);
     return [];
@@ -70,33 +87,65 @@ export async function getClients(organizationId: string): Promise<Client[]> {
 }
 
 export async function addClient(client: Omit<Client, "uid" | "createdAt">): Promise<Client> {
-  const uid = `client-${Math.random().toString(36).substr(2, 9)}`;
-  const newClient: Client = {
-    ...client,
-    uid,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
-  return newClient;
+  return trace(
+    "clients",
+    "WRITE",
+    "addClient",
+    async () => {
+      const uid = `client-${Math.random().toString(36).substr(2, 9)}`;
+      const newClient: Client = {
+        ...client,
+        uid,
+        createdAt: Date.now(),
+      };
+      await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
+      return newClient;
+    },
+    (c) => c.uid,
+  );
 }
 
 export async function updateClient(uid: string, client: Partial<Client>): Promise<void> {
-  const docRef = doc(db, "clients", uid);
-  await updateDoc(docRef, cleanUndefined({ ...client }));
+  return trace(
+    "clients",
+    "WRITE",
+    "updateClient",
+    async () => {
+      const docRef = doc(db, "clients", uid);
+      await updateDoc(docRef, cleanUndefined({ ...client }));
+    },
+    () => uid,
+  );
 }
 
 export async function deleteClient(uid: string): Promise<void> {
-  await deleteDoc(doc(db, "clients", uid));
+  return trace(
+    "clients",
+    "DELETE",
+    "deleteClient",
+    async () => {
+      await deleteDoc(doc(db, "clients", uid));
+    },
+    () => uid,
+  );
 }
 
 // --- VENDOR HELPER HOOKS & FUNCTIONS ---
 
 export async function getVendor(vendorId: string): Promise<Vendor | null> {
   try {
-    const docRef = doc(db, "vendors", vendorId);
-    const snapshot = await getDoc(docRef);
-    if (!snapshot.exists()) return null;
-    return snapshot.data() as Vendor;
+    return await trace(
+      "vendors",
+      "READ",
+      "getVendor",
+      async () => {
+        const docRef = doc(db, "vendors", vendorId);
+        const snapshot = await getDoc(docRef);
+        if (!snapshot.exists()) return null;
+        return snapshot.data() as Vendor;
+      },
+      (v) => (v ? vendorId : "not found"),
+    );
   } catch (error) {
     console.error("Error fetching vendor:", error);
     return null;
@@ -105,16 +154,24 @@ export async function getVendor(vendorId: string): Promise<Vendor | null> {
 
 export async function getVendors(organizationId: string): Promise<Vendor[]> {
   try {
-    const collRef = collection(db, "vendors");
-    const q = query(collRef, where("organizationId", "==", organizationId));
-    const filteredSnapshot = await getDocs(q);
+    return await trace(
+      "vendors",
+      "READ",
+      "getVendors",
+      async () => {
+        const collRef = collection(db, "vendors");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const filteredSnapshot = await getDocs(q);
 
-    const vendors: Vendor[] = [];
-    filteredSnapshot.forEach((doc) => {
-      vendors.push(doc.data() as Vendor);
-    });
+        const vendors: Vendor[] = [];
+        filteredSnapshot.forEach((doc) => {
+          vendors.push(doc.data() as Vendor);
+        });
 
-    return vendors.sort((a, b) => b.createdAt - a.createdAt);
+        return vendors.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (v) => `${v.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching vendors:", error);
     return [];
@@ -125,19 +182,35 @@ export async function addVendor(
   vendor: Omit<Vendor, "vendorId" | "createdAt">,
   customVendorId?: string,
 ): Promise<Vendor> {
-  const vendorId = customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
-  const newVendor: Vendor = {
-    ...vendor,
-    vendorId,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, "vendors", vendorId), cleanUndefined(newVendor));
-  return newVendor;
+  return trace(
+    "vendors",
+    "WRITE",
+    "addVendor",
+    async () => {
+      const vendorId = customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
+      const newVendor: Vendor = {
+        ...vendor,
+        vendorId,
+        createdAt: Date.now(),
+      };
+      await setDoc(doc(db, "vendors", vendorId), cleanUndefined(newVendor));
+      return newVendor;
+    },
+    (v) => v.vendorId,
+  );
 }
 
 export async function updateVendor(vendorId: string, vendor: Partial<Vendor>): Promise<void> {
-  const docRef = doc(db, "vendors", vendorId);
-  await updateDoc(docRef, cleanUndefined({ ...vendor }));
+  return trace(
+    "vendors",
+    "WRITE",
+    "updateVendor",
+    async () => {
+      const docRef = doc(db, "vendors", vendorId);
+      await updateDoc(docRef, cleanUndefined({ ...vendor }));
+    },
+    () => vendorId,
+  );
 }
 
 export async function deleteStorageFileByPath(path: string): Promise<void> {
@@ -181,39 +254,55 @@ export async function deleteReplacedStorageFiles(
 }
 
 export async function deleteVendor(vendorOrId: Vendor | string): Promise<void> {
-  let vendor: Vendor | null = null;
-  if (typeof vendorOrId === "string") {
-    vendor = await getVendor(vendorOrId);
-  } else {
-    vendor = vendorOrId;
-  }
-  if (!vendor) return;
+  return trace(
+    "vendors",
+    "DELETE",
+    "deleteVendor",
+    async () => {
+      let vendor: Vendor | null = null;
+      if (typeof vendorOrId === "string") {
+        vendor = await getVendor(vendorOrId);
+      } else {
+        vendor = vendorOrId;
+      }
+      if (!vendor) return;
 
-  const paths = [vendor.logoPath, vendor.heroImagePath].filter(
-    (p): p is string => typeof p === "string" && p.trim().length > 0,
+      const paths = [vendor.logoPath, vendor.heroImagePath].filter(
+        (p): p is string => typeof p === "string" && p.trim().length > 0,
+      );
+
+      const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
+
+      const failures = results.filter((r) => r.status === "rejected");
+      if (failures.length > 0) {
+        const error = (failures[0] as PromiseRejectedResult).reason;
+        throw new Error(`Failed to clean up storage files: ${error.message || error}`);
+      }
+
+      await deleteDoc(doc(db, "vendors", vendor.vendorId));
+    },
+    () => (typeof vendorOrId === "string" ? vendorOrId : vendorOrId.vendorId),
   );
-
-  const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
-
-  const failures = results.filter((r) => r.status === "rejected");
-  if (failures.length > 0) {
-    const error = (failures[0] as PromiseRejectedResult).reason;
-    throw new Error(`Failed to clean up storage files: ${error.message || error}`);
-  }
-
-  await deleteDoc(doc(db, "vendors", vendor.vendorId));
 }
 
 // --- PROJECT HELPER HOOKS & FUNCTIONS ---
 
 export async function getProject(projectId: string): Promise<Project | null> {
   try {
-    const docRef = doc(db, "projects", projectId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as Project;
-    }
-    return null;
+    return await trace(
+      "projects",
+      "READ",
+      "getProject",
+      async () => {
+        const docRef = doc(db, "projects", projectId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data() as Project;
+        }
+        return null;
+      },
+      (p) => (p ? projectId : "not found"),
+    );
   } catch (error) {
     console.error("Error fetching project:", error);
     return null;
@@ -222,16 +311,24 @@ export async function getProject(projectId: string): Promise<Project | null> {
 
 export async function getProjects(organizationId: string): Promise<Project[]> {
   try {
-    const collRef = collection(db, "projects");
-    const q = query(collRef, where("organizationId", "==", organizationId));
-    const filteredSnapshot = await getDocs(q);
+    return await trace(
+      "projects",
+      "READ",
+      "getProjects",
+      async () => {
+        const collRef = collection(db, "projects");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const filteredSnapshot = await getDocs(q);
 
-    const projects: Project[] = [];
-    filteredSnapshot.forEach((doc) => {
-      projects.push(doc.data() as Project);
-    });
+        const projects: Project[] = [];
+        filteredSnapshot.forEach((doc) => {
+          projects.push(doc.data() as Project);
+        });
 
-    return projects.sort((a, b) => b.createdAt - a.createdAt);
+        return projects.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (p) => `${p.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching projects:", error);
     return [];
@@ -244,17 +341,25 @@ export function formatProjectAddress(parts: Pick<Project, "street" | "city" | "s
 }
 
 export async function addProject(project: Omit<Project, "projectId" | "createdAt">): Promise<Project> {
-  const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
-  const address = formatProjectAddress(project);
+  return trace(
+    "projects",
+    "WRITE",
+    "addProject",
+    async () => {
+      const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
+      const address = formatProjectAddress(project);
 
-  const newProject: Project = {
-    ...project,
-    address: address || project.address,
-    projectId,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, "projects", projectId), cleanUndefined(newProject));
-  return newProject;
+      const newProject: Project = {
+        ...project,
+        address: address || project.address,
+        projectId,
+        createdAt: Date.now(),
+      };
+      await setDoc(doc(db, "projects", projectId), cleanUndefined(newProject));
+      return newProject;
+    },
+    (p) => p.projectId,
+  );
 }
 
 /**
@@ -263,39 +368,63 @@ export async function addProject(project: Omit<Project, "projectId" | "createdAt
  * apply an optimistic update that matches the stored document exactly.
  */
 export async function updateProject(projectId: string, project: Partial<Project>): Promise<Partial<Project>> {
-  const docRef = doc(db, "projects", projectId);
-  const updatedProject: Partial<Project> = {
-    ...project,
-  };
+  return trace(
+    "projects",
+    "WRITE",
+    "updateProject",
+    async () => {
+      const docRef = doc(db, "projects", projectId);
+      const updatedProject: Partial<Project> = {
+        ...project,
+      };
 
-  const hasAddressFields =
-    project.street !== undefined ||
-    project.city !== undefined ||
-    project.state !== undefined ||
-    project.zip !== undefined;
+      const hasAddressFields =
+        project.street !== undefined ||
+        project.city !== undefined ||
+        project.state !== undefined ||
+        project.zip !== undefined;
 
-  if (hasAddressFields) {
-    updatedProject.address = formatProjectAddress(project);
-  }
+      if (hasAddressFields) {
+        updatedProject.address = formatProjectAddress(project);
+      }
 
-  await updateDoc(docRef, cleanUndefined(updatedProject));
-  return updatedProject;
+      await updateDoc(docRef, cleanUndefined(updatedProject));
+      return updatedProject;
+    },
+    () => projectId,
+  );
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
-  await deleteDoc(doc(db, "projects", projectId));
+  return trace(
+    "projects",
+    "DELETE",
+    "deleteProject",
+    async () => {
+      await deleteDoc(doc(db, "projects", projectId));
+    },
+    () => projectId,
+  );
 }
 
 // --- LIBRARY HELPER HOOKS & FUNCTIONS ---
 
 export async function getLibraryItem(itemId: string): Promise<LibraryItem | null> {
   try {
-    const docRef = doc(db, "library", itemId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as LibraryItem;
-    }
-    return null;
+    return await trace(
+      "library",
+      "READ",
+      "getLibraryItem",
+      async () => {
+        const docRef = doc(db, "library", itemId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data() as LibraryItem;
+        }
+        return null;
+      },
+      (i) => (i ? itemId : "not found"),
+    );
   } catch (error) {
     console.error("Error fetching library item:", error);
     return null;
@@ -304,16 +433,24 @@ export async function getLibraryItem(itemId: string): Promise<LibraryItem | null
 
 export async function getLibraryItems(organizationId: string): Promise<LibraryItem[]> {
   try {
-    const collRef = collection(db, "library");
-    const q = query(collRef, where("organizationId", "==", organizationId));
-    const filteredSnapshot = await getDocs(q);
+    return await trace(
+      "library",
+      "READ",
+      "getLibraryItems",
+      async () => {
+        const collRef = collection(db, "library");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const filteredSnapshot = await getDocs(q);
 
-    const items: LibraryItem[] = [];
-    filteredSnapshot.forEach((doc) => {
-      items.push(doc.data() as LibraryItem);
-    });
+        const items: LibraryItem[] = [];
+        filteredSnapshot.forEach((doc) => {
+          items.push(doc.data() as LibraryItem);
+        });
 
-    return items.sort((a, b) => b.updatedAt - a.updatedAt);
+        return items.sort((a, b) => b.updatedAt - a.updatedAt);
+      },
+      (i) => `${i.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching library items:", error);
     return [];
@@ -322,14 +459,22 @@ export async function getLibraryItems(organizationId: string): Promise<LibraryIt
 
 export async function getVendorLibraryItems(organizationId: string, vendorId: string): Promise<LibraryItem[]> {
   try {
-    const collRef = collection(db, "library");
-    const q = query(collRef, where("organizationId", "==", organizationId), where("vendorId", "==", vendorId));
-    const snapshot = await getDocs(q);
-    const items: LibraryItem[] = [];
-    snapshot.forEach((docSnap) => {
-      items.push(docSnap.data() as LibraryItem);
-    });
-    return items.sort((a, b) => b.updatedAt - a.updatedAt);
+    return await trace(
+      "library",
+      "READ",
+      "getVendorLibraryItems",
+      async () => {
+        const collRef = collection(db, "library");
+        const q = query(collRef, where("organizationId", "==", organizationId), where("vendorId", "==", vendorId));
+        const snapshot = await getDocs(q);
+        const items: LibraryItem[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push(docSnap.data() as LibraryItem);
+        });
+        return items.sort((a, b) => b.updatedAt - a.updatedAt);
+      },
+      (i) => `${i.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching vendor library items:", error);
     return [];
@@ -340,59 +485,91 @@ export async function addLibraryItem(
   item: Omit<LibraryItem, "itemId" | "updatedAt">,
   customItemId?: string,
 ): Promise<LibraryItem> {
-  const itemId = customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`;
-  const newItem: LibraryItem = {
-    ...item,
-    itemId,
-    updatedAt: Date.now(),
-  };
-  await setDoc(doc(db, "library", itemId), cleanUndefined(newItem));
-  return newItem;
+  return trace(
+    "library",
+    "WRITE",
+    "addLibraryItem",
+    async () => {
+      const itemId = customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`;
+      const newItem: LibraryItem = {
+        ...item,
+        itemId,
+        updatedAt: Date.now(),
+      };
+      await setDoc(doc(db, "library", itemId), cleanUndefined(newItem));
+      return newItem;
+    },
+    (i) => i.itemId,
+  );
 }
 
 export async function updateLibraryItem(itemId: string, item: Partial<LibraryItem>): Promise<void> {
-  const docRef = doc(db, "library", itemId);
-  await updateDoc(docRef, cleanUndefined({ ...item, updatedAt: Date.now() }));
+  return trace(
+    "library",
+    "WRITE",
+    "updateLibraryItem",
+    async () => {
+      const docRef = doc(db, "library", itemId);
+      await updateDoc(docRef, cleanUndefined({ ...item, updatedAt: Date.now() }));
+    },
+    () => itemId,
+  );
 }
 
 export async function deleteLibraryItem(itemOrId: LibraryItem | string): Promise<void> {
-  let item: LibraryItem | null = null;
-  if (typeof itemOrId === "string") {
-    item = await getLibraryItem(itemOrId);
-  } else {
-    item = itemOrId;
-  }
-  if (!item) return;
+  return trace(
+    "library",
+    "DELETE",
+    "deleteLibraryItem",
+    async () => {
+      let item: LibraryItem | null = null;
+      if (typeof itemOrId === "string") {
+        item = await getLibraryItem(itemOrId);
+      } else {
+        item = itemOrId;
+      }
+      if (!item) return;
 
-  const paths = [item.coverImagePath, ...(item.images || []).map((img) => img.path)].filter(
-    (p): p is string => typeof p === "string" && p.trim().length > 0,
+      const paths = [item.coverImagePath, ...(item.images || []).map((img) => img.path)].filter(
+        (p): p is string => typeof p === "string" && p.trim().length > 0,
+      );
+
+      const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
+
+      const failures = results.filter((r) => r.status === "rejected");
+      if (failures.length > 0) {
+        const error = (failures[0] as PromiseRejectedResult).reason;
+        throw new Error(`Failed to clean up storage files: ${error.message || error}`);
+      }
+
+      await deleteDoc(doc(db, "library", item.itemId));
+    },
+    () => (typeof itemOrId === "string" ? itemOrId : itemOrId.itemId),
   );
-
-  const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
-
-  const failures = results.filter((r) => r.status === "rejected");
-  if (failures.length > 0) {
-    const error = (failures[0] as PromiseRejectedResult).reason;
-    throw new Error(`Failed to clean up storage files: ${error.message || error}`);
-  }
-
-  await deleteDoc(doc(db, "library", item.itemId));
 }
 
 // --- PROPOSAL HELPER HOOKS & FUNCTIONS ---
 
 export async function getProposals(organizationId: string): Promise<Proposal[]> {
   try {
-    const collRef = collection(db, "proposals");
-    const q = query(collRef, where("organizationId", "==", organizationId));
-    const snapshot = await getDocs(q);
+    return await trace(
+      "proposals",
+      "READ",
+      "getProposals",
+      async () => {
+        const collRef = collection(db, "proposals");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const snapshot = await getDocs(q);
 
-    const proposals: Proposal[] = [];
-    snapshot.forEach((doc) => {
-      proposals.push(doc.data() as Proposal);
-    });
+        const proposals: Proposal[] = [];
+        snapshot.forEach((doc) => {
+          proposals.push(doc.data() as Proposal);
+        });
 
-    return proposals.sort((a, b) => b.createdAt - a.createdAt);
+        return proposals.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (p) => `${p.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching proposals:", error);
     return [];
@@ -400,23 +577,47 @@ export async function getProposals(organizationId: string): Promise<Proposal[]> 
 }
 
 export async function addProposal(proposal: Omit<Proposal, "proposalId" | "createdAt">): Promise<Proposal> {
-  const proposalId = `proposal-${Math.random().toString(36).substr(2, 9)}`;
-  const newProposal: Proposal = {
-    ...proposal,
-    proposalId,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, "proposals", proposalId), cleanUndefined(newProposal));
-  return newProposal;
+  return trace(
+    "proposals",
+    "WRITE",
+    "addProposal",
+    async () => {
+      const proposalId = `proposal-${Math.random().toString(36).substr(2, 9)}`;
+      const newProposal: Proposal = {
+        ...proposal,
+        proposalId,
+        createdAt: Date.now(),
+      };
+      await setDoc(doc(db, "proposals", proposalId), cleanUndefined(newProposal));
+      return newProposal;
+    },
+    (p) => p.proposalId,
+  );
 }
 
 export async function updateProposal(proposalId: string, proposal: Partial<Proposal>): Promise<void> {
-  const docRef = doc(db, "proposals", proposalId);
-  await updateDoc(docRef, cleanUndefined({ ...proposal }));
+  return trace(
+    "proposals",
+    "WRITE",
+    "updateProposal",
+    async () => {
+      const docRef = doc(db, "proposals", proposalId);
+      await updateDoc(docRef, cleanUndefined({ ...proposal }));
+    },
+    () => proposalId,
+  );
 }
 
 export async function deleteProposal(proposalId: string): Promise<void> {
-  await deleteDoc(doc(db, "proposals", proposalId));
+  return trace(
+    "proposals",
+    "DELETE",
+    "deleteProposal",
+    async () => {
+      await deleteDoc(doc(db, "proposals", proposalId));
+    },
+    () => proposalId,
+  );
 }
 
 // --- STORAGE HELPER FUNCTIONS ---
@@ -501,25 +702,41 @@ export async function uploadVendorImageBlob(
 // --- DIAGNOSTICS HELPER FUNCTIONS ---
 
 export async function saveDiagnosticRun(run: Omit<DiagnosticRun, "runId" | "createdAt">): Promise<DiagnosticRun> {
-  const runId = `run-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-  const newRun: DiagnosticRun = {
-    ...run,
-    runId,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, "code", runId), cleanUndefined(newRun));
-  return newRun;
+  return trace(
+    "diagnostics",
+    "WRITE",
+    "saveDiagnosticRun",
+    async () => {
+      const runId = `run-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      const newRun: DiagnosticRun = {
+        ...run,
+        runId,
+        createdAt: Date.now(),
+      };
+      await setDoc(doc(db, "code", runId), cleanUndefined(newRun));
+      return newRun;
+    },
+    (r) => r.runId,
+  );
 }
 
 export async function getDiagnosticRuns(): Promise<DiagnosticRun[]> {
   try {
-    const collRef = collection(db, "code");
-    const snapshot = await getDocs(collRef);
-    const runs: DiagnosticRun[] = [];
-    snapshot.forEach((docSnap) => {
-      runs.push(docSnap.data() as DiagnosticRun);
-    });
-    return runs.sort((a, b) => b.createdAt - a.createdAt);
+    return await trace(
+      "diagnostics",
+      "READ",
+      "getDiagnosticRuns",
+      async () => {
+        const collRef = collection(db, "code");
+        const snapshot = await getDocs(collRef);
+        const runs: DiagnosticRun[] = [];
+        snapshot.forEach((docSnap) => {
+          runs.push(docSnap.data() as DiagnosticRun);
+        });
+        return runs.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (r) => `${r.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching diagnostic runs:", error);
     return [];
@@ -528,11 +745,13 @@ export async function getDiagnosticRuns(): Promise<DiagnosticRun[]> {
 
 export async function clearDiagnosticRuns(): Promise<void> {
   try {
-    const collRef = collection(db, "code");
-    const snapshot = await getDocs(collRef);
-    for (const docSnap of snapshot.docs) {
-      await deleteDoc(doc(db, "code", docSnap.id));
-    }
+    await trace("diagnostics", "DELETE", "clearDiagnosticRuns", async () => {
+      const collRef = collection(db, "code");
+      const snapshot = await getDocs(collRef);
+      for (const docSnap of snapshot.docs) {
+        await deleteDoc(doc(db, "code", docSnap.id));
+      }
+    });
   } catch (error) {
     console.error("Error clearing diagnostic runs:", error);
   }
@@ -542,13 +761,21 @@ export async function clearDiagnosticRuns(): Promise<void> {
 
 export async function getOrganizations(): Promise<Organization[]> {
   try {
-    const collRef = collection(db, "organizations");
-    const snapshot = await getDocs(collRef);
-    const organizations: Organization[] = [];
-    snapshot.forEach((docSnap) => {
-      organizations.push(docSnap.data() as Organization);
-    });
-    return organizations.sort((a, b) => b.createdAt - a.createdAt);
+    return await trace(
+      "organizations",
+      "READ",
+      "getOrganizations",
+      async () => {
+        const collRef = collection(db, "organizations");
+        const snapshot = await getDocs(collRef);
+        const organizations: Organization[] = [];
+        snapshot.forEach((docSnap) => {
+          organizations.push(docSnap.data() as Organization);
+        });
+        return organizations.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (o) => `${o.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching organizations:", error);
     return [];
@@ -556,75 +783,99 @@ export async function getOrganizations(): Promise<Organization[]> {
 }
 
 export async function addOrganization(org: Omit<Organization, "createdAt">, adminName: string): Promise<Organization> {
-  const newOrg: Organization = {
-    ...org,
-    createdAt: Date.now(),
-  };
+  return trace(
+    "organizations",
+    "WRITE",
+    "addOrganization",
+    async () => {
+      const newOrg: Organization = {
+        ...org,
+        createdAt: Date.now(),
+      };
 
-  // 1. Create the organization document
-  await setDoc(doc(db, "organizations", org.organizationId), cleanUndefined(newOrg));
+      // 1. Create the organization document
+      await setDoc(doc(db, "organizations", org.organizationId), cleanUndefined(newOrg));
 
-  // 2. Create the pending Administrator profile in the users collection
-  const adminEmailKey = org.adminEmail.trim().toLowerCase();
-  await setDoc(
-    doc(db, "users", adminEmailKey),
-    cleanUndefined({
-      fullName: adminName.trim(),
-      email: adminEmailKey,
-      role: "Admin",
-      organizationId: org.organizationId,
-      status: "Pending",
-      joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
-      lastActive: 0,
-    }),
+      // 2. Create the pending Administrator profile in the users collection
+      const adminEmailKey = org.adminEmail.trim().toLowerCase();
+      await setDoc(
+        doc(db, "users", adminEmailKey),
+        cleanUndefined({
+          fullName: adminName.trim(),
+          email: adminEmailKey,
+          role: "Admin",
+          organizationId: org.organizationId,
+          status: "Pending",
+          joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
+          lastActive: 0,
+        }),
+      );
+
+      // 3. Write invite email to the mail collection for Firebase Trigger Email extension
+      try {
+        await addDoc(collection(db, "mail"), {
+          to: adminEmailKey,
+          message: {
+            subject: `Welcome to SDG CRM - Set up your studio, ${adminName}!`,
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${adminName}!</h2>
+                <p style="color: #334155; font-size: 16px; line-height: 1.5;">
+                  You have been invited to set up your design studio, <strong>${org.name}</strong>, on the Sarvian Design Group CRM platform.
+                </p>
+                <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
+                  Click the button below to register and set up your administrator account:
+                </p>
+                <a href="${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/auth/invite?email=${adminEmailKey}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                  Activate Administrator Account
+                </a>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
+                <p style="color: #64748b; font-size: 12px; text-align: center;">
+                  Tenant onboarding invitation. If you did not expect this, please ignore this email.
+                </p>
+              </div>
+            `,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to write to mail collection for trigger email:", emailError);
+      }
+
+      return newOrg;
+    },
+    (o) => o.organizationId,
   );
-
-  // 3. Write invite email to the mail collection for Firebase Trigger Email extension
-  try {
-    await addDoc(collection(db, "mail"), {
-      to: adminEmailKey,
-      message: {
-        subject: `Welcome to SDG CRM - Set up your studio, ${adminName}!`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${adminName}!</h2>
-            <p style="color: #334155; font-size: 16px; line-height: 1.5;">
-              You have been invited to set up your design studio, <strong>${org.name}</strong>, on the Sarvian Design Group CRM platform.
-            </p>
-            <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
-              Click the button below to register and set up your administrator account:
-            </p>
-            <a href="${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/auth/invite?email=${adminEmailKey}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
-              Activate Administrator Account
-            </a>
-            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
-            <p style="color: #64748b; font-size: 12px; text-align: center;">
-              Tenant onboarding invitation. If you did not expect this, please ignore this email.
-            </p>
-          </div>
-        `,
-      },
-    });
-  } catch (emailError) {
-    console.error("Failed to write to mail collection for trigger email:", emailError);
-  }
-
-  return newOrg;
 }
 
 export async function updateOrganization(orgId: string, org: Partial<Organization>): Promise<void> {
-  const docRef = doc(db, "organizations", orgId);
-  await updateDoc(docRef, cleanUndefined({ ...org }));
+  return trace(
+    "organizations",
+    "WRITE",
+    "updateOrganization",
+    async () => {
+      const docRef = doc(db, "organizations", orgId);
+      await updateDoc(docRef, cleanUndefined({ ...org }));
+    },
+    () => orgId,
+  );
 }
 
 export async function getOrganization(orgId: string): Promise<Organization | null> {
   try {
-    const docRef = doc(db, "organizations", orgId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as Organization;
-    }
-    return null;
+    return await trace(
+      "organizations",
+      "READ",
+      "getOrganization",
+      async () => {
+        const docRef = doc(db, "organizations", orgId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data() as Organization;
+        }
+        return null;
+      },
+      (o) => (o ? orgId : "not found"),
+    );
   } catch (error) {
     console.error("Error fetching organization:", error);
     return null;
@@ -633,27 +884,35 @@ export async function getOrganization(orgId: string): Promise<Organization | nul
 
 export async function getOrganizationUsers(orgId: string): Promise<UserProfile[]> {
   try {
-    const collRef = collection(db, "users");
-    const q = query(collRef, where("organizationId", "==", orgId));
-    const snapshot = await getDocs(q);
-    const users: UserProfile[] = [];
-    snapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      users.push({
-        uid: docSnap.id,
-        fullName: data.fullName || "User",
-        displayName: data.displayName,
-        email: data.email || "",
-        role: data.role || "Contributor",
-        organizationId: data.organizationId || "",
-        status: data.status || "Active",
-        joinedDate: data.joinedDate || "",
-        lastActive: data.lastActive || 0,
-        location: data.location,
-        phone: data.phone,
-      } as UserProfile);
-    });
-    return users.sort((a, b) => b.lastActive - a.lastActive);
+    return await trace(
+      "users",
+      "READ",
+      "getOrganizationUsers",
+      async () => {
+        const collRef = collection(db, "users");
+        const q = query(collRef, where("organizationId", "==", orgId));
+        const snapshot = await getDocs(q);
+        const users: UserProfile[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          users.push({
+            uid: docSnap.id,
+            fullName: data.fullName || "User",
+            displayName: data.displayName,
+            email: data.email || "",
+            role: data.role || "Contributor",
+            organizationId: data.organizationId || "",
+            status: data.status || "Active",
+            joinedDate: data.joinedDate || "",
+            lastActive: data.lastActive || 0,
+            location: data.location,
+            phone: data.phone,
+          } as UserProfile);
+        });
+        return users.sort((a, b) => b.lastActive - a.lastActive);
+      },
+      (u) => `${u.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching organization users:", error);
     return [];
@@ -666,15 +925,23 @@ export async function addProjectRoom(
   room: Omit<ProjectRoom, "roomId" | "createdAt" | "updatedAt">,
   customRoomId?: string,
 ): Promise<ProjectRoom> {
-  const roomId = customRoomId ?? `room-${Math.random().toString(36).substr(2, 9)}`;
-  const newRoom: ProjectRoom = {
-    ...room,
-    roomId,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  await setDoc(doc(db, "projectRooms", roomId), cleanUndefined(newRoom));
-  return newRoom;
+  return trace(
+    "projectRooms",
+    "WRITE",
+    "addProjectRoom",
+    async () => {
+      const roomId = customRoomId ?? `room-${Math.random().toString(36).substr(2, 9)}`;
+      const newRoom: ProjectRoom = {
+        ...room,
+        roomId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await setDoc(doc(db, "projectRooms", roomId), cleanUndefined(newRoom));
+      return newRoom;
+    },
+    (r) => r.roomId,
+  );
 }
 
 export async function seedMockRooms(projectId: string, organizationId: string): Promise<ProjectRoom[]> {
@@ -718,21 +985,29 @@ export async function seedMockRooms(projectId: string, organizationId: string): 
 
 export async function getProjectRooms(projectId: string, organizationId: string): Promise<ProjectRoom[]> {
   try {
-    const collRef = collection(db, "projectRooms");
-    const q = query(collRef, where("projectId", "==", projectId));
-    const snapshot = await getDocs(q);
-    const rooms: ProjectRoom[] = [];
-    snapshot.forEach((docSnap) => {
-      rooms.push(docSnap.data() as ProjectRoom);
-    });
+    return await trace(
+      "projectRooms",
+      "READ",
+      "getProjectRooms",
+      async () => {
+        const collRef = collection(db, "projectRooms");
+        const q = query(collRef, where("projectId", "==", projectId));
+        const snapshot = await getDocs(q);
+        const rooms: ProjectRoom[] = [];
+        snapshot.forEach((docSnap) => {
+          rooms.push(docSnap.data() as ProjectRoom);
+        });
 
-    if (rooms.length === 0) {
-      // Automatic seeding of template mock rooms for the project on first check
-      const seeded = await seedMockRooms(projectId, organizationId);
-      return seeded;
-    }
+        if (rooms.length === 0) {
+          // Automatic seeding of template mock rooms for the project on first check
+          const seeded = await seedMockRooms(projectId, organizationId);
+          return seeded;
+        }
 
-    return rooms.sort((a, b) => a.createdAt - b.createdAt);
+        return rooms.sort((a, b) => a.createdAt - b.createdAt);
+      },
+      (r) => `${r.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching project rooms:", error);
     return [];
@@ -741,14 +1016,22 @@ export async function getProjectRooms(projectId: string, organizationId: string)
 
 export async function getProjectRoomItems(projectId: string): Promise<ProjectRoomItem[]> {
   try {
-    const collRef = collection(db, "projectRoomItems");
-    const q = query(collRef, where("projectId", "==", projectId));
-    const snapshot = await getDocs(q);
-    const items: ProjectRoomItem[] = [];
-    snapshot.forEach((docSnap) => {
-      items.push(docSnap.data() as ProjectRoomItem);
-    });
-    return items.sort((a, b) => a.updatedAt - b.updatedAt);
+    return await trace(
+      "projectRoomItems",
+      "READ",
+      "getProjectRoomItems",
+      async () => {
+        const collRef = collection(db, "projectRoomItems");
+        const q = query(collRef, where("projectId", "==", projectId));
+        const snapshot = await getDocs(q);
+        const items: ProjectRoomItem[] = [];
+        snapshot.forEach((docSnap) => {
+          items.push(docSnap.data() as ProjectRoomItem);
+        });
+        return items.sort((a, b) => a.updatedAt - b.updatedAt);
+      },
+      (i) => `${i.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching project room items:", error);
     return [];
@@ -759,24 +1042,40 @@ export async function addProjectRoomItem(
   item: Omit<ProjectRoomItem, "roomItemId" | "createdAt" | "updatedAt">,
   customRoomItemId?: string,
 ): Promise<ProjectRoomItem> {
-  const roomItemId = customRoomItemId ?? `roomitem-${Math.random().toString(36).substr(2, 9)}`;
-  const newRoomItem: ProjectRoomItem = {
-    ...item,
-    roomItemId,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  };
-  await setDoc(doc(db, "projectRoomItems", roomItemId), cleanUndefined(newRoomItem));
-  return newRoomItem;
+  return trace(
+    "projectRoomItems",
+    "WRITE",
+    "addProjectRoomItem",
+    async () => {
+      const roomItemId = customRoomItemId ?? `roomitem-${Math.random().toString(36).substr(2, 9)}`;
+      const newRoomItem: ProjectRoomItem = {
+        ...item,
+        roomItemId,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      await setDoc(doc(db, "projectRoomItems", roomItemId), cleanUndefined(newRoomItem));
+      return newRoomItem;
+    },
+    (i) => i.roomItemId,
+  );
 }
 
 // --- TRADES & SERVICES DATA HELPERS ---
 
 export async function getTrade(tradeId: string): Promise<Trade | null> {
   try {
-    const docSnap = await getDoc(doc(db, "trades", tradeId));
-    if (!docSnap.exists()) return null;
-    return docSnap.data() as Trade;
+    return await trace(
+      "trades",
+      "READ",
+      "getTrade",
+      async () => {
+        const docSnap = await getDoc(doc(db, "trades", tradeId));
+        if (!docSnap.exists()) return null;
+        return docSnap.data() as Trade;
+      },
+      (t) => (t ? tradeId : "not found"),
+    );
   } catch (error) {
     console.error("Error fetching trade:", error);
     return null;
@@ -785,14 +1084,22 @@ export async function getTrade(tradeId: string): Promise<Trade | null> {
 
 export async function getTrades(organizationId: string): Promise<Trade[]> {
   try {
-    const collRef = collection(db, "trades");
-    const q = query(collRef, where("organizationId", "==", organizationId));
-    const snapshot = await getDocs(q);
-    const trades: Trade[] = [];
-    snapshot.forEach((docSnap) => {
-      trades.push(docSnap.data() as Trade);
-    });
-    return trades.sort((a, b) => b.createdAt - a.createdAt);
+    return await trace(
+      "trades",
+      "READ",
+      "getTrades",
+      async () => {
+        const collRef = collection(db, "trades");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const snapshot = await getDocs(q);
+        const trades: Trade[] = [];
+        snapshot.forEach((docSnap) => {
+          trades.push(docSnap.data() as Trade);
+        });
+        return trades.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (t) => `${t.length} docs`,
+    );
   } catch (error) {
     console.error("Error fetching trades:", error);
     return [];
@@ -800,21 +1107,45 @@ export async function getTrades(organizationId: string): Promise<Trade[]> {
 }
 
 export async function addTrade(trade: Omit<Trade, "tradeId" | "createdAt">, customTradeId?: string): Promise<Trade> {
-  const tradeId = customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
-  const newTrade: Trade = {
-    ...trade,
-    tradeId,
-    createdAt: Date.now(),
-  };
-  await setDoc(doc(db, "trades", tradeId), cleanUndefined(newTrade));
-  return newTrade;
+  return trace(
+    "trades",
+    "WRITE",
+    "addTrade",
+    async () => {
+      const tradeId = customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
+      const newTrade: Trade = {
+        ...trade,
+        tradeId,
+        createdAt: Date.now(),
+      };
+      await setDoc(doc(db, "trades", tradeId), cleanUndefined(newTrade));
+      return newTrade;
+    },
+    (t) => t.tradeId,
+  );
 }
 
 export async function updateTrade(tradeId: string, trade: Partial<Trade>): Promise<void> {
-  const docRef = doc(db, "trades", tradeId);
-  await updateDoc(docRef, cleanUndefined({ ...trade }));
+  return trace(
+    "trades",
+    "WRITE",
+    "updateTrade",
+    async () => {
+      const docRef = doc(db, "trades", tradeId);
+      await updateDoc(docRef, cleanUndefined({ ...trade }));
+    },
+    () => tradeId,
+  );
 }
 
 export async function deleteTrade(tradeId: string): Promise<void> {
-  await deleteDoc(doc(db, "trades", tradeId));
+  return trace(
+    "trades",
+    "DELETE",
+    "deleteTrade",
+    async () => {
+      await deleteDoc(doc(db, "trades", tradeId));
+    },
+    () => tradeId,
+  );
 }

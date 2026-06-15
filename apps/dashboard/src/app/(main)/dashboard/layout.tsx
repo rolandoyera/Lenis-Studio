@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
+import { DbStatsProbe } from "./_components/db-stats-probe";
 import { LayoutControls } from "./_components/sidebar/layout-controls";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
@@ -25,6 +26,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
         } as React.CSSProperties
       }
     >
+      <DbStatsProbe />
       <AppSidebar variant="inset" collapsible="icon" />
       <SidebarInset className={cn("peer-data-[variant=inset]:border", "[--dashboard-header-height:--spacing(12)]")}>
         <header

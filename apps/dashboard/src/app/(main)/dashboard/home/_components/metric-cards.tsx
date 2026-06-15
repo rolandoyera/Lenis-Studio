@@ -4,25 +4,12 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import {
-  ArrowRight,
-  DollarSign,
-  TrendingDown,
-  TrendingUp,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { ArrowRight, DollarSign, TrendingDown, TrendingUp, UserPlus, Users } from "lucide-react";
 
 import { useAuth } from "@/components/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getProjects } from "@/lib/db";
 import type { Project } from "@/lib/types";
@@ -31,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { fetchInstagramFollowers, type KpiMetric } from "@/server/meta-actions";
 
 export function MetricCards() {
-  const { profile, loading: authLoading } = useAuth();
+  const { organizationId, loading: authLoading } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectsError, setProjectsError] = useState(false);
@@ -43,13 +30,13 @@ export function MetricCards() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!profile) {
+    if (!organizationId) {
       setLoadingProjects(false);
       return;
     }
 
     let isMounted = true;
-    const orgId = profile.organizationId;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     async function loadProjects() {
       setLoadingProjects(true);
@@ -77,11 +64,13 @@ export function MetricCards() {
     return () => {
       isMounted = false;
     };
-  }, [profile, authLoading]);
+  }, [organizationId, authLoading]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!profile) {
+    // Presence gate only: a profile is only ever set with an organizationId, so
+    // keying on organizationId is equivalent and avoids refetching on each heartbeat.
+    if (!organizationId) {
       setIgLoading(false);
       return;
     }
@@ -105,11 +94,9 @@ export function MetricCards() {
     return () => {
       isMounted = false;
     };
-  }, [profile, authLoading]);
+  }, [organizationId, authLoading]);
 
-  const activeProjectCount = projects.filter(
-    (project) => project.status === "Active",
-  ).length;
+  const activeProjectCount = projects.filter((project) => project.status === "Active").length;
 
   return (
     <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
@@ -124,9 +111,7 @@ export function MetricCards() {
         </CardHeader>
         <CardContent className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
-              $100,250
-            </div>
+            <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">$100,250</div>
           </div>
           <p className="text-muted-foreground text-sm">Last 90 days</p>
         </CardContent>
@@ -139,21 +124,17 @@ export function MetricCards() {
               <UserPlus className="size-4" />
             </div>
           </CardTitle>
-          <CardDescription>New Customers</CardDescription>
+          <CardDescription>New Opportunities</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
-              1,234
-            </div>
+            <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">1,234</div>
             <Badge variant="destructive">
               <TrendingDown className="size-3" />
               -20%
             </Badge>
           </div>
-          <p className="text-muted-foreground text-sm">
-            Acquisition needs attention
-          </p>
+          <p className="text-muted-foreground text-sm">Acquisition needs attention</p>
         </CardContent>
       </Card>
 
@@ -180,13 +161,12 @@ export function MetricCards() {
             <Skeleton className="h-5 w-28" />
           ) : projectsError ? (
             <div className="flex h-5 items-center justify-between gap-3">
-              <p className="text-muted-foreground text-sm">
-                Unable to load projects
-              </p>
+              <p className="text-muted-foreground text-sm">Unable to load projects</p>
               <Link
                 href="/dashboard/projects"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm">
+                className="flex items-center gap-1 font-medium text-primary text-sm"
+              >
                 View projects
                 <ArrowRight className="size-3" />
               </Link>
@@ -196,7 +176,8 @@ export function MetricCards() {
               <Link
                 href="/dashboard/projects"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm h-6">
+                className="flex items-center gap-1 font-medium text-primary text-sm h-6"
+              >
                 <Button variant="link">
                   View projects <ArrowRight className="size-3" />
                 </Button>
@@ -227,16 +208,9 @@ export function MetricCards() {
               )}
               {!igLoading && igFollowers?.comparison ? (
                 Number.parseFloat(igFollowers.comparison.change) === 0 ? (
-                  <span className="text-muted-foreground text-sm">
-                    No change
-                  </span>
+                  <span className="text-muted-foreground text-sm">No change</span>
                 ) : (
-                  <Badge
-                    variant={
-                      igFollowers.comparison.isPositive
-                        ? "default"
-                        : "destructive"
-                    }>
+                  <Badge variant={igFollowers.comparison.isPositive ? "default" : "destructive"}>
                     {igFollowers.comparison.isPositive ? (
                       <TrendingUp className="size-3" />
                     ) : (
@@ -264,7 +238,8 @@ export function MetricCards() {
               <Link
                 href="/dashboard/marketing"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm h-6">
+                className="flex items-center gap-1 font-medium text-primary text-sm h-6"
+              >
                 <Button variant="link">
                   View More <ArrowRight className="size-3" />
                 </Button>

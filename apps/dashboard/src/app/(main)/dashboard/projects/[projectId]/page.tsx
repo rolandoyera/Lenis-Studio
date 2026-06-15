@@ -30,7 +30,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const { projectId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
 
   const [project, setProject] = useState<Project | null>(null);
   const [client, setClient] = useState<Client | null>(null);
@@ -48,8 +48,8 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const [addingProposal, setAddingProposal] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     async function loadProjectData() {
       try {
@@ -81,7 +81,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
       }
     }
     void loadProjectData();
-  }, [projectId, router, profile, authLoading]);
+  }, [projectId, router, organizationId, authLoading]);
 
   const handleTabChange = (tab: ProjectTab) => {
     setActiveTab(tab);

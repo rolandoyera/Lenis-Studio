@@ -50,7 +50,7 @@ interface ProjectSelectionsProps {
 }
 
 export function ProjectSelections({ project }: ProjectSelectionsProps) {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
   const [rooms, setRooms] = useState<ProjectRoom[]>([]);
   const [roomItems, setRoomItems] = useState<ProjectRoomItem[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
@@ -72,15 +72,15 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
   const isSeeding = useRef(false);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const id = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     let unsubscribed = false;
 
     // Load global catalog data once
     async function initData() {
       try {
-        const [libItemsData, vendorsData] = await Promise.all([getLibraryItems(orgId), getVendors(orgId)]);
+        const [libItemsData, vendorsData] = await Promise.all([getLibraryItems(id), getVendors(id)]);
         if (unsubscribed) return;
         setLibraryItems(libItemsData);
         setVendors(vendorsData);
@@ -103,7 +103,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
 
         if (roomsData.length === 0 && !isSeeding.current) {
           isSeeding.current = true;
-          seedMockRooms(project.projectId, orgId)
+          seedMockRooms(project.projectId, id)
             .catch((err) => console.error("Error seeding:", err))
             .finally(() => {
               isSeeding.current = false;
@@ -142,7 +142,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
       unsubscribeRooms();
       unsubscribeItems();
     };
-  }, [project.projectId, profile, authLoading]);
+  }, [project.projectId, organizationId, authLoading]);
 
   // Handle Room submission
   const onSubmitRoom = async (data: RoomFormData) => {

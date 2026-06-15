@@ -57,7 +57,7 @@ interface PageProps {
 
 export default function TenantDetailPage({ params }: PageProps) {
   const { tenantId } = React.use(params);
-  const { profile, loading: authLoading } = useAuth();
+  const { uid, role, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [org, setOrg] = React.useState<Organization | null>(null);
@@ -80,15 +80,15 @@ export default function TenantDetailPage({ params }: PageProps) {
   // Access check
   React.useEffect(() => {
     if (authLoading) return;
-    if (!profile) {
+    if (!uid) {
       router.push("/auth/login");
       return;
     }
-    if (profile.role !== "SuperAdmin") {
+    if (role !== "SuperAdmin") {
       toast.error("Access denied. SuperAdmin privileges required.");
       router.push("/dashboard/home");
     }
-  }, [profile, authLoading, router]);
+  }, [uid, role, authLoading, router]);
 
   // Load tenant details & users
   const loadTenantData = React.useCallback(async () => {
@@ -120,10 +120,10 @@ export default function TenantDetailPage({ params }: PageProps) {
   }, [tenantId, router, reset]);
 
   React.useEffect(() => {
-    if (!authLoading && profile?.role === "SuperAdmin") {
+    if (!authLoading && role === "SuperAdmin") {
       void loadTenantData();
     }
-  }, [profile, authLoading, loadTenantData]);
+  }, [role, authLoading, loadTenantData]);
 
   // Handle config form submit
   const handleSaveConfig = async (data: TenantConfigFormData) => {
@@ -171,7 +171,7 @@ export default function TenantDetailPage({ params }: PageProps) {
     }
   };
 
-  if (authLoading || loading || profile?.role !== "SuperAdmin") {
+  if (authLoading || loading || role !== "SuperAdmin") {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">
         <div className="relative flex flex-col items-center gap-4">

@@ -32,7 +32,7 @@ import { ProjectFormDialog } from "./_components/project-form-dialog";
 import PageHeader from "@/components/page-header";
 
 export default function ProjectsPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,8 +45,8 @@ export default function ProjectsPage() {
 
   // Fetch projects & clients on mount
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
     async function loadData() {
       try {
         const [projectsData, clientsData] = await Promise.all([getProjects(orgId), getClients(orgId)]);
@@ -60,7 +60,7 @@ export default function ProjectsPage() {
       }
     }
     void loadData();
-  }, [profile, authLoading]);
+  }, [organizationId, authLoading]);
 
   const handleOpenAdd = () => {
     if (clients.length === 0) {

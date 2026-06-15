@@ -44,7 +44,7 @@ function preventPaginationNavigation(event: MouseEvent<HTMLAnchorElement>) {
 }
 
 export default function TenantsPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { uid, role, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [orgs, setOrgs] = useState<Organization[]>([]);
@@ -57,15 +57,15 @@ export default function TenantsPage() {
   // Access check & redirect
   useEffect(() => {
     if (authLoading) return;
-    if (!profile) {
+    if (!uid) {
       router.push("/auth/login");
       return;
     }
-    if (profile.role !== "SuperAdmin") {
+    if (role !== "SuperAdmin") {
       toast.error("Access denied. SuperAdmin privileges required.");
       router.push("/dashboard/home");
     }
-  }, [profile, authLoading, router]);
+  }, [uid, role, authLoading, router]);
 
   // Load organizations
   const loadOrgs = useCallback(async () => {
@@ -81,10 +81,10 @@ export default function TenantsPage() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && profile?.role === "SuperAdmin") {
+    if (!authLoading && role === "SuperAdmin") {
       void loadOrgs();
     }
-  }, [profile, authLoading, loadOrgs]);
+  }, [role, authLoading, loadOrgs]);
 
   // Toggle Tenant suspension status
   const handleToggleStatus = async (orgId: string, currentStatus: "Active" | "Suspended") => {
@@ -145,7 +145,7 @@ export default function TenantsPage() {
     return [currentPage - 1, currentPage, currentPage + 1];
   }, [currentPage, pageCount]);
 
-  if (authLoading || profile?.role !== "SuperAdmin") {
+  if (authLoading || role !== "SuperAdmin") {
     return (
       <div className="flex h-[60vh] w-full items-center justify-center">
         <div className="relative flex flex-col items-center gap-4">

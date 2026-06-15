@@ -62,7 +62,9 @@ export function WeatherWidget() {
     };
 
     void loadWeather();
-  }, [profile, authLoading]);
+    // Keyed on the location value only: loads once on page hit and re-fetches just
+    // when the user's location changes, not on every profile/lastActive heartbeat.
+  }, [profile?.location, authLoading]);
 
   if (loading) {
     return (

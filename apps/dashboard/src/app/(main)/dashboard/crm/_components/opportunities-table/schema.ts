@@ -2,10 +2,14 @@ import z from "zod";
 
 export const opportunitySchema = z.object({
   id: z.string(),
-  account: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  referrer: z.string(),
   stage: z.string(),
   priority: z.number(),
-  health: z.string(),
+  projectType: z.string(),
   value: z.string(),
 });
 

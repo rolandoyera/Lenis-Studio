@@ -39,7 +39,7 @@ function tradeGradient(name: string) {
 }
 
 export default function TradesPage() {
-  const { profile, loading: authLoading } = useAuth();
+  const { profile, organizationId, loading: authLoading } = useAuth();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,8 +49,8 @@ export default function TradesPage() {
   const handleOpenAdd = () => setIsAddOpen(true);
 
   useEffect(() => {
-    if (authLoading || !profile) return;
-    const orgId = profile.organizationId;
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
 
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -73,7 +73,7 @@ export default function TradesPage() {
       }
     }
     void loadData();
-  }, [profile, authLoading]);
+  }, [organizationId, authLoading]);
 
   const handleAdd = async (data: TradeFormData, customTradeId?: string) => {
     if (!profile) return;
