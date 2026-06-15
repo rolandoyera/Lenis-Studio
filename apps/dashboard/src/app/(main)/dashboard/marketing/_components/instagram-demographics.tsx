@@ -3,9 +3,14 @@ import { fetchInstagramDemographics } from "@/server/meta-actions";
 import type { DemographicItem } from "@/server/meta-graph";
 
 import { type DemoBar, InstagramDemoBarChart } from "./instagram-demo-bar-chart";
+import { H3 } from "@/components/ui/typography";
 
 const AGE_ORDER = ["13-17", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
-const GENDER_LABELS: Record<string, string> = { M: "Men", F: "Women", U: "Unknown" };
+const GENDER_LABELS: Record<string, string> = {
+  M: "Men",
+  F: "Women",
+  U: "Unknown",
+};
 
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
 function countryName(code: string): string {
@@ -17,14 +22,19 @@ function countryName(code: string): string {
 }
 
 function toBars(items: DemographicItem[]): DemoBar[] {
-  return items.map((i) => ({ key: i.label, label: i.label, value: i.value, valueLabel: String(i.value) }));
+  return items.map((i) => ({
+    key: i.label,
+    label: i.label,
+    value: i.value,
+    valueLabel: String(i.value),
+  }));
 }
 
 function DemoCard({ title, data }: { title: string; data: DemoBar[] }) {
   return (
     <Card className="h-full gap-2">
       <CardHeader>
-        <CardTitle className="font-normal">{title}</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="px-4">
         <InstagramDemoBarChart data={data} />
@@ -67,11 +77,14 @@ export async function InstagramDemographics() {
   const genderBars = toBars(gender.map((g) => ({ ...g, label: GENDER_LABELS[g.label] ?? g.label })));
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <DemoCard title="Top Cities" data={cityBars} />
-      <DemoCard title="Top Countries" data={countryBars} />
-      <DemoCard title="Age" data={ageBars} />
-      <DemoCard title="Gender" data={genderBars} />
-    </div>
+    <>
+      <H3 className="mb-6 font-normal">Followers</H3>
+      <div className="grid gap-6 grid-cols-1 xl:grid-cols-2">
+        <DemoCard title="Top Cities" data={cityBars} />
+        <DemoCard title="Top Countries" data={countryBars} />
+        <DemoCard title="Age" data={ageBars} />
+        <DemoCard title="Gender" data={genderBars} />
+      </div>
+    </>
   );
 }

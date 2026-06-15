@@ -17,7 +17,7 @@ export async function InstagramRecentPosts() {
   return (
     <Card className="h-full gap-2">
       <CardHeader>
-        <CardTitle className="font-normal">Recent Posts</CardTitle>
+        <CardTitle>Recent Posts</CardTitle>
       </CardHeader>
       <CardContent className="px-0">
         <Table className="[&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
@@ -45,7 +45,7 @@ export async function InstagramRecentPosts() {
             ) : (
               result.data.map((post) => (
                 <TableRow className="hover:bg-transparent" key={post.id}>
-                  <TableCell className="max-w-0 truncate py-3 font-medium">
+                  <TableCell className="max-w-0 truncate py-3">
                     <a href={post.permalink} target="_blank" rel="noreferrer" className="hover:underline">
                       {post.caption ? truncate(post.caption) : `${post.mediaType} post`}
                     </a>

@@ -13,6 +13,7 @@ import { InstagramDemographics } from "./_components/instagram-demographics";
 import { InstagramKpiStrip } from "./_components/instagram-kpi-strip";
 import { InstagramReachTrend } from "./_components/instagram-reach-trend";
 import { InstagramRecentPosts } from "./_components/instagram-recent-posts";
+import { MarketingTabs } from "./_components/marketing-tabs";
 import { MarketingToolbar } from "./_components/marketing-toolbar";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
@@ -22,10 +23,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
   return (
     <div className="flex flex-col gap-6">
       <PageTitle title="Marketing" />
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <PageHeader title="Marketing" description="How clients discover and interact with your brand on Instagram." />
-        {meta ? <MarketingToolbar /> : null}
-      </div>
+      <PageHeader title="Marketing" description="How clients discover and interact with your brand on Instagram." />
 
       {!meta ? (
         <Card className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -64,17 +62,20 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
             </div>
           </Card>
 
-          <InstagramKpiStrip range={range} />
+          <MarketingTabs
+            toolbar={<MarketingToolbar />}
+            overview={
+              <>
+                <InstagramKpiStrip range={range} />
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <InstagramReachTrend range={range} />
-            <InstagramRecentPosts />
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <h2 className="font-medium text-sm">Audience</h2>
-            <InstagramDemographics />
-          </div>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <InstagramReachTrend range={range} />
+                  <InstagramRecentPosts />
+                </div>
+              </>
+            }
+            audience={<InstagramDemographics />}
+          />
         </>
       )}
     </div>

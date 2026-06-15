@@ -33,7 +33,6 @@ interface WeatherData {
 export function WeatherWidget() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const { profile, loading: authLoading } = useAuth();
 
@@ -52,11 +51,11 @@ export function WeatherWidget() {
         if (res.success && res.data) {
           setWeather(res.data);
         } else {
-          setErrorMsg(res.error || "Failed to load weather.");
+          // Stay silent for the user — just log and render nothing.
+          console.warn("[WeatherWidget] Weather unavailable:", res.error);
         }
       } catch (err: unknown) {
         console.error("[WeatherWidget] Error loading weather details:", err);
-        setErrorMsg("Could not access weather service.");
       } finally {
         setLoading(false);
       }
@@ -77,15 +76,8 @@ export function WeatherWidget() {
     );
   }
 
-  // Gracefully fail-safe: hide if not configured, or if key limits are reached
-  if (errorMsg || !weather) {
-    if (process.env.NODE_ENV === "development" && errorMsg) {
-      return (
-        <div className="flex h-11 max-w-xs shrink-0 select-none items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-[10px] text-destructive shadow-xs backdrop-blur-xs">
-          <span>Weather API: {errorMsg}</span>
-        </div>
-      );
-    }
+  // Gracefully fail-safe: render nothing if the weather couldn't be fetched.
+  if (!weather) {
     return null;
   }
 

@@ -16,9 +16,10 @@ import {
   fetchInstagramProfile,
   fetchPages,
   fetchReachTrend,
+  fetchFollowerCount,
+  fetchFollowerGains,
   fetchRecentMedia,
   getStoredMetaCreds,
-  type IgKpis,
   type IgMediaItem,
   type IgTrendPoint,
   storeMetaConnection,
@@ -26,10 +27,51 @@ import {
 
 const NOT_CONNECTED = "Instagram isn't connected yet.";
 
-function rangeToWindow(range?: string): { since: number; until: number } {
+const RANGE_DAYS: Record<string, number> = {
+  "last-7-days": 7,
+  "last-14-days": 14,
+  "last-30-days": 30,
+  "last-60-days": 60,
+  "last-90-days": 90,
+};
+
+/** Current window + the equal-length window immediately before it (for "vs previous"). */
+function rangeToWindows(range?: string): {
+  current: { since: number; until: number };
+  previous: { since: number; until: number };
+  comparisonLabel: string;
+} {
+  const days = RANGE_DAYS[range ?? ""] ?? 30;
+  const span = days * 24 * 60 * 60;
   const until = Math.floor(Date.now() / 1000);
-  const days = range === "last-7-days" ? 7 : 30;
-  return { since: until - days * 24 * 60 * 60, until };
+  const since = until - span;
+  return {
+    current: { since, until },
+    previous: { since: since - span, until: since },
+    comparisonLabel: `previous ${days} days`,
+  };
+}
+
+export interface KpiMetric {
+  value: number;
+  previousValue: number;
+  /** Absolute percent change, e.g. "12.3%". */
+  change: string;
+  isPositive: boolean;
+}
+
+/** Percent change of `current` vs `previous`, mirroring the GA4 KPI comparison. */
+function compareMetric(current: number, previous: number): KpiMetric {
+  if (previous === 0) {
+    return { value: current, previousValue: previous, change: "0.0%", isPositive: true };
+  }
+  const pct = ((current - previous) / previous) * 100;
+  return {
+    value: current,
+    previousValue: previous,
+    change: `${Math.abs(pct).toFixed(1)}%`,
+    isPositive: pct >= 0,
+  };
 }
 
 async function getActiveOrgId(): Promise<string | null> {
@@ -133,37 +175,103 @@ export async function selectMetaPage(
   }
 }
 
-/** Account KPI totals (reach, views, profile visits, accounts engaged) over a range. */
-export async function fetchInstagramKpis(range?: string): Promise<{ success: boolean; data?: IgKpis; error?: string }> {
+export interface InstagramKpiComparison {
+  reach: KpiMetric;
+  views: KpiMetric;
+  profileViews: KpiMetric;
+  accountsEngaged: KpiMetric;
+  comparisonLabel: string;
+}
+
+/** Account KPI totals (reach, views, profile visits, accounts engaged) with vs-previous comparison. */
+export async function fetchInstagramKpis(
+  range?: string,
+): Promise<{ success: boolean; data?: InstagramKpiComparison; error?: string }> {
   const organizationId = await getActiveOrgId();
   if (!organizationId) return { success: false, error: NOT_CONNECTED };
   const creds = await getStoredMetaCreds(organizationId);
   if (!creds) return { success: false, error: NOT_CONNECTED };
 
   try {
-    const { since, until } = rangeToWindow(range);
-    return { success: true, data: await fetchAccountKpis(creds, since, until) };
+    const { current, previous, comparisonLabel } = rangeToWindows(range);
+    const [cur, prev] = await Promise.all([
+      fetchAccountKpis(creds, current.since, current.until),
+      fetchAccountKpis(creds, previous.since, previous.until),
+    ]);
+    return {
+      success: true,
+      data: {
+        reach: compareMetric(cur.reach, prev.reach),
+        views: compareMetric(cur.views, prev.views),
+        profileViews: compareMetric(cur.profileViews, prev.profileViews),
+        accountsEngaged: compareMetric(cur.accountsEngaged, prev.accountsEngaged),
+        comparisonLabel,
+      },
+    };
   } catch (error) {
     console.error("Failed to fetch Instagram KPIs:", error);
     return { success: false, error: error instanceof Error ? error.message : "Failed to load Instagram metrics." };
   }
 }
 
-/** Daily reach series over a range, for the trend chart. */
-export async function fetchInstagramReachTrend(
-  range?: string,
-): Promise<{ success: boolean; data: IgTrendPoint[]; error?: string }> {
+/**
+ * Live follower total plus a vs-previous-30-days comparison. `comparison` is null
+ * when the account is under 100 followers (Instagram won't expose daily gains there).
+ */
+export async function fetchInstagramFollowers(): Promise<{
+  success: boolean;
+  data?: { followers: number; comparison: KpiMetric | null };
+  error?: string;
+}> {
   const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, data: [], error: NOT_CONNECTED };
+  if (!organizationId) return { success: false, error: NOT_CONNECTED };
   const creds = await getStoredMetaCreds(organizationId);
-  if (!creds) return { success: false, data: [], error: NOT_CONNECTED };
+  if (!creds) return { success: false, error: NOT_CONNECTED };
 
   try {
-    const { since, until } = rangeToWindow(range);
-    return { success: true, data: await fetchReachTrend(creds, since, until) };
+    const until = Math.floor(Date.now() / 1000);
+    const since = until - 30 * 24 * 60 * 60;
+    const [followers, gains] = await Promise.all([fetchFollowerCount(creds), fetchFollowerGains(creds, since, until)]);
+    // followers 30 days ago = current total minus net gains over the window.
+    const comparison = gains === null ? null : compareMetric(followers, followers - gains);
+    return { success: true, data: { followers, comparison } };
+  } catch (error) {
+    console.error("Failed to fetch Instagram followers:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to load followers." };
+  }
+}
+
+export interface InstagramReachTrend {
+  points: IgTrendPoint[];
+  /** Total reach over the current window, compared to the previous window. */
+  comparison: KpiMetric;
+  comparisonLabel: string;
+}
+
+/** Daily reach series for the current range, plus a vs-previous total for the comparison badge. */
+export async function fetchInstagramReachTrend(
+  range?: string,
+): Promise<{ success: boolean; data?: InstagramReachTrend; error?: string }> {
+  const organizationId = await getActiveOrgId();
+  if (!organizationId) return { success: false, error: NOT_CONNECTED };
+  const creds = await getStoredMetaCreds(organizationId);
+  if (!creds) return { success: false, error: NOT_CONNECTED };
+
+  try {
+    const { current, previous, comparisonLabel } = rangeToWindows(range);
+    const [curPoints, prevPoints] = await Promise.all([
+      fetchReachTrend(creds, current.since, current.until),
+      fetchReachTrend(creds, previous.since, previous.until),
+    ]);
+    const total = curPoints.reduce((sum, p) => sum + p.reach, 0);
+    const previousTotal = prevPoints.reduce((sum, p) => sum + p.reach, 0);
+    return {
+      success: true,
+      data: { points: curPoints, comparison: compareMetric(total, previousTotal), comparisonLabel },
+    };
   } catch (error) {
     console.error("Failed to fetch Instagram reach trend:", error);
-    return { success: false, data: [], error: error instanceof Error ? error.message : "Failed to load reach." };
+    return { success: false, error: error instanceof Error ? error.message : "Failed to load reach." };
   }
 }
 

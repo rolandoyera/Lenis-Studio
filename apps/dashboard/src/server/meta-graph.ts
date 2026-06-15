@@ -193,22 +193,47 @@ function formatDayLabel(endTime: string): string {
   return Number.isNaN(d.getTime()) ? endTime : d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
 }
 
+// Instagram's day-period insights reject any window wider than 30 days
+// ((#100) "There cannot be more than 30 days between since and until"), so we
+// split longer ranges into ≤30-day chunks and aggregate the results.
+const MAX_WINDOW = 30 * 24 * 60 * 60;
+
+function splitWindow(since: number, until: number): { since: number; until: number }[] {
+  const chunks: { since: number; until: number }[] = [];
+  let cursor = since;
+  while (cursor < until) {
+    const end = Math.min(cursor + MAX_WINDOW, until);
+    chunks.push({ since: cursor, until: end });
+    cursor = end;
+  }
+  return chunks;
+}
+
 /** Account-level totals over a window: reach, views, profile visits, accounts engaged. */
 export async function fetchAccountKpis(creds: StoredMetaCreds, since: number, until: number): Promise<IgKpis> {
-  const json = await graphJson(
-    `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
-      metric: "reach,views,profile_views,accounts_engaged",
-      period: "day",
-      metric_type: "total_value",
-      since: String(since),
-      until: String(until),
-      access_token: creds.token,
-    })}`,
+  const chunks = await Promise.all(
+    splitWindow(since, until).map((w) =>
+      graphJson(
+        `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
+          metric: "reach,views,profile_views,accounts_engaged",
+          period: "day",
+          metric_type: "total_value",
+          since: String(w.since),
+          until: String(w.until),
+          access_token: creds.token,
+        })}`,
+      ),
+    ),
   );
 
+  // Summed across chunks. Reach is unique-per-chunk, so a multi-chunk total
+  // slightly over-counts accounts seen in more than one chunk — unavoidable
+  // given the 30-day cap, and the standard workaround.
   const byName: Record<string, number> = {};
-  for (const m of (json.data ?? []) as { name: string; total_value?: { value?: number } }[]) {
-    byName[m.name] = m.total_value?.value ?? 0;
+  for (const json of chunks) {
+    for (const m of (json.data ?? []) as { name: string; total_value?: { value?: number } }[]) {
+      byName[m.name] = (byName[m.name] ?? 0) + (m.total_value?.value ?? 0);
+    }
   }
 
   return {
@@ -221,19 +246,64 @@ export async function fetchAccountKpis(creds: StoredMetaCreds, since: number, un
 
 /** Daily reach series over a window, for the trend chart. */
 export async function fetchReachTrend(creds: StoredMetaCreds, since: number, until: number): Promise<IgTrendPoint[]> {
-  const json = await graphJson(
-    `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
-      metric: "reach",
-      period: "day",
-      since: String(since),
-      until: String(until),
-      access_token: creds.token,
-    })}`,
+  const chunks = await Promise.all(
+    splitWindow(since, until).map((w) =>
+      graphJson(
+        `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
+          metric: "reach",
+          period: "day",
+          since: String(w.since),
+          until: String(w.until),
+          access_token: creds.token,
+        })}`,
+      ),
+    ),
   );
 
-  const values =
-    ((json.data ?? [])[0] as { values?: { value?: number; end_time?: string }[] } | undefined)?.values ?? [];
-  return values.map((v) => ({ label: formatDayLabel(v.end_time ?? ""), reach: v.value ?? 0 }));
+  // Daily points just concatenate across chunks (in window order).
+  return chunks.flatMap((json) => {
+    const values =
+      ((json.data ?? [])[0] as { values?: { value?: number; end_time?: string }[] } | undefined)?.values ?? [];
+    return values.map((v) => ({ label: formatDayLabel(v.end_time ?? ""), reach: v.value ?? 0 }));
+  });
+}
+
+/** Live total follower count for the IG account. */
+export async function fetchFollowerCount(creds: StoredMetaCreds): Promise<number> {
+  const res = await fetch(`${GRAPH}/${creds.igId}?fields=followers_count&access_token=${creds.token}`, {
+    cache: "no-store",
+  });
+  const json = (await res.json()) as {
+    followers_count?: number;
+    error?: { message?: string; error_user_msg?: string };
+  };
+  if (json.error) {
+    throw new Error(json.error.error_user_msg ?? json.error.message ?? "Instagram Graph API error.");
+  }
+  return json.followers_count ?? 0;
+}
+
+/**
+ * New followers gained per day, summed over the window (≤30 days). Returns null
+ * when the metric is unavailable — Instagram doesn't expose `follower_count` for
+ * accounts under 100 followers, which we treat as "no comparison" rather than an error.
+ */
+export async function fetchFollowerGains(creds: StoredMetaCreds, since: number, until: number): Promise<number | null> {
+  try {
+    const json = await graphJson(
+      `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
+        metric: "follower_count",
+        period: "day",
+        since: String(since),
+        until: String(until),
+        access_token: creds.token,
+      })}`,
+    );
+    const values = ((json.data ?? [])[0] as { values?: { value?: number }[] } | undefined)?.values ?? [];
+    return values.reduce((sum, v) => sum + (v.value ?? 0), 0);
+  } catch {
+    return null;
+  }
 }
 
 export interface DemographicItem {
