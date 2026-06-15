@@ -29,8 +29,11 @@ export function UserProfile() {
         const userDocRef = doc(db, "users", user.uid);
         await setDoc(userDocRef, { lastActive: 0 }, { merge: true });
       }
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("explicit_logout", "true");
+      }
       await signOut();
-      router.push("/auth/login");
+      router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
     }

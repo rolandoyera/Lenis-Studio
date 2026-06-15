@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   Activity,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,11 +38,27 @@ const TABS = [
 ];
 
 export default function DiagnosticsPage() {
+  const { profile, loading: authLoading } = useAuth();
+  const router = useRouter();
+
   const [runs, setRuns] = useState<DiagnosticRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<DiagnosticRun | null>(null);
   const [activeTab, setActiveTab] = useState("extracted");
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
+
+  // Access check & redirect
+  useEffect(() => {
+    if (authLoading) return;
+    if (!profile) {
+      router.push("/auth/login");
+      return;
+    }
+    if (profile.role !== "SuperAdmin") {
+      toast.error("Access denied. SuperAdmin privileges required.");
+      router.push("/dashboard/home");
+    }
+  }, [profile, authLoading, router]);
 
   // Fetch runs on mount
   const loadRuns = useCallback(async (silent = false) => {
@@ -105,6 +123,22 @@ export default function DiagnosticsPage() {
       second: "2-digit",
     });
   };
+
+  if (authLoading || profile?.role !== "SuperAdmin") {
+    return (
+      <div className="flex h-[60vh] w-full items-center justify-center">
+        <div className="relative flex flex-col items-center gap-4">
+          <div className="relative size-12">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+          <p className="animate-pulse font-medium text-muted-foreground text-xs uppercase tracking-widest">
+            Verifying Authority
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">

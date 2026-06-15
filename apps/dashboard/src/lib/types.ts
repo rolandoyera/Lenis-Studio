@@ -1,3 +1,5 @@
+import type { MetaIntegrationConfig } from "@/types/meta";
+
 export interface Client {
   uid: string;
   organizationId: string;
@@ -177,6 +179,7 @@ export interface OrganizationConfig {
   customGeminiKey?: string;
   aiMonthlyLimit?: number;
   aiUsedCount?: number;
+  metaIntegration?: MetaIntegrationConfig;
 }
 
 export interface Organization {

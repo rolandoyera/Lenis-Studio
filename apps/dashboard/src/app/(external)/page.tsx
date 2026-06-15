@@ -28,13 +28,15 @@ export default function Home() {
                   priority
                 />
               </div>
-              <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">{APP_CONFIG.name}</h1>
+              <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">
+                {APP_CONFIG.name}
+              </h1>
               <p className="font-light text-base text-foreground/80 tracking-widest drop-shadow-sm">
                 Design. Build. Repeat.
               </p>
             </div>
           </ViewTransition>
-          <div className="absolute inset-x-0 bottom-24 z-10 flex justify-center">
+          <div className="absolute inset-x-0 bottom-84 z-10 flex justify-center">
             <Button asChild size="lg" className="px-10">
               <Link href="/auth/login">Login</Link>
             </Button>

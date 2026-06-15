@@ -166,6 +166,12 @@ service cloud.firestore {
       // Members may read their own org (e.g. plan/config); only SuperAdmins see all.
       allow get: if isSignedIn() && (orgId == userOrg() || isSuperAdmin());
       allow list, create, update, delete: if isSignedIn() && isSuperAdmin();
+
+      // Integration secrets (Meta page access tokens, etc.) are server-only:
+      // written and read exclusively via the firebase-admin SDK, never a client.
+      match /secrets/{secretId} {
+        allow read, write: if false;
+      }
     }
 
     // Outbox for the Trigger Email extension: write-only from the app.

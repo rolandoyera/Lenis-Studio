@@ -25,7 +25,14 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     if (loading) return;
 
     if (!user && !isAuthRoute) {
-      router.push("/auth/login");
+      const isExplicitLogout =
+        typeof window !== "undefined" && window.sessionStorage.getItem("explicit_logout") === "true";
+      if (isExplicitLogout) {
+        window.sessionStorage.removeItem("explicit_logout");
+        router.push("/");
+      } else {
+        router.push("/auth/login");
+      }
     } else if (user && isAuthRoute && !isInviteRoute) {
       router.push("/dashboard");
     }

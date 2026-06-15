@@ -251,6 +251,9 @@ export function NavMain({ items }: NavMainProps) {
                 if (item.title === "Tenants" && userRole !== "SuperAdmin") {
                   return null;
                 }
+                if (item.title === "AI Diagnostics" && userRole !== "SuperAdmin") {
+                  return null;
+                }
                 if (state === "collapsed" && !isMobile) {
                   // If no subItems, just render the button as a link
                   if (!item.subItems) {
