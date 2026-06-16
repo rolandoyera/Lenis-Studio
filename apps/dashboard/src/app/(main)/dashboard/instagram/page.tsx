@@ -13,6 +13,7 @@ import { InstagramDemographics } from "./_components/instagram-demographics";
 import { InstagramKpiStrip } from "./_components/instagram-kpi-strip";
 import { InstagramReachTrend } from "./_components/instagram-reach-trend";
 import { InstagramRecentPosts } from "./_components/instagram-recent-posts";
+import { InstagramPostsGrid } from "./_components/instagram-posts-grid";
 import { MarketingTabs } from "./_components/marketing-tabs";
 import { MarketingToolbar } from "./_components/marketing-toolbar";
 
@@ -74,6 +75,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
                 </div>
               </>
             }
+            posts={<InstagramPostsGrid />}
             audience={<InstagramDemographics />}
           />
         </>
