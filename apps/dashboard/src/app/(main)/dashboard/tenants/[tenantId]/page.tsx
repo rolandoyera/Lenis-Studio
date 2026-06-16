@@ -14,6 +14,7 @@ import {
   LineChart,
   Loader2,
   Save,
+  Search,
   Settings,
   ShieldAlert,
   Sparkles,
@@ -42,6 +43,7 @@ import HeaderBackLink from "../../_components/HeaderBackLink";
 
 const tenantConfigSchema = z.object({
   gaPropertyId: z.string().trim().optional().or(z.literal("")),
+  gscSiteUrl: z.string().trim().optional().or(z.literal("")),
   googleDriveFolderId: z.string().trim().optional().or(z.literal("")),
   customGeminiKey: z.string().trim().optional().or(z.literal("")),
   aiMonthlyLimit: z.number().min(0, "Limit must be 0 or greater."),
@@ -71,6 +73,7 @@ export default function TenantDetailPage({ params }: PageProps) {
     resolver: zodResolver(tenantConfigSchema),
     defaultValues: {
       gaPropertyId: "",
+      gscSiteUrl: "",
       googleDriveFolderId: "",
       customGeminiKey: "",
       aiMonthlyLimit: 100,
@@ -107,6 +110,7 @@ export default function TenantDetailPage({ params }: PageProps) {
       // Seed form values
       reset({
         gaPropertyId: orgData.config?.gaPropertyId || "",
+        gscSiteUrl: orgData.config?.gscSiteUrl || "",
         googleDriveFolderId: orgData.config?.googleDriveFolderId || "",
         customGeminiKey: orgData.config?.customGeminiKey || "",
         aiMonthlyLimit: orgData.config?.aiMonthlyLimit ?? 100,
@@ -132,7 +136,10 @@ export default function TenantDetailPage({ params }: PageProps) {
 
     try {
       const updatedConfig = {
+        // Preserve fields not managed by this form (e.g. metaIntegration).
+        ...org.config,
         gaPropertyId: data.gaPropertyId?.trim() || "",
+        gscSiteUrl: data.gscSiteUrl?.trim() || "",
         googleDriveFolderId: data.googleDriveFolderId?.trim() || "",
         customGeminiKey: data.customGeminiKey?.trim() || "",
         aiMonthlyLimit: data.aiMonthlyLimit,
@@ -300,6 +307,33 @@ export default function TenantDetailPage({ params }: PageProps) {
                         />
                         <p className="text-[10px] text-muted-foreground/80 leading-normal">
                           Optionally provide a GA4 Property ID to feed dashboard analytics views for this studio.
+                        </p>
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    )}
+                  />
+
+                  {/* Google Search Console */}
+                  <Controller
+                    control={control}
+                    name="gscSiteUrl"
+                    render={({ field, fieldState }) => (
+                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="gsc-site" className="flex items-center gap-1.5">
+                          <Search className="size-3.5 text-muted-foreground" />
+                          Search Console Site URL
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="gsc-site"
+                          placeholder="e.g. sc-domain:example.com"
+                          disabled={saving}
+                          aria-invalid={fieldState.invalid}
+                          autoComplete="off"
+                        />
+                        <p className="text-[10px] text-muted-foreground/80 leading-normal">
+                          Use the exact property string from Search Console: `sc-domain:example.com` for a domain
+                          property, or `https://example.com/` (with trailing slash) for a URL-prefix property.
                         </p>
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>

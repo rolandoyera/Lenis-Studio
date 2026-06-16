@@ -6,6 +6,7 @@ import { AnalyticsToolbar } from "./_components/analytics-toolbar";
 import { AudienceSection } from "./_components/audience-section";
 import { ConversionsSection } from "./_components/conversions-section";
 import { GA4ConnectionChecker } from "./_components/ga4-connection-checker";
+import { GoogleSearchSection } from "./_components/google-search-section";
 import { LandingPages } from "./_components/landing-pages";
 import { RealtimeVisitors } from "./_components/realtime-visitors";
 import { TopPages } from "./_components/top-pages";
@@ -41,6 +42,7 @@ export default async function Page({ searchParams }: PageProps) {
             <TabsTrigger value="acquisition">Acquisition</TabsTrigger>
             <TabsTrigger value="engagement">Engagement</TabsTrigger>
             <TabsTrigger value="conversions">Conversions</TabsTrigger>
+            <TabsTrigger value="google">Google</TabsTrigger>
           </TabsList>
 
           <AnalyticsToolbar />
@@ -85,6 +87,10 @@ export default async function Page({ searchParams }: PageProps) {
 
         <TabsContent value="conversions">
           <ConversionsSection range={range} />
+        </TabsContent>
+
+        <TabsContent value="google">
+          <GoogleSearchSection range={range} />
         </TabsContent>
       </Tabs>
     </div>

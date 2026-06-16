@@ -175,6 +175,7 @@ export interface DiagnosticRun {
 
 export interface OrganizationConfig {
   gaPropertyId?: string;
+  gscSiteUrl?: string;
   googleDriveFolderId?: string;
   customGeminiKey?: string;
   aiMonthlyLimit?: number;
