@@ -9,6 +9,19 @@ const InstagramIcon = ({
   flipHorizontal = false,
   flipVertical = false,
   padding = 0,
+  className,
+}: {
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+  background?: string;
+  opacity?: number;
+  rotation?: number;
+  shadow?: number;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+  padding?: number;
+  className?: string;
 }) => {
   const transforms = [];
   if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`);
@@ -32,6 +45,7 @@ const InstagramIcon = ({
       strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,

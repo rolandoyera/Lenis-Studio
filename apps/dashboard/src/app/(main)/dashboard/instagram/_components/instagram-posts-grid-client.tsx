@@ -5,23 +5,31 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 
 import { Card, CardFooter } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { IgMediaItem } from "@/server/meta-graph";
 
 type SortKey = "recent" | "likes" | "comments";
 
 function formatDate(ts: string): string {
   const d = new Date(ts);
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/** Instagram-style compact relative age, e.g. "5h", "3d", "12w", "2y". */
+function timeAgo(ts: string): string {
+  const then = new Date(ts).getTime();
+  if (Number.isNaN(then)) return "";
+  const seconds = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+  const weeks = Math.floor(days / 7);
+  if (days < 365) return `${weeks}w`;
+  return `${Math.floor(days / 365)}y`;
 }
 
 function truncate(s: string, n = 80): string {
@@ -40,9 +48,7 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <Select
-          value={sort}
-          onValueChange={(value) => setSort(value as SortKey)}>
+        <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
           <SelectTrigger className="w-40" size="sm">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
@@ -61,11 +67,7 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
           const image = post.thumbnailUrl || post.mediaUrl;
           return (
             <Card key={post.id} className="gap-0 overflow-hidden p-0">
-              <a
-                href={post.permalink}
-                target="_blank"
-                rel="noreferrer"
-                className="block">
+              <a href={post.permalink} target="_blank" rel="noreferrer" className="block">
                 <div className="relative aspect-square bg-muted">
                   {image ? (
                     <Image
@@ -85,9 +87,7 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
               <CardFooter className="p-0">
                 <div className="flex flex-col gap-2 p-3 w-full">
                   <p className="min-h-8 text-muted-foreground text-[12px]">
-                    {post.caption
-                      ? truncate(post.caption)
-                      : `${post.mediaType} post`}
+                    {post.caption ? truncate(post.caption) : `${post.mediaType} post`}
                   </p>
                   <div className="flex items-center justify-between text-muted-foreground text-xs">
                     <div className="flex items-center gap-3">
@@ -101,7 +101,7 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
                       </span>
                     </div>
                     <span className="tabular-nums">
-                      {formatDate(post.timestamp)}
+                      {formatDate(post.timestamp)} · {timeAgo(post.timestamp)}
                     </span>
                   </div>
                 </div>

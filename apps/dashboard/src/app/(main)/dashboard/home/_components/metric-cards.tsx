@@ -236,7 +236,7 @@ export function MetricCards() {
                 )}
               </Label>
               <Link
-                href="/dashboard/marketing"
+                href="/dashboard/instagram"
                 prefetch={false}
                 className="flex items-center gap-1 font-medium text-primary text-sm h-6"
               >

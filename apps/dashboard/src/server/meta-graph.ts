@@ -157,6 +157,10 @@ export interface IgMediaItem {
   likeCount: number;
   commentsCount: number;
   permalink: string;
+  /** Image/video URL. For video posts use `thumbnailUrl` to render a still. */
+  mediaUrl: string;
+  /** Still image for video/reel posts; empty for images. */
+  thumbnailUrl: string;
 }
 
 /** Reads the stored page token + IG account id for a tenant (server-only). */
@@ -344,7 +348,7 @@ export async function fetchFollowerDemographics(
 export async function fetchRecentMedia(creds: StoredMetaCreds, limit = 10): Promise<IgMediaItem[]> {
   const json = await graphJson(
     `${GRAPH}/${creds.igId}/media?${new URLSearchParams({
-      fields: "id,caption,media_type,timestamp,like_count,comments_count,permalink",
+      fields: "id,caption,media_type,timestamp,like_count,comments_count,permalink,media_url,thumbnail_url",
       limit: String(limit),
       access_token: creds.token,
     })}`,
@@ -358,5 +362,7 @@ export async function fetchRecentMedia(creds: StoredMetaCreds, limit = 10): Prom
     likeCount: Number(m.like_count ?? 0),
     commentsCount: Number(m.comments_count ?? 0),
     permalink: String(m.permalink ?? ""),
+    mediaUrl: String(m.media_url ?? ""),
+    thumbnailUrl: String(m.thumbnail_url ?? ""),
   }));
 }

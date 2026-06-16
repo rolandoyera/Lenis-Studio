@@ -31,12 +31,12 @@ const Toaster = ({ position = "top-center", ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
-          "--success-bg": "rgba(16, 185, 129, 0.1)",
-          "--success-text": "#10b981",
-          "--success-border": "rgba(16, 185, 129, 0.2)",
-          "--error-bg": "rgba(239, 68, 68, 0.1)",
-          "--error-text": "#ef4444",
-          "--error-border": "rgba(239, 68, 68, 0.2)",
+          "--success-bg": "var(--card)",
+          "--success-text": "var(--card-foreground)",
+          "--success-border": "var(--border)",
+          "--error-bg": "#dc2626",
+          "--error-text": "#ffffff",
+          "--error-border": "#dc2626",
           "--warning-bg": "rgba(245, 158, 11, 1)",
           "--warning-text": "#f59e0b",
           "--warning-border": "rgba(245, 158, 11, 0.2)",
@@ -50,9 +50,9 @@ const Toaster = ({ position = "top-center", ...props }: ToasterProps) => {
           toast:
             "cn-toast group-[.toaster]:border-border group-[.toaster]:shadow-lg",
           error:
-            "group-[.toaster]:!bg-red-500/10 group-[.toaster]:!text-red-600 group-[.toaster]:!border-red-500/20 dark:group-[.toaster]:!bg-red-500/15 dark:group-[.toaster]:!text-red-400 dark:group-[.toaster]:!border-red-500/30",
+            "group-[.toaster]:!bg-red-600 group-[.toaster]:!text-white group-[.toaster]:!border-red-600",
           success:
-            "group-[.toaster]:!bg-emerald-500/10 group-[.toaster]:!text-emerald-600 group-[.toaster]:!border-emerald-500/20 dark:group-[.toaster]:!bg-emerald-500/15 dark:group-[.toaster]:!text-emerald-400 dark:group-[.toaster]:!border-emerald-500/30",
+            "group-[.toaster]:!bg-card group-[.toaster]:!text-card-foreground group-[.toaster]:!border-border",
           warning:
             "group-[.toaster]:!bg-amber-500/10 group-[.toaster]:!text-amber-600 group-[.toaster]:!border-amber-500/20 dark:group-[.toaster]:!bg-amber-500/15 dark:group-[.toaster]:!text-amber-400 dark:group-[.toaster]:!border-amber-500/30",
           info: "group-[.toaster]:!bg-blue-500/10 group-[.toaster]:!text-blue-600 group-[.toaster]:!border-blue-500/20 dark:group-[.toaster]:!bg-blue-500/15 dark:group-[.toaster]:!text-blue-400 dark:group-[.toaster]:!border-blue-500/30",

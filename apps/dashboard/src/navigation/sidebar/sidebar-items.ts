@@ -13,16 +13,21 @@ import {
   Kanban,
   LayoutDashboard,
   type LucideIcon,
-  Megaphone,
   ReceiptText,
   ShoppingBag,
   Users,
 } from "lucide-react";
+import type { ComponentType } from "react";
+
+import { InstagramIcon } from "@/components/icons/icons";
+
+/** Sidebar icons can be lucide icons or our custom SVG icon components. */
+type NavIcon = LucideIcon | ComponentType<{ className?: string }>;
 
 export interface NavSubItem {
   title: string;
   url: string;
-  icon?: LucideIcon;
+  icon?: NavIcon;
   comingSoon?: boolean;
   newTab?: boolean;
   isNew?: boolean;
@@ -31,7 +36,7 @@ export interface NavSubItem {
 export interface NavMainItem {
   title: string;
   url: string;
-  icon?: LucideIcon;
+  icon?: NavIcon;
   subItems?: NavSubItem[];
   comingSoon?: boolean;
   newTab?: boolean;
@@ -60,9 +65,9 @@ export const sidebarItems: NavGroup[] = [
         icon: ChartBar,
       },
       {
-        title: "Marketing",
-        url: "/dashboard/marketing",
-        icon: Megaphone,
+        title: "Instagram",
+        url: "/dashboard/instagram",
+        icon: InstagramIcon,
       },
       {
         title: "Analytics",

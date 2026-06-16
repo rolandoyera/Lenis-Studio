@@ -14,8 +14,8 @@ import { InstagramKpiStrip } from "./_components/instagram-kpi-strip";
 import { InstagramReachTrend } from "./_components/instagram-reach-trend";
 import { InstagramRecentPosts } from "./_components/instagram-recent-posts";
 import { InstagramPostsGrid } from "./_components/instagram-posts-grid";
-import { MarketingTabs } from "./_components/marketing-tabs";
-import { MarketingToolbar } from "./_components/marketing-toolbar";
+import { InstagramTabs } from "./_components/instagram-tabs";
+import { InstagramToolbar } from "./_components/instagram-toolbar";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
   const { range = "last-30-days" } = await searchParams;
@@ -23,8 +23,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
 
   return (
     <div className="flex flex-col gap-6">
-      <PageTitle title="Marketing" />
-      <PageHeader title="Marketing" description="How clients discover and interact with your brand on Instagram." />
+      <PageTitle title="Instagram" />
+      <PageHeader title="Instagram" description="How clients discover and interact with your brand on Instagram." />
 
       {!meta ? (
         <Card className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -63,8 +63,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
             </div>
           </Card>
 
-          <MarketingTabs
-            toolbar={<MarketingToolbar />}
+          <InstagramTabs
+            toolbar={<InstagramToolbar />}
             overview={
               <>
                 <InstagramKpiStrip range={range} />

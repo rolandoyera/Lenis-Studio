@@ -276,7 +276,7 @@ export async function fetchInstagramReachTrend(
 }
 
 /** Recent posts with engagement counts. */
-export async function fetchInstagramMedia(): Promise<{
+export async function fetchInstagramMedia(limit = 10): Promise<{
   success: boolean;
   data: IgMediaItem[];
   error?: string;
@@ -287,7 +287,7 @@ export async function fetchInstagramMedia(): Promise<{
   if (!creds) return { success: false, data: [], error: NOT_CONNECTED };
 
   try {
-    return { success: true, data: await fetchRecentMedia(creds, 10) };
+    return { success: true, data: await fetchRecentMedia(creds, limit) };
   } catch (error) {
     console.error("Failed to fetch Instagram media:", error);
     return { success: false, data: [], error: error instanceof Error ? error.message : "Failed to load posts." };

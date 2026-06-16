@@ -20,6 +20,15 @@ const nextConfig = {
         protocol: "https",
         hostname: "cdn.weatherapi.com",
       },
+      // Instagram media (post images and video thumbnails) served via the Meta CDN.
+      {
+        protocol: "https",
+        hostname: "**.cdninstagram.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.fbcdn.net",
+      },
     ],
   },
   compiler: {

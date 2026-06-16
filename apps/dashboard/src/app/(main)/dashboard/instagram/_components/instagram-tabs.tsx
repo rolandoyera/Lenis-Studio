@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export function MarketingTabs({
+export function InstagramTabs({
   overview,
   posts,
   audience,

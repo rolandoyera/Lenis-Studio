@@ -8,7 +8,13 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import { addProject, deleteClient, getClient, getProjects, updateClient } from "@/lib/db";
+import {
+  addProject,
+  deleteClient,
+  getClient,
+  getProjects,
+  updateClient,
+} from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 
 import type { ProjectFormData } from "../../projects/_components/project-constants";
@@ -48,7 +54,10 @@ export default function ClientProfilePage({ params }: PageProps) {
 
     async function loadClientData() {
       try {
-        const [clientData, projectsData] = await Promise.all([getClient(clientId), getProjects(orgId)]);
+        const [clientData, projectsData] = await Promise.all([
+          getClient(clientId),
+          getProjects(orgId),
+        ]);
 
         if (!clientData || clientData.organizationId !== orgId) {
           toast.error("Client profile not found.");
@@ -151,7 +160,10 @@ export default function ClientProfilePage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <div className="flex flex-col gap-6 lg:col-span-7">
-          <ClientProjectsCard projects={projects} onAddProject={() => setIsAddProjectOpen(true)} />
+          <ClientProjectsCard
+            projects={projects}
+            onAddProject={() => setIsAddProjectOpen(true)}
+          />
           <ClientNotesCard client={client} onEdit={() => setIsEditOpen(true)} />
         </div>
         <div className="flex flex-col gap-6 lg:col-span-5">
@@ -163,7 +175,7 @@ export default function ClientProfilePage({ params }: PageProps) {
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
         title="Edit Client Profile"
-        description="Modify client contacts and optional company settings."
+        description="Modify client or company profile information."
         submitLabel="Save Changes"
         submitting={updatingProfile}
         defaultValues={{
