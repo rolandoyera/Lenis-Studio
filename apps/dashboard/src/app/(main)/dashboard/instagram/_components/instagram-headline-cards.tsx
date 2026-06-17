@@ -3,11 +3,13 @@ import { Eye, Heart, MessageCircle, UserPlus } from "lucide-react";
 import { InstagramIcon } from "@/components/icons/icons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { fetchInstagramHeadline } from "@/server/meta-actions";
+import { fetchInstagramFollowers, fetchInstagramHeadline } from "@/server/meta-actions";
 
 export async function InstagramHeadlineCards({ followersCount }: { followersCount: number }) {
-  const result = await fetchInstagramHeadline();
+  const [result, followersResult] = await Promise.all([fetchInstagramHeadline(), fetchInstagramFollowers()]);
   const data = result.success ? result.data : undefined;
+  // Prefer the live follower total; fall back to the stored snapshot if the live call fails.
+  const followers = followersResult.success ? (followersResult.data?.followers ?? followersCount) : followersCount;
   const fmt = (val: number | null | undefined) => (val == null ? "—" : val.toLocaleString());
 
   const cards = [
@@ -29,9 +31,7 @@ export async function InstagramHeadlineCards({ followersCount }: { followersCoun
           <CardDescription>Followers</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-2 pt-1">
-          <p className="font-medium text-3xl leading-none tracking-tight tabular-nums">
-            {followersCount.toLocaleString()}
-          </p>
+          <p className="font-medium text-3xl leading-none tracking-tight tabular-nums">{followers.toLocaleString()}</p>
           <Label>Current Count</Label>
         </CardContent>
       </Card>
