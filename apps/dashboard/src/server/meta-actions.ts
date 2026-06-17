@@ -9,7 +9,7 @@ import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
 import type { MetaIntegrationConfig, MetaPendingPage } from "@/types/meta";
 
 import { getAdminDb } from "./firebase-admin";
-import { getLatestSnapshot, snapshotInstagramForOrg } from "./meta-snapshots";
+import { getLatestSnapshot } from "./meta-snapshots";
 import {
   type DemographicItem,
   fetchAccountKpis,
@@ -271,22 +271,6 @@ export async function fetchInstagramFollowers(): Promise<{
   } catch (error) {
     console.error("Failed to fetch Instagram followers:", error);
     return { success: false, error: error instanceof Error ? error.message : "Failed to load followers." };
-  }
-}
-
-/** Manually capture today's snapshot for the active org (same logic the daily cron runs). */
-export async function refreshInstagramSnapshot(): Promise<{ success: boolean; error?: string }> {
-  const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, error: NOT_CONNECTED };
-
-  try {
-    const snapshot = await snapshotInstagramForOrg(organizationId);
-    if (!snapshot) return { success: false, error: NOT_CONNECTED };
-    revalidatePath("/dashboard/instagram");
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to refresh Instagram snapshot:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to refresh." };
   }
 }
 

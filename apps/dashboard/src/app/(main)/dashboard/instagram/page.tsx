@@ -11,7 +11,6 @@ import { InstagramHeadlineCards } from "./_components/instagram-headline-cards";
 import { InstagramKpiStrip } from "./_components/instagram-kpi-strip";
 import { InstagramReachTrend } from "./_components/instagram-reach-trend";
 import { InstagramRecentPosts } from "./_components/instagram-recent-posts";
-import { InstagramRefreshButton } from "./_components/instagram-refresh-button";
 import { InstagramPostsGrid } from "./_components/instagram-posts-grid";
 import { InstagramTabs } from "./_components/instagram-tabs";
 import { InstagramToolbar } from "./_components/instagram-toolbar";
@@ -64,8 +63,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
             <>
               <InstagramHeadlineCards followersCount={meta.followersCount} />
 
-              <div className="flex justify-end gap-2">
-                <InstagramRefreshButton />
+              <div className="flex justify-end">
                 <InstagramToolbar />
               </div>
 

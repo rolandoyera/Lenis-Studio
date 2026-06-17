@@ -44,9 +44,5 @@ Server logic lives in `src/server/`, not this folder:
 - Route: `src/app/api/cron/instagram-snapshots/route.ts`. Auth via `Authorization: Bearer $CRON_SECRET`.
 - Schedule: `vercel.json` → daily `0 6 * * *` (06:00 UTC). Vercel root dir is `apps/dashboard`.
 - Loops every org where `config.metaIntegration.connected == true`; per-org errors are isolated.
-
-## TEMP — remove later
-
-- `_components/instagram-refresh-button.tsx` + the `refreshInstagramSnapshot` action are a temporary
-  manual trigger for the snapshot job. Remove the button file, its use in `page.tsx`, and the action
-  once the cron is trusted.
+- No manual/UI trigger by design — the daily cron is the only writer. If you ever need an on-demand
+  capture, `snapshotInstagramForOrg(orgId)` in `meta-snapshots.ts` is the entry point.
