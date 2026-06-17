@@ -11,6 +11,14 @@ function formatCount(val: number): string {
   return val.toString();
 }
 
+/** "2026-06-15" → "As of Jun 15, 2026" (falls back to the raw string if unparseable). */
+function asOfLabel(date?: string): string {
+  if (!date) return "Last saved snapshot";
+  const d = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return `As of ${date}`;
+  return `As of ${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
+}
+
 export async function InstagramKpiStrip({ range }: { range?: string }) {
   const result = await fetchInstagramKpis(range);
 
@@ -22,51 +30,65 @@ export async function InstagramKpiStrip({ range }: { range?: string }) {
     );
   }
 
-  const { reach, views, profileViews, accountsEngaged, comparisonLabel } = result.data;
+  const isFallback = result.source === "fallback";
+  const { reach, views, profileViews, accountsEngaged, websiteClicks, comparisonLabel } = result.data;
   const kpis = [
     { title: "Accounts Reached", metric: reach },
     { title: "Views", metric: views },
     { title: "Profile Visits", metric: profileViews },
     { title: "Accounts Engaged", metric: accountsEngaged },
+    { title: "Website Taps", metric: websiteClicks },
   ];
 
   return (
-    <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
-      <div className="grid divide-y *:data-[slot=card]:rounded-none *:data-[slot=card]:ring-0 md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-4">
-        {kpis.map(({ title, metric }) => {
-          const noChange = Number.parseFloat(metric.change) === 0;
+    <div className="flex flex-col gap-2">
+      {isFallback && (
+        <div className="rounded-md bg-amber-500/10 px-3 py-2 text-amber-700 text-xs dark:text-amber-400">
+          Live Instagram data is unavailable — showing saved data. {asOfLabel(result.asOf)}.
+        </div>
+      )}
+      <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
+        <div className="grid divide-y *:data-[slot=card]:rounded-none *:data-[slot=card]:ring-0 md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-5">
+          {kpis.map(({ title, metric }) => {
+            const noChange = Number.parseFloat(metric.change) === 0;
 
-          return (
-            <Card key={title}>
-              <CardHeader>
-                <CardTitle className="font-normal text-sm">{title}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="text-2xl leading-none tracking-tight">{formatCount(metric.value)}</div>
-                  {noChange ? (
-                    <span className="text-muted-foreground text-xs">No change</span>
+            return (
+              <Card key={title}>
+                <CardHeader>
+                  <CardTitle className="font-normal text-sm">{title}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-2xl leading-none tracking-tight">{formatCount(metric.value)}</div>
+                    {!isFallback &&
+                      (noChange ? (
+                        <span className="text-muted-foreground text-xs">No change</span>
+                      ) : (
+                        <Badge
+                          className={
+                            metric.isPositive
+                              ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
+                              : "bg-destructive/10 text-destructive"
+                          }
+                        >
+                          {metric.isPositive ? <TrendingUp /> : <TrendingDown />}
+                          {metric.change}
+                        </Badge>
+                      ))}
+                  </div>
+                  {isFallback ? (
+                    <Label>{asOfLabel(result.asOf)}</Label>
                   ) : (
-                    <Badge
-                      className={
-                        metric.isPositive
-                          ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                          : "bg-destructive/10 text-destructive"
-                      }
-                    >
-                      {metric.isPositive ? <TrendingUp /> : <TrendingDown />}
-                      {metric.change}
-                    </Badge>
+                    <Label>
+                      vs <span className="text-base text-card-foreground">{formatCount(metric.previousValue)}</span>{" "}
+                      {comparisonLabel}
+                    </Label>
                   )}
-                </div>
-                <Label>
-                  vs <span className="text-base text-card-foreground">{formatCount(metric.previousValue)}</span>{" "}
-                  {comparisonLabel}
-                </Label>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

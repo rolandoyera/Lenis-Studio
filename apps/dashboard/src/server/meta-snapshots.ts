@@ -12,6 +12,7 @@ export interface InstagramSnapshot {
   accountsEngaged: number;
   likes: number;
   comments: number;
+  websiteClicks: number;
   /** Epoch ms the snapshot was written. */
   createdAt: number;
 }
@@ -19,6 +20,18 @@ export interface InstagramSnapshot {
 /** UTC `YYYY-MM-DD` for a Date. */
 function utcDateKey(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+/** Most recent stored snapshot for an org, or null if none exist yet. */
+export async function getLatestSnapshot(organizationId: string): Promise<InstagramSnapshot | null> {
+  const snap = await getAdminDb()
+    .collection("organizations")
+    .doc(organizationId)
+    .collection("instagramSnapshots")
+    .orderBy("date", "desc")
+    .limit(1)
+    .get();
+  return snap.empty ? null : (snap.docs[0].data() as InstagramSnapshot);
 }
 
 /**
@@ -46,6 +59,7 @@ export async function snapshotInstagramForOrg(organizationId: string): Promise<I
     accountsEngaged: kpis.accountsEngaged,
     likes: kpis.likes,
     comments: kpis.comments,
+    websiteClicks: kpis.websiteClicks,
     createdAt: Date.now(),
   };
 

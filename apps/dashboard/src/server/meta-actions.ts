@@ -9,7 +9,7 @@ import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
 import type { MetaIntegrationConfig, MetaPendingPage } from "@/types/meta";
 
 import { getAdminDb } from "./firebase-admin";
-import { snapshotInstagramForOrg } from "./meta-snapshots";
+import { getLatestSnapshot, snapshotInstagramForOrg } from "./meta-snapshots";
 import {
   type DemographicItem,
   fetchAccountKpis,
@@ -180,13 +180,27 @@ export interface InstagramKpiComparison {
   views: KpiMetric;
   profileViews: KpiMetric;
   accountsEngaged: KpiMetric;
+  websiteClicks: KpiMetric;
   comparisonLabel: string;
 }
 
+export interface InstagramKpiResult {
+  success: boolean;
+  data?: InstagramKpiComparison;
+  /** "live" = fresh from Graph; "fallback" = served from the latest stored snapshot. */
+  source?: "live" | "fallback";
+  /** Snapshot date (`YYYY-MM-DD`) when `source` is "fallback". */
+  asOf?: string;
+  error?: string;
+}
+
+/** A snapshot value as a comparison metric with no prior period to compare against. */
+function flatMetric(value: number): KpiMetric {
+  return { value, previousValue: 0, change: "0.0%", isPositive: true };
+}
+
 /** Account KPI totals (reach, views, profile visits, accounts engaged) with vs-previous comparison. */
-export async function fetchInstagramKpis(
-  range?: string,
-): Promise<{ success: boolean; data?: InstagramKpiComparison; error?: string }> {
+export async function fetchInstagramKpis(range?: string): Promise<InstagramKpiResult> {
   const organizationId = await getActiveOrgId();
   if (!organizationId) return { success: false, error: NOT_CONNECTED };
   const creds = await getStoredMetaCreds(organizationId);
@@ -200,16 +214,35 @@ export async function fetchInstagramKpis(
     ]);
     return {
       success: true,
+      source: "live",
       data: {
         reach: compareMetric(cur.reach, prev.reach),
         views: compareMetric(cur.views, prev.views),
         profileViews: compareMetric(cur.profileViews, prev.profileViews),
         accountsEngaged: compareMetric(cur.accountsEngaged, prev.accountsEngaged),
+        websiteClicks: compareMetric(cur.websiteClicks, prev.websiteClicks),
         comparisonLabel,
       },
     };
   } catch (error) {
-    console.error("Failed to fetch Instagram KPIs:", error);
+    console.error("Failed to fetch Instagram KPIs, trying snapshot fallback:", error);
+    // Live Graph call failed — serve the last stored snapshot so the strip isn't empty.
+    const snapshot = await getLatestSnapshot(organizationId);
+    if (snapshot) {
+      return {
+        success: true,
+        source: "fallback",
+        asOf: snapshot.date,
+        data: {
+          reach: flatMetric(snapshot.reach),
+          views: flatMetric(snapshot.views),
+          profileViews: flatMetric(snapshot.profileViews),
+          accountsEngaged: flatMetric(snapshot.accountsEngaged),
+          websiteClicks: flatMetric(snapshot.websiteClicks),
+          comparisonLabel: "",
+        },
+      };
+    }
     return { success: false, error: error instanceof Error ? error.message : "Failed to load Instagram metrics." };
   }
 }
