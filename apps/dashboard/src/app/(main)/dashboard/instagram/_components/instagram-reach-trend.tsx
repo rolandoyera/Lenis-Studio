@@ -2,7 +2,6 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { fetchInstagramReachTrend } from "@/server/meta-actions";
 
 import { InstagramReachChart } from "./instagram-reach-chart";
@@ -25,8 +24,8 @@ export async function InstagramReachTrend({ range }: { range?: string }) {
     );
   }
 
-  const { points, comparison, comparisonLabel } = result.data;
-  const hasData = points.length > 0 && !points.every((p) => p.reach === 0);
+  const { points, comparison } = result.data;
+  const hasData = points.length > 0 && !points.every((p) => p.current === 0 && p.previous === 0);
   const noChange = Number.parseFloat(comparison.change) === 0;
 
   return (
@@ -58,13 +57,7 @@ export async function InstagramReachTrend({ range }: { range?: string }) {
             No reach recorded in this range yet.
           </div>
         ) : (
-          <>
-            <InstagramReachChart data={points} />
-            <Label>
-              vs <span className="text-base text-card-foreground">{comparison.previousValue.toLocaleString()}</span>{" "}
-              {comparisonLabel}
-            </Label>
-          </>
+          <InstagramReachChart data={points} />
         )}
       </CardContent>
     </Card>

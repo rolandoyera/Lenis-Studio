@@ -142,6 +142,8 @@ export interface IgKpis {
   views: number;
   profileViews: number;
   accountsEngaged: number;
+  likes: number;
+  comments: number;
 }
 
 export interface IgTrendPoint {
@@ -219,7 +221,7 @@ export async function fetchAccountKpis(creds: StoredMetaCreds, since: number, un
     splitWindow(since, until).map((w) =>
       graphJson(
         `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
-          metric: "reach,views,profile_views,accounts_engaged",
+          metric: "reach,views,profile_views,accounts_engaged,likes,comments",
           period: "day",
           metric_type: "total_value",
           since: String(w.since),
@@ -245,6 +247,8 @@ export async function fetchAccountKpis(creds: StoredMetaCreds, since: number, un
     views: byName.views ?? 0,
     profileViews: byName.profile_views ?? 0,
     accountsEngaged: byName.accounts_engaged ?? 0,
+    likes: byName.likes ?? 0,
+    comments: byName.comments ?? 0,
   };
 }
 

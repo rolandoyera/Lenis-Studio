@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { cookies } from "next/headers";
 
 import { FieldValue } from "firebase-admin/firestore";
@@ -21,7 +21,6 @@ import {
   fetchRecentMedia,
   getStoredMetaCreds,
   type IgMediaItem,
-  type IgTrendPoint,
   storeMetaConnection,
 } from "./meta-graph";
 
@@ -241,8 +240,53 @@ export async function fetchInstagramFollowers(): Promise<{
   }
 }
 
+export interface InstagramHeadline {
+  /** Net followers gained over the window; null when IG won't expose it (<100 followers). */
+  newFollowers: number | null;
+  likes: number;
+  comments: number;
+  profileViews: number;
+}
+
+/** Fixed last-30-days totals for the headline cards (not driven by the range dropdown). */
+export async function fetchInstagramHeadline(): Promise<{
+  success: boolean;
+  data?: InstagramHeadline;
+  error?: string;
+}> {
+  const organizationId = await getActiveOrgId();
+  if (!organizationId) return { success: false, error: NOT_CONNECTED };
+  const creds = await getStoredMetaCreds(organizationId);
+  if (!creds) return { success: false, error: NOT_CONNECTED };
+
+  try {
+    const until = Math.floor(Date.now() / 1000);
+    const since = until - 30 * 24 * 60 * 60;
+    const [kpis, gains] = await Promise.all([
+      fetchAccountKpis(creds, since, until),
+      fetchFollowerGains(creds, since, until),
+    ]);
+    return {
+      success: true,
+      data: { newFollowers: gains, likes: kpis.likes, comments: kpis.comments, profileViews: kpis.profileViews },
+    };
+  } catch (error) {
+    console.error("Failed to fetch Instagram headline:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to load metrics." };
+  }
+}
+
+export interface ReachTrendPoint {
+  /** Current-window date (the x-axis label). */
+  label: string;
+  /** Aligned previous-window date, shown alongside the previous value in the tooltip. */
+  previousLabel: string;
+  current: number;
+  previous: number;
+}
+
 export interface InstagramReachTrend {
-  points: IgTrendPoint[];
+  points: ReachTrendPoint[];
   /** Total reach over the current window, compared to the previous window. */
   comparison: KpiMetric;
   comparisonLabel: string;
@@ -265,9 +309,17 @@ export async function fetchInstagramReachTrend(
     ]);
     const total = curPoints.reduce((sum, p) => sum + p.reach, 0);
     const previousTotal = prevPoints.reduce((sum, p) => sum + p.reach, 0);
+    // Both windows are equal length, so align the previous series to the current
+    // one by day index — the x-axis shows current-window dates.
+    const points: ReachTrendPoint[] = curPoints.map((p, i) => ({
+      label: p.label,
+      previousLabel: prevPoints[i]?.label ?? "",
+      current: p.reach,
+      previous: prevPoints[i]?.reach ?? 0,
+    }));
     return {
       success: true,
-      data: { points: curPoints, comparison: compareMetric(total, previousTotal), comparisonLabel },
+      data: { points, comparison: compareMetric(total, previousTotal), comparisonLabel },
     };
   } catch (error) {
     console.error("Failed to fetch Instagram reach trend:", error);
@@ -287,7 +339,19 @@ export async function fetchInstagramMedia(limit = 10): Promise<{
   if (!creds) return { success: false, data: [], error: NOT_CONNECTED };
 
   try {
-    return { success: true, data: await fetchRecentMedia(creds, limit) };
+    // The Graph API returns signed CDN URLs that rotate on every call, so re-fetching
+    // on each navigation hands next/image a new src and busts both the optimizer and
+    // browser caches. Cache the result per org so revisits reuse identical URLs. The 6h
+    // window stays well inside Meta's URL expiry while limiting how often next/image
+    // re-transforms the same (rotated-URL) thumbnails.
+    const data = await unstable_cache(
+      () => fetchRecentMedia(creds, limit),
+      ["ig-media", organizationId, String(limit)],
+      {
+        revalidate: 21600,
+      },
+    )();
+    return { success: true, data };
   } catch (error) {
     console.error("Failed to fetch Instagram media:", error);
     return { success: false, data: [], error: error instanceof Error ? error.message : "Failed to load posts." };

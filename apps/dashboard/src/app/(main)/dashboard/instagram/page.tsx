@@ -4,12 +4,12 @@ import Link from "next/link";
 import PageHeader from "@/components/page-header";
 import { PageTitle } from "@/components/page-title-updater";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getMetaConnection } from "@/server/meta-actions";
 
 import { InstagramDemographics } from "./_components/instagram-demographics";
+import { InstagramHeadlineCards } from "./_components/instagram-headline-cards";
 import { InstagramKpiStrip } from "./_components/instagram-kpi-strip";
 import { InstagramReachTrend } from "./_components/instagram-reach-trend";
 import { InstagramRecentPosts } from "./_components/instagram-recent-posts";
@@ -24,7 +24,18 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
   return (
     <div className="flex flex-col gap-6">
       <PageTitle title="Instagram" />
-      <PageHeader title="Instagram" description="How clients discover and interact with your brand on Instagram." />
+      <div className="flex items-center justify-between">
+        <PageHeader title="Instagram" description="How clients discover and interact with your brand on Instagram." />
+        {meta && (
+          <div className="flex flex-col items-center gap-2">
+            <Avatar className="size-9">
+              <AvatarImage src={meta.instagramProfilePictureUrl} alt={meta.instagramUsername} />
+              <AvatarFallback>{meta.instagramUsername.slice(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span className="font-medium text-card-foreground text-sm">@{meta.instagramUsername}</span>
+          </div>
+        )}
+      </div>
 
       {!meta ? (
         <Card className="flex flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -44,41 +55,26 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
           </Button>
         </Card>
       ) : (
-        <>
-          <Card className="flex items-center gap-3 p-4">
-            <Avatar>
-              <AvatarImage src={meta.instagramProfilePictureUrl} alt={meta.instagramUsername} />
-              <AvatarFallback>{meta.instagramUsername.slice(0, 2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">@{meta.instagramUsername}</span>
-                <div className="flex h-5 items-center">
-                  <Badge variant="success">Connected</Badge>
-                </div>
+        <InstagramTabs
+          overview={
+            <>
+              <InstagramHeadlineCards followersCount={meta.followersCount} />
+
+              <div className="flex justify-end">
+                <InstagramToolbar />
               </div>
-              <p className="text-muted-foreground text-xs">
-                {meta.followersCount.toLocaleString()} followers · {meta.mediaCount} posts
-              </p>
-            </div>
-          </Card>
 
-          <InstagramTabs
-            toolbar={<InstagramToolbar />}
-            overview={
-              <>
-                <InstagramKpiStrip range={range} />
+              <InstagramKpiStrip range={range} />
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <InstagramReachTrend range={range} />
-                  <InstagramRecentPosts />
-                </div>
-              </>
-            }
-            posts={<InstagramPostsGrid />}
-            audience={<InstagramDemographics />}
-          />
-        </>
+              <div className="grid gap-6 lg:grid-cols-1">
+                <InstagramReachTrend range={range} />
+                <InstagramRecentPosts />
+              </div>
+            </>
+          }
+          posts={<InstagramPostsGrid />}
+          audience={<InstagramDemographics />}
+        />
       )}
     </div>
   );

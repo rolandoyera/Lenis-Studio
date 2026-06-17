@@ -11,6 +11,7 @@ import * as z from "zod";
 
 import { useAuth } from "@/components/auth-context";
 import { DashboardImage } from "@/components/dashboard-image";
+import { FadeIn } from "@/components/fade-in";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -186,7 +187,7 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
   }
 
   return (
-    <div className="fade-in flex w-full animate-in flex-col gap-6 duration-300">
+    <FadeIn className="flex w-full flex-col gap-6">
       {/* Banner / Stat Bar */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-6">
         <Card>
@@ -433,6 +434,6 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
           onItemAdded={handleItemAdded}
         />
       )}
-    </div>
+    </FadeIn>
   );
 }

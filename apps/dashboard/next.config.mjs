@@ -7,6 +7,9 @@ const nextConfig = {
     viewTransition: true,
   },
   images: {
+    // Hold optimized images (incl. rotating Instagram CDN thumbnails) for 6h so they
+    // don't re-optimize on every revisit. Matches the server-side media cache window.
+    minimumCacheTTL: 21600,
     remotePatterns: [
       {
         protocol: "https",

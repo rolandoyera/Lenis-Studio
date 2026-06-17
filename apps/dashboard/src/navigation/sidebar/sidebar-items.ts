@@ -41,6 +41,8 @@ export interface NavMainItem {
   comingSoon?: boolean;
   newTab?: boolean;
   isNew?: boolean;
+  /** Opt this link into Next route prefetch (off by default for the rest of the nav). */
+  prefetch?: boolean;
 }
 
 export interface NavGroup {
@@ -68,6 +70,8 @@ export const sidebarItems: NavGroup[] = [
         title: "Instagram",
         url: "/dashboard/instagram",
         icon: InstagramIcon,
+        // Warm the page (and the cached post URLs) on hover so it opens instantly.
+        prefetch: true,
       },
       {
         title: "Analytics",

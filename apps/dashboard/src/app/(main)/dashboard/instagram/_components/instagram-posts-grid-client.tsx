@@ -4,6 +4,7 @@ import { Heart, ImageOff, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useState } from "react";
 
+import { FadeIn } from "@/components/fade-in";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { IgMediaItem } from "@/server/meta-graph";
@@ -46,7 +47,7 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
   }, [posts, sort]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <FadeIn className="flex w-full flex-col gap-6">
       <div className="flex justify-end">
         <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
           <SelectTrigger className="w-40" size="sm">
@@ -62,7 +63,7 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
         {sortedPosts.map((post) => {
           const image = post.thumbnailUrl || post.mediaUrl;
           return (
@@ -110,6 +111,6 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
           );
         })}
       </div>
-    </div>
+    </FadeIn>
   );
 }
