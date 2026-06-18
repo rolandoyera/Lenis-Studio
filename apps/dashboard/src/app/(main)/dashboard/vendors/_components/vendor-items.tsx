@@ -20,13 +20,13 @@ interface VendorItemsProps {
 
 export function VendorItems({ items, onAddItem }: VendorItemsProps) {
   return (
-    <Card className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between">
+    <Card className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none pt-0">
+      <CardHeader className="bg-muted/50">
+        <CardTitle className="flex items-center justify-between h-14">
           <span className="flex items-center gap-2">
             <ShoppingBag className="icons" />
             Linked Library Items
-            <Badge variant="secondary" className="px-2 py-0.5 font-bold text-xs">
+            <Badge variant="secondary" className="px-1 text-xs h-4 py-0 -mt-3">
               {items.length}
             </Badge>
           </span>
@@ -63,7 +63,7 @@ export function VendorItems({ items, onAddItem }: VendorItemsProps) {
             {items.map((item) => (
               <div key={item.itemId} className="flex items-center gap-3 p-3">
                 {/* Thumbnail */}
-                <div className="relative flex size-32 shrink-0 items-center justify-center overflow-hidden rounded border border-border/50 bg-background/50">
+                <div className="relative flex size-32 shrink-0 items-center justify-center overflow-hidden bg-background/50">
                   {item.coverImageUrl ? (
                     <DashboardImage
                       src={item.coverImageUrl}

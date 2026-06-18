@@ -76,15 +76,75 @@ export function isValidUsPhone(value: string): boolean {
   return digits.length === 10;
 }
 
+/** Phone countries that use the US-style `(XXX) XXX-XXXX` formatter. */
+function usesUsPhoneFormat(phoneCountry: string | undefined | null): boolean {
+  return phoneCountry === "US" || phoneCountry === "CA";
+}
+
+/** Keep only characters valid in an international phone string (+, digits, spaces, () . -). */
+function sanitizeIntlPhone(value: string): string {
+  return (value ?? "").replace(/[^\d+().\-\s]/g, "");
+}
+
+/**
+ * Format a vendor phone for input/display, dispatching on the rep's phone country.
+ * - A leading `+` means international: preserved as typed (only stripped of invalid chars).
+ * - US/CA without a leading `+` use the standard `formatPhone`.
+ * - Any other country keeps free-form input (+, digits, spaces, () . -).
+ */
+export function formatVendorPhone(value: string, phoneCountry: string | undefined | null): string {
+  const raw = value ?? "";
+  if (raw.trim().startsWith("+")) return sanitizeIntlPhone(raw);
+  if (usesUsPhoneFormat(phoneCountry)) return formatPhone(raw);
+  return sanitizeIntlPhone(raw);
+}
+
+/**
+ * Validate a vendor phone given its phone country (for Zod). US/CA numbers without
+ * a leading `+` must be a complete US number; everything else is free-form and only
+ * needs to contain at least one digit using the allowed phone characters.
+ */
+export function isValidVendorPhone(value: string, phoneCountry: string | undefined | null): boolean {
+  const raw = (value ?? "").trim();
+  if (raw.length === 0) return true;
+  if (!raw.startsWith("+") && usesUsPhoneFormat(phoneCountry)) return isValidUsPhone(raw);
+  return /^\+?[\d\s().-]+$/.test(raw) && /\d/.test(raw);
+}
+
+/**
+ * Build a `tel:` value for a vendor phone. International numbers (leading `+` or a
+ * non-US/CA phone country) keep their `+` and digits; US/CA fall back to the
+ * 10-digit `normalizePhone`.
+ */
+export function vendorPhoneTel(value: string, phoneCountry?: string | null): string {
+  const raw = (value ?? "").trim();
+  if (raw.startsWith("+")) return `+${raw.replace(/\D/g, "")}`;
+  if (usesUsPhoneFormat(phoneCountry) || !phoneCountry) return normalizePhone(raw);
+  return raw.replace(/\D/g, "");
+}
+
 /** Strip a ZIP to its USA 5-digit core (digits only, capped at 5). */
 export function formatZip(value: string): string {
   return (value ?? "").replace(/\D/g, "").slice(0, 5);
 }
 
-/** True when a ZIP field is empty or a complete 5-digit US ZIP code (for Zod `.refine`). */
+/**
+ * Format a US ZIP supporting ZIP+4: digits only, `XXXXX` or `XXXXX-XXXX`.
+ * Inserts the hyphen once a 6th digit is typed; idempotent for display.
+ */
+export function formatUsZip(value: string): string {
+  const digits = (value ?? "").replace(/\D/g, "").slice(0, 9);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+/**
+ * True when a ZIP field is empty or a complete US ZIP — 5-digit or ZIP+4
+ * (9-digit) — for Zod `.refine`.
+ */
 export function isValidUsZip(value: string): boolean {
   const digits = (value ?? "").replace(/\D/g, "");
-  return digits.length === 0 || digits.length === 5;
+  return digits.length === 0 || digits.length === 5 || digits.length === 9;
 }
 
 /** Strip a Tax ID string to its 9-digit core (digits only, capped at 9). */

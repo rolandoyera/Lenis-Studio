@@ -10,6 +10,15 @@ import { toast } from "sonner";
 import LunaMoon from "@/components/LunaMoon";
 import { Button } from "@/components/ui/button";
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -25,19 +34,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { runAiActionWithRetry } from "@/lib/ai-retry";
 import { uploadVendorImage } from "@/lib/db";
-import { formatPhone, formatZip } from "@/lib/utils";
+import { cn, formatUsZip, formatVendorPhone } from "@/lib/utils";
 import { autofillVendorFromUrl } from "@/server/ai-actions";
 
 import {
-  cleanTrailingSlash,
+  COUNTRIES,
+  type CountryOption,
   EMPTY_VENDOR_FORM,
+  regionLabelFor,
   VENDOR_CATEGORIES,
   type VendorFormData,
   vendorSchema,
   vendorToForm,
 } from "./vendor-constants";
 
-export { cleanTrailingSlash, EMPTY_VENDOR_FORM, VENDOR_CATEGORIES, type VendorFormData, vendorSchema, vendorToForm };
+export { EMPTY_VENDOR_FORM, VENDOR_CATEGORIES, type VendorFormData, vendorSchema, vendorToForm };
 
 const LABEL_CLASS = "h-5 flex items-center";
 
@@ -200,10 +211,14 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
 
   const logoUrlValue = watch("logoUrl");
   const heroImageUrlValue = watch("heroImageUrl");
+  const countryValue = watch("country");
+  const phoneCountryValue = watch("repPhoneCountry");
+  const [phoneCountryTouched, setPhoneCountryTouched] = useState(false);
 
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
   const [tempVendorId, setTempVendorId] = useState("");
+  const [comboboxContainer, setComboboxContainer] = useState<HTMLDivElement | null>(null);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -257,8 +272,17 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
     if (open) {
       reset(initialData ?? EMPTY_VENDOR_FORM);
       setTempVendorId(vendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`);
+      setPhoneCountryTouched(false);
     }
   }, [open, initialData, reset, vendorId]);
+
+  // While adding, keep the phone country following the address country until the
+  // user overrides it. (Edit mode respects the stored repPhoneCountry as-is.)
+  useEffect(() => {
+    if (mode === "add" && !phoneCountryTouched) {
+      setValue("repPhoneCountry", countryValue);
+    }
+  }, [mode, phoneCountryTouched, countryValue, setValue]);
 
   const handleEnrich = async () => {
     const url = getValues("website");
@@ -272,11 +296,18 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
         if (d.name) setValue("name", d.name);
         if (d.category) setValue("category", d.category);
         if (d.description) setValue("description", d.description);
-        if (d.street) setValue("street", d.street);
+        if (d.addressLine1) setValue("addressLine1", d.addressLine1);
+        if (d.addressLine2) setValue("addressLine2", d.addressLine2);
         if (d.city) setValue("city", d.city);
-        if (d.state) setValue("state", d.state);
-        if (d.zip) setValue("zip", d.zip);
-        if (d.repPhone) setValue("repPhone", formatPhone(d.repPhone));
+        if (d.region) setValue("region", d.region);
+        if (d.country) setValue("country", d.country);
+        if (d.postalCode) {
+          setValue("postalCode", d.country === "US" ? formatUsZip(d.postalCode) : d.postalCode);
+        }
+        if (d.formattedAddress) setValue("formattedAddress", d.formattedAddress);
+        if (d.repPhone) {
+          setValue("repPhone", formatVendorPhone(d.repPhone, d.country ?? getValues("repPhoneCountry")));
+        }
         if (d.repEmail) setValue("repEmail", d.repEmail);
         if (d.logoUrl) setValue("logoUrl", d.logoUrl);
         if (d.heroImageUrl) setValue("heroImageUrl", d.heroImageUrl);
@@ -322,6 +353,8 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
         }}
       >
         <DialogContent className="sm:max-w-3xl">
+          {/* Portal target so the country combobox popup renders within the dialog. */}
+          <div ref={setComboboxContainer} />
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate autoComplete="off">
             <DialogHeader>
               <DialogTitle className="text-xl">{mode === "edit" ? "Edit Vendor" : "Add Vendor"}</DialogTitle>
@@ -389,10 +422,6 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                         aria-invalid={fieldState.invalid}
                         className="flex-1"
                         autoComplete="one-time-code"
-                        onBlur={(e) => {
-                          field.onBlur();
-                          field.onChange(cleanTrailingSlash(e.target.value));
-                        }}
                       />
                       <Button
                         type="button"
@@ -597,21 +626,89 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
               {/* Address */}
               <Controller
                 control={control}
-                name="street"
+                name="addressLine1"
                 render={({ field, fieldState }) => (
                   <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                    <Label className={LABEL_CLASS}>Street Address</Label>
+                    <Label className={LABEL_CLASS}>Address Line 1</Label>
                     <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
-              <div className="grid grid-cols-4 gap-4">
+              <Controller
+                control={control}
+                name="addressLine2"
+                render={({ field, fieldState }) => (
+                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Label className={LABEL_CLASS}>Address Line 2</Label>
+                    <Input
+                      {...field}
+                      placeholder="Apt, suite, unit, building, floor, etc."
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="one-time-code"
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Controller
+                  control={control}
+                  name="country"
+                  render={({ field, fieldState }) => {
+                    const selected = COUNTRIES.find((c) => c.code === field.value) ?? null;
+                    return (
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>
+                          Country <span className="ml-0.5 text-destructive">*</span>
+                        </Label>
+                        <Combobox
+                          value={selected}
+                          onValueChange={(item: CountryOption | null) => field.onChange(item?.code ?? "")}
+                          items={COUNTRIES}
+                          filter={(item: CountryOption, inputValue: string) =>
+                            item.name.toLowerCase().includes(inputValue.toLowerCase())
+                          }
+                        >
+                          <ComboboxTrigger
+                            render={
+                              <button
+                                type="button"
+                                aria-invalid={fieldState.invalid}
+                                className={cn(
+                                  "flex h-10 w-full items-center justify-between whitespace-nowrap rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors",
+                                  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                                  "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+                                  "dark:bg-input/30",
+                                  !selected && "text-muted-foreground",
+                                )}
+                              >
+                                {selected ? selected.name : "Select country..."}
+                              </button>
+                            }
+                          />
+                          <ComboboxContent container={comboboxContainer}>
+                            <ComboboxInput showTrigger={false} placeholder="Search countries..." />
+                            <ComboboxEmpty>No country found.</ComboboxEmpty>
+                            <ComboboxList>
+                              {(item: CountryOption) => (
+                                <ComboboxItem key={item.code} value={item}>
+                                  {item.name}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    );
+                  }}
+                />
                 <Controller
                   control={control}
                   name="city"
                   render={({ field, fieldState }) => (
-                    <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>City</Label>
                       <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -620,32 +717,35 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                 />
                 <Controller
                   control={control}
-                  name="state"
+                  name="region"
                   render={({ field, fieldState }) => (
                     <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                      <Label className={LABEL_CLASS}>State</Label>
-                      <Input {...field} maxLength={2} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
+                      <Label className={LABEL_CLASS}>{regionLabelFor(countryValue)}</Label>
+                      <Input {...field} aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
                 />
                 <Controller
                   control={control}
-                  name="zip"
-                  render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
-                      <Label className={LABEL_CLASS}>ZIP</Label>
-                      <Input
-                        {...field}
-                        inputMode="numeric"
-                        maxLength={5}
-                        aria-invalid={fieldState.invalid}
-                        onChange={(e) => field.onChange(formatZip(e.target.value))}
-                        autoComplete="one-time-code"
-                      />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                    </Field>
-                  )}
+                  name="postalCode"
+                  render={({ field, fieldState }) => {
+                    const isUs = countryValue === "US";
+                    return (
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>{isUs ? "ZIP Code" : "Postal Code"}</Label>
+                        <Input
+                          {...field}
+                          inputMode={isUs ? "numeric" : undefined}
+                          maxLength={isUs ? 10 : 20}
+                          aria-invalid={fieldState.invalid}
+                          onChange={(e) => field.onChange(isUs ? formatUsZip(e.target.value) : e.target.value)}
+                          autoComplete="one-time-code"
+                        />
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    );
+                  }}
                 />
               </div>
 
@@ -666,12 +766,68 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                   control={control}
                   name="repEmail"
                   render={({ field, fieldState }) => (
-                    <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                       <Label className={LABEL_CLASS}>Contact Email</Label>
                       <Input {...field} type="email" aria-invalid={fieldState.invalid} autoComplete="one-time-code" />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
+                />
+                <Controller
+                  control={control}
+                  name="repPhoneCountry"
+                  render={({ field, fieldState }) => {
+                    const selected = COUNTRIES.find((c) => c.code === field.value) ?? null;
+                    return (
+                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                        <Label className={LABEL_CLASS}>Phone Country</Label>
+                        <Combobox
+                          value={selected}
+                          onValueChange={(item: CountryOption | null) => {
+                            setPhoneCountryTouched(true);
+                            const code = item?.code ?? "";
+                            field.onChange(code);
+                            // Re-apply formatting to the existing number under the new country.
+                            setValue("repPhone", formatVendorPhone(getValues("repPhone"), code));
+                          }}
+                          items={COUNTRIES}
+                          filter={(item: CountryOption, inputValue: string) =>
+                            item.name.toLowerCase().includes(inputValue.toLowerCase())
+                          }
+                        >
+                          <ComboboxTrigger
+                            render={
+                              <button
+                                type="button"
+                                aria-invalid={fieldState.invalid}
+                                className={cn(
+                                  "flex h-10 w-full items-center justify-between whitespace-nowrap rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors",
+                                  "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                                  "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+                                  "dark:bg-input/30",
+                                  !selected && "text-muted-foreground",
+                                )}
+                              >
+                                {selected ? selected.name : "Select country..."}
+                              </button>
+                            }
+                          />
+                          <ComboboxContent container={comboboxContainer}>
+                            <ComboboxInput showTrigger={false} placeholder="Search countries..." />
+                            <ComboboxEmpty>No country found.</ComboboxEmpty>
+                            <ComboboxList>
+                              {(item: CountryOption) => (
+                                <ComboboxItem key={item.code} value={item}>
+                                  {item.name}
+                                </ComboboxItem>
+                              )}
+                            </ComboboxList>
+                          </ComboboxContent>
+                        </Combobox>
+                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      </Field>
+                    );
+                  }}
                 />
                 <Controller
                   control={control}
@@ -682,7 +838,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                       <Input
                         {...field}
                         aria-invalid={fieldState.invalid}
-                        onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                        onChange={(e) => field.onChange(formatVendorPhone(e.target.value, phoneCountryValue))}
                         autoComplete="one-time-code"
                       />
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -710,10 +866,6 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                           {...field}
                           placeholder="https://instagram.com/handle"
                           aria-invalid={fieldState.invalid}
-                          onBlur={(e) => {
-                            field.onBlur();
-                            field.onChange(cleanTrailingSlash(e.target.value));
-                          }}
                         />
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>
@@ -732,10 +884,6 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                           {...field}
                           placeholder="https://pinterest.com/handle"
                           aria-invalid={fieldState.invalid}
-                          onBlur={(e) => {
-                            field.onBlur();
-                            field.onChange(cleanTrailingSlash(e.target.value));
-                          }}
                         />
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>
@@ -750,15 +898,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                         data-invalid={fieldState.invalid}
                       >
                         <Label className={LABEL_CLASS}>Facebook URL</Label>
-                        <Input
-                          {...field}
-                          placeholder="https://facebook.com/handle"
-                          aria-invalid={fieldState.invalid}
-                          onBlur={(e) => {
-                            field.onBlur();
-                            field.onChange(cleanTrailingSlash(e.target.value));
-                          }}
-                        />
+                        <Input {...field} placeholder="https://facebook.com/handle" aria-invalid={fieldState.invalid} />
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>
                     )}
@@ -776,10 +916,6 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                           {...field}
                           placeholder="https://youtube.com/c/handle"
                           aria-invalid={fieldState.invalid}
-                          onBlur={(e) => {
-                            field.onBlur();
-                            field.onChange(cleanTrailingSlash(e.target.value));
-                          }}
                         />
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>
@@ -791,15 +927,7 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                     render={({ field, fieldState }) => (
                       <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>X / Twitter URL</Label>
-                        <Input
-                          {...field}
-                          placeholder="https://x.com/handle"
-                          aria-invalid={fieldState.invalid}
-                          onBlur={(e) => {
-                            field.onBlur();
-                            field.onChange(cleanTrailingSlash(e.target.value));
-                          }}
-                        />
+                        <Input {...field} placeholder="https://x.com/handle" aria-invalid={fieldState.invalid} />
                         {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                       </Field>
                     )}

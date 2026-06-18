@@ -24,8 +24,10 @@ A vendor directory (trade vendors / procurement reps). Two routes, both **client
 
 - `_components/vendor-constants.ts` — the **single source of truth** for the form: `vendorSchema`
   (Zod), `VendorFormData` (inferred type), `VENDOR_CATEGORIES`, `EMPTY_VENDOR_FORM`, `vendorToForm`
-  (Vendor → form), and `cleanTrailingSlash`. The `Vendor` Firestore type itself lives in
-  `@/lib/types`.
+  (Vendor → form), and the international-address helpers: `COUNTRIES`
+  (built from the `country-list` dep, US + Canada pinned), `countryName`, `regionLabelFor`
+  (US→State, CA→Province, else→Region), and `formatVendorAddress`. The `Vendor` Firestore type
+  itself lives in `@/lib/types`.
 - `_components/vendor-form-dialog.tsx` — the add/edit dialog (RHF + `zodResolver`), image uploads,
   the "Enrich with AI" flow, and the `ImagePickerDialog` for choosing among scraped candidates.
   Re-exports the constants module so callers import everything from here.
@@ -94,7 +96,10 @@ go through the mirror so links don't rot and `DashboardImage` can serve them.
 
 The website field's button calls `autofillVendorFromUrl(url)` (`src/server/ai-actions.ts`, a
 `"use server"` action; Gemini + Jina scrape, keys server-only). It returns scalar fields (name,
-category, address, rep, socials) plus `logoCandidates`/`imageCandidates` arrays. When multiple image
+category, the international address fields incl. `country` as an ISO alpha-2 code and a
+`formattedAddress` fallback, rep, socials) plus `logoCandidates`/`imageCandidates` arrays. The
+prompt is explicitly told **not to assume the US** and to always return a `formattedAddress` even
+when it can't split the address into discrete fields. When multiple image
 candidates come back (`showImagePicker`), `ImagePickerDialog` opens so the user picks logo + hero;
 the candidate buttons remain available afterward via the "Select … Candidate" buttons. Enrichment
 only fills form state — nothing is saved until the user submits.
@@ -104,13 +109,31 @@ only fills form state — nothing is saved until the user submits.
 - **Form changes are three-touch.** A new vendor field means updating `vendorSchema`,
   `EMPTY_VENDOR_FORM`, **and** `vendorToForm` in `vendor-constants.ts`, plus rendering a `Controller`
   in `vendor-form-dialog.tsx`. Miss one and RHF/Zod will silently drop or mistype the field.
-- **Phone/ZIP go through shared helpers.** Format with `formatPhone`/`formatZip` on change, build
-  `tel:` links with `normalizePhone`, validate via `isValidUsPhone`/`isValidUsZip` in the schema.
-  Never write a local formatter (root AGENTS.md rule).
-- **Social/website URLs are stored slash-trimmed and rendered via `vendor-links.ts`.** The schema
-  `.transform(cleanTrailingSlash)`s them and the fields `onBlur`-clean too. Always derive hrefs with
-  `getVendorSocialHrefs` rather than using the raw stored value — empty fields must resolve to
-  `null` so the icon renders disabled.
+- **Phone/postal go through shared helpers.** Phones are international too: a separate
+  `repPhoneCountry` (ISO alpha-2) drives formatting/validation, defaulting to the address `country`
+  but independently overridable (in add mode it follows the address country until the user picks a
+  phone country). The selector is always shown next to the phone field. Format with
+  `formatVendorPhone(value, repPhoneCountry)` on change/display, build
+  `tel:` links with `vendorPhoneTel`, validate via `isValidVendorPhone` (US/CA require a full
+  10-digit number; a leading `+` or any other country is free-form: +, digits, spaces, `()`, `.`,
+  `-`). The address is international:
+  `country` (ISO alpha-2) is the only required address field. The `postalCode` field formats with
+  `formatUsZip` and validates via `isValidUsZip` (accepts 5-digit **and** ZIP+4) **only when
+  `country === "US"`** (enforced in a schema `.superRefine`); other countries accept free-form
+  postal text. Never write a local formatter (root AGENTS.md rule).
+- **`formattedAddress` is always written.** A schema-level `.transform` keeps any AI/manual
+  `formattedAddress`, else composes one from the parts via `formatVendorAddress` (which omits the
+  country name for US). The detail page prefers the stored `formattedAddress` for display.
+- **Legacy address back-compat.** Older docs only have `street`/`state`/`zip` (now `@deprecated`
+  on the `Vendor` type). `vendorToForm` and the detail page read the new fields with a fallback to
+  those; new saves write the new fields only (legacy keys are left untouched in old docs, not
+  migrated).
+- **Social/website URLs are stored verbatim (only whitespace-trimmed) and rendered via
+  `vendor-links.ts`.** We deliberately do **not** strip trailing slashes — a trailing `/` can be
+  significant (e.g. a locale path like `/en/` that 404s without it, which the AI-enrich scrape
+  fetches directly). Always derive hrefs with `getVendorSocialHrefs` rather than using the raw
+  stored value — empty fields must resolve to `null` so the icon renders disabled; `getDisplayUrl`
+  still strips scheme/`www`/trailing slash for display only.
 - **Deletion is gated by linked items.** If `getVendorLibraryItems` is non-empty the delete dialog
   refuses and lists the items; only an empty result allows `deleteVendor`. Don't bypass this.
 - **`organizationId` is the effect dependency, not `profile`.** Both routes depend on the stable

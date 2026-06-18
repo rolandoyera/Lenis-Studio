@@ -27,7 +27,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { H1, H3 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
-import { formatPhone, getInitials } from "@/lib/utils";
+import { formatVendorPhone, getInitials } from "@/lib/utils";
 import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
 
 import {
@@ -148,13 +148,11 @@ export default function VendorsPage() {
         {/* Filter and search controls combined into a clean layout */}
         <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
           {/* Category Tabs */}
-          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full md:w-auto">
-            <TabsList className="flex h-auto! max-w-full flex-wrap gap-0.5">
-              <TabsTrigger value="All" className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
-                All Vendors
-              </TabsTrigger>
+          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+            <TabsList className="flex max-w-full flex-wrap gap-0.5">
+              <TabsTrigger value="All">All Vendors</TabsTrigger>
               {VENDOR_CATEGORIES.map((cat) => (
-                <TabsTrigger key={cat} value={cat} className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
+                <TabsTrigger key={cat} value={cat}>
                   {cat}
                 </TabsTrigger>
               ))}
@@ -286,7 +284,7 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
               {vendor.repPhone && (
                 <span className="flex items-center gap-1.5">
                   <Phone className="size-3 shrink-0" />
-                  {formatPhone(vendor.repPhone)}
+                  {formatVendorPhone(vendor.repPhone, vendor.repPhoneCountry)}
                 </span>
               )}
             </div>

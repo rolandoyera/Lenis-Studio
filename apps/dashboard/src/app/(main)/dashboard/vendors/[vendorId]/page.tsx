@@ -31,11 +31,12 @@ import {
 } from "@/lib/db";
 import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
-import { formatPhone, normalizePhone } from "@/lib/utils";
+import { formatVendorPhone, vendorPhoneTel } from "@/lib/utils";
 import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
 
 import { LibraryItemFormDialog } from "../../library/_components/library-item-form-dialog";
 import { useLibraryItemForm } from "../../library/_components/use-library-item-form";
+import { formatVendorAddress } from "../_components/vendor-constants";
 import { type VendorFormData, VendorFormDialog, vendorToForm } from "../_components/vendor-form-dialog";
 import { VendorHeader } from "../_components/vendor-header";
 import { VendorHero } from "../_components/vendor-hero";
@@ -196,6 +197,19 @@ export default function VendorDetailPage({ params }: PageProps) {
 
   if (!vendor) return null;
 
+  // Prefer the stored formattedAddress; otherwise compose it from the discrete
+  // fields, falling back to the deprecated US-only fields on older docs.
+  const addressText =
+    vendor.formattedAddress?.trim() ||
+    formatVendorAddress({
+      addressLine1: vendor.addressLine1 ?? vendor.street,
+      addressLine2: vendor.addressLine2,
+      city: vendor.city,
+      region: vendor.region ?? vendor.state,
+      postalCode: vendor.postalCode ?? vendor.zip,
+      country: vendor.country,
+    });
+
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <VendorHeader vendor={vendor} onEdit={() => setIsEditOpen(true)} onRequestDelete={() => setIsDeleteOpen(true)} />
@@ -215,9 +229,9 @@ export default function VendorDetailPage({ params }: PageProps) {
       {/* Account Info Card */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Account & Address */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>
+        <Card className="pt-0">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="h-14">
               <Building2 className="icons" />
               Account Information
             </CardTitle>
@@ -233,32 +247,25 @@ export default function VendorDetailPage({ params }: PageProps) {
               </div>
             ) : null}
 
-            {vendor.street || vendor.city || vendor.state || vendor.zip ? (
+            {addressText ? (
               <div className="flex flex-col gap-1">
                 <Label>Address</Label>
                 <span className="flex items-start gap-2 text-foreground/80">
                   <MapPin className="icons" />
-                  <span>
-                    {vendor.street && <span className="block">{vendor.street}</span>}
-                    {(vendor.city || vendor.state || vendor.zip) && (
-                      <span className="block">
-                        {[vendor.city, vendor.state].filter(Boolean).join(", ") + (vendor.zip ? ` ${vendor.zip}` : "")}
-                      </span>
-                    )}
-                  </span>
+                  <span>{addressText}</span>
                 </span>
               </div>
             ) : null}
-            {!vendor.accountNumber && !vendor.street && !vendor.city && !vendor.state && !vendor.zip && (
+            {!vendor.accountNumber && !addressText && (
               <p className="text-muted-foreground/50 text-sm italic">No account information on file.</p>
             )}
           </CardContent>
         </Card>
 
         {/* Rep Contact */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle>
+        <Card className="pt-0">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="h-14">
               <Mail className="icons" />
               Contact Information
             </CardTitle>
@@ -286,11 +293,11 @@ export default function VendorDetailPage({ params }: PageProps) {
               <div className="flex flex-col gap-1">
                 <Label>Phone</Label>
                 <a
-                  href={`tel:${normalizePhone(vendor.repPhone)}`}
+                  href={`tel:${vendorPhoneTel(vendor.repPhone, vendor.repPhoneCountry)}`}
                   className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary"
                 >
                   <Phone className="icons" />
-                  {formatPhone(vendor.repPhone)}
+                  {formatVendorPhone(vendor.repPhone, vendor.repPhoneCountry)}
                 </a>
               </div>
             ) : null}
@@ -302,9 +309,9 @@ export default function VendorDetailPage({ params }: PageProps) {
 
         {/* Sourcing Notes — full width */}
 
-        <Card className="min-h-40 md:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle>
+        <Card className="min-h-40 pt-0 md:col-span-2">
+          <CardHeader className="bg-muted/50">
+            <CardTitle className="h-14">
               <FileText className="icons" />
               Sourcing Notes
             </CardTitle>

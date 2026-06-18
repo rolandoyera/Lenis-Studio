@@ -2,7 +2,6 @@
 
 import { SCRAPER_CONFIG } from "@/config/scraper-config";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
-import { saveDiagnosticRun } from "@/lib/db";
 
 import {
   CATEGORIES,
@@ -11,6 +10,7 @@ import {
   withProtocol,
 } from "../app/(main)/dashboard/library/_components/library-constants";
 import { VENDOR_CATEGORIES } from "../app/(main)/dashboard/vendors/_components/vendor-constants";
+import { saveDiagnosticRun } from "./diagnostics";
 
 /**
  * Classifies a non-OK Gemini HTTP status. Transient overload (503/500) and rate-limit (429)
@@ -793,10 +793,13 @@ export interface VendorAutofillResult {
     name?: string;
     category?: string;
     description?: string;
-    street?: string;
+    addressLine1?: string;
+    addressLine2?: string;
     city?: string;
-    state?: string;
-    zip?: string;
+    region?: string;
+    postalCode?: string;
+    country?: string;
+    formattedAddress?: string;
     repPhone?: string;
     repEmail?: string;
     logoUrl?: string;
@@ -813,14 +816,14 @@ export interface VendorAutofillResult {
   };
 }
 
-function normalizeToHomepage(url: string): string {
-  const withProto = withProtocol(url.trim());
-  try {
-    const { protocol, hostname } = new URL(withProto);
-    return `${protocol}//${hostname}`;
-  } catch {
-    return withProto;
-  }
+/**
+ * Vendor enrichment scrapes the **exact** URL the user entered — paths, locale
+ * routes (`/en/`, `/it/`), and trailing slashes are all significant (stripping
+ * them loses localized content or 404s some sites). We only add a protocol if
+ * missing; we never reduce the URL to its origin.
+ */
+function normalizeVendorUrl(url: string): string {
+  return withProtocol(url.trim());
 }
 
 function resolveAbsoluteUrl(href: string, base: string): string {
@@ -978,18 +981,18 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
       return { success: false, error: "GEMINI_API_KEY is not configured." };
     }
 
-    const homepageUrl = normalizeToHomepage(url);
-    console.log(`[Vendor Autofill] Fetching homepage: ${homepageUrl}`);
+    const vendorUrl = normalizeVendorUrl(url);
+    console.log(`[Vendor Autofill] Fetching: ${vendorUrl}`);
 
-    const jinaHeaders: Record<string, string> = {};
+    const jinaHeaders: Record<string, string> = { "X-No-Cache": "true" };
     if (process.env.JINA_API_KEY) jinaHeaders.Authorization = `Bearer ${process.env.JINA_API_KEY}`;
 
     const [htmlSettled, jinaSettled] = await Promise.allSettled([
-      fetch(homepageUrl, {
+      fetch(vendorUrl, {
         headers: { "User-Agent": "Mozilla/5.0 (compatible; CRM-Enricher/1.0)" },
         signal: AbortSignal.timeout(10000),
       }).then((r) => r.text()),
-      fetch(`${SCRAPER_CONFIG.jinaReaderUrl}${homepageUrl}`, {
+      fetch(`${SCRAPER_CONFIG.jinaReaderUrl}${vendorUrl}`, {
         headers: jinaHeaders,
         next: { revalidate: 0 },
         signal: AbortSignal.timeout(20000),
@@ -1007,7 +1010,7 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
       };
     }
 
-    const ogMeta = rawHtml ? extractOgMeta(rawHtml, homepageUrl) : {};
+    const ogMeta = rawHtml ? extractOgMeta(rawHtml, vendorUrl) : {};
     const { logoCandidates, imageCandidates } = extractVendorImageCandidates(markdownText);
 
     console.log(`[Vendor Autofill] OG:`, ogMeta);
@@ -1034,7 +1037,7 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
 
     const prompt = `You are an expert business data extractor for an interior design CRM. Parse the vendor/supplier website content below and extract structured contact and brand information.
 
-Homepage URL: ${homepageUrl}
+Page URL: ${vendorUrl}
 og:site_name: ${ogMeta.ogSiteName ?? "not found"}
 Meta description: ${ogMeta.ogDescription ?? "not found"}
 
@@ -1051,10 +1054,13 @@ Extract the following and return as JSON:
 - name: The company's official brand/trade name. Prefer og:site_name over page title.
 - category: Match to ONE of these exact categories: ${VENDOR_CATEGORIES.join(", ")}. Leave empty if unsure.
 - description: A clean 1–3 sentence company description or tagline. About the company, not a product.
-- street: Full street address from footer, contact page, or about section. Empty if not found.
-- city: City from the business address. Empty if not found.
-- state: US state abbreviation (e.g. "TX") from address. Empty if not found.
-- zip: 5-digit ZIP code (e.g. "12345") from the business address. Empty if not found.
+- addressLine1: Street address line (number + street, or PO box) from footer, contact, or about section. Empty if not found.
+- addressLine2: Secondary address line (suite, unit, floor, building) if present. Empty if not found.
+- city: City / town / locality from the business address. Empty if not found.
+- region: State, province, or region exactly as written on the page (e.g. "TX", "Ontario", "Lombardia"). Do NOT convert or assume a US state. Empty if not found.
+- postalCode: Postal/ZIP code in whatever format appears (e.g. "12345", "SW1A 1AA", "75008"). Empty if not found.
+- country: The country as an ISO 3166-1 alpha-2 code (e.g. "US", "CA", "GB", "IT"). Do NOT assume the United States — infer it from the address, domain, currency, language, or phone code. Empty only if genuinely indeterminable.
+- formattedAddress: The full address as a single human-readable line. ALWAYS provide this whenever any address text is present, even if you cannot split it into the discrete fields above.
 - repPhone: Primary business phone number. Empty if not found.
 - repEmail: Primary business contact email (not newsletter/unsubscribe). Empty if not found.
 - logoUrl: The single best logo URL from the Logo Sources above. Use priority order. Only absolute HTTPS URLs. Return empty string if nothing suitable.
@@ -1078,10 +1084,13 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
             name: { type: "STRING" },
             category: { type: "STRING" },
             description: { type: "STRING" },
-            street: { type: "STRING" },
+            addressLine1: { type: "STRING" },
+            addressLine2: { type: "STRING" },
             city: { type: "STRING" },
-            state: { type: "STRING" },
-            zip: { type: "STRING" },
+            region: { type: "STRING" },
+            postalCode: { type: "STRING" },
+            country: { type: "STRING" },
+            formattedAddress: { type: "STRING" },
             repPhone: { type: "STRING" },
             repEmail: { type: "STRING" },
             logoUrl: { type: "STRING" },
@@ -1097,10 +1106,13 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
                 name: { type: "NUMBER" },
                 category: { type: "NUMBER" },
                 description: { type: "NUMBER" },
-                street: { type: "NUMBER" },
+                addressLine1: { type: "NUMBER" },
+                addressLine2: { type: "NUMBER" },
                 city: { type: "NUMBER" },
-                state: { type: "NUMBER" },
-                zip: { type: "NUMBER" },
+                region: { type: "NUMBER" },
+                postalCode: { type: "NUMBER" },
+                country: { type: "NUMBER" },
+                formattedAddress: { type: "NUMBER" },
                 repPhone: { type: "NUMBER" },
                 repEmail: { type: "NUMBER" },
                 logoUrl: { type: "NUMBER" },
@@ -1115,10 +1127,13 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
                 "name",
                 "category",
                 "description",
-                "street",
+                "addressLine1",
+                "addressLine2",
                 "city",
-                "state",
-                "zip",
+                "region",
+                "postalCode",
+                "country",
+                "formattedAddress",
                 "repPhone",
                 "repEmail",
                 "logoUrl",
@@ -1135,10 +1150,13 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
             "name",
             "category",
             "description",
-            "street",
+            "addressLine1",
+            "addressLine2",
             "city",
-            "state",
-            "zip",
+            "region",
+            "postalCode",
+            "country",
+            "formattedAddress",
             "repPhone",
             "repEmail",
             "logoUrl",
@@ -1202,10 +1220,13 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
       name: (extracted.name as string) || undefined,
       category: (extracted.category as string) || undefined,
       description: (extracted.description as string) || undefined,
-      street: (extracted.street as string) || undefined,
+      addressLine1: (extracted.addressLine1 as string) || undefined,
+      addressLine2: (extracted.addressLine2 as string) || undefined,
       city: (extracted.city as string) || undefined,
-      state: (extracted.state as string) || undefined,
-      zip: (extracted.zip as string) || undefined,
+      region: (extracted.region as string) || undefined,
+      postalCode: (extracted.postalCode as string) || undefined,
+      country: (extracted.country as string) || undefined,
+      formattedAddress: (extracted.formattedAddress as string) || undefined,
       repPhone: (extracted.repPhone as string) || undefined,
       repEmail: (extracted.repEmail as string) || undefined,
       logoUrl: logoUrl || undefined,
@@ -1226,7 +1247,7 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
     // Save diagnostic run in Firestore background (non-blocking)
     void saveDiagnosticRun({
       type: "vendor",
-      url: homepageUrl,
+      url: vendorUrl,
       scrapedMarkdown: markdownText,
       prompt: prompt || "",
       rawResponse: parsedText || "",
@@ -1405,10 +1426,13 @@ function sanitizeVendorData(data: unknown): NonNullable<VendorAutofillResult["da
   const name = sanitizeField(vendor.name, 150, "name");
   const category = sanitizeField(vendor.category, 50, "category");
   const description = sanitizeField(vendor.description, 1000, "description", true);
-  const street = sanitizeField(vendor.street, 150, "street");
+  const addressLine1 = sanitizeField(vendor.addressLine1, 150, "addressLine1");
+  const addressLine2 = sanitizeField(vendor.addressLine2, 100, "addressLine2");
   const city = sanitizeField(vendor.city, 80, "city");
-  const state = sanitizeField(vendor.state, 30, "state");
-  const zip = sanitizeField(vendor.zip, 20, "zip");
+  const region = sanitizeField(vendor.region, 60, "region");
+  const postalCode = sanitizeField(vendor.postalCode, 20, "postalCode");
+  const country = sanitizeField(vendor.country, 60, "country");
+  const formattedAddress = sanitizeField(vendor.formattedAddress, 250, "formattedAddress");
   const repPhone = sanitizeField(vendor.repPhone, 40, "repPhone");
   const repEmail = sanitizeField(vendor.repEmail, 80, "repEmail");
   const logoUrl = sanitizeField(vendor.logoUrl, 1000, "logoUrl", true);
@@ -1424,10 +1448,13 @@ function sanitizeVendorData(data: unknown): NonNullable<VendorAutofillResult["da
     name: name || "Unnamed Vendor",
     category,
     description,
-    street,
+    addressLine1,
+    addressLine2,
     city,
-    state,
-    zip,
+    region,
+    postalCode,
+    country,
+    formattedAddress,
     repPhone,
     repEmail,
     logoUrl,

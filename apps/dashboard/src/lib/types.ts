@@ -43,9 +43,22 @@ export interface Vendor {
   description?: string;
   website?: string;
   accountNumber?: string;
-  street?: string;
+  // International address model. `country` is an ISO 3166-1 alpha-2 code (e.g. "US").
+  addressLine1?: string;
+  addressLine2?: string;
   city?: string;
+  region?: string;
+  postalCode?: string;
+  country?: string;
+  /** Denormalized single-line address; always written on save. */
+  formattedAddress?: string;
+  // Deprecated US-only address fields — kept for back-compat reads of older docs.
+  // `vendorToForm` falls back to these; new saves write the fields above instead.
+  /** @deprecated use addressLine1 */
+  street?: string;
+  /** @deprecated use region */
   state?: string;
+  /** @deprecated use postalCode */
   zip?: string;
   logoUrl?: string;
   logoPath?: string;
@@ -54,6 +67,8 @@ export interface Vendor {
   repName?: string;
   repEmail?: string;
   repPhone?: string;
+  /** ISO 3166-1 alpha-2 code that drives phone formatting/validation; falls back to `country`. */
+  repPhoneCountry?: string;
   notes?: string;
   instagram?: string;
   pinterest?: string;
