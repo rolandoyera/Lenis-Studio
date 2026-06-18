@@ -3,11 +3,13 @@
 import { MoreVertical } from "lucide-react";
 
 import { EditIcon, TrashIcon } from "@/components/icons/icons";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
   TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
@@ -23,19 +25,24 @@ interface VendorHeaderProps {
 }
 
 /** Back link, vendor title banner, website, and the edit/delete actions menu. */
-export function VendorHeader({ vendor, onEdit, onRequestDelete }: VendorHeaderProps) {
+export function VendorHeader({
+  vendor,
+  onEdit,
+  onRequestDelete,
+}: VendorHeaderProps) {
   return (
     <>
       <HeaderBackLink href="/dashboard/vendors" />
 
-      <div className="flex flex-col gap-16 border-b pb-4 md:flex-row md:items-center">
+      <div className="flex flex-col gap-16 border-b pb-4 md:flex-row md:items-start">
         <div className="flex flex-col gap-1.5">
+          <H1>{vendor.name}</H1>
           {vendor.category && (
-            <div className="flex items-center gap-2">
-              <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">{vendor.category}</Badge>
+            <div className="flex items-center gap-1.5">
+              <Tag className="size-2.5 text-primary" />
+              <Label> {vendor.category}</Label>
             </div>
           )}
-          <H1>{vendor.name}</H1>
         </div>
 
         <div>
@@ -47,9 +54,10 @@ export function VendorHeader({ vendor, onEdit, onRequestDelete }: VendorHeaderPr
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
+              <DropdownMenuLabel>Manage Vendor</DropdownMenuLabel>
               <DropdownMenuItem onClick={onEdit}>
                 <EditIcon size={4} />
-                Edit Profile
+                Edit Vendor
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onRequestDelete} variant="destructive">
                 <TrashIcon size={4} />
