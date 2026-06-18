@@ -3,6 +3,41 @@ import { GoogleAuth } from "google-auth-library";
 
 let gaClient: BetaAnalyticsDataClient | null = null;
 
+// GA4's Data API caps concurrent requests per property. One analytics render
+// fans out ~19 reports across all tab sections, and dev Fast Refresh re-fires
+// that whole burst on every save — overlapping renders blow the quota
+// (RESOURCE_EXHAUSTED). Funnel every report through one process-wide limiter so
+// at most a handful are ever in flight; excess calls queue instead of failing.
+const MAX_CONCURRENT_GA4_REQUESTS = 5;
+
+function createLimiter(max: number) {
+  let active = 0;
+  const queue: (() => void)[] = [];
+
+  const next = () => {
+    if (active >= max || queue.length === 0) return;
+    active++;
+    const run = queue.shift();
+    run?.();
+  };
+
+  return function limit<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      queue.push(async () => {
+        try {
+          resolve(await fn());
+        } catch (error) {
+          reject(error);
+        } finally {
+          active--;
+          next();
+        }
+      });
+      next();
+    });
+  };
+}
+
 /**
  * Parses GA_SERVICE_ACCOUNT_KEY, which may be the raw service-account JSON
  * or a base64-encoded version of it (easier to paste into env managers).
@@ -55,9 +90,19 @@ function buildAuth(): GoogleAuth {
 export function getGA4Client() {
   if (gaClient) return gaClient;
 
-  gaClient = new BetaAnalyticsDataClient({
+  const client = new BetaAnalyticsDataClient({
     auth: buildAuth(),
   });
 
+  // Route both report methods through a shared limiter so every GA4 Data API
+  // call — regardless of which action issues it — respects the concurrency cap.
+  const limit = createLimiter(MAX_CONCURRENT_GA4_REQUESTS);
+  const runReport = client.runReport.bind(client) as (...args: unknown[]) => Promise<unknown>;
+  const runRealtimeReport = client.runRealtimeReport.bind(client) as (...args: unknown[]) => Promise<unknown>;
+  client.runReport = ((...args: unknown[]) => limit(() => runReport(...args))) as typeof client.runReport;
+  client.runRealtimeReport = ((...args: unknown[]) =>
+    limit(() => runRealtimeReport(...args))) as typeof client.runRealtimeReport;
+
+  gaClient = client;
   return gaClient;
 }

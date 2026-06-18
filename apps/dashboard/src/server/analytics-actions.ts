@@ -1,11 +1,7 @@
 ﻿"use server";
 
-import { cookies } from "next/headers";
-
-import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
-
-import { getAdminDb } from "./firebase-admin";
 import { getGA4Client, hasGA4Credentials } from "./ga4";
+import { getActiveOrgConfig } from "./org-config";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -424,18 +420,10 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
 async function getConfiguredPropertyId(): Promise<string | null> {
   if (!hasGA4Credentials()) return null;
 
-  const cookieStore = await cookies();
-  const organizationId = cookieStore.get(ACTIVE_ORG_COOKIE)?.value;
-
-  if (organizationId) {
-    try {
-      const orgSnap = await getAdminDb().collection("organizations").doc(organizationId).get();
-      const gaPropertyId = orgSnap.exists ? (orgSnap.data()?.config?.gaPropertyId as string | undefined) : undefined;
-      return gaPropertyId?.trim() ? gaPropertyId.trim() : null;
-    } catch (error) {
-      console.error("Failed to resolve organization GA4 property:", error);
-      return null;
-    }
+  const orgConfig = await getActiveOrgConfig();
+  if (orgConfig) {
+    const gaPropertyId = orgConfig.gaPropertyId;
+    return gaPropertyId?.trim() ? gaPropertyId.trim() : null;
   }
 
   const propertyId = process.env.GA_PROPERTY_ID;

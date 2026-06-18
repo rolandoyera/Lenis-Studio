@@ -1,11 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
-
-import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
-
-import { getAdminDb } from "./firebase-admin";
 import { getGSCClient, hasGSCCredentials } from "./gsc";
+import { getActiveOrgConfig } from "./org-config";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -47,18 +43,10 @@ function getDateRange(range?: string): { startDate: string; endDate: string } {
 async function getConfiguredSiteUrl(): Promise<string | null> {
   if (!hasGSCCredentials()) return null;
 
-  const cookieStore = await cookies();
-  const organizationId = cookieStore.get(ACTIVE_ORG_COOKIE)?.value;
-
-  if (organizationId) {
-    try {
-      const orgSnap = await getAdminDb().collection("organizations").doc(organizationId).get();
-      const siteUrl = orgSnap.exists ? (orgSnap.data()?.config?.gscSiteUrl as string | undefined) : undefined;
-      return siteUrl?.trim() ? siteUrl.trim() : null;
-    } catch (error) {
-      console.error("Failed to resolve organization Search Console site:", error);
-      return null;
-    }
+  const orgConfig = await getActiveOrgConfig();
+  if (orgConfig) {
+    const siteUrl = orgConfig.gscSiteUrl;
+    return siteUrl?.trim() ? siteUrl.trim() : null;
   }
 
   const siteUrl = process.env.GSC_SITE_URL;
