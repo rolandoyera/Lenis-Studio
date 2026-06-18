@@ -21,11 +21,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { deleteReplacedStorageFiles, deleteVendor, getVendor, getVendorLibraryItems, updateVendor } from "@/lib/db";
+import {
+  addLibraryItem,
+  deleteReplacedStorageFiles,
+  deleteVendor,
+  getVendor,
+  getVendorLibraryItems,
+  updateVendor,
+} from "@/lib/db";
+import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
 import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
 
+import { LibraryItemFormDialog } from "../../library/_components/library-item-form-dialog";
+import { useLibraryItemForm } from "../../library/_components/use-library-item-form";
 import { type VendorFormData, VendorFormDialog, vendorToForm } from "../_components/vendor-form-dialog";
 import { VendorHeader } from "../_components/vendor-header";
 import { VendorHero } from "../_components/vendor-hero";
@@ -50,6 +60,52 @@ export default function VendorDetailPage({ params }: PageProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const itemForm = useLibraryItemForm();
+  const [isAddItemOpen, setIsAddItemOpen] = useState(false);
+  const [addingItem, setAddingItem] = useState(false);
+
+  const handleOpenAddItem = () => {
+    if (!vendor) return;
+    itemForm.reset({ vendorId: vendor.vendorId });
+    setIsAddItemOpen(true);
+  };
+
+  const handleAddItem = async () => {
+    if (!vendor) return;
+    setAddingItem(true);
+    try {
+      // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
+      const { imageUrls, coverImageUrl, coverImagePath, images } = await mirrorExternalImagesToFirebase(
+        {
+          imageUrls: itemForm.formData.imageUrls,
+          coverImageUrl: itemForm.formData.coverImageUrl,
+          coverImagePath: itemForm.formData.coverImagePath,
+          images: itemForm.formData.images,
+        },
+        itemForm.tempItemId,
+      );
+      const created = await addLibraryItem(
+        {
+          ...itemForm.formData,
+          imageUrls,
+          coverImageUrl,
+          coverImagePath,
+          images,
+          organizationId: vendor.organizationId,
+        },
+        itemForm.tempItemId,
+      );
+      setItems((prev) => [created, ...prev]);
+      toast.success("Item added to library and linked to this vendor!");
+      setIsAddItemOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save library item.");
+    } finally {
+      setAddingItem(false);
+    }
+  };
 
   useEffect(() => {
     if (authLoading || !organizationId) return;
@@ -151,7 +207,7 @@ export default function VendorDetailPage({ params }: PageProps) {
         {/* Linked Library Items Card — fills the row height and scrolls internally */}
         <div className="relative">
           <div className="md:absolute md:inset-0">
-            <VendorItems items={items} />
+            <VendorItems items={items} onAddItem={handleOpenAddItem} />
           </div>
         </div>
       </div>
@@ -258,6 +314,22 @@ export default function VendorDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Library Item dialog — vendor locked to this page's vendor */}
+      <LibraryItemFormDialog
+        open={isAddItemOpen}
+        onOpenChange={setIsAddItemOpen}
+        title="Add Item Specifications"
+        submitLabel="Add Catalog Item"
+        submitting={addingItem}
+        onSubmit={handleAddItem}
+        form={itemForm}
+        vendors={[vendor]}
+        // Vendor is locked to this page, so Quick Add is never shown/called.
+        onQuickAddVendor={() => undefined}
+        uploaderId="vendor-item-image-uploader"
+        lockVendor
+      />
 
       {/* Edit dialog */}
       {vendor && (

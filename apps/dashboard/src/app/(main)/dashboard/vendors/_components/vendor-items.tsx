@@ -2,20 +2,23 @@
 
 import Link from "next/link";
 
-import { ShoppingBag } from "lucide-react";
+import { Plus, ShoppingBag } from "lucide-react";
 
 import { DashboardImage } from "@/components/dashboard-image";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { LibraryItem } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 interface VendorItemsProps {
   items: LibraryItem[];
+  onAddItem?: () => void;
 }
 
-export function VendorItems({ items }: VendorItemsProps) {
+export function VendorItems({ items, onAddItem }: VendorItemsProps) {
   return (
     <Card className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none">
       <CardHeader className="pb-3">
@@ -23,10 +26,27 @@ export function VendorItems({ items }: VendorItemsProps) {
           <span className="flex items-center gap-2">
             <ShoppingBag className="icons" />
             Linked Library Items
+            <Badge variant="secondary" className="px-2 py-0.5 font-bold text-xs">
+              {items.length}
+            </Badge>
           </span>
-          <Badge variant="secondary" className="px-2 py-0.5 font-bold text-xs">
-            {items.length} {items.length === 1 ? "item" : "items"}
-          </Badge>
+          {onAddItem && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={onAddItem}
+                  className="size-8 shrink-0 rounded-full"
+                >
+                  <Plus className="size-4" />
+                  <span className="sr-only">Add Items</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Add Items</TooltipContent>
+            </Tooltip>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">

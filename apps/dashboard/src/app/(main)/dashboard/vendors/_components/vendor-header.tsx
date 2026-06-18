@@ -25,11 +25,7 @@ interface VendorHeaderProps {
 }
 
 /** Back link, vendor title banner, website, and the edit/delete actions menu. */
-export function VendorHeader({
-  vendor,
-  onEdit,
-  onRequestDelete,
-}: VendorHeaderProps) {
+export function VendorHeader({ vendor, onEdit, onRequestDelete }: VendorHeaderProps) {
   return (
     <>
       <HeaderBackLink href="/dashboard/vendors" />

@@ -82,6 +82,12 @@ interface LibraryItemFormDialogProps {
   onQuickAddVendor: () => void;
   /** Unique id for the hidden file input (must differ if two forms ever mount together). */
   uploaderId?: string;
+  /**
+   * When true, the vendor is fixed (e.g. adding an item from a vendor's page):
+   * the combobox and Quick Add are replaced by a read-only vendor name so the
+   * item can't be reassigned to another vendor.
+   */
+  lockVendor?: boolean;
 }
 
 const downloadImage = async (url: string) => {
@@ -275,6 +281,7 @@ export function LibraryItemFormDialog({
   vendors,
   onQuickAddVendor,
   uploaderId = "library-image-uploader",
+  lockVendor = false,
 }: LibraryItemFormDialogProps) {
   const [comboboxContainer, setComboboxContainer] = useState<HTMLDivElement | null>(null);
   const { formData, setFormData, uploadingImage } = form;
@@ -564,6 +571,18 @@ export function LibraryItemFormDialog({
                     name="vendorId"
                     render={({ field, fieldState }) => {
                       const selected = vendors.find((v) => v.vendorId === field.value) ?? null;
+                      if (lockVendor) {
+                        return (
+                          <Field className="flex flex-col gap-1.5">
+                            <Label className={`${LABEL_CLASS} flex items-center`}>
+                              Vendor <span className="ml-0.5 text-destructive">*</span>
+                            </Label>
+                            <div className="flex h-10 items-center rounded-lg border border-input bg-muted/40 px-2.5 text-muted-foreground text-sm">
+                              {selected?.name ?? "—"}
+                            </div>
+                          </Field>
+                        );
+                      }
                       return (
                         <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
                           <Label className={`${LABEL_CLASS} flex items-center justify-between`}>
