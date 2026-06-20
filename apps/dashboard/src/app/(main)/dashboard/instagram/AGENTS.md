@@ -18,6 +18,27 @@ Server logic lives in `src/server/`, not this folder:
 - `meta-actions.ts` — `"use server"` actions the UI calls.
 - `meta-snapshots.ts` — daily history + the `getLatestSnapshot` fallback helper. **Not** `"use server"` (internal, not a public action).
 
+## The connect flow lives here (moved from /dashboard/company)
+
+`_components/instagram-connect.tsx` ("use client") owns connecting:
+
+- **Disconnected** → a centered "Connect your Instagram" empty-state card (the page body renders
+  nothing else when `getMetaConnection()` is null). Connect button → `/api/integrations/meta/login`.
+- **Multi-Page grant** → the callback redirects to `?meta=select`; `page.tsx` fetches
+  `getMetaPendingPages()` (only on that param) and the component opens a picker. On pick it calls
+  `selectMetaPage` then does a full `window.location.assign("/dashboard/instagram?meta=connected")`
+  so the server re-renders with the data tabs + success dialog in one shot.
+- **Single Page** → callback connects directly and lands on `?meta=connected` (success dialog).
+- URL hygiene: `replaceState` to `/dashboard/instagram` strips `?meta=…` so reloads don't re-fire.
+
+All `?meta=…` redirects point at `/dashboard/instagram` (callback `route.ts`, login `route.ts`'s
+`no_org`, and `revalidatePath` in `meta-actions.ts`). The OAuth `redirect_uri` registered with Meta
+is unchanged — it's still `/api/integrations/meta/callback` (`META_REDIRECT_URI`); only the
+post-callback landing page moved.
+
+**No Disconnect in the UI by design.** `disconnectMeta` stays in `meta-actions.ts` for later
+SuperAdmin exposure, but nothing surfaces it. To switch accounts, reconnect (the callback upserts).
+
 ## Two data modes — keep them straight
 
 1. **Live (on-demand):** most UI pulls from the Graph API at request time (`cache: "no-store"`).

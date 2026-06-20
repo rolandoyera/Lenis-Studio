@@ -13,17 +13,13 @@ than none — treat updating it as part of "done," not optional.
 
 ## What this route is
 
-`/dashboard/company` hosts **two unrelated things** stacked on one page ([page.tsx](./page.tsx)):
+`/dashboard/company` hosts **only the Company Profile** ([page.tsx](./page.tsx)) — the org's own
+identity/branding/defaults, edited by org Admins
+([_components/company-profile-form.tsx](./_components/company-profile-form.tsx)).
 
-1. **Company Profile** — the org's own identity/branding/defaults, edited by org Admins.
-   ([_components/company-profile-form.tsx](./_components/company-profile-form.tsx)).
-2. **Instagram / Meta integration** — [company-meta-card.tsx](./company-meta-card.tsx), backed by
-   `src/server/meta-actions.ts`. This predates the profile (the route started as the Meta card) and
-   is a separate concern; Meta page-access tokens are server-only (`organizations/{orgId}/secrets`,
-   denied to clients in `firestore.rules`). Don't entangle the two.
-
-`page.tsx` is a server component (fetches Meta connection); the profile form is a `"use client"`
-island that loads/saves its own data.
+The route started as the Meta/Instagram card, but that connect flow now lives entirely on
+`/dashboard/instagram` (see that folder's AGENTS.md). `page.tsx` is a plain server component; the
+profile form is a `"use client"` island that loads/saves its own data.
 
 ## Where the data lives — no new collection
 

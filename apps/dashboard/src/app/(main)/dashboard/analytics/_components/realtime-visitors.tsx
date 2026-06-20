@@ -1,6 +1,12 @@
 import { Ellipsis } from "lucide-react";
 
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { fetchRealtimeData } from "@/server/analytics-actions";
 
 import { AnalyticsSetupRequired } from "./analytics-setup-required";
@@ -11,15 +17,19 @@ export async function RealtimeVisitors() {
 
   if (!result.success || !result.data) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="font-normal">Realtime Visitors</CardTitle>
+      <Card className="h-full pt-0">
+        <CardHeader className="bg-muted/50 py-3">
+          <CardTitle>Realtime Visitors</CardTitle>
           <CardAction>
             <Ellipsis className="size-4" />
           </CardAction>
         </CardHeader>
         <CardContent>
-          <AnalyticsSetupRequired error={result.error} title="Realtime Visitors Error" className="h-64" />
+          <AnalyticsSetupRequired
+            error={result.error}
+            title="Realtime Visitors Error"
+            className="h-64"
+          />
         </CardContent>
       </Card>
     );

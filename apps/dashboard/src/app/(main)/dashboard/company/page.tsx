@@ -1,18 +1,9 @@
 import { PageTitle } from "@/components/page-title-updater";
 import { H1 } from "@/components/ui/typography";
-import { getMetaConnection, getMetaPendingPages } from "@/server/meta-actions";
 
 import { CompanyProfileForm } from "./_components/company-profile-form";
-import { CompanyMetaCard } from "./company-meta-card";
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ meta?: string }> }) {
-  const { meta } = await searchParams;
-
-  const connection = await getMetaConnection();
-  // Only hit the Graph API for the picker when we actually arrived from a
-  // multi-page grant (?meta=select) — keeps normal page loads cheap.
-  const pendingPages = meta === "select" ? await getMetaPendingPages() : [];
-
+export default function Page() {
   return (
     <>
       <PageTitle title="Company Profile" />
@@ -25,8 +16,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
         </div>
 
         <CompanyProfileForm />
-
-        <CompanyMetaCard connection={connection} pendingPages={pendingPages} justConnected={meta === "connected"} />
       </div>
     </>
   );

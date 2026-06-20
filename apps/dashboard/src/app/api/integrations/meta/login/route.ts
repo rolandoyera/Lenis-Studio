@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   // The callback writes to organizations/{orgId}; without a tenant we can't
   // know where to store the connection, so bail before leaving the app.
   if (!organizationId) {
-    return NextResponse.redirect(new URL("/dashboard/company?meta=no_org", req.url));
+    return NextResponse.redirect(new URL("/dashboard/instagram?meta=no_org", req.url));
   }
 
   // Random nonce ties this redirect to its callback (CSRF protection); the org

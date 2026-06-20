@@ -3,10 +3,10 @@
 import { CircleCheckIcon } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { InstagramIcon } from "@/components/icons/icons";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -15,10 +15,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { disconnectMeta, selectMetaPage } from "@/server/meta-actions";
+import { selectMetaPage } from "@/server/meta-actions";
 import type { MetaIntegrationConfig, MetaPendingPage } from "@/types/meta";
 
-export function CompanyMetaCard({
+/**
+ * Owns the Instagram connect flow on the Instagram page: the "Connect your
+ * Instagram" empty state (shown when disconnected), the multi-Page picker
+ * (?meta=select), and the success confirmation (?meta=connected). Disconnecting
+ * is intentionally not surfaced here — `disconnectMeta` stays in
+ * `meta-actions.ts` for later SuperAdmin use.
+ */
+export function InstagramConnect({
   connection,
   pendingPages,
   justConnected,
@@ -27,7 +34,6 @@ export function CompanyMetaCard({
   pendingPages: MetaPendingPage[];
   justConnected: boolean;
 }) {
-  const [account, setAccount] = useState<MetaIntegrationConfig | null>(connection);
   const [successOpen, setSuccessOpen] = useState(justConnected && connection !== null);
   const [pickerOpen, setPickerOpen] = useState(pendingPages.length > 0);
   const [isPending, startTransition] = useTransition();
@@ -37,7 +43,7 @@ export function CompanyMetaCard({
   // URL hygiene: drop the ?meta=… param so a reload doesn't re-trigger dialogs.
   useEffect(() => {
     if (justConnected || pendingPages.length > 0) {
-      window.history.replaceState(null, "", "/dashboard/company");
+      window.history.replaceState(null, "", "/dashboard/instagram");
     }
   }, [justConnected, pendingPages.length]);
 
@@ -47,10 +53,9 @@ export function CompanyMetaCard({
     startTransition(async () => {
       const res = await selectMetaPage(pageId);
       if (res.success && res.connection) {
-        setAccount(res.connection);
-        setPickerOpen(false);
-        setSelecting(null);
-        setSuccessOpen(true);
+        // Full navigation so the server re-renders with the data tabs and the
+        // success dialog (?meta=connected) in one shot.
+        window.location.assign("/dashboard/instagram?meta=connected");
       } else {
         setError(res.error ?? "Something went wrong.");
         setSelecting(null);
@@ -58,49 +63,26 @@ export function CompanyMetaCard({
     });
   }
 
-  function disconnect() {
-    startTransition(async () => {
-      const res = await disconnectMeta();
-      if (res.success) setAccount(null);
-    });
-  }
-
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Instagram</CardTitle>
-          <CardDescription>Connect your Instagram Business account to track analytics.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {account ? (
-            <div className="flex items-center gap-4">
-              <Avatar size="lg">
-                <AvatarImage src={account.instagramProfilePictureUrl} alt={account.instagramUsername} />
-                <AvatarFallback>{account.instagramUsername.slice(0, 2).toUpperCase()}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">@{account.instagramUsername}</span>
-                  <div className="flex h-5 items-center">
-                    <Badge variant="success">Connected</Badge>
-                  </div>
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  {account.followersCount.toLocaleString()} followers · {account.mediaCount} posts
-                </p>
-              </div>
-              <Button variant="outline" size="sm" disabled={isPending} onClick={disconnect}>
-                {isPending ? "Disconnecting…" : "Disconnect"}
-              </Button>
+      {connection ? null : (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+              <InstagramIcon size={24} />
+            </span>
+            <div className="space-y-1">
+              <h3 className="font-semibold text-lg">Connect your Instagram</h3>
+              <p className="mx-auto max-w-sm text-muted-foreground text-sm">
+                Link your Instagram Business account to track reach, engagement, and audience insights here.
+              </p>
             </div>
-          ) : (
             <Button asChild>
               <a href="/api/integrations/meta/login">Connect Instagram</a>
             </Button>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Success confirmation */}
       <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
@@ -112,8 +94,8 @@ export function CompanyMetaCard({
               </span>
               <DialogTitle>Instagram connected</DialogTitle>
               <DialogDescription>
-                {account
-                  ? `@${account.instagramUsername} is now linked. You can track its analytics here.`
+                {connection
+                  ? `@${connection.instagramUsername} is now linked. You can track its analytics here.`
                   : "Your Instagram account is now linked."}
               </DialogDescription>
             </div>

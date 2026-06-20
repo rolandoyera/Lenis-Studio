@@ -33,8 +33,8 @@ No analytics charts yet — that's the next phase.
       this makes it explicit and future-proof.
 - [x] **Multi-page account picker (2026-06-14):** if the user grants access to more than one
       Facebook Page, the callback stores **nothing** yet — it stashes only the long-lived user
-      token at `secrets/metaPending` and redirects to `/dashboard/company?meta=select`. The
-      company page opens a **picker dialog** (`company-meta-card.tsx`) listing each granted Page
+      token at `secrets/metaPending` and redirects to `/dashboard/instagram?meta=select`. The
+      Instagram page opens a **picker dialog** (`instagram/_components/instagram-connect.tsx`) listing each granted Page
       (with its linked IG username / follower count, or "No Instagram account") and connects
       **only the one chosen**. The temp token is deleted on selection; non-chosen accounts are
       never persisted. Single-page grants connect directly. Shared Graph helpers live in

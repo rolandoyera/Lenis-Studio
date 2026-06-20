@@ -33,12 +33,12 @@ export async function GET(req: NextRequest) {
   const cookieNonce = req.cookies.get(META_OAUTH_STATE_COOKIE)?.value;
 
   if (!code) {
-    return redirect(req, "/dashboard/company?meta=error");
+    return redirect(req, "/dashboard/instagram?meta=error");
   }
 
   // CSRF: the nonce in `state` must match the httpOnly cookie we set at login.
   if (!state || !cookieNonce || state.nonce !== cookieNonce) {
-    return redirect(req, "/dashboard/company?meta=state_error");
+    return redirect(req, "/dashboard/instagram?meta=state_error");
   }
 
   const { organizationId } = state;
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 
   if (!tokenData.access_token) {
     console.error("Meta token error:", tokenData);
-    return redirect(req, "/dashboard/company?meta=token_error");
+    return redirect(req, "/dashboard/instagram?meta=token_error");
   }
 
   // Upgrade to a long-lived user token (~60 days). Page tokens derived from it
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
   const pages = await fetchPages(userAccessToken);
 
   if (pages.length === 0) {
-    return redirect(req, "/dashboard/company?meta=no_page");
+    return redirect(req, "/dashboard/instagram?meta=no_page");
   }
 
   const orgRef = getAdminDb().collection("organizations").doc(organizationId);
@@ -84,15 +84,15 @@ export async function GET(req: NextRequest) {
       await orgRef.collection("secrets").doc("metaPending").set(pending);
     } catch (error) {
       console.error("Failed to stage Meta page selection:", error);
-      return redirect(req, "/dashboard/company?meta=save_error");
+      return redirect(req, "/dashboard/instagram?meta=save_error");
     }
-    return redirect(req, "/dashboard/company?meta=select");
+    return redirect(req, "/dashboard/instagram?meta=select");
   }
 
   // Exactly one Page: connect it directly.
   const profile = await fetchInstagramProfile(pages[0]);
   if (!profile) {
-    return redirect(req, "/dashboard/company?meta=no_instagram");
+    return redirect(req, "/dashboard/instagram?meta=no_instagram");
   }
 
   try {
@@ -101,8 +101,8 @@ export async function GET(req: NextRequest) {
     await orgRef.collection("secrets").doc("metaPending").delete();
   } catch (error) {
     console.error("Failed to persist Meta integration:", error);
-    return redirect(req, "/dashboard/company?meta=save_error");
+    return redirect(req, "/dashboard/instagram?meta=save_error");
   }
 
-  return redirect(req, "/dashboard/company?meta=connected");
+  return redirect(req, "/dashboard/instagram?meta=connected");
 }

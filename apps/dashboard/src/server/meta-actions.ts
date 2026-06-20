@@ -167,7 +167,7 @@ export async function selectMetaPage(
 
     const connection = await storeMetaConnection(organizationId, page, profile, expiresAt);
     await orgRef.collection("secrets").doc("metaPending").delete();
-    revalidatePath("/dashboard/company");
+    revalidatePath("/dashboard/instagram");
     return { success: true, connection };
   } catch (error) {
     console.error("Failed to select Meta page:", error);
@@ -433,7 +433,7 @@ export async function disconnectMeta(): Promise<{ success: boolean }> {
     const orgRef = getAdminDb().collection("organizations").doc(organizationId);
     await orgRef.set({ config: { metaIntegration: FieldValue.delete() } }, { merge: true });
     await orgRef.collection("secrets").doc("meta").delete();
-    revalidatePath("/dashboard/company");
+    revalidatePath("/dashboard/instagram");
     return { success: true };
   } catch (error) {
     console.error("Failed to disconnect Meta:", error);

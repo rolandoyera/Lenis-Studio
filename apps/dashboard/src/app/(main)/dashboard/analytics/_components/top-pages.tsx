@@ -1,7 +1,20 @@
 import { Ellipsis } from "lucide-react";
 
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { fetchTopPagesData } from "@/server/analytics-actions";
 
 import { AnalyticsSetupRequired } from "./analytics-setup-required";
@@ -10,9 +23,9 @@ export async function TopPages({ range }: { range?: string }) {
   const result = await fetchTopPagesData(range);
 
   return (
-    <Card className="h-full gap-2">
-      <CardHeader>
-        <CardTitle className="font-normal">Page Performance</CardTitle>
+    <Card className="h-full gap-2 pt-0">
+      <CardHeader className="bg-muted/50 py-3">
+        <CardTitle>Page Performance</CardTitle>
         <CardAction>
           <Ellipsis className="size-4" />
         </CardAction>
@@ -22,32 +35,52 @@ export async function TopPages({ range }: { range?: string }) {
         <Table className="[&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
           <TableHeader className="[&_tr]:border-border/50">
             <TableRow className="hover:bg-transparent">
-              <TableHead className="h-8" />
-              <TableHead className="h-8 w-24 text-right font-normal">Views</TableHead>
-              <TableHead className="h-8 w-24 text-right font-normal">Avg Time</TableHead>
-              <TableHead className="h-8 w-20 text-right font-normal">Bounce</TableHead>
+              <TableHead className="h-8">Page</TableHead>
+              <TableHead className="h-8 w-24 text-right font-normal">
+                Views
+              </TableHead>
+              <TableHead className="h-8 w-24 text-right font-normal">
+                Avg Time
+              </TableHead>
+              <TableHead className="h-8 w-20 text-right font-normal">
+                Bounce
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="[&_tr]:border-border/50">
             {!result.success ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={4} className="py-4">
-                  <AnalyticsSetupRequired error={result.error} title="Page Performance Error" className="min-h-32" />
+                  <AnalyticsSetupRequired
+                    error={result.error}
+                    title="Page Performance Error"
+                    className="min-h-32"
+                  />
                 </TableCell>
               </TableRow>
             ) : result.data.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="h-32 py-4 text-center text-muted-foreground text-sm">
+                <TableCell
+                  colSpan={4}
+                  className="h-32 py-4 text-center text-muted-foreground text-sm">
                   No page performance data available.
                 </TableCell>
               </TableRow>
             ) : (
               result.data.map((page) => (
                 <TableRow className="hover:bg-transparent" key={page.path}>
-                  <TableCell className="max-w-0 truncate py-4 font-medium">{page.path}</TableCell>
-                  <TableCell className="text-right tabular-nums">{page.views}</TableCell>
-                  <TableCell className="text-right text-muted-foreground tabular-nums">{page.time}</TableCell>
-                  <TableCell className="text-right text-muted-foreground tabular-nums">{page.bounce}</TableCell>
+                  <TableCell className="max-w-0 truncate py-4 font-medium">
+                    {page.path}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {page.views}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground tabular-nums">
+                    {page.time}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground tabular-nums">
+                    {page.bounce}
+                  </TableCell>
                 </TableRow>
               ))
             )}

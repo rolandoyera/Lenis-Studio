@@ -4,9 +4,18 @@ import { useEffect, useState } from "react";
 
 import { Ellipsis } from "lucide-react";
 
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { fetchRealtimeData, type RealtimeData } from "@/server/analytics-actions";
+import {
+  fetchRealtimeData,
+  type RealtimeData,
+} from "@/server/analytics-actions";
 
 import { RealtimeChart } from "./realtime-chart";
 
@@ -48,9 +57,9 @@ export function RealtimeCard({ initialData }: { initialData: RealtimeData }) {
   const { total, perMinute, countries } = data;
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="font-normal">Realtime Visitors</CardTitle>
+    <Card className="h-full pt-0">
+      <CardHeader className="bg-muted/50 py-3">
+        <CardTitle>Realtime Visitors</CardTitle>
         <CardAction>
           <Ellipsis className="size-4" />
         </CardAction>
@@ -59,8 +68,12 @@ export function RealtimeCard({ initialData }: { initialData: RealtimeData }) {
       <CardContent className="flex flex-col gap-4">
         <div className="flex items-end justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl tabular-nums leading-none tracking-tight">{total}</span>
-            <span className="text-muted-foreground text-sm">in last 30 min</span>
+            <span className="text-2xl tabular-nums leading-none tracking-tight">
+              {total}
+            </span>
+            <span className="text-muted-foreground text-sm">
+              in last 30 min
+            </span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <span className="relative flex size-2">
@@ -83,14 +96,17 @@ export function RealtimeCard({ initialData }: { initialData: RealtimeData }) {
                 className={cn(
                   "flex items-center gap-3",
                   index % 2 === 0 ? "border-border/50 border-r pr-5" : "pl-5",
-                  index < 2 ? "border-border/50 border-b pt-1 pb-4" : "pt-4 pb-1",
-                )}
-              >
+                  index < 2
+                    ? "border-border/50 border-b pt-1 pb-4"
+                    : "pt-4 pb-1",
+                )}>
                 <span
                   aria-hidden="true"
                   className={`flag:${country.code} shrink-0 rounded-xs text-lg ring-1 ring-foreground/10`}
                 />
-                <span className="min-w-0 flex-1 truncate text-sm">{country.name}</span>
+                <span className="min-w-0 flex-1 truncate text-sm">
+                  {country.name}
+                </span>
                 <span className="text-sm tabular-nums">{country.visitors}</span>
               </div>
             ))}

@@ -1,11 +1,9 @@
-import Link from "next/link";
-
 import PageHeader from "@/components/page-header";
 import { PageTitle } from "@/components/page-title-updater";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { getMetaConnection } from "@/server/meta-actions";
+import { getMetaConnection, getMetaPendingPages } from "@/server/meta-actions";
 
+import { InstagramConnect } from "./_components/instagram-connect";
 import { InstagramDemographics } from "./_components/instagram-demographics";
 import { InstagramHeadlineCards } from "./_components/instagram-headline-cards";
 import { InstagramKpiStrip } from "./_components/instagram-kpi-strip";
@@ -15,9 +13,12 @@ import { InstagramPostsGrid } from "./_components/instagram-posts-grid";
 import { InstagramTabs } from "./_components/instagram-tabs";
 import { InstagramToolbar } from "./_components/instagram-toolbar";
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
-  const { range = "last-30-days" } = await searchParams;
+export default async function Page({ searchParams }: { searchParams: Promise<{ range?: string; meta?: string }> }) {
+  const { range = "last-30-days", meta: metaParam } = await searchParams;
   const meta = await getMetaConnection();
+  // Only hit the Graph API for the picker when we arrived from a multi-page
+  // grant (?meta=select) — keeps normal page loads cheap.
+  const pendingPages = metaParam === "select" ? await getMetaPendingPages() : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -42,7 +43,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
             </span>
           }
         />
-        {meta ? (
+        {meta && (
           <div className="flex flex-col items-center gap-2">
             <Avatar className="size-9">
               <AvatarImage src={meta.instagramProfilePictureUrl} alt={meta.instagramUsername} />
@@ -50,10 +51,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
             </Avatar>
             <span className="font-medium text-card-foreground text-sm">@{meta.instagramUsername}</span>
           </div>
-        ) : (
-          <Button asChild size="sm">
-            <Link href="/dashboard/company">Connect Instagram</Link>
-          </Button>
         )}
       </div>
 
@@ -79,6 +76,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
           audience={<InstagramDemographics />}
         />
       )}
+
+      <InstagramConnect connection={meta} pendingPages={pendingPages} justConnected={metaParam === "connected"} />
     </div>
   );
 }
