@@ -1,9 +1,12 @@
 "use client";
 
+import { useTransition } from "react";
+
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { FileDown, MoreVertical, RefreshCw } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenuContent,
@@ -17,6 +20,7 @@ export function AnalyticsToolbar() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isRefreshing, startRefresh] = useTransition();
 
   const currentRange = searchParams.get("range") || "last-24-hours";
 
@@ -51,13 +55,20 @@ export function AnalyticsToolbar() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.open(`/reports/analytics?range=${currentRange}`, "_blank")}>
             <FileDown />
             Export report
           </DropdownMenuItem>
-          <DropdownMenuItem>
-            <RefreshCw />
-            Refresh metrics
+          <DropdownMenuItem
+            disabled={isRefreshing}
+            onSelect={(event) => {
+              // Keep the menu from closing so the spinner stays visible while refreshing.
+              event.preventDefault();
+              startRefresh(() => router.refresh());
+            }}
+          >
+            <RefreshCw className={cn(isRefreshing && "animate-spin")} />
+            {isRefreshing ? "Refreshing…" : "Refresh metrics"}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </TooltipDropdownMenu>

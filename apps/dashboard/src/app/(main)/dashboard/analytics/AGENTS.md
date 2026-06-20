@@ -58,3 +58,24 @@ tenant. The Admin SDK in `org-config.ts` bypasses security rules; keep it server
   client-side check, so a page visit produces a single `getActiveOrgConfig` read from this path.
 - **Range comes from `?range=` search param**, default `last-24-hours`, threaded as a `range` prop
   into sections. `last-24-hours` switches GA4 trend dimensions to hourly (`dateHour`).
+
+## Document / PDF export — separate from the dashboard UI
+
+Dashboard analytics is the interactive screen app. The exportable report is a **separate document
+UI**, intentionally designed as a client-facing document rather than a printable dashboard. Do not
+reuse this folder's section components in the report or try to mirror the dashboard layout.
+
+- Entry point: the toolbar's "Export report" item opens `/reports/analytics?range=<currentRange>`
+  in a new tab.
+- Route: `src/app/(main)/reports/analytics` — **outside** the dashboard shell (no sidebar/header),
+  still behind the `(main)` AuthGuard. The page fetches the same GA4 actions (`fetchKpiData`,
+  `fetchTrafficTrend`, `fetchTopPagesData`, `fetchTrafficSources`, `fetchAudienceData`) and passes
+  the **data** into a presentational document component. Same `ga4.ts` limiter, tenant-isolation,
+  and concurrency rules as above.
+- Document system: `src/components/reports/` — `ReportShell`/`ReportSection` (generic foundation,
+  reused by future `ProposalReport`/`InvoiceReport`) and `analytics/AnalyticsReport.tsx` (the
+  analytics document; its own layout/typography/tables, reusing only chart *primitives*).
+- Presentation lives in the components; `src/styles/report.css` is minimal — pins a light palette
+  so the dark theme can't bleed in, plus `@page`/page-break primitives. PDF is the browser print
+  dialog for now (Playwright-rendered PDFs of this route likely later). Company identity is from
+  `APP_CONFIG` until a DB company record exists.

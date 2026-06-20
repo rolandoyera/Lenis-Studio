@@ -1,0 +1,82 @@
+/*
+ * Document styling for exportable reports (analytics today; proposals and
+ * invoices later). The report *components* own layout, typography, and spacing;
+ * this file only does what CSS alone can:
+ *   1. Pin the report sheet to a light palette so the dashboard's (possibly
+ *      dark) theme never bleeds into a document — applies on screen and print.
+ *   2. Provide the handful of print primitives the browser needs (page size,
+ *      page breaks, and hiding on-screen-only chrome).
+ */
+
+/* 1 — Light document palette, independent of the app theme. */
+.report-sheet {
+  color-scheme: light;
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0.0269 95.7226);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.1908 0.002 106.5859);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2671 0.0196 98.939);
+  --primary: oklch(0.6 0.1375 39.0427);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.9245 0.0138 92.9892);
+  --secondary-foreground: oklch(0.4334 0.0177 98.6048);
+  --muted: oklch(0.9341 0.0153 90.239);
+  --muted-foreground: oklch(0.5059 0.0075 97.4233);
+  --accent: oklch(0.9245 0.0138 92.9892);
+  --accent-foreground: oklch(0.2671 0.0196 98.939);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.8847 0.0069 97.3627);
+  --input: oklch(0.7621 0.0156 98.3528);
+  --ring: oklch(0.6171 0.1375 39.0427);
+  --chart-1: oklch(0.5583 0.1276 42.9956);
+  --chart-2: oklch(0.6898 0.1581 290.4107);
+  --chart-3: oklch(0.8816 0.0276 93.128);
+  --chart-4: oklch(0.8822 0.0403 298.1792);
+  --chart-5: oklch(0.5608 0.1348 42.0584);
+}
+
+/* Render card/chart backgrounds and fills when printed. */
+.report-sheet,
+.report-sheet * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* 2 — Print primitives. */
+@page {
+  size: A4 landscape;
+  margin: 14mm;
+}
+
+@media print {
+  .report-no-print {
+    display: none !important;
+  }
+
+  .report-screen {
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .report-sheet {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .report-keep-together {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+}
