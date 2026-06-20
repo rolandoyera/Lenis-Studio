@@ -209,13 +209,6 @@ export interface CompanyAddress {
   formatted?: string;
 }
 
-export interface CompanySocial {
-  instagram?: string;
-  facebook?: string;
-  linkedin?: string;
-  houzz?: string;
-}
-
 /** Organization-owned company profile used across proposals, invoices, reports, and branding. */
 export interface CompanyProfile {
   displayName: string;
@@ -225,10 +218,7 @@ export interface CompanyProfile {
   /** ISO 3166-1 alpha-2 code that drives phone formatting/validation; falls back to the address country. */
   phoneCountry?: string;
   website?: string;
-  logoUrl?: string;
-  logoPath?: string;
   address?: CompanyAddress;
-  social?: CompanySocial;
 }
 
 export interface OrgBranding {
@@ -238,8 +228,10 @@ export interface OrgBranding {
   logoLightPath?: string;
   logoDarkUrl?: string;
   logoDarkPath?: string;
-  faviconUrl?: string;
-  faviconPath?: string;
+  iconLightUrl?: string;
+  iconLightPath?: string;
+  iconDarkUrl?: string;
+  iconDarkPath?: string;
 }
 
 export interface OrgSettings {

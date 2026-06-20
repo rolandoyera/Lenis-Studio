@@ -17,6 +17,11 @@ service firebase.storage {
       allow read, write: if request.auth != null;
     }
 
+    // Org branding assets (light/dark logos and icon marks) uploaded from the Company page.
+    match /organizations/{orgId}/branding/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
     // Everything else: denied by default.
   }
 }

@@ -42,8 +42,6 @@ export const companyProfileSchema = z
     phone: z.string(),
     phoneCountry: z.string(),
     website: optionalUrl,
-    logoUrl: z.string(),
-    logoPath: z.string(),
 
     // Address
     line1: z.string(),
@@ -53,12 +51,6 @@ export const companyProfileSchema = z
     postalCode: z.string(),
     country: z.string(),
 
-    // Social
-    instagram: optionalUrl,
-    facebook: optionalUrl,
-    linkedin: optionalUrl,
-    houzz: optionalUrl,
-
     // Branding
     primaryColor: hexColor,
     accentColor: hexColor,
@@ -66,8 +58,10 @@ export const companyProfileSchema = z
     logoLightPath: z.string(),
     logoDarkUrl: z.string(),
     logoDarkPath: z.string(),
-    faviconUrl: z.string(),
-    faviconPath: z.string(),
+    iconLightUrl: z.string(),
+    iconLightPath: z.string(),
+    iconDarkUrl: z.string(),
+    iconDarkPath: z.string(),
 
     // Settings
     timezone: z.string(),
@@ -101,29 +95,25 @@ export const EMPTY_COMPANY_PROFILE_FORM: CompanyProfileFormData = {
   phone: "",
   phoneCountry: "US",
   website: "",
-  logoUrl: "",
-  logoPath: "",
   line1: "",
   line2: "",
   city: "",
   state: "",
   postalCode: "",
   country: "US",
-  instagram: "",
-  facebook: "",
-  linkedin: "",
-  houzz: "",
   primaryColor: "",
   accentColor: "",
   logoLightUrl: "",
   logoLightPath: "",
   logoDarkUrl: "",
   logoDarkPath: "",
-  faviconUrl: "",
-  faviconPath: "",
+  iconLightUrl: "",
+  iconLightPath: "",
+  iconDarkUrl: "",
+  iconDarkPath: "",
   timezone: "",
-  currency: "",
-  measurementUnit: "",
+  currency: "USD",
+  measurementUnit: "imperial",
   defaultMarkupPercent: "",
   defaultTaxRate: "",
   proposalExpirationDays: "",
@@ -135,7 +125,6 @@ const numToStr = (n: number | undefined): string => (typeof n === "number" ? Str
 export function organizationToForm(org: Organization): CompanyProfileFormData {
   const cp = org.companyProfile;
   const addr = cp?.address;
-  const social = cp?.social;
   const b = org.branding;
   const s = org.settings;
 
@@ -149,29 +138,27 @@ export function organizationToForm(org: Organization): CompanyProfileFormData {
     phone: formatVendorPhone(cp?.phone ?? "", phoneCountry),
     phoneCountry,
     website: cp?.website ?? "",
-    logoUrl: cp?.logoUrl ?? "",
-    logoPath: cp?.logoPath ?? "",
     line1: addr?.line1 ?? "",
     line2: addr?.line2 ?? "",
     city: addr?.city ?? "",
     state: addr?.state ?? "",
     postalCode: addr?.postalCode ?? "",
     country: addr?.country ?? "US",
-    instagram: social?.instagram ?? "",
-    facebook: social?.facebook ?? "",
-    linkedin: social?.linkedin ?? "",
-    houzz: social?.houzz ?? "",
     primaryColor: b?.primaryColor ?? "",
     accentColor: b?.accentColor ?? "",
     logoLightUrl: b?.logoLightUrl ?? "",
     logoLightPath: b?.logoLightPath ?? "",
     logoDarkUrl: b?.logoDarkUrl ?? "",
     logoDarkPath: b?.logoDarkPath ?? "",
-    faviconUrl: b?.faviconUrl ?? "",
-    faviconPath: b?.faviconPath ?? "",
+    iconLightUrl: b?.iconLightUrl ?? "",
+    iconLightPath: b?.iconLightPath ?? "",
+    iconDarkUrl: b?.iconDarkUrl ?? "",
+    iconDarkPath: b?.iconDarkPath ?? "",
     timezone: s?.timezone ?? "",
-    currency: s?.currency ?? "",
-    measurementUnit: s?.measurementUnit ?? "",
+    // Currency/measurement are hidden in the UI and injected automatically on save.
+    // Defaulting here means every settings save persists them, easing future market migrations.
+    currency: s?.currency ?? "USD",
+    measurementUnit: s?.measurementUnit ?? "imperial",
     defaultMarkupPercent: numToStr(s?.defaultMarkupPercent),
     defaultTaxRate: numToStr(s?.defaultTaxRate),
     proposalExpirationDays: numToStr(s?.proposalExpirationDays),
@@ -204,8 +191,6 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
     phone: emptyToUndef(data.phone),
     phoneCountry: emptyToUndef(data.phoneCountry),
     website: emptyToUndef(data.website),
-    logoUrl: emptyToUndef(data.logoUrl),
-    logoPath: emptyToUndef(data.logoPath),
     address: {
       line1: emptyToUndef(data.line1),
       line2: emptyToUndef(data.line2),
@@ -214,12 +199,6 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
       postalCode: emptyToUndef(data.postalCode),
       country: emptyToUndef(data.country),
       formatted: emptyToUndef(formattedAddress),
-    },
-    social: {
-      instagram: emptyToUndef(data.instagram),
-      facebook: emptyToUndef(data.facebook),
-      linkedin: emptyToUndef(data.linkedin),
-      houzz: emptyToUndef(data.houzz),
     },
   };
 
@@ -230,8 +209,10 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
     logoLightPath: emptyToUndef(data.logoLightPath),
     logoDarkUrl: emptyToUndef(data.logoDarkUrl),
     logoDarkPath: emptyToUndef(data.logoDarkPath),
-    faviconUrl: emptyToUndef(data.faviconUrl),
-    faviconPath: emptyToUndef(data.faviconPath),
+    iconLightUrl: emptyToUndef(data.iconLightUrl),
+    iconLightPath: emptyToUndef(data.iconLightPath),
+    iconDarkUrl: emptyToUndef(data.iconDarkUrl),
+    iconDarkPath: emptyToUndef(data.iconDarkPath),
   };
 
   const settings: OrgSettings = {

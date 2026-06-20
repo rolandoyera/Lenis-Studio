@@ -28,17 +28,20 @@ island that loads/saves its own data.
 ## Where the data lives — no new collection
 
 Everything is stored **directly on the existing `organizations/{organizationId}` document**, under
-three top-level fields (typed in `src/lib/types.ts`): `companyProfile` (incl. nested `address` and
-`social`, plus `phone`/`phoneCountry` and the main `logoUrl`/`logoPath`), `branding`
-(colors + light/dark logo + favicon URLs/paths), and `settings` (timezone, currency,
-measurementUnit, defaultMarkupPercent, defaultTaxRate, proposalExpirationDays).
+three top-level fields (typed in `src/lib/types.ts`): `companyProfile` (identity + nested `address`,
+plus `phone`/`phoneCountry`), `branding` (colors + light/dark logo + favicon URLs/paths), and
+`settings` (timezone, currency, measurementUnit, defaultMarkupPercent, defaultTaxRate,
+proposalExpirationDays). There is **no logo on `companyProfile`** — the only logos are the light/dark
+pair under `branding`, alongside a light/dark **icon mark** pair (`iconLight*`/`iconDark*`) — a small
+in-app icon (not a browser favicon), same convention: light variant for dark backgrounds, dark
+variant for light backgrounds.
 
 - Reads/writes go through `getOrganization` / `updateOrganization` in `src/lib/db.ts`
   (both `trace()`-wrapped, so they show in `window.__dbStats()`). `updateOrganization` runs
   `cleanUndefined`, and the form maps blank fields to `undefined` so they're omitted, not stored as
   `""`.
 - Branding images upload via `uploadOrgBrandingImage(file, type, orgId)` →
-  `organizations/{orgId}/branding/{logo|logo-light|logo-dark|favicon}.{ext}`. On save the form
+  `organizations/{orgId}/branding/{logo-light|logo-dark|icon-light|icon-dark}.{ext}`. On save the form
   diffs old vs new paths and calls `deleteReplacedStorageFiles` to clean up replaced/removed assets
   (same pattern as Vendors/Library).
 
@@ -68,9 +71,15 @@ just that section. There is no single page-wide "Save."
 - `persist` (in `CompanyProfileForm`) updates `org` state **optimistically**, awaits
   `updateOrganization`, runs storage cleanup, and **reverts on error**.
 - Because every dialog seeds from the full org, saving one section (e.g. `{ companyProfile }`)
-  preserves the fields it doesn't show. Social and the company logo both live *under*
-  `companyProfile`, so their dialogs also write the whole `companyProfile` block — that's fine since
-  it's seeded complete.
+  preserves the fields it doesn't show. Each section writes only its own top-level block
+  (`companyProfile`, `branding`, or `settings`); the Settings dialog also silently injects
+  `currency`/`measurementUnit` (see below).
+- **Each section lives in its own file** — `company-info-section.tsx`, `settings-section.tsx`,
+  `branding-section.tsx` each export that section's display card **and** its edit-dialog field group.
+  Shared shell is in `section-dialog.tsx` (`SectionEditDialog`, `EditableCardHeader`, `LABEL_CLASS`,
+  the `SectionDialogChildProps`/`PatchResult` types); the Country/Timezone combobox is
+  `search-select.tsx`. `company-profile-form.tsx` is now just the orchestrator (load + `persist` +
+  wire the three dialogs).
 
 ## Conventions that are easy to break
 
@@ -82,8 +91,11 @@ just that section. There is no single page-wide "Save."
   markup/tax/expiration inputs sanitize on change (`sanitizeDecimal`/`sanitizeInteger`) so a pasted
   `"15%"` becomes `"15"` rather than failing validation.
 - **Company Name falls back to `org.name`** until explicitly saved (intentional; mirrors how the
-  tenant already has a name). Currency / Measurement Unit deliberately have **no default and no
-  "None" option** — the user must pick one (they feed pricing/proposals).
+  tenant already has a name). **Currency / Measurement Unit are not user-editable** — there are no
+  inputs and no display for them. `organizationToForm` defaults them to `USD` / `imperial`, so they
+  are injected automatically on the **next Settings save** (not backfilled). This is deliberate:
+  pin US defaults now so adding other markets later isn't a migration. To expose them, re-add inputs
+  in `settings-section.tsx`; the schema/mapper fields still exist.
 - **Phone is international, matching the Vendor form.** Uses `formatVendorPhone` /
   `isValidVendorPhone` with a `phoneCountry` (defaults to the address country). Do **not** swap in
   the US-only `formatPhone` here.
@@ -91,5 +103,4 @@ just that section. There is no single page-wide "Save."
   imported from `../vendors/_components/vendor-constants`. The stored `address.formatted` string is
   generated on save via `formatVendorAddress`. Region label + ZIP/Postal adapt to the country.
 - **Control types:** searchable lists (Country, Phone Country, Timezone) use the `Combobox`
-  (`SearchSelect` helper); Currency / Measurement Unit use `Select`. There is no `NativeSelect` in
-  the app — don't reintroduce it.
+  (`SearchSelect` helper). There is no `NativeSelect` in the app — don't reintroduce it.

@@ -64,8 +64,11 @@ organizations/{organizationId}
     logoDarkUrl?: string;
     logoDarkPath?: string;
 
-    faviconUrl?: string;
-    faviconPath?: string;
+    iconLightUrl?: string;
+    iconLightPath?: string;
+
+    iconDarkUrl?: string;
+    iconDarkPath?: string;
   };
 
   settings: {
@@ -88,7 +91,8 @@ Use Firebase Storage for branding assets.
 organizations / { organizationId } / branding / logo.webp;
 organizations / { organizationId } / branding / logo - light.webp;
 organizations / { organizationId } / branding / logo - dark.webp;
-organizations / { organizationId } / branding / favicon.webp;
+organizations / { organizationId } / branding / icon - light.webp;
+organizations / { organizationId } / branding / icon - dark.webp;
 ```
 
 Store both:

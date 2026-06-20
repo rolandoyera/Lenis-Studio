@@ -681,7 +681,7 @@ export async function uploadLibraryImageBlob(
 
 export async function uploadOrgBrandingImage(
   file: File,
-  type: "logo" | "logo-light" | "logo-dark" | "favicon",
+  type: "logo" | "logo-light" | "logo-dark" | "icon-light" | "icon-dark",
   organizationId: string,
 ): Promise<{ url: string; path: string }> {
   const ext = file.name.split(".").pop() ?? "png";
