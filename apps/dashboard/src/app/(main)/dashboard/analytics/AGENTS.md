@@ -53,8 +53,8 @@ tenant. The Admin SDK in `org-config.ts` bypasses security rules; keep it server
   (`trace()` and `__dbStats` are defined in `src/lib/db-trace.ts`, and called only from
   `src/lib/db.ts`). The Admin-SDK org read and the GA4/GSC API calls go through neither, so they're
   invisible to it — expect the panel to under-report on this route.
-- **`GA4ConnectionChecker` is a client component** ([ga4-connection-checker.tsx](./_components/ga4-connection-checker.tsx))
-  that calls `testGA4Connection()` on mount. That's a *separate* request from the SSR render, so a
-  single page visit produces two `getActiveOrgConfig` reads (one SSR, one from this checker) — expected.
+- **Connection status is checked during SSR.** `page.tsx` awaits `testGA4Connection()` and renders the
+  result as a ping indicator next to the page title (green = connected, red = not). No separate
+  client-side check, so a page visit produces a single `getActiveOrgConfig` read from this path.
 - **Range comes from `?range=` search param**, default `last-24-hours`, threaded as a `range` prop
   into sections. `last-24-hours` switches GA4 trend dimensions to hourly (`dateHour`).

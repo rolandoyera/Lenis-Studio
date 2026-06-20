@@ -7,6 +7,24 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+// Resolve an ISO country code (e.g. "US") to a display name. Querying countryId
+// alone keeps activeUsers counts matching GA4's single-dimension Countries report.
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+function countryNameFromCode(code: string): string {
+  try {
+    return regionNames.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+// GA4 returns unresolved geography under two blank spellings — "" and "(not set)" —
+// and (when a second dimension is present) smears the same users across several such
+// rows. We treat both as "unknown" so they can be collapsed into one group.
+function isUnknownGeo(value: string | null | undefined): boolean {
+  return !value || value === "(not set)";
+}
+
 export interface GA4ConnectionResult {
   success: boolean;
   activeUsers?: number;
@@ -779,55 +797,97 @@ export async function fetchAudienceData(
   try {
     const client = getGA4Client();
 
-    const [[cityResponse], [countryResponse], [deviceResponse], [newReturningResponse]] = await Promise.all([
-      client.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges,
-        dimensions: [{ name: "city" }, { name: "countryId" }],
-        metrics: [{ name: "activeUsers" }],
-        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-        limit: 10,
-      }),
-      client.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges,
-        dimensions: [{ name: "country" }, { name: "countryId" }],
-        metrics: [{ name: "activeUsers" }],
-        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-        limit: 10,
-      }),
-      client.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges,
-        dimensions: [{ name: "deviceCategory" }],
-        metrics: [{ name: "activeUsers" }],
-        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-      }),
-      client.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges,
-        dimensions: [{ name: "newVsReturning" }],
-        metrics: [{ name: "activeUsers" }],
-      }),
-    ]);
+    const [[cityResponse], [cityFlagResponse], [countryResponse], [deviceResponse], [newReturningResponse]] =
+      await Promise.all([
+        // Counts come from the single-dimension city report so they match GA4 exactly.
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: "city" }],
+          metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+          limit: 250,
+        }),
+        // Secondary lookup only: maps each city to its dominant country for the flag.
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: "city" }, { name: "countryId" }],
+          metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+          limit: 250,
+        }),
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: "countryId" }],
+          metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+          limit: 250,
+        }),
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: "deviceCategory" }],
+          metrics: [{ name: "activeUsers" }],
+          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+        }),
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: "newVsReturning" }],
+          metrics: [{ name: "activeUsers" }],
+        }),
+      ]);
 
-    const cities = (cityResponse.rows || [])
-      .filter((row) => row.dimensionValues?.[0]?.value !== "(not set)")
-      .map((row) => ({
-        city: row.dimensionValues?.[0]?.value || "Unknown",
-        countryId: row.dimensionValues?.[1]?.value || "",
-        users: parseInt(row.metricValues?.[0]?.value || "0", 10),
-      }))
-      .slice(0, 8);
+    // City -> dominant country code (rows are sorted desc, so the first hit per city
+    // is its highest-traffic country). Used only to attach the flag.
+    const cityFlag = new Map<string, string>();
+    for (const row of cityFlagResponse.rows || []) {
+      const city = row.dimensionValues?.[0]?.value;
+      const code = row.dimensionValues?.[1]?.value;
+      if (!city || isUnknownGeo(city) || isUnknownGeo(code)) continue;
+      if (!cityFlag.has(city)) cityFlag.set(city, code as string);
+    }
 
-    const countries = (countryResponse.rows || [])
-      .filter((row) => row.dimensionValues?.[0]?.value !== "(not set)")
-      .map((row) => ({
-        country: row.dimensionValues?.[0]?.value || "Unknown",
-        countryId: row.dimensionValues?.[1]?.value || "",
-        users: parseInt(row.metricValues?.[0]?.value || "0", 10),
-      }))
-      .slice(0, 8);
+    const cityRows = cityResponse.rows || [];
+    const knownCities = cityRows
+      .filter((row) => !isUnknownGeo(row.dimensionValues?.[0]?.value))
+      .map((row) => {
+        const name = row.dimensionValues?.[0]?.value as string;
+        return {
+          city: name,
+          countryId: cityFlag.get(name) || "",
+          users: parseInt(row.metricValues?.[0]?.value || "0", 10),
+        };
+      });
+    // Single-dimension blanks are GA4's one "(not set)" bucket — sum into a flag-less Unknown.
+    const unknownCityUsers = cityRows
+      .filter((row) => isUnknownGeo(row.dimensionValues?.[0]?.value))
+      .reduce((sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0", 10), 0);
+    const cities = [
+      ...knownCities,
+      ...(unknownCityUsers > 0 ? [{ city: "Unknown", countryId: "", users: unknownCityUsers }] : []),
+    ].sort((a, b) => b.users - a.users);
+
+    const countryRows = countryResponse.rows || [];
+    const knownCountries = countryRows
+      .filter((row) => !isUnknownGeo(row.dimensionValues?.[0]?.value))
+      .map((row) => {
+        const code = row.dimensionValues?.[0]?.value as string;
+        return {
+          country: countryNameFromCode(code),
+          countryId: code,
+          users: parseInt(row.metricValues?.[0]?.value || "0", 10),
+        };
+      });
+    const unknownCountryUsers = countryRows
+      .filter((row) => isUnknownGeo(row.dimensionValues?.[0]?.value))
+      .reduce((sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0", 10), 0);
+    const countries = [
+      ...knownCountries,
+      ...(unknownCountryUsers > 0 ? [{ country: "Unknown", countryId: "", users: unknownCountryUsers }] : []),
+    ].sort((a, b) => b.users - a.users);
 
     const devices = (deviceResponse.rows || []).map((row) => ({
       device: row.dimensionValues?.[0]?.value || "unknown",

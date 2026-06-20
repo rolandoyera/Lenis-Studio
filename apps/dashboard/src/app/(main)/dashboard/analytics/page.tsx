@@ -5,7 +5,6 @@ import { AnalyticsKpiStrip } from "./_components/analytics-kpi-strip";
 import { AnalyticsToolbar } from "./_components/analytics-toolbar";
 import { AudienceSection } from "./_components/audience-section";
 import { ConversionsSection } from "./_components/conversions-section";
-import { GA4ConnectionChecker } from "./_components/ga4-connection-checker";
 import { GoogleSearchSection } from "./_components/google-search-section";
 import { LandingPages } from "./_components/landing-pages";
 import { RealtimeVisitors } from "./_components/realtime-visitors";
@@ -17,6 +16,7 @@ import { TrafficTrend } from "./_components/traffic-trend";
 import "@/styles/flag-icons/flags.css";
 import PageHeader from "@/components/page-header";
 import { PageTitle } from "@/components/page-title-updater";
+import { testGA4Connection } from "@/server/analytics-actions";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -25,14 +25,33 @@ interface PageProps {
 export default async function Page({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const range = (resolvedSearchParams.range as string) || "last-24-hours";
+  const connection = await testGA4Connection();
+  const connected = connection.success;
 
   return (
     <div className="flex flex-col gap-6">
       <PageTitle title="Analytics" />
-      <PageHeader title="Analytics" description="Remove the guesswork and follow the data." />
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <GA4ConnectionChecker />
-      </div>
+      <PageHeader
+        title="Analytics"
+        description="Remove the guesswork and follow the data."
+        titleAccessory={
+          <span
+            role="img"
+            className="relative flex size-2.5"
+            title={connected ? "Connected" : "Not connected"}
+            aria-label={connected ? "Connected" : "Not connected"}
+          >
+            <span
+              className={`absolute inline-flex size-full animate-ping rounded-full opacity-75 ${
+                connected ? "bg-green-500" : "bg-red-500"
+              }`}
+            />
+            <span
+              className={`relative inline-flex size-2.5 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`}
+            />
+          </span>
+        }
+      />
 
       <Tabs defaultValue="overview" className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">

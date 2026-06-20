@@ -23,12 +23,14 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { H1 } from "@/components/ui/typography";
 import { SCRAPER_CONFIG } from "@/config/scraper-config";
 import { clearDiagnosticRuns, getDiagnosticRuns } from "@/lib/db";
 import type { DiagnosticRun } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
+
+import { DiagnosticOutputViewer } from "./_components/diagnostic-output-viewer";
 
 const TABS = [
   { id: "extracted", label: "Selected Fields", icon: Eye },
@@ -621,65 +623,41 @@ export default function DiagnosticsPage() {
 
               {/* TAB 2: Scraped Markdown text viewer */}
               {activeTab === "markdown" && selectedRun && (
-                <Card className="border border-border/50 bg-card/50">
-                  <CardHeader className="border-b bg-muted/20 pb-3.5">
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="size-4 text-primary" />
-                      Cleaned Webpage Readability Snapshot (Markdown)
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Length: {selectedRun.scrapedMarkdown.length.toLocaleString()} characters. First{" "}
-                      {SCRAPER_CONFIG.maxCharacters.toLocaleString()} chars are fed to the model context.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <pre className="max-h-[580px] overflow-auto whitespace-pre-wrap bg-background/30 p-4 font-mono text-[11px] text-muted-foreground leading-relaxed selection:bg-primary/20">
-                      {selectedRun.scrapedMarkdown || "No Jina Reader scraped markdown captured."}
-                    </pre>
-                  </CardContent>
-                </Card>
+                <DiagnosticOutputViewer
+                  title="Cleaned Webpage Readability Snapshot"
+                  description={`First ${SCRAPER_CONFIG.maxCharacters.toLocaleString()} characters are fed to the model context.`}
+                  emptyText="No Jina Reader scraped markdown captured."
+                  value={selectedRun.scrapedMarkdown}
+                  kind="markdown"
+                  icon={FileText}
+                  meta={`${selectedRun.scrapedMarkdown.length.toLocaleString()} characters`}
+                />
               )}
 
               {/* TAB 3: Prompt viewer */}
               {activeTab === "prompt" && selectedRun && (
-                <Card className="border border-border/50 bg-card/50">
-                  <CardHeader className="border-b bg-muted/20 pb-3.5">
-                    <CardTitle className="flex items-center gap-2">
-                      <Code className="size-4 text-primary" />
-                      Raw LLM Prompt Instructions Context
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Contains the task instructions, category specifications, extracted HTML image crawler results, and
-                      Jina body markdown.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <pre className="max-h-[580px] overflow-auto whitespace-pre-wrap bg-background/30 p-4 font-mono text-[11px] text-muted-foreground leading-relaxed selection:bg-primary/20">
-                      {selectedRun.prompt || "No prompt context captured."}
-                    </pre>
-                  </CardContent>
-                </Card>
+                <DiagnosticOutputViewer
+                  title="Raw LLM Prompt Instructions Context"
+                  description="Contains the task instructions, category specifications, extracted HTML image crawler results, and Jina body markdown."
+                  emptyText="No prompt context captured."
+                  value={selectedRun.prompt}
+                  kind="prompt"
+                  icon={Code}
+                  meta={`${selectedRun.prompt.length.toLocaleString()} characters`}
+                />
               )}
 
               {/* TAB 4: Raw Response JSON viewer */}
               {activeTab === "raw" && selectedRun && (
-                <Card className="border border-border/50 bg-card/50">
-                  <CardHeader className="border-b bg-muted/20 pb-3.5">
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="size-4 text-primary" />
-                      Raw AI Extraction String (Structured JSON)
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Raw JSON response text returned from the model before frontend validation, self-healing parser
-                      adjustments, and image candidate sorting.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <pre className="max-h-[580px] overflow-auto whitespace-pre-wrap bg-background/30 p-4 font-mono text-[11px] text-muted-foreground leading-relaxed selection:bg-primary/20">
-                      {selectedRun.rawResponse || "No raw JSON response text captured."}
-                    </pre>
-                  </CardContent>
-                </Card>
+                <DiagnosticOutputViewer
+                  title="Raw AI Extraction String"
+                  description="Raw JSON response text returned from the model before frontend validation, self-healing parser adjustments, and image candidate sorting."
+                  emptyText="No raw JSON response text captured."
+                  value={selectedRun.rawResponse}
+                  kind="json"
+                  icon={Database}
+                  meta={`${selectedRun.rawResponse.length.toLocaleString()} characters`}
+                />
               )}
             </div>
           </div>
