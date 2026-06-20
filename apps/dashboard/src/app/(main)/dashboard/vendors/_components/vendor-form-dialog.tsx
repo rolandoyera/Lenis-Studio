@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Image, Loader2, Upload } from "lucide-react";
+import { Check, ChevronDownIcon, Image, Loader2, Upload } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -683,7 +683,8 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                                   !selected && "text-muted-foreground",
                                 )}
                               >
-                                {selected ? selected.name : "Select country..."}
+                                <span className="truncate">{selected ? selected.name : "Select country..."}</span>
+                                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
                               </button>
                             }
                           />
@@ -808,7 +809,8 @@ export function VendorFormDialog({ open, onOpenChange, mode, initialData, vendor
                                   !selected && "text-muted-foreground",
                                 )}
                               >
-                                {selected ? selected.name : "Select country..."}
+                                <span className="truncate">{selected ? selected.name : "Select country..."}</span>
+                                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
                               </button>
                             }
                           />

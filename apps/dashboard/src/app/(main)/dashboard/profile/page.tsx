@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
 import { formatPhone, getInitials, isValidUsPhone, isValidUsZip } from "@/lib/utils";
 
@@ -376,15 +376,15 @@ function ProfileContent() {
                 {/* Role Selection Dropdown */}
                 <Field className="gap-1.5">
                   <FieldLabel htmlFor="profile-role">User Role</FieldLabel>
-                  <NativeSelect
-                    id="profile-role"
-                    className="w-full [&>select]:h-10 [&>select]:w-full"
-                    value={role}
-                    disabled
-                  >
-                    <NativeSelectOption value="Admin">Admin</NativeSelectOption>
-                    <NativeSelectOption value="Contributor">Contributor</NativeSelectOption>
-                  </NativeSelect>
+                  <Select value={role} disabled>
+                    <SelectTrigger id="profile-role" className="w-full">
+                      <SelectValue placeholder="Select role..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Admin">Admin</SelectItem>
+                      <SelectItem value="Contributor">Contributor</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </Field>
 
                 {/* Phone */}
@@ -452,15 +452,15 @@ function ProfileContent() {
                   render={({ field, fieldState }) => (
                     <Field className="gap-1.5" data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="modal-role">User Role</FieldLabel>
-                      <NativeSelect
-                        {...field}
-                        id="modal-role"
-                        className="w-full [&>select]:h-10 [&>select]:w-full"
-                        disabled={isRoleDisabled}
-                      >
-                        <NativeSelectOption value="Admin">Admin</NativeSelectOption>
-                        <NativeSelectOption value="Contributor">Contributor</NativeSelectOption>
-                      </NativeSelect>
+                      <Select value={field.value} onValueChange={field.onChange} disabled={isRoleDisabled}>
+                        <SelectTrigger id="modal-role" className="w-full" aria-invalid={fieldState.invalid}>
+                          <SelectValue placeholder="Select role..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="Contributor">Contributor</SelectItem>
+                        </SelectContent>
+                      </Select>
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}

@@ -679,6 +679,19 @@ export async function uploadLibraryImageBlob(
   return { url, path: storagePath };
 }
 
+export async function uploadOrgBrandingImage(
+  file: File,
+  type: "logo" | "logo-light" | "logo-dark" | "favicon",
+  organizationId: string,
+): Promise<{ url: string; path: string }> {
+  const ext = file.name.split(".").pop() ?? "png";
+  const storagePath = `organizations/${organizationId}/branding/${type}.${ext}`;
+  const storageRef = ref(storage, storagePath);
+  const snapshot = await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(snapshot.ref);
+  return { url, path: storagePath };
+}
+
 /**
  * Uploads a raw image Blob to Firebase Storage under the vendors folder
  * and returns its public download URL.

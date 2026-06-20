@@ -1,5 +1,12 @@
 # CRM AI Development Rules
 
+## Feature-Level Notes
+
+Before working inside a feature folder, check for an `AGENTS.md` in that folder (and its parents) and
+follow it — these capture feature-specific context that isn't obvious from the code (e.g.
+`src/app/(main)/dashboard/{analytics,vendors,company}/AGENTS.md`). If your change makes one of those
+files wrong, update it in the same change; treat that as part of "done."
+
 ## Think Before Coding
 
 Don't assume. Don't hide confusion. Surface tradeoffs.

@@ -198,6 +198,59 @@ export interface OrganizationConfig {
   metaIntegration?: MetaIntegrationConfig;
 }
 
+export interface CompanyAddress {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  /** Denormalized single-line address; generated on save. */
+  formatted?: string;
+}
+
+export interface CompanySocial {
+  instagram?: string;
+  facebook?: string;
+  linkedin?: string;
+  houzz?: string;
+}
+
+/** Organization-owned company profile used across proposals, invoices, reports, and branding. */
+export interface CompanyProfile {
+  displayName: string;
+  legalName?: string;
+  email?: string;
+  phone?: string;
+  /** ISO 3166-1 alpha-2 code that drives phone formatting/validation; falls back to the address country. */
+  phoneCountry?: string;
+  website?: string;
+  logoUrl?: string;
+  logoPath?: string;
+  address?: CompanyAddress;
+  social?: CompanySocial;
+}
+
+export interface OrgBranding {
+  primaryColor?: string;
+  accentColor?: string;
+  logoLightUrl?: string;
+  logoLightPath?: string;
+  logoDarkUrl?: string;
+  logoDarkPath?: string;
+  faviconUrl?: string;
+  faviconPath?: string;
+}
+
+export interface OrgSettings {
+  timezone?: string;
+  currency?: string;
+  measurementUnit?: "imperial" | "metric";
+  defaultMarkupPercent?: number;
+  defaultTaxRate?: number;
+  proposalExpirationDays?: number;
+}
+
 export interface Organization {
   organizationId: string;
   name: string;
@@ -206,6 +259,9 @@ export interface Organization {
   plan: "Starter" | "Pro" | "Enterprise";
   createdAt: number;
   config?: OrganizationConfig;
+  companyProfile?: CompanyProfile;
+  branding?: OrgBranding;
+  settings?: OrgSettings;
 }
 
 export interface UserProfile {

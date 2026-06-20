@@ -165,7 +165,18 @@ service cloud.firestore {
     match /organizations/{orgId} {
       // Members may read their own org (e.g. plan/config); only SuperAdmins see all.
       allow get: if isSignedIn() && (orgId == userOrg() || isSuperAdmin());
-      allow list, create, update, delete: if isSignedIn() && isSuperAdmin();
+      allow list, create, delete: if isSignedIn() && isSuperAdmin();
+
+      // Admins may edit their own org's Company Profile, but only those fields —
+      // billing/identity fields (name, adminEmail, status, plan, config) stay
+      // SuperAdmin-only. SuperAdmins keep full update access.
+      allow update: if isSignedIn() && (
+        isSuperAdmin()
+        || (isAdmin()
+          && orgId == userOrg()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['companyProfile', 'branding', 'settings']))
+      );
 
       // Integration secrets (Meta page access tokens, etc.) are server-only:
       // written and read exclusively via the firebase-admin SDK, never a client.
