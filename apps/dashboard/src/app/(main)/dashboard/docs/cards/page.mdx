@@ -1,0 +1,22 @@
+---
+title: Cards
+order: 4
+---
+
+import { CardPlayground } from "./_components/card-playground";
+
+# Cards
+
+A playground for developing a consistent card theme. Cards are built on
+`components/ui/card.tsx` (`Card`, `CardHeader`, `CardTitle`, `CardContent`,
+`CardFooter`), but their spacing, headers, and footers still vary across the
+app. This page renders real cards with mock data so we can settle on shared
+conventions here before rolling them back into the components.
+
+## Playground
+
+Starting point: the client contact card, shown at mobile, tablet, and desktop
+widths at once. Each preview renders in its own iframe so Tailwind breakpoints
+resolve against the frame — edit the card and all three widths update live.
+
+<CardPlayground />
