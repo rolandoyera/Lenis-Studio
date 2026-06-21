@@ -45,7 +45,8 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 ### 1. Verification & Compile Checks
 
 - Always execute `npx tsc --noEmit` inside the dashboard app directory to check for TypeScript errors before completing any code changes.
-- Ensure all Biome formatting and lint checks pass cleanly using `npx biome check --write`.
+- Use Prettier for formatting with `npm run format`.
+- Ensure all Biome lint checks pass cleanly using `npx biome check --write`; Biome formatting is disabled.
 
 ### 2. Next.js Client & Server Boundaries
 

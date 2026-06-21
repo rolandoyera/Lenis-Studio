@@ -17,14 +17,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard/instagram?meta=no_org", req.url));
   }
 
+  const appId = process.env.META_APP_ID;
+  const redirectUri = process.env.META_REDIRECT_URI;
+
+  if (!appId || !redirectUri) {
+    return NextResponse.redirect(new URL("/dashboard/instagram?meta=not_configured", req.url));
+  }
+
   // Random nonce ties this redirect to its callback (CSRF protection); the org
   // id rides along in `state` so the callback knows which tenant to write to.
   const nonce = randomBytes(16).toString("hex");
   const state = Buffer.from(JSON.stringify({ organizationId, nonce })).toString("base64url");
 
   const params = new URLSearchParams({
-    client_id: process.env.META_APP_ID!,
-    redirect_uri: process.env.META_REDIRECT_URI!,
+    client_id: appId,
+    redirect_uri: redirectUri,
     response_type: "code",
     state,
     scope: [

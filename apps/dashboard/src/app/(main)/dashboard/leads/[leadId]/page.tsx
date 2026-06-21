@@ -354,8 +354,8 @@ export default function LeadDetailPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="pt-0">
+            <CardHeader className="py-3 bg-muted/50">
               <CardTitle>Audit</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm">

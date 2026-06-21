@@ -6,7 +6,11 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import { deleteReplacedStorageFiles, getOrganization, updateOrganization } from "@/lib/db";
+import {
+  deleteReplacedStorageFiles,
+  getOrganization,
+  updateOrganization,
+} from "@/lib/db";
 import type { Organization } from "@/lib/types";
 
 import { BrandingCard, BrandingFields } from "./branding-section";
@@ -49,7 +53,8 @@ export function CompanyProfileForm() {
     setOrg({ ...org, ...patch }); // optimistic
     try {
       await updateOrganization(organizationId, patch);
-      if (prevPaths.length > 0) await deleteReplacedStorageFiles(prevPaths, nextPaths);
+      if (prevPaths.length > 0)
+        await deleteReplacedStorageFiles(prevPaths, nextPaths);
       toast.success("Company profile saved.");
       return true;
     } catch (error) {
@@ -69,7 +74,9 @@ export function CompanyProfileForm() {
   }
 
   if (!org) {
-    return <p className="text-muted-foreground text-sm">No organization found.</p>;
+    return (
+      <p className="text-muted-foreground text-sm">No organization found.</p>
+    );
   }
 
   return (
@@ -85,15 +92,14 @@ export function CompanyProfileForm() {
         open={editing === "company"}
         onOpenChange={(v) => setEditing(v ? "company" : null)}
         title="Edit Company Information"
-        description="Company details and address. A formatted address is generated automatically."
+        description="Add and edit your company information."
         org={org}
         persist={persist}
         buildPatch={(data) => ({
           patch: {
             companyProfile: formToOrganizationUpdate(data).companyProfile,
           },
-        })}
-      >
+        })}>
         {(props) => <CompanyInfoFields {...props} />}
       </SectionEditDialog>
 
@@ -115,11 +121,17 @@ export function CompanyProfileForm() {
               org.branding?.iconLightPath,
               org.branding?.iconDarkPath,
             ],
-            nextPaths: [branding.logoLightPath, branding.logoDarkPath, branding.iconLightPath, branding.iconDarkPath],
+            nextPaths: [
+              branding.logoLightPath,
+              branding.logoDarkPath,
+              branding.iconLightPath,
+              branding.iconDarkPath,
+            ],
           };
-        }}
-      >
-        {(props) => <BrandingFields {...props} organizationId={organizationId ?? ""} />}
+        }}>
+        {(props) => (
+          <BrandingFields {...props} organizationId={organizationId ?? ""} />
+        )}
       </SectionEditDialog>
 
       {/* Settings */}
@@ -132,8 +144,7 @@ export function CompanyProfileForm() {
         persist={persist}
         buildPatch={(data) => ({
           patch: { settings: formToOrganizationUpdate(data).settings },
-        })}
-      >
+        })}>
         {(props) => <SettingsFields {...props} />}
       </SectionEditDialog>
     </>

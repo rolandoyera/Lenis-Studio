@@ -9,7 +9,10 @@ import { H3 } from "@/components/ui/typography";
 import type { Project } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
-import { PROJECT_STATUS_LABELS, PROJECT_STATUS_META } from "../../projects/_components/project-constants";
+import {
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_META,
+} from "../../projects/_components/project-constants";
 
 interface ClientProjectsCardProps {
   projects: Project[];
@@ -17,15 +20,19 @@ interface ClientProjectsCardProps {
 }
 
 /** Associated project spaces grid with an "Initialize Project" entry point. */
-export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCardProps) {
+export function ClientProjectsCard({
+  projects,
+  onAddProject,
+}: ClientProjectsCardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between border-b">
+    <Card className="pt-0">
+      <CardHeader className="bg-muted/50 h-15 flex items-center justify-between">
         <CardTitle>
           <FolderKanban className="icons" />
           Projects
         </CardTitle>
-        <Button variant="secondary" onClick={onAddProject}>
+
+        <Button size="sm" variant="secondary" onClick={onAddProject}>
           <Plus className="size-3.5" />
           Start New Project
         </Button>
@@ -36,7 +43,8 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
             <FolderKanban className="mb-2 size-10 text-muted-foreground/30" />
             <h3 className="font-semibold text-sm">No projects created</h3>
             <p className="mt-1 max-w-xs text-muted-foreground text-xs">
-              Begin drafting budget pools, address details, and design briefs by setting up this client's first project.
+              Begin drafting budget pools, address details, and design briefs by
+              setting up this client's first project.
             </p>
             <Button onClick={onAddProject} className="mt-4">
               <Plus className="size-3.5" />
@@ -48,11 +56,11 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
             {projects.map((project) => (
               <div
                 key={project.projectId}
-                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4"
-              >
+                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4">
                 <div className="mt-1 flex items-center justify-between">
                   <H3 className="text-muted-foreground">{project.name}</H3>
-                  <Badge className={` ${PROJECT_STATUS_META[project.status].badgeClass}`}>
+                  <Badge
+                    className={` ${PROJECT_STATUS_META[project.status].badgeClass}`}>
                     {PROJECT_STATUS_LABELS[project.status]}
                   </Badge>
                 </div>
@@ -85,8 +93,7 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
                   <Link
                     href={`/dashboard/projects/${project.projectId}`}
                     prefetch={false}
-                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline"
-                  >
+                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline">
                     View Project
                   </Link>
                 </div>
