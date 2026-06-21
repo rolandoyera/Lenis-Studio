@@ -19,7 +19,7 @@ export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGaller
     <Card className="overflow-hidden">
       <CardHeader className="h-6.5">
         {activeImage === item.coverImageUrl && activeImage && (
-          <Badge className="flex items-center gap-2 bg-black/55 text-white uppercase backdrop-blur-xs">
+          <Badge variant="overlay">
             <Image className="size-2.5 text-yellow-500" />
             Primary Cover
           </Badge>

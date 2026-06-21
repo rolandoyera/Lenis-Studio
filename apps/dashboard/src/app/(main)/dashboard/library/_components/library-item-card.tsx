@@ -1,6 +1,11 @@
 import Link from "next/link";
 
-import { ExternalLink, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  ExternalLink,
+  ShoppingBag,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 
 import { DashboardImage } from "@/components/dashboard-image";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +15,13 @@ import { H3 } from "@/components/ui/typography";
 import type { LibraryItem, Vendor } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
-export function LibraryItemCard({ item, parentVendor }: { item: LibraryItem; parentVendor?: Vendor }) {
+export function LibraryItemCard({
+  item,
+  parentVendor,
+}: {
+  item: LibraryItem;
+  parentVendor?: Vendor;
+}) {
   const vendorName = parentVendor?.name || "Unknown Vendor";
   const profitable = item.sellingPrice > item.unitCost;
 
@@ -19,8 +30,7 @@ export function LibraryItemCard({ item, parentVendor }: { item: LibraryItem; par
       {/* Visual Thumbnail Area */}
       <Link
         href={`/dashboard/library/${item.itemId}`}
-        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40"
-      >
+        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40">
         {item.coverImageUrl ? (
           <DashboardImage
             priority
@@ -37,19 +47,9 @@ export function LibraryItemCard({ item, parentVendor }: { item: LibraryItem; par
 
         {/* Sourcing Category & Subcategory Tags */}
         <div className="absolute top-2 left-2.5 flex items-center gap-1.5">
-          <Badge
-            variant="default"
-            className="bg-black/50 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs"
-          >
-            {item.category}
-          </Badge>
+          <Badge variant="overlay">{item.category}</Badge>
           {item.subcategory && (
-            <Badge
-              variant="default"
-              className="bg-black/50 text-[8px] text-white uppercase tracking-wider backdrop-blur-xs"
-            >
-              {item.subcategory}
-            </Badge>
+            <Badge variant="overlay">{item.subcategory}</Badge>
           )}
         </div>
       </Link>
@@ -58,7 +58,9 @@ export function LibraryItemCard({ item, parentVendor }: { item: LibraryItem; par
         <div className="flex-1">
           {/* Item Name - Clicking/hovering on the title takes you to the detail page */}
           <H3 className="transition-colors group-has-[.detail-link:hover]:text-primary">
-            <Link href={`/dashboard/library/${item.itemId}`} className="detail-link block">
+            <Link
+              href={`/dashboard/library/${item.itemId}`}
+              className="detail-link block">
               {item.name}
             </Link>
           </H3>
@@ -69,37 +71,42 @@ export function LibraryItemCard({ item, parentVendor }: { item: LibraryItem; par
               parentVendor?.website ? (
                 <a
                   href={
-                    parentVendor.website.startsWith("http") ? parentVendor.website : `https://${parentVendor.website}`
+                    parentVendor.website.startsWith("http")
+                      ? parentVendor.website
+                      : `https://${parentVendor.website}`
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                   {vendorName}
                   <ExternalLink className="ml-1 size-2.5 shrink-0" />
                 </a>
               ) : (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                   {vendorName}
                   <ExternalLink className="size-2.5 shrink-0" />
                 </Link>
               )
             ) : (
-              <span className="font-medium text-foreground/60">{vendorName}</span>
+              <span className="font-medium text-foreground/60">
+                {vendorName}
+              </span>
             )}
           </div>
 
           {/* Product webpage link on vendor's site */}
           {item.sourcingLink ? (
             <a
-              href={item.sourcingLink.startsWith("http") ? item.sourcingLink : `https://${item.sourcingLink}`}
+              href={
+                item.sourcingLink.startsWith("http")
+                  ? item.sourcingLink
+                  : `https://${item.sourcingLink}`
+              }
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline"
-            >
+              className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline">
               <span className="truncate">Origin Link</span>
               <ExternalLink className="size-2.5 shrink-0" />
             </a>
@@ -115,17 +122,27 @@ export function LibraryItemCard({ item, parentVendor }: { item: LibraryItem; par
         <div className="flex w-full items-center justify-between">
           <div className="flex flex-col">
             <Label className="mb-1">Cost</Label>
-            <span className="font-semibold text-foreground/75 text-sm">{formatCurrency(item.unitCost)}</span>
+            <span className="font-semibold text-foreground/75 text-sm">
+              {formatCurrency(item.unitCost)}
+            </span>
           </div>
           <div className="flex flex-col text-right">
             <Label className="mb-1 ml-auto">Selling Price</Label>
-            <span className="font-bold text-primary text-sm">{formatCurrency(item.sellingPrice)}</span>
+            <span className="font-bold text-primary text-sm">
+              {formatCurrency(item.sellingPrice)}
+            </span>
           </div>
         </div>
 
         {/* Calculated Margin indicators */}
-        <Badge variant={profitable ? "success" : "warning"} className="mx-auto mt-3 -mb-1 gap-1">
-          {profitable ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+        <Badge
+          variant={profitable ? "success" : "warning"}
+          className="mx-auto mt-3 -mb-1 gap-1">
+          {profitable ? (
+            <TrendingUp className="size-3" />
+          ) : (
+            <TrendingDown className="size-3" />
+          )}
           <span className="font-semibold">{Math.round(item.markup)}%</span>
           <span>markup</span>
         </Badge>

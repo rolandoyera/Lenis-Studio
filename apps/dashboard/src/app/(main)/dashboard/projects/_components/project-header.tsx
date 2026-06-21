@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenuContent,
@@ -26,7 +27,7 @@ import type { Client, Project } from "@/lib/types";
 import HeaderBackLink from "../../_components/HeaderBackLink";
 import {
   PROJECT_STATUS_LABELS,
-  PROJECT_STATUS_META,
+  PROJECT_STATUS_VARIANT,
   PROJECT_TABS,
 } from "./project-constants";
 
@@ -68,10 +69,9 @@ export function ProjectHeader({
             <div>
               <div className="flex items-center gap-3">
                 <H1>{project.name}</H1>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] tracking-wider ${PROJECT_STATUS_META[project.status].badgeClass}`}>
+                <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
                   {PROJECT_STATUS_LABELS[project.status]}
-                </span>
+                </Badge>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-medium text-muted-foreground text-sm">
                 {client ? (

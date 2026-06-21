@@ -37,16 +37,12 @@ export function ItemDetailHeader({
     <>
       <HeaderBackLink href="/dashboard/library" />
 
-      <div className="flex flex-col justify-start gap-16 border-b pb-6 md:flex-row md:items-center">
+      <div className="flex flex-col justify-start gap-16 pb-4 md:flex-row md:items-center">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">
-              {item.category}
-            </Badge>
+            <Badge variant="secondary">{item.category}</Badge>
             {item.subcategory && (
-              <Badge className="border border-muted-foreground/20 bg-muted/10 text-muted-foreground uppercase">
-                {item.subcategory}
-              </Badge>
+              <Badge variant="outline">{item.subcategory}</Badge>
             )}
           </div>
           <h1 className="mt-1 font-heading font-medium text-3xl tracking-tight">

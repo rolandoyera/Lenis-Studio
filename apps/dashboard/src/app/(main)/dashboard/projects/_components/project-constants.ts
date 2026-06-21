@@ -1,5 +1,8 @@
+import type { ComponentProps } from "react";
+
 import { z } from "zod";
 
+import type { Badge } from "@/components/ui/badge";
 import type { Project, ProjectStatus } from "@/lib/types";
 import { formatZip, isValidUsZip } from "@/lib/utils";
 
@@ -17,12 +20,15 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   cancelled: "Cancelled",
 };
 
-/** Distinct badge colors per status, mirroring the pill styling used across the projects UI. */
-export const PROJECT_STATUS_META: Record<ProjectStatus, { badgeClass: string }> = {
-  in_progress: { badgeClass: "border border-emerald-500/20 bg-emerald-500/15 text-emerald-500" },
-  on_hold: { badgeClass: "border border-amber-500/20 bg-amber-500/15 text-amber-500" },
-  completed: { badgeClass: "border border-blue-500/20 bg-blue-500/15 text-blue-500" },
-  cancelled: { badgeClass: "border border-rose-500/20 bg-rose-500/15 text-rose-500" },
+/** Badge variant per status — keeps status pills on the shared variant styling so they can't drift. */
+export const PROJECT_STATUS_VARIANT: Record<
+  ProjectStatus,
+  ComponentProps<typeof Badge>["variant"]
+> = {
+  in_progress: "info",
+  on_hold: "warning",
+  completed: "success",
+  cancelled: "destructive",
 };
 
 export const PROJECT_TABS = [

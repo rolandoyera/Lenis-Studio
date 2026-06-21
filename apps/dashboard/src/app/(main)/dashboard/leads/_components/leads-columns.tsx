@@ -11,14 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Lead } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 import {
   BUDGET_RANGE_LABELS,
   getLeadName,
   LEAD_SOURCE_LABELS,
   LEAD_STAGE_LABELS,
-  LEAD_STAGE_META,
+  LEAD_STAGE_VARIANT,
   PROPERTY_TYPE_LABELS,
 } from "./lead-constants";
 
@@ -87,15 +86,9 @@ export function getLeadsColumns(
       header: "Stage",
       filterFn: "equalsString",
       cell: ({ row }) => {
-        const meta = LEAD_STAGE_META[row.original.stage];
         return (
-          <Badge
-            variant="outline"
-            className={cn(
-              "gap-1.5 border px-2 py-1 font-medium",
-              meta.badgeClass,
-            )}>
-            <span className={cn("size-1.5 rounded-full", meta.dotClass)} />
+          <Badge variant={LEAD_STAGE_VARIANT[row.original.stage]}>
+            <span className="size-1.5 rounded-full bg-current" />
             {LEAD_STAGE_LABELS[row.original.stage]}
           </Badge>
         );

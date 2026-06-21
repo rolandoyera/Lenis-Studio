@@ -40,7 +40,7 @@ import {
   updateLead,
 } from "@/lib/db";
 import type { Lead, UserProfile } from "@/lib/types";
-import { cn, formatPhone, normalizePhone } from "@/lib/utils";
+import { formatPhone, normalizePhone } from "@/lib/utils";
 
 import {
   BUDGET_RANGE_LABELS,
@@ -48,7 +48,7 @@ import {
   getLeadName,
   LEAD_SOURCE_LABELS,
   LEAD_STAGE_LABELS,
-  LEAD_STAGE_META,
+  LEAD_STAGE_VARIANT,
   type LeadFormData,
   leadFormToFields,
   leadToForm,
@@ -178,7 +178,6 @@ export default function LeadDetailPage({ params }: PageProps) {
 
   if (!lead) return null;
 
-  const stageMeta = LEAD_STAGE_META[lead.stage];
   const isConverted = !!lead.convertedClientId;
   const fullAddress = [
     lead.street,
@@ -196,13 +195,8 @@ export default function LeadDetailPage({ params }: PageProps) {
       <div className="flex flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
         <div className="flex items-center gap-3">
           <H1>{getLeadName(lead)}</H1>
-          <Badge
-            variant="outline"
-            className={cn(
-              "gap-1.5 border px-2 py-1 font-medium",
-              stageMeta.badgeClass,
-            )}>
-            <span className={cn("size-1.5 rounded-full", stageMeta.dotClass)} />
+          <Badge variant={LEAD_STAGE_VARIANT[lead.stage]}>
+            <span className="size-1.5 rounded-full bg-current" />
             {LEAD_STAGE_LABELS[lead.stage]}
           </Badge>
         </div>

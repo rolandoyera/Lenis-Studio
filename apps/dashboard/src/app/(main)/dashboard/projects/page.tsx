@@ -20,6 +20,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,7 +43,7 @@ import { formatCurrency } from "@/lib/utils";
 import {
   EMPTY_PROJECT_FORM,
   PROJECT_STATUS_LABELS,
-  PROJECT_STATUS_META,
+  PROJECT_STATUS_VARIANT,
   type ProjectFormData,
   projectToForm,
 } from "./_components/project-constants";
@@ -223,10 +224,9 @@ export default function ProjectsPage() {
                   className="group relative overflow-hidden">
                   <CardHeader className="flex flex-col gap-1.5 pb-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${PROJECT_STATUS_META[project.status].badgeClass}`}>
+                      <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
                         {PROJECT_STATUS_LABELS[project.status]}
-                      </span>
+                      </Badge>
                     </div>
 
                     <CardTitle className="line-clamp-1 font-heading font-semibold text-lg leading-tight transition-colors hover:text-primary">

@@ -11,7 +11,7 @@ import { formatCurrency } from "@/lib/utils";
 
 import {
   PROJECT_STATUS_LABELS,
-  PROJECT_STATUS_META,
+  PROJECT_STATUS_VARIANT,
 } from "../../projects/_components/project-constants";
 
 interface ClientProjectsCardProps {
@@ -59,8 +59,7 @@ export function ClientProjectsCard({
                 className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4">
                 <div className="mt-1 flex items-center justify-between">
                   <H3 className="text-muted-foreground">{project.name}</H3>
-                  <Badge
-                    className={` ${PROJECT_STATUS_META[project.status].badgeClass}`}>
+                  <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
                     {PROJECT_STATUS_LABELS[project.status]}
                   </Badge>
                 </div>

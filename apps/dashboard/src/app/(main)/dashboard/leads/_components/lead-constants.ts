@@ -1,5 +1,8 @@
+import type { ComponentProps } from "react";
+
 import { z } from "zod";
 
+import type { Badge } from "@/components/ui/badge";
 import type { BudgetRange, DesiredTimeline, Lead, LeadSource, LeadStage, PropertyType } from "@/lib/types";
 import { isValidUsPhone, isValidUsZip } from "@/lib/utils";
 
@@ -18,42 +21,18 @@ export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
   on_hold: "On Hold",
 };
 
-/** Distinct badge colors per stage, mirroring the outline+dot status badge used in the users table. */
-export const LEAD_STAGE_META: Record<LeadStage, { badgeClass: string; dotClass: string }> = {
-  new: {
-    badgeClass: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300",
-    dotClass: "bg-sky-500",
-  },
-  contacted: {
-    badgeClass:
-      "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300",
-    dotClass: "bg-indigo-500",
-  },
-  qualified: {
-    badgeClass:
-      "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-300",
-    dotClass: "bg-violet-500",
-  },
-  proposal_sent: {
-    badgeClass:
-      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300",
-    dotClass: "bg-amber-500",
-  },
-  won: {
-    badgeClass:
-      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300",
-    dotClass: "bg-emerald-500",
-  },
-  lost: {
-    badgeClass:
-      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300",
-    dotClass: "bg-rose-500",
-  },
-  on_hold: {
-    badgeClass:
-      "border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-500/20 dark:bg-zinc-500/10 dark:text-zinc-300",
-    dotClass: "bg-zinc-400",
-  },
+/** Badge variant per stage — keeps stage pills on the shared variant styling so they can't drift. */
+export const LEAD_STAGE_VARIANT: Record<
+  LeadStage,
+  ComponentProps<typeof Badge>["variant"]
+> = {
+  new: "info",
+  contacted: "info",
+  qualified: "info",
+  proposal_sent: "info",
+  won: "success",
+  lost: "destructive",
+  on_hold: "warning",
 };
 
 export const LEAD_SOURCES: LeadSource[] = [

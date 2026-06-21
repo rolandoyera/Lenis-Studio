@@ -48,8 +48,14 @@ export function BadgeGallery() {
         <Swatch label='variant="warning"'>
           <Badge variant="warning">Warning</Badge>
         </Swatch>
+        <Swatch label='variant="info"'>
+          <Badge variant="info">Info</Badge>
+        </Swatch>
         <Swatch label='variant="link"'>
           <Badge variant="link">Link</Badge>
+        </Swatch>
+        <Swatch label='variant="overlay"'>
+          <Badge variant="overlay">Overlay</Badge>
         </Swatch>
       </Section>
 
@@ -62,11 +68,6 @@ export function BadgeGallery() {
         <Swatch label="Uppercase muted tag">
           <Badge className="border border-muted-foreground/20 bg-muted/10 text-muted-foreground uppercase">
             Draft
-          </Badge>
-        </Swatch>
-        <Swatch label="Overlay (on imagery)">
-          <Badge className="flex items-center gap-2 bg-black/55 text-white uppercase backdrop-blur-xs">
-            Featured
           </Badge>
         </Swatch>
       </Section>
