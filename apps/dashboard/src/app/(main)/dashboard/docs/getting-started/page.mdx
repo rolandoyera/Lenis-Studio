@@ -1,0 +1,32 @@
+---
+title: Getting Started
+order: 1
+---
+
+# Getting Started
+
+Welcome to the docs. This page is authored in **MDX**, so you can mix Markdown
+with React components.
+
+## Writing a new doc
+
+1. Create a folder under `docs/` with a `page.mdx` file (e.g. `docs/billing/page.mdx`).
+2. Add YAML frontmatter with a `title` and `order` — the sidebar picks it up automatically.
+3. Write Markdown — headings, lists, links, and `code` are styled to match the app.
+
+```yaml
+---
+title: Billing
+order: 4
+---
+```
+
+## Code blocks
+
+Fenced code blocks are syntax-highlighted at build time with Shiki:
+
+```ts
+export function docsHref(slug: string) {
+  return slug ? `/dashboard/docs/${slug}` : "/dashboard/docs";
+}
+```

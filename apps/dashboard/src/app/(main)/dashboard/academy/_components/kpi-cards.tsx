@@ -17,7 +17,7 @@ export function KpiCards() {
           <CardContent className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="text-3xl text-foreground leading-none tracking-tight">128</span>
-              <Badge className="rounded-sm border-green-600/50 bg-green-500/10 px-1 font-normal text-green-700 text-xs dark:border-green-800/50 dark:bg-green-500/15 dark:text-green-300">
+              <Badge variant="success" className="px-1 font-normal">
                 <ArrowUp />
                 2.8%
               </Badge>
@@ -36,7 +36,7 @@ export function KpiCards() {
           <CardContent className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="text-3xl text-foreground leading-none tracking-tight">94.2%</span>
-              <Badge className="rounded-sm border-green-600/50 bg-green-500/10 px-1 font-normal text-green-700 text-xs dark:border-green-800/50 dark:bg-green-500/15 dark:text-green-300">
+              <Badge variant="success" className="px-1 font-normal">
                 <ArrowUp />
                 1.1%
               </Badge>

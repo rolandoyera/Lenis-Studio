@@ -1,0 +1,38 @@
+---
+title: Alerts
+order: 3
+---
+
+import { ToastGallery } from "./_components/toast-gallery";
+import { BadgeGallery } from "./_components/badge-gallery";
+
+# Alerts
+
+The feedback surfaces used across the app — Sonner toasts and Badges — gathered
+in one place. Components live in `components/ui`, but they're restyled in many
+spots; this page shows the canonical variants plus the patterns actually in use.
+
+## Toasts
+
+Built on [Sonner](https://sonner.emilkowal.ski/), configured once in
+`components/ui/sonner.tsx`. Trigger them to see the live styling:
+
+<ToastGallery />
+
+```ts
+import { toast } from "sonner";
+
+toast.success("Changes saved.");
+toast.error("Couldn't load analytics", {
+  description: "The request timed out. Try again in a moment.",
+});
+```
+
+## Badges
+
+From `components/ui/badge.tsx`. The first row is the sanctioned variants; the
+second collects the restyled badges that recur throughout the app. KPI trend
+deltas use `success` (up) and `destructive` (down) — reach for an existing
+variant before hand-rolling colors.
+
+<BadgeGallery />

@@ -18,10 +18,7 @@ export function KpiCards() {
             <div className="flex items-center gap-3">
               <span className="text-3xl leading-none tracking-tight">$284,500</span>
 
-              <Badge
-                variant="outline"
-                className="border-green-200 bg-green-500/10 text-green-700 dark:border-green-900/40 dark:bg-green-500/15 dark:text-green-300"
-              >
+              <Badge variant="success">
                 <TrendingUp />
                 +12%
               </Badge>
@@ -44,7 +41,7 @@ export function KpiCards() {
             <div className="flex items-center gap-3">
               <span className="text-3xl leading-none tracking-tight">28.4%</span>
 
-              <Badge variant="outline" className="border-destructive/20 bg-destructive/10 text-destructive">
+              <Badge variant="destructive">
                 <TrendingDown />
                 -2.5%
               </Badge>
@@ -67,10 +64,7 @@ export function KpiCards() {
             <div className="flex items-center gap-3">
               <span className="text-3xl leading-none tracking-tight">42</span>
 
-              <Badge
-                variant="outline"
-                className="border-green-200 bg-green-500/10 text-green-700 dark:border-green-900/40 dark:bg-green-500/15 dark:text-green-300"
-              >
+              <Badge variant="success">
                 <TrendingUp />
                 +7
               </Badge>
@@ -93,10 +87,7 @@ export function KpiCards() {
             <div className="flex items-center gap-3">
               <span className="text-3xl leading-none tracking-tight">18.1%</span>
 
-              <Badge
-                variant="outline"
-                className="border-green-200 bg-green-500/10 text-green-700 dark:border-green-900/40 dark:bg-green-500/15 dark:text-green-300"
-              >
+              <Badge variant="success">
                 <TrendingUp />
                 +1.6%
               </Badge>

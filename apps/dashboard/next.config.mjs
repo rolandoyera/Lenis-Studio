@@ -1,6 +1,10 @@
+import createMDX from "@next/mdx";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  // Let `.mdx` files act as routes/pages alongside `.ts`/`.tsx`.
+  pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   experimental: {
     // Enables React's <ViewTransition> integration so route navigations animate
     // shared elements (the auth image/logo) across the home <-> login transition.
@@ -48,4 +52,19 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+const withMDX = createMDX({
+  options: {
+    // Plugins are passed as strings (not imports) so they're serializable for
+    // Turbopack, the default bundler in Next 16.
+    remarkPlugins: [
+      // Parse `---` YAML frontmatter so it drives the nav instead of rendering as text.
+      "remark-frontmatter",
+    ],
+    rehypePlugins: [
+      // Shiki-based build-time syntax highlighting for fenced code blocks.
+      ["rehype-pretty-code", { theme: "github-dark-default", keepBackground: true }],
+    ],
+  },
+});
+
+export default withMDX(nextConfig);

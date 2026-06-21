@@ -3,6 +3,8 @@
 
 import Link from "next/link";
 
+import type { ComponentProps } from "react";
+
 import type { ColumnDef } from "@tanstack/react-table";
 import { parse } from "date-fns";
 import { ArrowUpDown } from "lucide-react";
@@ -13,18 +15,27 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn, getInitials } from "@/lib/utils";
 
-import { statusMeta, type UserRow } from "./data";
+import type { UserRow } from "./data";
 
 function RoleCell({ role }: { role: string }) {
   return <span className="whitespace-nowrap font-medium text-sm">{role}</span>;
 }
 
-function StatusBadge({ status }: { status: UserRow["status"] }) {
-  const meta = statusMeta[status];
+const statusVariant: Record<
+  UserRow["status"],
+  ComponentProps<typeof Badge>["variant"]
+> = {
+  Active: "success",
+  Pending: "warning",
+  Deactivated: "outline",
+  Locked: "destructive",
+  Suspended: "warning",
+};
 
+function StatusBadge({ status }: { status: UserRow["status"] }) {
   return (
-    <Badge className={cn("gap-1.5 border px-2 py-1 font-medium", meta.badgeClass)} variant="outline">
-      <span className={cn("size-1.5 rounded-full", meta.dotClass)} />
+    <Badge variant={statusVariant[status]}>
+      <span className="size-1.5 rounded-full bg-current" />
       {status}
     </Badge>
   );

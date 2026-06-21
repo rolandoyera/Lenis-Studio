@@ -68,7 +68,7 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
     accessorKey: "stage",
     header: "Stage",
     cell: ({ row }) => (
-      <Badge variant="outline" className="rounded-full px-2.5">
+      <Badge variant="outline" className="px-2.5">
         {row.original.stage}
       </Badge>
     ),

@@ -124,7 +124,7 @@ export function LibraryItemCard({ item, parentVendor }: { item: LibraryItem; par
         </div>
 
         {/* Calculated Margin indicators */}
-        <Badge variant={profitable ? "profit" : "warning"} className="mx-auto mt-3 -mb-1 gap-1">
+        <Badge variant={profitable ? "success" : "warning"} className="mx-auto mt-3 -mb-1 gap-1">
           {profitable ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
           <span className="font-semibold">{Math.round(item.markup)}%</span>
           <span>markup</span>
