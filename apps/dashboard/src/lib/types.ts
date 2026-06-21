@@ -25,6 +25,77 @@ export interface Client {
   createdAt: number;
 }
 
+// --- CLIENT NOTES & ACTIVITY ---
+// Append-only records stored in subcollections under the client document
+// (`clients/{clientId}/notes`, `clients/{clientId}/activities`). These are
+// separate from the legacy single-string `Client.notes` design brief.
+
+/** Who triggered an activity or authored a note. */
+export interface ActivityActor {
+  type: "user" | "client" | "system";
+  /** Optional — system-generated events have no real actor id. */
+  id?: string;
+  /** Denormalized at write time so timelines need no lookups and stay historically accurate. */
+  name: string;
+}
+
+/** What an activity points at — a polymorphic reference to the related record. */
+export interface ActivityEntity {
+  type: "client" | "note";
+  id: string;
+  /** Denormalized label for display. */
+  label?: string;
+}
+
+/** Client timeline events implemented today. */
+export type ClientActivityType =
+  | "client_created"
+  | "note_added"
+  | "note_deleted";
+
+/** Append-only audit record — written once, never updated or deleted. */
+export interface ClientActivity {
+  id: string;
+  organizationId: string;
+  /** The client whose timeline this belongs to. */
+  clientId: string;
+  type: ClientActivityType;
+  actor: ActivityActor;
+  /** What the event is about. Top-level client events point at the client itself. */
+  entity: ActivityEntity;
+  /** Who can see it. Defaults to internal; opt specific events into the portal later. */
+  visibility: "internal" | "client_visible";
+  /** Type-specific extras — kept loose until the payloads stabilize. */
+  metadata?: Record<string, unknown>;
+  createdAt: number;
+}
+
+/** Constrained soft-delete reasons — not freeform text. */
+export type NoteDeleteReason =
+  | "created_in_error"
+  | "duplicate"
+  | "no_longer_relevant"
+  | "other";
+
+/**
+ * Append-only client note. Immutable after creation: never edited, never
+ * physically deleted. Removal is a creator-only soft-delete that stamps
+ * `deletedAt`/`deletedBy`/`deleteReason`. Stored at `clients/{clientId}/notes/{id}`.
+ */
+export interface ClientNote {
+  id: string;
+  organizationId: string;
+  clientId: string;
+  body: string;
+  createdBy: ActivityActor;
+  /** Epoch milliseconds — the app-wide timestamp convention. */
+  createdAt: number;
+  deletedAt?: number;
+  deletedBy?: ActivityActor;
+  /** Set once at soft-delete time; not editable afterward. */
+  deleteReason?: NoteDeleteReason;
+}
+
 // --- LEADS ---
 
 export type LeadStage =

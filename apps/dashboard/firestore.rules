@@ -37,6 +37,11 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/projects/$(projectId)).data.organizationId;
     }
 
+    // Org of a client document, for subcollections that inherit the parent's access.
+    function clientOrg(clientId) {
+      return get(/databases/$(database)/documents/clients/$(clientId)).data.organizationId;
+    }
+
     // Shared shape for org-partitioned data collections.
     function readsOwnOrg() {
       return isSignedIn() && resource.data.organizationId == userOrg();
@@ -56,6 +61,41 @@ service cloud.firestore {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg();
       allow update: if updatesInOwnOrg();
+    }
+
+    // Append-only client notes. Each note carries organizationId and a
+    // createdBy actor. Notes are immutable: the body is never editable. The
+    // only permitted mutation is a creator-only soft-delete that stamps
+    // deletedAt/deletedBy/deleteReason and touches nothing else. Notes are
+    // never physically deleted.
+    // Access is inherited from the parent client's org (not the doc's own
+    // organizationId), so unfiltered list queries under this path are allowed —
+    // a per-doc org check would make Firestore reject the list.
+    match /clients/{clientId}/notes/{noteId} {
+      allow read: if isSignedIn() && clientOrg(clientId) == userOrg();
+      allow create: if isSignedIn()
+        && clientOrg(clientId) == userOrg()
+        && request.resource.data.organizationId == userOrg()
+        && request.resource.data.createdBy.id == request.auth.uid
+        && !('deletedAt' in request.resource.data);
+      allow update: if isSignedIn()
+        && clientOrg(clientId) == userOrg()
+        && resource.data.createdBy.id == request.auth.uid
+        && !('deletedAt' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['deletedAt', 'deletedBy', 'deleteReason']);
+      allow delete: if false;
+    }
+
+    // Client activity timeline: an append-only audit log. Records are
+    // write-once — created within the org, then never updated or deleted.
+    // Access is inherited from the parent client (see notes above).
+    match /clients/{clientId}/activities/{activityId} {
+      allow read: if isSignedIn() && clientOrg(clientId) == userOrg();
+      allow create: if isSignedIn()
+        && clientOrg(clientId) == userOrg()
+        && request.resource.data.organizationId == userOrg();
+      allow update, delete: if false;
     }
 
     match /leads/{id} {

@@ -63,7 +63,7 @@ interface PageProps {
 export default function LeadDetailPage({ params }: PageProps) {
   const { leadId } = use(params);
   const router = useRouter();
-  const { uid, organizationId, loading: authLoading } = useAuth();
+  const { uid, profile, organizationId, loading: authLoading } = useAuth();
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -143,7 +143,17 @@ export default function LeadDetailPage({ params }: PageProps) {
     if (!lead || !uid) return;
     setConverting(true);
     try {
-      const client = await convertLeadToClient(lead, uid);
+      const client = await convertLeadToClient(
+        lead,
+        uid,
+        profile
+          ? {
+              type: "user",
+              id: profile.uid,
+              name: profile.displayName || profile.fullName,
+            }
+          : undefined,
+      );
       const now = Date.now();
       setLead({
         ...lead,

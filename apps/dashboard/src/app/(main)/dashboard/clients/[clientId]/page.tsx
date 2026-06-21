@@ -9,13 +9,22 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import {
+  addClientNote,
   addProject,
   deleteClient,
   getClient,
+  getClientNotes,
   getProjects,
+  softDeleteClientNote,
   updateClient,
 } from "@/lib/db";
-import type { Client, Project } from "@/lib/types";
+import type {
+  ActivityActor,
+  Client,
+  ClientNote,
+  NoteDeleteReason,
+  Project,
+} from "@/lib/types";
 
 import type { ProjectFormData } from "../../projects/_components/project-constants";
 import { ProjectFormDialog } from "../../projects/_components/project-form-dialog";
@@ -25,6 +34,7 @@ import { ClientDetailHeader } from "../_components/client-detail-header";
 import { ClientFormDialog } from "../_components/client-form-dialog";
 import { getClientName } from "../_components/client-name";
 import { ClientNotesCard } from "../_components/client-notes-card";
+import { ClientNotesLogCard } from "../_components/client-notes-log-card";
 import { ClientProjectsCard } from "../_components/client-projects-card";
 import { DeleteClientDialog } from "../_components/delete-client-dialog";
 
@@ -39,6 +49,7 @@ export default function ClientProfilePage({ params }: PageProps) {
 
   const [client, setClient] = useState<Client | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [notes, setNotes] = useState<ClientNote[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -54,9 +65,10 @@ export default function ClientProfilePage({ params }: PageProps) {
 
     async function loadClientData() {
       try {
-        const [clientData, projectsData] = await Promise.all([
+        const [clientData, projectsData, notesData] = await Promise.all([
           getClient(clientId),
           getProjects(orgId),
+          getClientNotes(clientId),
         ]);
 
         if (!clientData || clientData.organizationId !== orgId) {
@@ -67,6 +79,7 @@ export default function ClientProfilePage({ params }: PageProps) {
 
         setClient(clientData);
         setProjects(projectsData.filter((p) => p.clientId === clientId));
+        setNotes(notesData);
       } catch (error) {
         console.error("Failed to load client details:", error);
         toast.error("Failed to retrieve client credentials from database.");
@@ -135,6 +148,50 @@ export default function ClientProfilePage({ params }: PageProps) {
     }
   };
 
+  const currentActor: ActivityActor | null = profile
+    ? {
+        type: "user",
+        id: profile.uid,
+        name: profile.displayName || profile.fullName,
+      }
+    : null;
+
+  const handleAddNote = async (body: string) => {
+    if (!client || !currentActor) return;
+    try {
+      const created = await addClientNote({
+        organizationId: client.organizationId,
+        clientId: client.uid,
+        body,
+        author: currentActor,
+      });
+      setNotes((prev) => [created, ...prev]);
+      toast.success("Note added.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to add note.");
+      throw error; // keep the composer text so the user can retry
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string, reason: NoteDeleteReason) => {
+    if (!client || !currentActor) return;
+    try {
+      await softDeleteClientNote({
+        clientId: client.uid,
+        noteId,
+        organizationId: client.organizationId,
+        actor: currentActor,
+        reason,
+      });
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      toast.success("Note deleted.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete note.");
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
@@ -160,16 +217,26 @@ export default function ClientProfilePage({ params }: PageProps) {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="col-span-1 lg:col-span-5">
+        <div className="col-span-1 lg:col-span-4">
           <ClientContactCard client={client} />
         </div>
-        <div className="col-span-1 lg:col-span-7">
+        <div className="col-span-1 lg:col-span-4">
           <ClientProjectsCard
             projects={projects}
             onAddProject={() => setIsAddProjectOpen(true)}
           />
         </div>
-        <div className="col-span-1 lg:col-span-12">
+        {currentActor && (
+          <div className="col-span-1 lg:col-span-4">
+            <ClientNotesLogCard
+              notes={notes}
+              currentActor={currentActor}
+              onAddNote={handleAddNote}
+              onDeleteNote={handleDeleteNote}
+            />
+          </div>
+        )}
+        <div className="col-span-1 lg:col-span-4">
           <ClientNotesCard client={client} onEdit={() => setIsEditOpen(true)} />
         </div>
       </div>

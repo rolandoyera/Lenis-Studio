@@ -87,10 +87,17 @@ export default function ClientsPage() {
 
     setSubmitting(true);
     try {
-      const created = await addClient({
-        ...data,
-        organizationId: profile.organizationId,
-      });
+      const created = await addClient(
+        {
+          ...data,
+          organizationId: profile.organizationId,
+        },
+        {
+          type: "user",
+          id: profile.uid,
+          name: profile.displayName || profile.fullName,
+        },
+      );
       setClients((prev) => [created, ...prev]);
       toast.success("New client created successfully!");
       setIsDialogOpen(false);

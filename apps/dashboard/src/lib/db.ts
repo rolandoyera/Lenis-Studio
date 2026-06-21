@@ -23,10 +23,14 @@ import { trace } from "@/lib/db-trace";
 import { db, storage } from "@/lib/firebase";
 
 import type {
+  ActivityActor,
   Client,
+  ClientActivity,
+  ClientNote,
   DiagnosticRun,
   Lead,
   LibraryItem,
+  NoteDeleteReason,
   Organization,
   Project,
   ProjectRoom,
@@ -95,6 +99,8 @@ export async function getClients(organizationId: string): Promise<Client[]> {
 
 export async function addClient(
   client: Omit<Client, "uid" | "createdAt">,
+  /** When provided, a `client_created` activity is logged atomically with the new client. */
+  actor?: ActivityActor,
 ): Promise<Client> {
   return trace(
     "clients",
@@ -107,7 +113,30 @@ export async function addClient(
         uid,
         createdAt: Date.now(),
       };
-      await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
+
+      if (!actor) {
+        await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
+        return newClient;
+      }
+
+      const activity: ClientActivity = {
+        id: `act-${Math.random().toString(36).substr(2, 9)}`,
+        organizationId: newClient.organizationId,
+        clientId: uid,
+        type: "client_created",
+        actor,
+        entity: { type: "client", id: uid },
+        visibility: "internal",
+        createdAt: newClient.createdAt,
+      };
+
+      const batch = writeBatch(db);
+      batch.set(doc(db, "clients", uid), cleanUndefined(newClient));
+      batch.set(
+        doc(db, "clients", uid, "activities", activity.id),
+        cleanUndefined(activity),
+      );
+      await batch.commit();
       return newClient;
     },
     (c) => c.uid,
@@ -139,6 +168,199 @@ export async function deleteClient(uid: string): Promise<void> {
       await deleteDoc(doc(db, "clients", uid));
     },
     () => uid,
+  );
+}
+
+// --- CLIENT NOTES & ACTIVITY (append-only subcollections) ---
+
+/**
+ * Appends an immutable record to a client's activity timeline
+ * (`clients/{clientId}/activities`). Activities are write-once: never updated,
+ * never deleted.
+ */
+export async function addClientActivity(
+  activity: Omit<ClientActivity, "id" | "createdAt">,
+): Promise<ClientActivity> {
+  return trace(
+    "clientActivities",
+    "WRITE",
+    "addClientActivity",
+    async () => {
+      const newActivity: ClientActivity = {
+        ...activity,
+        id: `act-${Math.random().toString(36).substr(2, 9)}`,
+        createdAt: Date.now(),
+      };
+      await setDoc(
+        doc(db, "clients", activity.clientId, "activities", newActivity.id),
+        cleanUndefined(newActivity),
+      );
+      return newActivity;
+    },
+    (a) => a.id,
+  );
+}
+
+export async function getClientActivities(
+  clientId: string,
+): Promise<ClientActivity[]> {
+  try {
+    return await trace(
+      "clientActivities",
+      "READ",
+      "getClientActivities",
+      async () => {
+        const collRef = collection(db, "clients", clientId, "activities");
+        const snapshot = await getDocs(collRef);
+        const activities: ClientActivity[] = [];
+        snapshot.forEach((docSnap) => {
+          activities.push(docSnap.data() as ClientActivity);
+        });
+        return activities.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (a) => `${a.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching client activities:", error);
+    return [];
+  }
+}
+
+/**
+ * Reads a client's notes (`clients/{clientId}/notes`), newest first.
+ * Soft-deleted notes are excluded unless `includeDeleted` is set (audit views).
+ */
+export async function getClientNotes(
+  clientId: string,
+  options?: { includeDeleted?: boolean },
+): Promise<ClientNote[]> {
+  try {
+    return await trace(
+      "clientNotes",
+      "READ",
+      "getClientNotes",
+      async () => {
+        const collRef = collection(db, "clients", clientId, "notes");
+        const snapshot = await getDocs(collRef);
+        const notes: ClientNote[] = [];
+        snapshot.forEach((docSnap) => {
+          notes.push(docSnap.data() as ClientNote);
+        });
+        const visible = options?.includeDeleted
+          ? notes
+          : notes.filter((n) => !n.deletedAt);
+        return visible.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (n) => `${n.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching client notes:", error);
+    return [];
+  }
+}
+
+/**
+ * Creates an append-only client note and writes a matching `note_added`
+ * activity in the same atomic batch. Notes are immutable once created.
+ */
+export async function addClientNote(input: {
+  organizationId: string;
+  clientId: string;
+  body: string;
+  author: ActivityActor;
+}): Promise<ClientNote> {
+  return trace(
+    "clientNotes",
+    "WRITE",
+    "addClientNote",
+    async () => {
+      const { organizationId, clientId, body, author } = input;
+      const now = Date.now();
+
+      const note: ClientNote = {
+        id: `note-${Math.random().toString(36).substr(2, 9)}`,
+        organizationId,
+        clientId,
+        body,
+        createdBy: author,
+        createdAt: now,
+      };
+      const activity: ClientActivity = {
+        id: `act-${Math.random().toString(36).substr(2, 9)}`,
+        organizationId,
+        clientId,
+        type: "note_added",
+        actor: author,
+        entity: { type: "note", id: note.id },
+        visibility: "internal",
+        createdAt: now,
+      };
+
+      const batch = writeBatch(db);
+      batch.set(
+        doc(db, "clients", clientId, "notes", note.id),
+        cleanUndefined(note),
+      );
+      batch.set(
+        doc(db, "clients", clientId, "activities", activity.id),
+        cleanUndefined(activity),
+      );
+      await batch.commit();
+      return note;
+    },
+    (n) => n.id,
+  );
+}
+
+/**
+ * Soft-deletes a client note: stamps `deletedAt`/`deletedBy`/`deleteReason` and
+ * writes a matching `note_deleted` activity in the same atomic batch. The note
+ * document is never physically removed. Creator-only enforcement is the
+ * caller's responsibility (and, ultimately, Firestore security rules).
+ */
+export async function softDeleteClientNote(input: {
+  clientId: string;
+  noteId: string;
+  organizationId: string;
+  actor: ActivityActor;
+  reason: NoteDeleteReason;
+}): Promise<void> {
+  return trace(
+    "clientNotes",
+    "WRITE",
+    "softDeleteClientNote",
+    async () => {
+      const { clientId, noteId, organizationId, actor, reason } = input;
+      const now = Date.now();
+
+      const activity: ClientActivity = {
+        id: `act-${Math.random().toString(36).substr(2, 9)}`,
+        organizationId,
+        clientId,
+        type: "note_deleted",
+        actor,
+        entity: { type: "note", id: noteId },
+        visibility: "internal",
+        metadata: { deleteReason: reason },
+        createdAt: now,
+      };
+
+      const batch = writeBatch(db);
+      batch.update(
+        doc(db, "clients", clientId, "notes", noteId),
+        cleanUndefined({
+          deletedAt: now,
+          deletedBy: actor,
+          deleteReason: reason,
+        }),
+      );
+      batch.set(
+        doc(db, "clients", clientId, "activities", activity.id),
+        cleanUndefined(activity),
+      );
+      await batch.commit();
+    },
+    () => input.noteId,
   );
 }
 
@@ -251,6 +473,8 @@ export async function updateLead(
 export async function convertLeadToClient(
   lead: Lead,
   convertedBy: string,
+  /** When provided, a `client_created` activity is logged on the new client. */
+  actor?: ActivityActor,
 ): Promise<Client> {
   return trace(
     "leads",
@@ -294,6 +518,24 @@ export async function convertLeadToClient(
           lastActivityAt: now,
         }),
       );
+
+      if (actor) {
+        const activity: ClientActivity = {
+          id: `act-${Math.random().toString(36).substr(2, 9)}`,
+          organizationId: newClient.organizationId,
+          clientId: clientUid,
+          type: "client_created",
+          actor,
+          entity: { type: "client", id: clientUid },
+          visibility: "internal",
+          metadata: { sourceLeadId: lead.uid },
+          createdAt: now,
+        };
+        batch.set(
+          doc(db, "clients", clientUid, "activities", activity.id),
+          cleanUndefined(activity),
+        );
+      }
 
       await batch.commit();
       return newClient;
