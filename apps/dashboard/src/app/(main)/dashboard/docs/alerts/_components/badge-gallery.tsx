@@ -1,7 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 
 /** One labelled swatch: the rendered element above its source/usage note. */
-function Swatch({ label, children }: { label: string; children: React.ReactNode }) {
+function Swatch({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col items-start gap-2 rounded-lg border bg-card p-4">
       <div className="flex min-h-6 items-center">{children}</div>
@@ -10,7 +16,13 @@ function Swatch({ label, children }: { label: string; children: React.ReactNode 
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-3">
       <h3 className="font-medium text-sm">{title}</h3>
@@ -20,8 +32,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 /**
- * Gallery of every sanctioned `Badge` variant plus the restyled patterns that
- * actually appear across the app, so they can be reviewed in one place.
+ * Gallery of every sanctioned `Badge` variant, so the standard set can be
+ * reviewed in one place.
  */
 export function BadgeGallery() {
   return (
@@ -56,19 +68,6 @@ export function BadgeGallery() {
         </Swatch>
         <Swatch label='variant="overlay"'>
           <Badge variant="overlay">Overlay</Badge>
-        </Swatch>
-      </Section>
-
-      <Section title="Restyled patterns in the app">
-        <Swatch label="Uppercase primary tag">
-          <Badge className="border border-primary/20 bg-primary/10 text-primary uppercase">
-            New
-          </Badge>
-        </Swatch>
-        <Swatch label="Uppercase muted tag">
-          <Badge className="border border-muted-foreground/20 bg-muted/10 text-muted-foreground uppercase">
-            Draft
-          </Badge>
         </Swatch>
       </Section>
     </div>

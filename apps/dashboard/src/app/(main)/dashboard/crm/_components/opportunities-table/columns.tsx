@@ -67,11 +67,7 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
   {
     accessorKey: "stage",
     header: "Stage",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="px-2.5">
-        {row.original.stage}
-      </Badge>
-    ),
+    cell: ({ row }) => <Badge variant="outline">{row.original.stage}</Badge>,
     filterFn: "equalsString",
   },
   {
@@ -99,7 +95,8 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 rounded-full text-muted-foreground hover:bg-transparent focus-visible:bg-transparent">
+          className="size-8 rounded-full text-muted-foreground hover:bg-transparent focus-visible:bg-transparent"
+        >
           <Pencil />
           <span className="sr-only">Edit opportunity</span>
         </Button>

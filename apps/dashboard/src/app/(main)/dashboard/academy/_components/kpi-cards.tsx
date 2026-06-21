@@ -1,7 +1,13 @@
 import { ArrowUp, Info } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export function KpiCards() {
   return (
@@ -16,13 +22,17 @@ export function KpiCards() {
           </CardHeader>
           <CardContent className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-3xl text-foreground leading-none tracking-tight">128</span>
-              <Badge variant="success" className="px-1 font-normal">
+              <span className="text-3xl text-foreground leading-none tracking-tight">
+                128
+              </span>
+              <Badge variant="success">
                 <ArrowUp />
                 2.8%
               </Badge>
             </div>
-            <div className="text-right text-muted-foreground text-xs">across 5 Grade 11 sections</div>
+            <div className="text-right text-muted-foreground text-xs">
+              across 5 Grade 11 sections
+            </div>
           </CardContent>
         </Card>
 
@@ -35,13 +45,17 @@ export function KpiCards() {
           </CardHeader>
           <CardContent className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-3xl text-foreground leading-none tracking-tight">94.2%</span>
-              <Badge variant="success" className="px-1 font-normal">
+              <span className="text-3xl text-foreground leading-none tracking-tight">
+                94.2%
+              </span>
+              <Badge variant="success">
                 <ArrowUp />
                 1.1%
               </Badge>
             </div>
-            <div className="text-right text-muted-foreground text-xs">vs last month</div>
+            <div className="text-right text-muted-foreground text-xs">
+              vs last month
+            </div>
           </CardContent>
         </Card>
 
@@ -53,9 +67,13 @@ export function KpiCards() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col">
-            <div className="text-3xl text-foreground leading-none tracking-tight">81</div>
+            <div className="text-3xl text-foreground leading-none tracking-tight">
+              81
+            </div>
 
-            <div className="text-right text-muted-foreground text-xs">63 pending · 18 overdue</div>
+            <div className="text-right text-muted-foreground text-xs">
+              63 pending · 18 overdue
+            </div>
           </CardContent>
         </Card>
 
@@ -67,9 +85,13 @@ export function KpiCards() {
             </CardAction>
           </CardHeader>
           <CardContent className="flex flex-col">
-            <div className="text-3xl text-foreground leading-none tracking-tight">5</div>
+            <div className="text-3xl text-foreground leading-none tracking-tight">
+              5
+            </div>
 
-            <div className="text-right text-muted-foreground text-xs">1 in progress · 3 upcoming · 1 cancelled</div>
+            <div className="text-right text-muted-foreground text-xs">
+              1 in progress · 3 upcoming · 1 cancelled
+            </div>
           </CardContent>
         </Card>
       </div>

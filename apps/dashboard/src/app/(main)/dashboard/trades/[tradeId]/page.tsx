@@ -184,7 +184,8 @@ export default function TradeDetailPage({ params }: PageProps) {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setIsDeleteOpen(true)}
-                variant="destructive">
+                variant="destructive"
+              >
                 <Trash2 size={4} />
                 Delete Profile
               </DropdownMenuItem>
@@ -216,7 +217,8 @@ export default function TradeDetailPage({ params }: PageProps) {
                 <Label>Email Address</Label>
                 <a
                   href={`mailto:${trade.email}`}
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline">
+                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline"
+                >
                   <Mail className="size-4 shrink-0 text-muted-foreground" />
                   {trade.email}
                 </a>
@@ -228,7 +230,8 @@ export default function TradeDetailPage({ params }: PageProps) {
                 <Label>Phone Number</Label>
                 <a
                   href={`tel:${normalizePhone(trade.phone)}`}
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline">
+                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline"
+                >
                   <Phone className="size-4 shrink-0 text-muted-foreground" />
                   {formatPhone(trade.phone)}
                 </a>
@@ -246,7 +249,8 @@ export default function TradeDetailPage({ params }: PageProps) {
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline">
+                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline"
+                >
                   <Globe className="size-4 shrink-0 text-muted-foreground" />
                   {trade.website}
                   <ExternalLink className="size-3 text-muted-foreground" />
@@ -302,7 +306,8 @@ export default function TradeDetailPage({ params }: PageProps) {
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-3 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                            className="mt-3 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                          >
                             Open Google Maps
                             <ExternalLink className="size-3" />
                           </a>
@@ -434,7 +439,8 @@ export default function TradeDetailPage({ params }: PageProps) {
               variant="destructive"
               onClick={handleDelete}
               disabled={deleting}
-              className="gap-2">
+              className="gap-2"
+            >
               {deleting && <Loader2 className="size-4 animate-spin" />}
               Delete Profile
             </AlertDialogAction>
@@ -478,20 +484,12 @@ function ComplianceBadge({ dateStr }: { dateStr?: string }) {
   const { expired, expiringSoon, none } = checkExpiration(dateStr);
 
   if (none) {
-    return (
-      <Badge
-        variant="outline"
-        className="font-bold text-[10px] uppercase tracking-wider opacity-60">
-        N/A
-      </Badge>
-    );
+    return <Badge variant="outline">N/A</Badge>;
   }
 
   if (expired) {
     return (
-      <Badge
-        variant="destructive"
-        className="flex items-center gap-1 font-bold text-[10px] uppercase tracking-wider">
+      <Badge variant="destructive">
         <AlertTriangle className="size-3" /> Expired
       </Badge>
     );
@@ -499,18 +497,14 @@ function ComplianceBadge({ dateStr }: { dateStr?: string }) {
 
   if (expiringSoon) {
     return (
-      <Badge
-        variant="secondary"
-        className="flex items-center gap-1 border-amber-500/20 bg-amber-500/15 font-bold text-[10px] text-amber-500 uppercase tracking-wider">
+      <Badge variant="warning">
         <AlertTriangle className="size-3" /> Expiring Soon
       </Badge>
     );
   }
 
   return (
-    <Badge
-      variant="secondary"
-      className="flex items-center gap-1 border-emerald-500/20 bg-emerald-500/15 font-bold text-[10px] text-emerald-500 uppercase tracking-wider">
+    <Badge variant="success">
       <CheckCircle2 className="size-3" /> Active
     </Badge>
   );

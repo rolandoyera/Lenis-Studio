@@ -1,7 +1,13 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { fetchInstagramReachTrend } from "@/server/meta-actions";
 
 import { InstagramReachChart } from "./instagram-reach-chart";
@@ -25,7 +31,9 @@ export async function InstagramReachTrend({ range }: { range?: string }) {
   }
 
   const { points, comparison } = result.data;
-  const hasData = points.length > 0 && !points.every((p) => p.current === 0 && p.previous === 0);
+  const hasData =
+    points.length > 0 &&
+    !points.every((p) => p.current === 0 && p.previous === 0);
   const noChange = Number.parseFloat(comparison.change) === 0;
 
   return (
@@ -38,11 +46,7 @@ export async function InstagramReachTrend({ range }: { range?: string }) {
               <span className="text-muted-foreground text-xs">No change</span>
             ) : (
               <Badge
-                className={
-                  comparison.isPositive
-                    ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                    : "bg-destructive/10 text-destructive"
-                }
+                variant={comparison.isPositive ? "success" : "destructive"}
               >
                 {comparison.isPositive ? <TrendingUp /> : <TrendingDown />}
                 {comparison.change}

@@ -31,12 +31,29 @@ import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { H1 } from "@/components/ui/typography";
-import { getOrganization, getOrganizationUsers, updateOrganization } from "@/lib/db";
+import {
+  getOrganization,
+  getOrganizationUsers,
+  updateOrganization,
+} from "@/lib/db";
 import type { Organization, UserProfile } from "@/lib/types";
 
 import HeaderBackLink from "../../_components/HeaderBackLink";
@@ -96,7 +113,10 @@ export default function TenantDetailPage({ params }: PageProps) {
   // Load tenant details & users
   const loadTenantData = React.useCallback(async () => {
     try {
-      const [orgData, usersData] = await Promise.all([getOrganization(tenantId), getOrganizationUsers(tenantId)]);
+      const [orgData, usersData] = await Promise.all([
+        getOrganization(tenantId),
+        getOrganizationUsers(tenantId),
+      ]);
 
       if (!orgData) {
         toast.error("Organization not found.");
@@ -198,7 +218,10 @@ export default function TenantDetailPage({ params }: PageProps) {
 
   const aiUsed = org.config?.aiUsedCount || 0;
   const aiLimit = org.config?.aiMonthlyLimit ?? 100;
-  const usagePercentage = Math.min(100, aiLimit > 0 ? (aiUsed / aiLimit) * 100 : 0);
+  const usagePercentage = Math.min(
+    100,
+    aiLimit > 0 ? (aiUsed / aiLimit) * 100 : 0,
+  );
 
   return (
     <>
@@ -213,20 +236,19 @@ export default function TenantDetailPage({ params }: PageProps) {
                 <Building2 className="size-6" />
               </div>
               <div>
-                <H1 className="flex items-center gap-2 font-bold text-2xl">{org.name}</H1>
-                <p className="font-mono text-muted-foreground text-xs">ID: {org.organizationId}</p>
+                <H1 className="flex items-center gap-2 font-bold text-2xl">
+                  {org.name}
+                </H1>
+                <p className="font-mono text-muted-foreground text-xs">
+                  ID: {org.organizationId}
+                </p>
               </div>
             </div>
 
             {/* Quick Actions */}
             <div className="flex items-center gap-2">
               <Badge
-                variant="outline"
-                className={
-                  org.status === "Active"
-                    ? "border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-700 dark:text-emerald-400"
-                    : "border-rose-500/30 bg-rose-500/10 font-semibold text-rose-700 dark:text-rose-400"
-                }
+                variant={org.status === "Active" ? "success" : "destructive"}
               >
                 {org.status}
               </Badge>
@@ -264,11 +286,16 @@ export default function TenantDetailPage({ params }: PageProps) {
                   Integration Configurations
                 </CardTitle>
                 <CardDescription>
-                  Assign dedicated keys and folders to override global defaults for this tenant.
+                  Assign dedicated keys and folders to override global defaults
+                  for this tenant.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit(handleSaveConfig)} className="flex flex-col gap-4" autoComplete="off">
+                <form
+                  onSubmit={handleSubmit(handleSaveConfig)}
+                  className="flex flex-col gap-4"
+                  autoComplete="off"
+                >
                   {/* Dummy inputs to prevent Chrome autofill */}
                   <input
                     type="text"
@@ -292,8 +319,14 @@ export default function TenantDetailPage({ params }: PageProps) {
                     control={control}
                     name="gaPropertyId"
                     render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="ga-id" className="flex items-center gap-1.5">
+                      <Field
+                        className="gap-1.5"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <FieldLabel
+                          htmlFor="ga-id"
+                          className="flex items-center gap-1.5"
+                        >
                           <LineChart className="size-3.5 text-muted-foreground" />
                           Google Analytics Property ID
                         </FieldLabel>
@@ -306,9 +339,12 @@ export default function TenantDetailPage({ params }: PageProps) {
                           autoComplete="off"
                         />
                         <p className="text-[10px] text-muted-foreground/80 leading-normal">
-                          Optionally provide a GA4 Property ID to feed dashboard analytics views for this studio.
+                          Optionally provide a GA4 Property ID to feed dashboard
+                          analytics views for this studio.
                         </p>
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -318,8 +354,14 @@ export default function TenantDetailPage({ params }: PageProps) {
                     control={control}
                     name="gscSiteUrl"
                     render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="gsc-site" className="flex items-center gap-1.5">
+                      <Field
+                        className="gap-1.5"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <FieldLabel
+                          htmlFor="gsc-site"
+                          className="flex items-center gap-1.5"
+                        >
                           <Search className="size-3.5 text-muted-foreground" />
                           Search Console Site URL
                         </FieldLabel>
@@ -332,10 +374,14 @@ export default function TenantDetailPage({ params }: PageProps) {
                           autoComplete="off"
                         />
                         <p className="text-[10px] text-muted-foreground/80 leading-normal">
-                          Use the exact property string from Search Console: `sc-domain:example.com` for a domain
-                          property, or `https://example.com/` (with trailing slash) for a URL-prefix property.
+                          Use the exact property string from Search Console:
+                          `sc-domain:example.com` for a domain property, or
+                          `https://example.com/` (with trailing slash) for a
+                          URL-prefix property.
                         </p>
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -345,8 +391,14 @@ export default function TenantDetailPage({ params }: PageProps) {
                     control={control}
                     name="googleDriveFolderId"
                     render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="drive-id" className="flex items-center gap-1.5">
+                      <Field
+                        className="gap-1.5"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <FieldLabel
+                          htmlFor="drive-id"
+                          className="flex items-center gap-1.5"
+                        >
                           <Folder className="size-3.5 text-muted-foreground" />
                           Google Drive Folder ID
                         </FieldLabel>
@@ -359,9 +411,12 @@ export default function TenantDetailPage({ params }: PageProps) {
                           autoComplete="off"
                         />
                         <p className="text-[10px] text-muted-foreground/80 leading-normal">
-                          Uploads from this studio will be stored under this dedicated Google Drive folder path.
+                          Uploads from this studio will be stored under this
+                          dedicated Google Drive folder path.
                         </p>
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -371,8 +426,14 @@ export default function TenantDetailPage({ params }: PageProps) {
                     control={control}
                     name="customGeminiKey"
                     render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="gemini-key" className="flex items-center gap-1.5">
+                      <Field
+                        className="gap-1.5"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <FieldLabel
+                          htmlFor="gemini-key"
+                          className="flex items-center gap-1.5"
+                        >
                           <Key className="size-3.5 text-muted-foreground" />
                           Custom Gemini API Key
                         </FieldLabel>
@@ -386,9 +447,12 @@ export default function TenantDetailPage({ params }: PageProps) {
                           autoComplete="new-password"
                         />
                         <p className="text-[10px] text-muted-foreground/80 leading-normal">
-                          If provided, the AI scraping agent will consume requests using this developer API key.
+                          If provided, the AI scraping agent will consume
+                          requests using this developer API key.
                         </p>
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -398,8 +462,14 @@ export default function TenantDetailPage({ params }: PageProps) {
                     control={control}
                     name="aiMonthlyLimit"
                     render={({ field, fieldState }) => (
-                      <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="ai-limit" className="flex items-center gap-1.5">
+                      <Field
+                        className="gap-1.5"
+                        data-invalid={fieldState.invalid}
+                      >
+                        <FieldLabel
+                          htmlFor="ai-limit"
+                          className="flex items-center gap-1.5"
+                        >
                           <CreditCard className="size-3.5 text-muted-foreground" />
                           Monthly AI Scraping Limit
                         </FieldLabel>
@@ -410,16 +480,24 @@ export default function TenantDetailPage({ params }: PageProps) {
                           placeholder="100"
                           disabled={saving}
                           aria-invalid={fieldState.invalid}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                           autoComplete="off"
                         />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
 
                   <div className="mt-4 flex justify-end">
-                    <Button type="submit" disabled={saving} className="flex items-center gap-2">
+                    <Button
+                      type="submit"
+                      disabled={saving}
+                      className="flex items-center gap-2"
+                    >
                       {saving ? (
                         <>
                           <Loader2 className="size-4 animate-spin" />
@@ -450,8 +528,12 @@ export default function TenantDetailPage({ params }: PageProps) {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-bold text-3xl text-foreground">{aiUsed}</span>
-                  <span className="text-muted-foreground text-sm">of {aiLimit} requests</span>
+                  <span className="font-bold text-3xl text-foreground">
+                    {aiUsed}
+                  </span>
+                  <span className="text-muted-foreground text-sm">
+                    of {aiLimit} requests
+                  </span>
                 </div>
 
                 {/* Progress Bar container */}
@@ -479,11 +561,15 @@ export default function TenantDetailPage({ params }: PageProps) {
               <CardContent className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
                   <User className="size-4 text-muted-foreground" />
-                  <span className="font-medium text-foreground">{org.adminEmail}</span>
+                  <span className="font-medium text-foreground">
+                    {org.adminEmail}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="size-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Plan: {org.plan} Tier</span>
+                  <span className="text-muted-foreground">
+                    Plan: {org.plan} Tier
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -497,7 +583,10 @@ export default function TenantDetailPage({ params }: PageProps) {
               <Users className="size-4" />
               Studio Team Directory
             </CardTitle>
-            <CardDescription>Active and pending team member accounts registered under this tenant.</CardDescription>
+            <CardDescription>
+              Active and pending team member accounts registered under this
+              tenant.
+            </CardDescription>
           </CardHeader>
           <Table>
             <TableHeader>
@@ -513,27 +602,34 @@ export default function TenantDetailPage({ params }: PageProps) {
             <TableBody>
               {users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="h-24 text-center text-muted-foreground"
+                  >
                     No registered users found for this organization.
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((user) => (
                   <TableRow key={user.uid} className="hover:bg-muted/30">
-                    <TableCell className="font-semibold text-foreground">{user.fullName}</TableCell>
+                    <TableCell className="font-semibold text-foreground">
+                      {user.fullName}
+                    </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.role}</TableCell>
                     <TableCell>{user.joinedDate || "N/A"}</TableCell>
                     <TableCell>
-                      {user.lastActive > 0 ? format(new Date(user.lastActive), "dd MMM yyyy, h:mm a") : "Never"}
+                      {user.lastActive > 0
+                        ? format(
+                            new Date(user.lastActive),
+                            "dd MMM yyyy, h:mm a",
+                          )
+                        : "Never"}
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant="outline"
-                        className={
-                          user.status === "Active"
-                            ? "border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-700 dark:text-emerald-400"
-                            : "border-amber-500/30 bg-amber-500/10 font-semibold text-amber-700 dark:text-amber-300"
+                        variant={
+                          user.status === "Active" ? "success" : "warning"
                         }
                       >
                         {user.status}

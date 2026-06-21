@@ -7,7 +7,13 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +40,9 @@ function normalizeJson(raw: string) {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
-  const withoutFence = trimmed.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  const withoutFence = trimmed
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
   try {
     return JSON.stringify(JSON.parse(withoutFence), null, 2);
   } catch {
@@ -109,7 +117,8 @@ function MarkdownPreview({ value }: { value: string }) {
 
     const flushParagraph = () => {
       const text = paragraph.join(" ").trim();
-      if (text) grouped.push({ id: nextId("paragraph"), type: "paragraph", text });
+      if (text)
+        grouped.push({ id: nextId("paragraph"), type: "paragraph", text });
       paragraph = [];
     };
 
@@ -123,7 +132,12 @@ function MarkdownPreview({ value }: { value: string }) {
       const heading = /^(#{1,4})\s+(.+)$/.exec(trimmed);
       if (heading) {
         flushParagraph();
-        grouped.push({ id: nextId("heading"), type: "heading", level: heading[1].length, text: heading[2] });
+        grouped.push({
+          id: nextId("heading"),
+          type: "heading",
+          level: heading[1].length,
+          text: heading[2],
+        });
         continue;
       }
 
@@ -136,7 +150,11 @@ function MarkdownPreview({ value }: { value: string }) {
 
       if (/^(```| {4})/.test(line)) {
         flushParagraph();
-        grouped.push({ id: nextId("code"), type: "code", text: trimmed.replace(/^```/, "") });
+        grouped.push({
+          id: nextId("code"),
+          type: "code",
+          text: trimmed.replace(/^```/, ""),
+        });
         continue;
       }
 
@@ -155,9 +173,17 @@ function MarkdownPreview({ value }: { value: string }) {
     <div className="space-y-4 p-5 text-sm leading-7">
       {blocks.map((block) => {
         if (block.type === "heading") {
-          const size = block.level === 1 ? "text-xl" : block.level === 2 ? "text-lg" : "text-base";
+          const size =
+            block.level === 1
+              ? "text-xl"
+              : block.level === 2
+                ? "text-lg"
+                : "text-base";
           return (
-            <h3 key={block.id} className={cn("font-heading font-semibold text-foreground", size)}>
+            <h3
+              key={block.id}
+              className={cn("font-heading font-semibold text-foreground", size)}
+            >
               {block.text}
             </h3>
           );
@@ -193,7 +219,15 @@ function MarkdownPreview({ value }: { value: string }) {
   );
 }
 
-function TextBlock({ value, wrap, json }: { value: string; wrap: boolean; json?: boolean }) {
+function TextBlock({
+  value,
+  wrap,
+  json,
+}: {
+  value: string;
+  wrap: boolean;
+  json?: boolean;
+}) {
   const lines = useMemo(() => {
     let offset = 0;
     return value.split(/\r?\n/).map((line, index) => {
@@ -207,13 +241,17 @@ function TextBlock({ value, wrap, json }: { value: string; wrap: boolean; json?:
     <div
       className={cn(
         "grid min-w-full grid-cols-[auto_1fr] gap-x-4 p-4 font-mono text-[12px] leading-6",
-        wrap ? "whitespace-pre-wrap break-words" : "whitespace-pre",
+        wrap ? "whitespace-pre-wrap wrap-break-word" : "whitespace-pre",
       )}
     >
       {lines.map(({ id, line, number }) => (
         <div key={id} className="contents">
-          <span className="select-none text-right text-muted-foreground/55 tabular-nums">{number}</span>
-          <span className="text-foreground">{json ? renderJsonLine(line, number) : line || " "}</span>
+          <span className="select-none text-right text-muted-foreground/55 tabular-nums">
+            {number}
+          </span>
+          <span className="text-foreground">
+            {json ? renderJsonLine(line, number) : line || " "}
+          </span>
         </div>
       ))}
     </div>
@@ -234,8 +272,12 @@ export function DiagnosticOutputViewer({
   const [showRaw, setShowRaw] = useState(false);
 
   const content = value.trim();
-  const prettyJson = useMemo(() => (kind === "json" ? normalizeJson(value) : null), [kind, value]);
-  const displayValue = kind === "json" && prettyJson && !showRaw ? prettyJson : value;
+  const prettyJson = useMemo(
+    () => (kind === "json" ? normalizeJson(value) : null),
+    [kind, value],
+  );
+  const displayValue =
+    kind === "json" && prettyJson && !showRaw ? prettyJson : value;
   const canPreviewMarkdown = kind === "markdown" && content.length > 0;
 
   const handleCopy = async () => {
@@ -259,30 +301,52 @@ export function DiagnosticOutputViewer({
               <Icon className="size-4 text-primary" />
               {title}
             </CardTitle>
-            <CardDescription className="mt-1 text-xs">{description}</CardDescription>
+            <CardDescription className="mt-1 text-xs">
+              {description}
+            </CardDescription>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {meta && (
-              <Badge variant="outline" className="px-2.5 py-1 font-semibold text-[10px]">
-                {meta}
-              </Badge>
-            )}
+            {meta && <Badge variant="outline">{meta}</Badge>}
             {kind === "json" && prettyJson && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowRaw((current) => !current)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRaw((current) => !current)}
+              >
                 {showRaw ? "Pretty" : "Raw"}
               </Button>
             )}
             {canPreviewMarkdown && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowRaw((current) => !current)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowRaw((current) => !current)}
+              >
                 {showRaw ? "Preview" : "Raw"}
               </Button>
             )}
-            <Button type="button" variant="outline" size="sm" onClick={() => setWrap((current) => !current)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setWrap((current) => !current)}
+            >
               <WrapText className="size-3.5" />
               {wrap ? "No wrap" : "Wrap"}
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
-              {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopy}
+            >
+              {copied ? (
+                <Check className="size-3.5" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
               {copyLabel(copied)}
             </Button>
           </div>
@@ -299,7 +363,11 @@ export function DiagnosticOutputViewer({
           </ScrollArea>
         ) : (
           <ScrollArea className="h-[580px] bg-background/30">
-            <TextBlock value={displayValue} wrap={wrap} json={kind === "json" && !showRaw && Boolean(prettyJson)} />
+            <TextBlock
+              value={displayValue}
+              wrap={wrap}
+              json={kind === "json" && !showRaw && Boolean(prettyJson)}
+            />
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
         )}

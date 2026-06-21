@@ -92,7 +92,8 @@ export default function DiagnosticsPage() {
 
   // Wipes temporary collection
   const handleClear = async () => {
-    if (!confirm("Are you sure you want to delete all diagnostic history?")) return;
+    if (!confirm("Are you sure you want to delete all diagnostic history?"))
+      return;
     setClearing(true);
     try {
       await clearDiagnosticRuns();
@@ -153,7 +154,8 @@ export default function DiagnosticsPage() {
           </div>
           <H1>Logs & Extraction Diagnostics</H1>
           <p className="mt-1 text-muted-foreground text-sm">
-            Real-time inspection center showing scraped markdown data, prompts, and raw JSON returned by Luna.
+            Real-time inspection center showing scraped markdown data, prompts,
+            and raw JSON returned by Luna.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -188,10 +190,13 @@ export default function DiagnosticsPage() {
       ) : runs.length === 0 ? (
         <Card className="flex min-h-[350px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center backdrop-blur-xs">
           <Activity className="mb-4 size-16 animate-pulse text-muted-foreground/35" />
-          <h3 className="font-heading font-semibold text-xl">No Diagnostic Runs Found</h3>
+          <h3 className="font-heading font-semibold text-xl">
+            No Diagnostic Runs Found
+          </h3>
           <p className="mt-2 max-w-md text-muted-foreground text-sm leading-relaxed">
-            Run an AI Product Autofill from a webpage link or AI Vendor Autofill from a domain homepage, and your
-            telemetry logs will populate here automatically.
+            Run an AI Product Autofill from a webpage link or AI Vendor Autofill
+            from a domain homepage, and your telemetry logs will populate here
+            automatically.
           </p>
           <div className="mt-6 flex items-center gap-4">
             <Button asChild variant="outline">
@@ -230,10 +235,13 @@ export default function DiagnosticsPage() {
                   <CardContent className="flex flex-col gap-2.5">
                     <div className="flex w-full items-center justify-between">
                       <Badge
-                        variant={run.type === "product" ? "default" : "secondary"}
-                        className="font-extrabold text-[9px] uppercase tracking-wider"
+                        variant={
+                          run.type === "product" ? "default" : "secondary"
+                        }
                       >
-                        {run.type === "product" ? "Product Autofill" : "Vendor Profile"}
+                        {run.type === "product"
+                          ? "Product Autofill"
+                          : "Vendor Profile"}
                       </Badge>
                       <span className="font-medium text-[11px] text-muted-foreground">
                         {formatTimestamp(run.createdAt)}
@@ -280,9 +288,7 @@ export default function DiagnosticsPage() {
                     </a>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="border-border px-3 py-1 font-semibold text-xs">
-                      ID: {selectedRun.runId}
-                    </Badge>
+                    <Badge variant="outline">ID: {selectedRun.runId}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -335,7 +341,9 @@ export default function DiagnosticsPage() {
                           <div className="flex h-5 w-full items-center overflow-hidden">
                             <span className="truncate font-semibold text-foreground text-sm">
                               {selectedRun.parsedData?.name || (
-                                <em className="text-muted-foreground/50">Not extracted</em>
+                                <em className="text-muted-foreground/50">
+                                  Not extracted
+                                </em>
                               )}
                             </span>
                           </div>
@@ -347,11 +355,11 @@ export default function DiagnosticsPage() {
                           </span>
                           <div className="flex h-5 items-center">
                             {selectedRun.parsedData?.category ? (
-                              <Badge className="font-bold text-[9px] uppercase tracking-wider">
-                                {selectedRun.parsedData.category}
-                              </Badge>
+                              <Badge>{selectedRun.parsedData.category}</Badge>
                             ) : (
-                              <em className="text-muted-foreground/50 text-xs">Not matched</em>
+                              <em className="text-muted-foreground/50 text-xs">
+                                Not matched
+                              </em>
                             )}
                           </div>
                         </div>
@@ -364,7 +372,9 @@ export default function DiagnosticsPage() {
                             <div className="flex h-5 items-center">
                               <span className="truncate font-medium font-mono text-foreground text-sm">
                                 {selectedRun.parsedData?.sku || (
-                                  <em className="font-sans text-muted-foreground/50">Not extracted</em>
+                                  <em className="font-sans text-muted-foreground/50">
+                                    Not extracted
+                                  </em>
                                 )}
                               </span>
                             </div>
@@ -378,7 +388,9 @@ export default function DiagnosticsPage() {
                           <div className="flex h-5 items-center">
                             <span className="truncate font-medium text-foreground text-sm">
                               {selectedRun.parsedData?.repPhone || (
-                                <em className="text-muted-foreground/50">Not extracted</em>
+                                <em className="text-muted-foreground/50">
+                                  Not extracted
+                                </em>
                               )}
                             </span>
                           </div>
@@ -391,7 +403,9 @@ export default function DiagnosticsPage() {
                           <div className="flex h-5 items-center">
                             <span className="truncate font-medium text-foreground text-sm">
                               {selectedRun.parsedData?.repEmail || (
-                                <em className="text-muted-foreground/50">Not extracted</em>
+                                <em className="text-muted-foreground/50">
+                                  Not extracted
+                                </em>
                               )}
                             </span>
                           </div>
@@ -417,7 +431,9 @@ export default function DiagnosticsPage() {
                               <div className="flex h-5 items-center">
                                 <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.street || (
-                                    <em className="text-muted-foreground/50">Not extracted</em>
+                                    <em className="text-muted-foreground/50">
+                                      Not extracted
+                                    </em>
                                   )}
                                 </span>
                               </div>
@@ -429,7 +445,9 @@ export default function DiagnosticsPage() {
                               <div className="flex h-5 items-center">
                                 <span className="text-foreground text-sm">
                                   {selectedRun.parsedData?.city || (
-                                    <em className="text-muted-foreground/50">Not extracted</em>
+                                    <em className="text-muted-foreground/50">
+                                      Not extracted
+                                    </em>
                                   )}
                                 </span>
                               </div>
@@ -441,7 +459,9 @@ export default function DiagnosticsPage() {
                               <div className="flex h-5 items-center">
                                 <span className="text-foreground text-sm">
                                   {selectedRun.parsedData?.state || (
-                                    <em className="text-muted-foreground/50">Not extracted</em>
+                                    <em className="text-muted-foreground/50">
+                                      Not extracted
+                                    </em>
                                   )}
                                 </span>
                               </div>
@@ -456,7 +476,9 @@ export default function DiagnosticsPage() {
                               <div className="flex h-5 items-center">
                                 <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.finishColor || (
-                                    <em className="text-muted-foreground/50">Not extracted</em>
+                                    <em className="text-muted-foreground/50">
+                                      Not extracted
+                                    </em>
                                   )}
                                 </span>
                               </div>
@@ -468,7 +490,9 @@ export default function DiagnosticsPage() {
                               <div className="flex h-5 items-center">
                                 <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.dimensions || (
-                                    <em className="text-muted-foreground/50">Not extracted</em>
+                                    <em className="text-muted-foreground/50">
+                                      Not extracted
+                                    </em>
                                   )}
                                 </span>
                               </div>
@@ -480,7 +504,9 @@ export default function DiagnosticsPage() {
                               <div className="flex h-5 items-center">
                                 <span className="truncate text-foreground text-sm">
                                   {selectedRun.parsedData?.materials || (
-                                    <em className="text-muted-foreground/50">Not extracted</em>
+                                    <em className="text-muted-foreground/50">
+                                      Not extracted
+                                    </em>
                                   )}
                                 </span>
                               </div>
@@ -494,7 +520,9 @@ export default function DiagnosticsPage() {
                                   {selectedRun.parsedData?.msrp ? (
                                     formatCurrency(selectedRun.parsedData.msrp)
                                   ) : (
-                                    <em className="font-normal text-muted-foreground/50">Not extracted</em>
+                                    <em className="font-normal text-muted-foreground/50">
+                                      Not extracted
+                                    </em>
                                   )}
                                 </span>
                               </div>
@@ -512,7 +540,9 @@ export default function DiagnosticsPage() {
                         </span>
                         <p className="text-foreground text-sm leading-relaxed">
                           {selectedRun.parsedData?.description || (
-                            <em className="text-muted-foreground/50">No description extracted</em>
+                            <em className="text-muted-foreground/50">
+                              No description extracted
+                            </em>
                           )}
                         </p>
                       </CardContent>
@@ -557,16 +587,21 @@ export default function DiagnosticsPage() {
                             <span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
                               Resolved Cover / Hero Image
                             </span>
-                            {selectedRun.parsedData?.heroImageUrl || selectedRun.parsedData?.coverImageUrl ? (
+                            {selectedRun.parsedData?.heroImageUrl ||
+                            selectedRun.parsedData?.coverImageUrl ? (
                               <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/50 p-3">
                                 {/* biome-ignore lint/performance/noImgElement: diagnostics preview renders arbitrary scraped image URLs. */}
                                 <img
-                                  src={selectedRun.parsedData.heroImageUrl || selectedRun.parsedData.coverImageUrl}
+                                  src={
+                                    selectedRun.parsedData.heroImageUrl ||
+                                    selectedRun.parsedData.coverImageUrl
+                                  }
                                   alt="Hero Showcase"
                                   className="size-12 rounded-md border border-border object-cover"
                                 />
                                 <span className="max-w-[200px] truncate font-mono text-muted-foreground text-xs">
-                                  {selectedRun.parsedData.heroImageUrl || selectedRun.parsedData.coverImageUrl}
+                                  {selectedRun.parsedData.heroImageUrl ||
+                                    selectedRun.parsedData.coverImageUrl}
                                 </span>
                               </div>
                             ) : (
@@ -586,35 +621,39 @@ export default function DiagnosticsPage() {
                       </CardHeader>
                       <CardContent className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
                         {selectedRun.parsedData?.confidence &&
-                          Object.entries(selectedRun.parsedData.confidence).map(([field, score]) => {
-                            const val = typeof score === "number" ? score : 0;
-                            const pct = Math.round(val * 100);
-                            return (
-                              <div
-                                key={field}
-                                className="flex flex-col rounded-lg border border-border/40 bg-background/40 p-2.5"
-                              >
-                                <span className="truncate font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
-                                  {field}
-                                </span>
-                                <div className="mt-1 flex h-5 items-center gap-1.5">
-                                  <span
-                                    className={cn(
-                                      "font-bold text-xs",
-                                      val >= 0.75
-                                        ? "text-emerald-500"
-                                        : val >= 0.4
-                                          ? "text-amber-500"
-                                          : "text-rose-500",
-                                    )}
-                                  >
-                                    {pct}%
+                          Object.entries(selectedRun.parsedData.confidence).map(
+                            ([field, score]) => {
+                              const val = typeof score === "number" ? score : 0;
+                              const pct = Math.round(val * 100);
+                              return (
+                                <div
+                                  key={field}
+                                  className="flex flex-col rounded-lg border border-border/40 bg-background/40 p-2.5"
+                                >
+                                  <span className="truncate font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
+                                    {field}
                                   </span>
-                                  <span className="font-semibold text-[9px] text-muted-foreground">certainty</span>
+                                  <div className="mt-1 flex h-5 items-center gap-1.5">
+                                    <span
+                                      className={cn(
+                                        "font-bold text-xs",
+                                        val >= 0.75
+                                          ? "text-emerald-500"
+                                          : val >= 0.4
+                                            ? "text-amber-500"
+                                            : "text-rose-500",
+                                      )}
+                                    >
+                                      {pct}%
+                                    </span>
+                                    <span className="font-semibold text-[9px] text-muted-foreground">
+                                      certainty
+                                    </span>
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            },
+                          )}
                       </CardContent>
                     </Card>
                   </div>

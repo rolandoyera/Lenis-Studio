@@ -30,10 +30,14 @@ type SearchItem = {
   newTab?: boolean;
 };
 
-const sidebarGroupLabels = new Set(sidebarItems.flatMap((group) => (group.label ? [group.label] : [])));
+const sidebarGroupLabels = new Set(
+  sidebarItems.flatMap((group) => (group.label ? [group.label] : [])),
+);
 
 function getSubItemGroup(groupLabel: string | undefined, itemTitle: string) {
-  return sidebarGroupLabels.has(itemTitle) ? (groupLabel ?? "Other") : itemTitle;
+  return sidebarGroupLabels.has(itemTitle)
+    ? (groupLabel ?? "Other")
+    : itemTitle;
 }
 
 const searchItems: SearchItem[] = sidebarItems.flatMap((group) =>
@@ -62,7 +66,9 @@ const searchItems: SearchItem[] = sidebarItems.flatMap((group) =>
 );
 
 function getAvailableItems(items: SearchItem[]) {
-  return items.filter((item) => !item.disabled && !item.url.includes("coming-soon"));
+  return items.filter(
+    (item) => !item.disabled && !item.url.includes("coming-soon"),
+  );
 }
 
 const recommendations = getAvailableItems(searchItems);
@@ -121,11 +127,7 @@ export function SearchDialog() {
               {item.icon && <item.icon />}
               <span>{item.label}</span>
 
-              {item.disabled && (
-                <Badge variant="outline" className="text-xs">
-                  Soon
-                </Badge>
-              )}
+              {item.disabled && <Badge variant="outline">Soon</Badge>}
             </CommandItem>
           ))}
         </CommandGroup>
@@ -147,7 +149,11 @@ export function SearchDialog() {
       </Button>
       <CommandDialog open={open} onOpenChange={handleOpenChange}>
         <Command>
-          <CommandInput placeholder="Search dashboards, users, and more…" value={query} onValueChange={setQuery} />
+          <CommandInput
+            placeholder="Search dashboards, users, and more…"
+            value={query}
+            onValueChange={setQuery}
+          />
           <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             {query ? renderGroups(searchItems) : renderGroups(recommendations)}

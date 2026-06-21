@@ -30,7 +30,8 @@ export function LibraryItemCard({
       {/* Visual Thumbnail Area */}
       <Link
         href={`/dashboard/library/${item.itemId}`}
-        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40">
+        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40"
+      >
         {item.coverImageUrl ? (
           <DashboardImage
             priority
@@ -60,7 +61,8 @@ export function LibraryItemCard({
           <H3 className="transition-colors group-has-[.detail-link:hover]:text-primary">
             <Link
               href={`/dashboard/library/${item.itemId}`}
-              className="detail-link block">
+              className="detail-link block"
+            >
               {item.name}
             </Link>
           </H3>
@@ -77,14 +79,16 @@ export function LibraryItemCard({
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
+                >
                   {vendorName}
                   <ExternalLink className="ml-1 size-2.5 shrink-0" />
                 </a>
               ) : (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
+                >
                   {vendorName}
                   <ExternalLink className="size-2.5 shrink-0" />
                 </Link>
@@ -106,7 +110,8 @@ export function LibraryItemCard({
               }
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline">
+              className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline"
+            >
               <span className="truncate">Origin Link</span>
               <ExternalLink className="size-2.5 shrink-0" />
             </a>
@@ -135,17 +140,16 @@ export function LibraryItemCard({
         </div>
 
         {/* Calculated Margin indicators */}
-        <Badge
-          variant={profitable ? "success" : "warning"}
-          className="mx-auto mt-3 -mb-1 gap-1">
-          {profitable ? (
-            <TrendingUp className="size-3" />
-          ) : (
-            <TrendingDown className="size-3" />
-          )}
-          <span className="font-semibold">{Math.round(item.markup)}%</span>
-          <span>markup</span>
-        </Badge>
+        <div className="mx-auto mt-3 -mb-1">
+          <Badge variant={profitable ? "success" : "warning"}>
+            {profitable ? (
+              <TrendingUp className="size-3" />
+            ) : (
+              <TrendingDown className="size-3" />
+            )}
+            {Math.round(item.markup)}% markup
+          </Badge>
+        </div>
       </CardFooter>
     </Card>
   );

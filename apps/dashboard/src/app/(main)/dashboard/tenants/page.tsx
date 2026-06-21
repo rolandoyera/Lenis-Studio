@@ -1,19 +1,41 @@
 "use client";
 
-import { type MouseEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { format } from "date-fns";
-import { ArrowUpDown, Building2, CreditCard, Loader2, Plus, Search, UserCheck, UserX } from "lucide-react";
+import {
+  ArrowUpDown,
+  Building2,
+  CreditCard,
+  Loader2,
+  Plus,
+  Search,
+  UserCheck,
+  UserX,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +54,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { H1 } from "@/components/ui/typography";
 import { getOrganizations, updateOrganization } from "@/lib/db";
 import type { Organization } from "@/lib/types";
@@ -87,12 +116,21 @@ export default function TenantsPage() {
   }, [role, authLoading, loadOrgs]);
 
   // Toggle Tenant suspension status
-  const handleToggleStatus = async (orgId: string, currentStatus: "Active" | "Suspended") => {
+  const handleToggleStatus = async (
+    orgId: string,
+    currentStatus: "Active" | "Suspended",
+  ) => {
     const newStatus = currentStatus === "Active" ? "Suspended" : "Active";
     try {
       await updateOrganization(orgId, { status: newStatus });
-      setOrgs((prev) => prev.map((o) => (o.organizationId === orgId ? { ...o, status: newStatus } : o)));
-      toast.success(`Tenant '${orgId}' has been ${newStatus === "Suspended" ? "suspended" : "reactivated"}.`);
+      setOrgs((prev) =>
+        prev.map((o) =>
+          o.organizationId === orgId ? { ...o, status: newStatus } : o,
+        ),
+      );
+      toast.success(
+        `Tenant '${orgId}' has been ${newStatus === "Suspended" ? "suspended" : "reactivated"}.`,
+      );
     } catch (error) {
       console.error("Error updating organization status:", error);
       toast.error("Failed to update tenant status.");
@@ -100,10 +138,17 @@ export default function TenantsPage() {
   };
 
   // Update subscription plan tier
-  const handleUpdatePlan = async (orgId: string, newPlan: "Starter" | "Pro" | "Enterprise") => {
+  const handleUpdatePlan = async (
+    orgId: string,
+    newPlan: "Starter" | "Pro" | "Enterprise",
+  ) => {
     try {
       await updateOrganization(orgId, { plan: newPlan });
-      setOrgs((prev) => prev.map((o) => (o.organizationId === orgId ? { ...o, plan: newPlan } : o)));
+      setOrgs((prev) =>
+        prev.map((o) =>
+          o.organizationId === orgId ? { ...o, plan: newPlan } : o,
+        ),
+      );
       toast.success(`Tenant '${orgId}' subscription updated to ${newPlan}.`);
     } catch (error) {
       console.error("Error updating organization plan:", error);
@@ -140,7 +185,8 @@ export default function TenantsPage() {
     }
 
     if (currentPage <= 2) return [1, 2, 3];
-    if (currentPage >= pageCount - 1) return [pageCount - 2, pageCount - 1, pageCount];
+    if (currentPage >= pageCount - 1)
+      return [pageCount - 2, pageCount - 1, pageCount];
 
     return [currentPage - 1, currentPage, currentPage + 1];
   }, [currentPage, pageCount]);
@@ -172,7 +218,8 @@ export default function TenantsPage() {
             Tenant Management
           </H1>
           <p className="text-muted-foreground text-sm">
-            Provision, monitor, and configure multi-tenant design studio organizations on the SaaS network.
+            Provision, monitor, and configure multi-tenant design studio
+            organizations on the SaaS network.
           </p>
         </div>
 
@@ -183,7 +230,9 @@ export default function TenantsPage() {
               <CardDescription className="font-semibold text-xs uppercase tracking-wider">
                 Total Studio Tenants
               </CardDescription>
-              <CardTitle className="font-bold text-3xl">{orgs.length}</CardTitle>
+              <CardTitle className="font-bold text-3xl">
+                {orgs.length}
+              </CardTitle>
             </CardHeader>
           </Card>
           <Card className="bg-card/40 backdrop-blur-xs">
@@ -223,7 +272,10 @@ export default function TenantsPage() {
             <p className="mt-1 max-w-sm text-muted-foreground text-sm">
               Provision your first design studio client account to get started.
             </p>
-            <Button onClick={() => setIsDialogOpen(true)} className="mt-4 flex items-center gap-2">
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              className="mt-4 flex items-center gap-2"
+            >
               <Plus className="size-4" />
               Create New Tenant
             </Button>
@@ -232,7 +284,9 @@ export default function TenantsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="leading-none">All Tenants</CardTitle>
-              <CardDescription>Manage and configure all design studio tenant profiles.</CardDescription>
+              <CardDescription>
+                Manage and configure all design studio tenant profiles.
+              </CardDescription>
               <CardAction>
                 <div className="flex items-center gap-2">
                   <div className="relative">
@@ -285,16 +339,17 @@ export default function TenantsPage() {
                           </TableCell>
                           <TableCell>{org.organizationId}</TableCell>
                           <TableCell>{org.adminEmail}</TableCell>
-                          <TableCell>{format(new Date(org.createdAt), "dd MMM yyyy")}</TableCell>
+                          <TableCell>
+                            {format(new Date(org.createdAt), "dd MMM yyyy")}
+                          </TableCell>
                           <TableCell>
                             <Badge
-                              variant="outline"
-                              className={
+                              variant={
                                 org.plan === "Enterprise"
-                                  ? "border-violet-500/30 bg-violet-500/10 font-semibold text-violet-700 dark:text-violet-400"
+                                  ? "secondary"
                                   : org.plan === "Pro"
-                                    ? "border-sky-500/30 bg-sky-500/10 font-semibold text-sky-700 dark:text-sky-400"
-                                    : "border-gray-500/30 bg-gray-500/10 font-semibold text-gray-700 dark:text-gray-400"
+                                    ? "info"
+                                    : "outline"
                               }
                             >
                               {org.plan}
@@ -302,11 +357,10 @@ export default function TenantsPage() {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant="outline"
-                              className={
+                              variant={
                                 org.status === "Active"
-                                  ? "border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-700 dark:text-emerald-400"
-                                  : "border-rose-500/30 bg-rose-500/10 font-semibold text-rose-700 dark:text-rose-400"
+                                  ? "success"
+                                  : "destructive"
                               }
                             >
                               {org.status}
@@ -315,40 +369,62 @@ export default function TenantsPage() {
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                >
                                   <span className="sr-only">Open menu</span>
                                   <ArrowUpDown className="h-4.5 w-4.5 rotate-90 opacity-60" />
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Manage Tenant</DropdownMenuLabel>
+                                <DropdownMenuLabel>
+                                  Manage Tenant
+                                </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
 
                                 {/* Toggle Status Action */}
                                 <DropdownMenuItem
-                                  onClick={() => handleToggleStatus(org.organizationId, org.status)}
+                                  onClick={() =>
+                                    handleToggleStatus(
+                                      org.organizationId,
+                                      org.status,
+                                    )
+                                  }
                                   className="flex cursor-pointer items-center gap-2"
                                 >
                                   {org.status === "Active" ? (
                                     <>
                                       <UserX className="size-4 text-rose-500 opacity-80" />
-                                      <span className="text-rose-500">Suspend Organization</span>
+                                      <span className="text-rose-500">
+                                        Suspend Organization
+                                      </span>
                                     </>
                                   ) : (
                                     <>
                                       <UserCheck className="size-4 text-emerald-500 opacity-80" />
-                                      <span className="text-emerald-500">Reactivate Tenant</span>
+                                      <span className="text-emerald-500">
+                                        Reactivate Tenant
+                                      </span>
                                     </>
                                   )}
                                 </DropdownMenuItem>
 
                                 <DropdownMenuSeparator />
-                                <DropdownMenuLabel>Upgrade/Downgrade Plan</DropdownMenuLabel>
+                                <DropdownMenuLabel>
+                                  Upgrade/Downgrade Plan
+                                </DropdownMenuLabel>
 
                                 {/* Plan selection options */}
                                 <DropdownMenuItem
                                   disabled={org.plan === "Starter"}
-                                  onClick={() => handleUpdatePlan(org.organizationId, "Starter")}
+                                  onClick={() =>
+                                    handleUpdatePlan(
+                                      org.organizationId,
+                                      "Starter",
+                                    )
+                                  }
                                   className="flex cursor-pointer items-center gap-2"
                                 >
                                   <CreditCard className="size-4 opacity-70" />
@@ -356,7 +432,9 @@ export default function TenantsPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   disabled={org.plan === "Pro"}
-                                  onClick={() => handleUpdatePlan(org.organizationId, "Pro")}
+                                  onClick={() =>
+                                    handleUpdatePlan(org.organizationId, "Pro")
+                                  }
                                   className="flex cursor-pointer items-center gap-2"
                                 >
                                   <CreditCard className="size-4 opacity-70" />
@@ -364,7 +442,12 @@ export default function TenantsPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   disabled={org.plan === "Enterprise"}
-                                  onClick={() => handleUpdatePlan(org.organizationId, "Enterprise")}
+                                  onClick={() =>
+                                    handleUpdatePlan(
+                                      org.organizationId,
+                                      "Enterprise",
+                                    )
+                                  }
                                   className="flex cursor-pointer items-center gap-2"
                                 >
                                   <CreditCard className="size-4 opacity-70" />
@@ -388,7 +471,8 @@ export default function TenantsPage() {
 
               <div className="flex items-center justify-between gap-4 px-4 pb-1">
                 <p className="text-muted-foreground text-sm">
-                  Viewing {visibleTenantCount} out of {filteredOrgs.length.toLocaleString()} tenants
+                  Viewing {visibleTenantCount} out of{" "}
+                  {filteredOrgs.length.toLocaleString()} tenants
                 </p>
 
                 <Pagination className="mx-0 w-auto justify-end">
@@ -396,7 +480,11 @@ export default function TenantsPage() {
                     <PaginationItem>
                       <PaginationPrevious
                         href="#"
-                        className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : undefined
+                        }
                         onClick={(event) => {
                           preventPaginationNavigation(event);
                           if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -430,10 +518,15 @@ export default function TenantsPage() {
                     <PaginationItem>
                       <PaginationNext
                         href="#"
-                        className={currentPage === pageCount ? "pointer-events-none opacity-50" : undefined}
+                        className={
+                          currentPage === pageCount
+                            ? "pointer-events-none opacity-50"
+                            : undefined
+                        }
                         onClick={(event) => {
                           preventPaginationNavigation(event);
-                          if (currentPage < pageCount) setCurrentPage(currentPage + 1);
+                          if (currentPage < pageCount)
+                            setCurrentPage(currentPage + 1);
                         }}
                       />
                     </PaginationItem>

@@ -31,7 +31,14 @@ export async function InstagramKpiStrip({ range }: { range?: string }) {
   }
 
   const isFallback = result.source === "fallback";
-  const { reach, views, profileViews, accountsEngaged, websiteClicks, comparisonLabel } = result.data;
+  const {
+    reach,
+    views,
+    profileViews,
+    accountsEngaged,
+    websiteClicks,
+    comparisonLabel,
+  } = result.data;
   const kpis = [
     { title: "Accounts Reached", metric: reach },
     { title: "Views", metric: views },
@@ -44,7 +51,8 @@ export async function InstagramKpiStrip({ range }: { range?: string }) {
     <div className="flex flex-col gap-2">
       {isFallback && (
         <div className="rounded-md bg-amber-500/10 px-3 py-2 text-amber-700 text-xs dark:text-amber-400">
-          Live Instagram data is unavailable — showing saved data. {asOfLabel(result.asOf)}.
+          Live Instagram data is unavailable — showing saved data.{" "}
+          {asOfLabel(result.asOf)}.
         </div>
       )}
       <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
@@ -59,19 +67,25 @@ export async function InstagramKpiStrip({ range }: { range?: string }) {
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="text-2xl leading-none tracking-tight">{formatCount(metric.value)}</div>
+                    <div className="text-2xl leading-none tracking-tight">
+                      {formatCount(metric.value)}
+                    </div>
                     {!isFallback &&
                       (noChange ? (
-                        <span className="text-muted-foreground text-xs">No change</span>
+                        <span className="text-muted-foreground text-xs">
+                          No change
+                        </span>
                       ) : (
                         <Badge
-                          className={
-                            metric.isPositive
-                              ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                              : "bg-destructive/10 text-destructive"
+                          variant={
+                            metric.isPositive ? "success" : "destructive"
                           }
                         >
-                          {metric.isPositive ? <TrendingUp /> : <TrendingDown />}
+                          {metric.isPositive ? (
+                            <TrendingUp />
+                          ) : (
+                            <TrendingDown />
+                          )}
                           {metric.change}
                         </Badge>
                       ))}
@@ -80,7 +94,10 @@ export async function InstagramKpiStrip({ range }: { range?: string }) {
                     <Label>{asOfLabel(result.asOf)}</Label>
                   ) : (
                     <Label>
-                      vs <span className="text-base text-card-foreground">{formatCount(metric.previousValue)}</span>{" "}
+                      vs{" "}
+                      <span className="text-base text-card-foreground">
+                        {formatCount(metric.previousValue)}
+                      </span>{" "}
                       {comparisonLabel}
                     </Label>
                   )}

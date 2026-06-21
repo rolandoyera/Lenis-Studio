@@ -104,11 +104,7 @@ export function ClassSchedule() {
               </div>
             </div>
 
-            <Badge
-              variant="destructive"
-              className="shrink-0 px-2.5 py-1 text-[10px]">
-              Cancelled
-            </Badge>
+            <Badge variant="destructive">Cancelled</Badge>
           </div>
 
           <div className="grid grid-cols-1 gap-3 bg-card py-3 transition-colors hover:bg-muted/30 sm:grid-cols-[10rem_1fr_auto] sm:items-center">

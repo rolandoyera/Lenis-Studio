@@ -9,7 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { LibraryItem } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -26,9 +30,7 @@ export function VendorItems({ items, onAddItem }: VendorItemsProps) {
           <span className="flex items-center gap-2">
             <ShoppingBag className="icons" />
             Linked Library Items
-            <Badge variant="secondary" className="px-1 text-xs h-4 py-0 -mt-3">
-              {items.length}
-            </Badge>
+            <Badge variant="secondary">{items.length}</Badge>
           </span>
           {onAddItem && (
             <Tooltip>
@@ -53,9 +55,12 @@ export function VendorItems({ items, onAddItem }: VendorItemsProps) {
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
             <ShoppingBag className="mb-2 size-10 text-muted-foreground/30" />
-            <p className="font-medium text-muted-foreground text-sm">No linked products</p>
+            <p className="font-medium text-muted-foreground text-sm">
+              No linked products
+            </p>
             <p className="mt-1 max-w-[240px] text-muted-foreground/60 text-xs">
-              Items from the product library will appear here when added to this vendor.
+              Items from the product library will appear here when added to this
+              vendor.
             </p>
           </div>
         ) : (

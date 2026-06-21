@@ -23,10 +23,7 @@ function formatOrderDate(date: string) {
 function PaymentBadge({ status }: { status: OrderRow["payment"] }) {
   if (status === "Paid") {
     return (
-      <Badge
-        className="border-green-700/25 text-green-700 dark:border-green-300/25 dark:text-green-300"
-        variant="outline"
-      >
+      <Badge variant="success">
         <span className="size-1.5 rounded-full bg-current" />
         Paid
       </Badge>
@@ -43,10 +40,7 @@ function PaymentBadge({ status }: { status: OrderRow["payment"] }) {
   }
 
   return (
-    <Badge
-      className="border-yellow-700/25 text-yellow-700 dark:border-yellow-300/25 dark:text-yellow-300"
-      variant="outline"
-    >
+    <Badge variant="warning">
       <span className="size-1.5 rounded-full bg-current" />
       Pending
     </Badge>
@@ -56,10 +50,7 @@ function PaymentBadge({ status }: { status: OrderRow["payment"] }) {
 function FulfillmentBadge({ status }: { status: OrderRow["fulfillment"] }) {
   if (status === "Fulfilled") {
     return (
-      <Badge
-        className="border-green-700/25 text-green-700 dark:border-green-300/25 dark:text-green-300"
-        variant="outline"
-      >
+      <Badge variant="success">
         <span className="size-1.5 rounded-full bg-current" />
         Fulfilled
       </Badge>
@@ -90,7 +81,10 @@ export const recentOrdersColumns: ColumnDef<OrderRow>[] = [
       <div className="w-10">
         <Checkbox
           aria-label="Select all orders"
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         />
       </div>
@@ -113,7 +107,9 @@ export const recentOrdersColumns: ColumnDef<OrderRow>[] = [
     cell: ({ row }) => (
       <div className="flex flex-col gap-0.5">
         <div className="font-medium leading-none">{row.original.id}</div>
-        <div className="text-muted-foreground text-xs">{row.original.items}</div>
+        <div className="text-muted-foreground text-xs">
+          {row.original.items}
+        </div>
       </div>
     ),
     enableHiding: false,
@@ -150,7 +146,10 @@ export const recentOrdersColumns: ColumnDef<OrderRow>[] = [
       }
 
       if (value === "Returns") {
-        return row.original.payment === "Refunded" || row.original.fulfillment === "Returned";
+        return (
+          row.original.payment === "Refunded" ||
+          row.original.fulfillment === "Returned"
+        );
       }
 
       return true;
@@ -159,12 +158,18 @@ export const recentOrdersColumns: ColumnDef<OrderRow>[] = [
   {
     accessorKey: "total",
     header: () => <div className="w-28">Total</div>,
-    cell: ({ row }) => <div className="w-28 tabular-nums">{row.original.total}</div>,
+    cell: ({ row }) => (
+      <div className="w-28 tabular-nums">{row.original.total}</div>
+    ),
   },
   {
     accessorKey: "date",
     header: () => <div className="w-44">Date</div>,
-    cell: ({ row }) => <div className="w-44 text-muted-foreground">{formatOrderDate(row.original.date)}</div>,
+    cell: ({ row }) => (
+      <div className="w-44 text-muted-foreground">
+        {formatOrderDate(row.original.date)}
+      </div>
+    ),
   },
   {
     id: "actions",
@@ -173,7 +178,11 @@ export const recentOrdersColumns: ColumnDef<OrderRow>[] = [
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="flex w-full justify-end">
-            <Button aria-label="Open order actions" size="icon-sm" variant="ghost">
+            <Button
+              aria-label="Open order actions"
+              size="icon-sm"
+              variant="ghost"
+            >
               <MoreHorizontal />
             </Button>
           </div>

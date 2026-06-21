@@ -23,7 +23,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { H1, H3 } from "@/components/ui/typography";
 import { addVendor, getVendors } from "@/lib/db";
 import type { Vendor } from "@/lib/types";
@@ -37,7 +41,10 @@ import {
   VendorFormDialog,
 } from "./_components/vendor-form-dialog";
 import { vendorGradient } from "./_components/vendor-gradient";
-import { getDisplayUrl, getVendorSocialHrefs } from "./_components/vendor-links";
+import {
+  getDisplayUrl,
+  getVendorSocialHrefs,
+} from "./_components/vendor-links";
 
 export default function VendorsPage() {
   const { profile, organizationId, loading: authLoading } = useAuth();
@@ -78,7 +85,8 @@ export default function VendorsPage() {
 
   const handleAdd = async (data: VendorFormData, customVendorId?: string) => {
     if (!profile) return;
-    const vendorId = customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
+    const vendorId =
+      customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
     try {
       const mirrored = await mirrorVendorImagesToFirebase(
         {
@@ -118,7 +126,8 @@ export default function VendorsPage() {
         v.category?.toLowerCase().includes(term) ||
         v.notes?.toLowerCase().includes(term);
 
-      const matchesCategory = activeCategory === "All" || v.category === activeCategory;
+      const matchesCategory =
+        activeCategory === "All" || v.category === activeCategory;
 
       return matchesSearch && matchesCategory;
     })
@@ -148,7 +157,11 @@ export default function VendorsPage() {
         {/* Filter and search controls combined into a clean layout */}
         <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
           {/* Category Tabs */}
-          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+          <Tabs
+            value={activeCategory}
+            onValueChange={setActiveCategory}
+            className="w-full"
+          >
             <TabsList className="flex max-w-full flex-wrap gap-0.5">
               <TabsTrigger value="All">All Vendors</TabsTrigger>
               {VENDOR_CATEGORIES.map((cat) => (
@@ -175,7 +188,9 @@ export default function VendorsPage() {
         {loading ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
             <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Directory</p>
+            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              Loading Directory
+            </p>
           </div>
         ) : filteredVendors.length === 0 ? (
           <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
@@ -187,7 +202,10 @@ export default function VendorsPage() {
                 : "Get started by adding your first vendor contact."}
             </p>
             {!searchQuery && (
-              <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
+              <Button
+                onClick={handleOpenAdd}
+                className="mt-4 flex items-center gap-2"
+              >
                 <Plus className="size-4" />
                 Add Vendor
               </Button>
@@ -216,8 +234,14 @@ export default function VendorsPage() {
 function VendorCard({ vendor }: { vendor: Vendor }) {
   const initials = getInitials(vendor.name);
   const gradient = vendorGradient(vendor.name);
-  const { websiteHref, instagramHref, pinterestHref, facebookHref, youtubeHref, xTwitterHref } =
-    getVendorSocialHrefs(vendor);
+  const {
+    websiteHref,
+    instagramHref,
+    pinterestHref,
+    facebookHref,
+    youtubeHref,
+    xTwitterHref,
+  } = getVendorSocialHrefs(vendor);
 
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden pt-0 transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
@@ -242,7 +266,12 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Logo or initials monogram */}
         <div className="relative flex size-12 items-center justify-center overflow-hidden">
           {vendor.logoUrl ? (
-            <DashboardImage src={vendor.logoUrl} alt={vendor.name} sizes="48px" className="object-contain p-1" />
+            <DashboardImage
+              src={vendor.logoUrl}
+              alt={vendor.name}
+              sizes="48px"
+              className="object-contain p-1"
+            />
           ) : (
             <span className="select-none font-bold font-heading text-2xl text-foreground/80">
               {initials.slice(0, 2)}
@@ -251,12 +280,9 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         </div>
 
         {vendor.category && (
-          <Badge
-            variant="secondary"
-            className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm"
-          >
-            {vendor.category}
-          </Badge>
+          <div className="absolute top-3 left-3">
+            <Badge variant="overlay">{vendor.category}</Badge>
+          </div>
         )}
       </Link>
 
@@ -264,7 +290,10 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Name */}
         <div>
           <H3 className="transition-colors group-has-[.detail-link:hover]:text-primary">
-            <Link href={`/dashboard/vendors/${vendor.vendorId}`} className="detail-link cursor-pointer">
+            <Link
+              href={`/dashboard/vendors/${vendor.vendorId}`}
+              className="detail-link cursor-pointer"
+            >
               {vendor.name}
             </Link>
           </H3>
@@ -273,7 +302,11 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
         {/* Rep contact */}
         {vendor.repName || vendor.repEmail || vendor.repPhone ? (
           <div className="flex flex-col gap-1.5 rounded-lg border border-muted/60 bg-muted/40 px-3 py-2.5">
-            {vendor.repName && <p className="truncate font-medium text-foreground/80 text-xs">{vendor.repName}</p>}
+            {vendor.repName && (
+              <p className="truncate font-medium text-foreground/80 text-xs">
+                {vendor.repName}
+              </p>
+            )}
             <div className="flex flex-col gap-1 text-muted-foreground text-xs">
               {vendor.repEmail && (
                 <span className="flex items-center gap-1.5 truncate">

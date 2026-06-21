@@ -11,18 +11,30 @@ interface AnalyticsKpiStripProps {
   range?: string;
 }
 
-export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKpiStripProps) {
+export async function AnalyticsKpiStrip({
+  range = "last-24-hours",
+}: AnalyticsKpiStripProps) {
   const result = await fetchKpiData(range);
 
   if (!result.success || !result.data) {
     return (
       <div className="rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
-        <AnalyticsSetupRequired error={result.error} title="Analytics KPI Error" className="min-h-[140px]" />
+        <AnalyticsSetupRequired
+          error={result.error}
+          title="Analytics KPI Error"
+          className="min-h-[140px]"
+        />
       </div>
     );
   }
 
-  const { uniqueVisitors, visitors, pageviews, engagementRate, conversionRate } = result.data;
+  const {
+    uniqueVisitors,
+    visitors,
+    pageviews,
+    engagementRate,
+    conversionRate,
+  } = result.data;
   const labelText = result.comparisonLabel;
 
   const kpis = [
@@ -46,16 +58,16 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-4">
-                  <div className="text-2xl leading-none tracking-tight">{metric.value}</div>
+                  <div className="text-2xl leading-none tracking-tight">
+                    {metric.value}
+                  </div>
                   {noChange ? (
-                    <span className="text-muted-foreground text-xs">No change</span>
+                    <span className="text-muted-foreground text-xs">
+                      No change
+                    </span>
                   ) : (
                     <Badge
-                      className={
-                        metric.isPositive
-                          ? "bg-green-500/10 text-green-700 dark:bg-green-500/15 dark:text-green-300"
-                          : "bg-destructive/10 text-destructive"
-                      }
+                      variant={metric.isPositive ? "success" : "destructive"}
                     >
                       {metric.isPositive ? <TrendingUp /> : <TrendingDown />}
                       {metric.change}
@@ -63,7 +75,11 @@ export async function AnalyticsKpiStrip({ range = "last-24-hours" }: AnalyticsKp
                   )}
                 </div>
                 <Label>
-                  vs <span className="text-base text-card-foreground">{metric.previousValue}</span> {labelText}
+                  vs{" "}
+                  <span className="text-base text-card-foreground">
+                    {metric.previousValue}
+                  </span>{" "}
+                  {labelText}
                 </Label>
               </CardContent>
             </Card>

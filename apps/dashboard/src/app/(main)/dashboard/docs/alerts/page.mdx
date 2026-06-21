@@ -9,13 +9,16 @@ import { BadgeGallery } from "./_components/badge-gallery";
 # Alerts
 
 The feedback surfaces used across the app — Sonner toasts and Badges — gathered
-in one place. Components live in `components/ui`, but they're restyled in many
-spots; this page shows the canonical variants plus the patterns actually in use.
+in one place. Both are now standardized: every usage pulls the shared component
+from `components/ui` with no custom styling layered on top. These are the
+canonical surfaces and **should not change without approval** — don't restyle a
+toast or hand-roll badge colors; reach for an existing variant instead.
 
 ## Toasts
 
 Built on [Sonner](https://sonner.emilkowal.ski/), configured once in
-`components/ui/sonner.tsx`. Trigger them to see the live styling:
+`components/ui/sonner.tsx`. This configuration is standard and shouldn't change
+without approval. Trigger them to see the live styling:
 
 <ToastGallery />
 
@@ -30,9 +33,9 @@ toast.error("Couldn't load analytics", {
 
 ## Badges
 
-From `components/ui/badge.tsx`. The first row is the sanctioned variants; the
-second collects the restyled badges that recur throughout the app. KPI trend
-deltas use `success` (up) and `destructive` (down) — reach for an existing
-variant before hand-rolling colors.
+From `components/ui/badge.tsx`. These are the sanctioned variants — the complete
+set, used as-is with no custom styling. KPI trend deltas use `success` (up) and
+`destructive` (down). This set is standard and shouldn't change without
+approval; reach for an existing variant rather than hand-rolling colors.
 
 <BadgeGallery />

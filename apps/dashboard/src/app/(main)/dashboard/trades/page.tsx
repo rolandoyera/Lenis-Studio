@@ -4,7 +4,16 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 
-import { AlertTriangle, Hammer, Loader2, Mail, Phone, Plus, Search, ShieldAlert } from "lucide-react";
+import {
+  AlertTriangle,
+  Hammer,
+  Loader2,
+  Mail,
+  Phone,
+  Plus,
+  Search,
+  ShieldAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
@@ -19,7 +28,11 @@ import { addTrade, getTrades } from "@/lib/db";
 import type { Trade } from "@/lib/types";
 import { formatPhone, getInitials } from "@/lib/utils";
 
-import { EMPTY_TRADE_FORM, TRADE_TYPES, type TradeFormData } from "./_components/trade-constants";
+import {
+  EMPTY_TRADE_FORM,
+  TRADE_TYPES,
+  type TradeFormData,
+} from "./_components/trade-constants";
 import { TradeFormDialog } from "./_components/trade-form-dialog";
 
 // Accent gradients by company name first letter for premium aesthetic
@@ -77,7 +90,8 @@ export default function TradesPage() {
 
   const handleAdd = async (data: TradeFormData, customTradeId?: string) => {
     if (!profile) return;
-    const tradeId = customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
+    const tradeId =
+      customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
     try {
       const created = await addTrade(
         {
@@ -117,7 +131,8 @@ export default function TradesPage() {
           <div>
             <H1>Trades & Services</H1>
             <p className="mt-1 text-muted-foreground text-sm">
-              Manage subcontractors, installers, service entities, and credentials.
+              Manage subcontractors, installers, service entities, and
+              credentials.
             </p>
           </div>
           <Button
@@ -133,13 +148,24 @@ export default function TradesPage() {
         <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 xl:flex-row">
           {/* Trade Type Tabs */}
           <div className="w-full pb-2 xl:pb-0">
-            <Tabs value={activeType} onValueChange={setActiveType} className="w-auto">
+            <Tabs
+              value={activeType}
+              onValueChange={setActiveType}
+              className="w-auto"
+            >
               <TabsList className="flex h-auto! w-max gap-0.5">
-                <TabsTrigger value="All" className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
+                <TabsTrigger
+                  value="All"
+                  className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]"
+                >
                   All Trades
                 </TabsTrigger>
                 {TRADE_TYPES.map((type) => (
-                  <TabsTrigger key={type} value={type} className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]">
+                  <TabsTrigger
+                    key={type}
+                    value={type}
+                    className="cursor-pointer px-3 py-1.5 font-semibold text-[12px]"
+                  >
                     {type}
                   </TabsTrigger>
                 ))}
@@ -163,7 +189,9 @@ export default function TradesPage() {
         {loading ? (
           <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
             <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Directory</p>
+            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              Loading Directory
+            </p>
           </div>
         ) : filteredTrades.length === 0 ? (
           <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
@@ -175,7 +203,10 @@ export default function TradesPage() {
                 : "Get started by adding your first trade subcontractor contact."}
             </p>
             {!searchQuery && (
-              <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
+              <Button
+                onClick={handleOpenAdd}
+                className="mt-4 flex items-center gap-2"
+              >
                 <Plus className="size-4" />
                 Add Trade Profile
               </Button>
@@ -207,7 +238,8 @@ function checkExpiration(dateStr?: string): {
 } {
   if (!dateStr) return { expired: false, expiringSoon: false };
   const expDate = new Date(dateStr);
-  if (Number.isNaN(expDate.getTime())) return { expired: false, expiringSoon: false };
+  if (Number.isNaN(expDate.getTime()))
+    return { expired: false, expiringSoon: false };
 
   const now = new Date();
   // Clear times for date comparisons
@@ -236,7 +268,11 @@ function TradeCard({ trade }: { trade: Trade }) {
   const licExp = checkExpiration(trade.licenseExpirationDate);
   const insExp = checkExpiration(trade.insuranceExpirationDate);
 
-  const hasAlert = licExp.expired || licExp.expiringSoon || insExp.expired || insExp.expiringSoon;
+  const hasAlert =
+    licExp.expired ||
+    licExp.expiringSoon ||
+    insExp.expired ||
+    insExp.expiringSoon;
 
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden pt-0 transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
@@ -250,24 +286,30 @@ function TradeCard({ trade }: { trade: Trade }) {
 
         {/* Monogram circle */}
         <div className="relative flex size-14 items-center justify-center rounded-full border bg-background shadow-xs">
-          <span className="select-none font-bold font-heading text-primary/80 text-xl">{initials.slice(0, 2)}</span>
+          <span className="select-none font-bold font-heading text-primary/80 text-xl">
+            {initials.slice(0, 2)}
+          </span>
         </div>
 
-        <Badge
-          variant="secondary"
-          className="absolute top-3 left-3 border-0 bg-black/20 font-semibold text-[10px] text-white tracking-wide backdrop-blur-sm"
-        >
-          {["Contractors", "Installers", "Fabricators", "Engineer"].includes(trade.tradeType) && trade.tradeSubcategory
-            ? trade.tradeSubcategory
-            : trade.tradeType}
-        </Badge>
+        <div className="absolute top-3 left-3">
+          <Badge variant="overlay">
+            {["Contractors", "Installers", "Fabricators", "Engineer"].includes(
+              trade.tradeType,
+            ) && trade.tradeSubcategory
+              ? trade.tradeSubcategory
+              : trade.tradeType}
+          </Badge>
+        </div>
       </Link>
 
       <CardContent className="flex flex-1 flex-col gap-3.5 pt-4">
         {/* Company Title */}
         <div>
           <H3 className="line-clamp-1 transition-colors group-has-[.detail-link:hover]:text-primary">
-            <Link href={`/dashboard/trades/${trade.tradeId}`} className="detail-link cursor-pointer">
+            <Link
+              href={`/dashboard/trades/${trade.tradeId}`}
+              className="detail-link cursor-pointer"
+            >
               {trade.companyName}
             </Link>
           </H3>
@@ -280,34 +322,22 @@ function TradeCard({ trade }: { trade: Trade }) {
         {hasAlert && (
           <div className="flex flex-wrap gap-1.5">
             {licExp.expired && (
-              <Badge
-                variant="destructive"
-                className="flex items-center gap-1 font-bold text-[9px] uppercase tracking-wider"
-              >
+              <Badge variant="destructive">
                 <ShieldAlert className="size-3" /> Lic. Expired
               </Badge>
             )}
             {licExp.expiringSoon && (
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 border-amber-500/20 bg-amber-500/15 font-bold text-[9px] text-amber-500 uppercase tracking-wider"
-              >
+              <Badge variant="warning">
                 <AlertTriangle className="size-3" /> Lic. Expiring
               </Badge>
             )}
             {insExp.expired && (
-              <Badge
-                variant="destructive"
-                className="flex items-center gap-1 font-bold text-[9px] uppercase tracking-wider"
-              >
+              <Badge variant="destructive">
                 <ShieldAlert className="size-3" /> Ins. Expired
               </Badge>
             )}
             {insExp.expiringSoon && (
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 border-amber-500/20 bg-amber-500/15 font-bold text-[9px] text-amber-500 uppercase tracking-wider"
-              >
+              <Badge variant="warning">
                 <AlertTriangle className="size-3" /> Ins. Expiring
               </Badge>
             )}
