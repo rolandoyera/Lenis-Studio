@@ -27,7 +27,14 @@ export interface Client {
 
 // --- LEADS ---
 
-export type LeadStage = "new" | "contacted" | "qualified" | "proposal_sent" | "won" | "lost" | "on_hold";
+export type LeadStage =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "proposal_sent"
+  | "won"
+  | "lost"
+  | "on_hold";
 
 export type LeadSource =
   | "website"
@@ -43,11 +50,30 @@ export type LeadSource =
   | "family"
   | "other";
 
-export type PropertyType = "residential" | "commercial" | "hospitality" | "multifamily" | "retail" | "office" | "other";
+export type PropertyType =
+  | "residential"
+  | "commercial"
+  | "hospitality"
+  | "multifamily"
+  | "retail"
+  | "office"
+  | "other";
 
-export type BudgetRange = "under_50k" | "50k_100k" | "100k_250k" | "250k_500k" | "500k_1m" | "over_1m";
+export type BudgetRange =
+  | "under_50k"
+  | "50k_100k"
+  | "100k_250k"
+  | "250k_500k"
+  | "500k_1m"
+  | "over_1m";
 
-export type DesiredTimeline = "asap" | "1_3_months" | "3_6_months" | "6_12_months" | "12_plus_months" | "not_sure";
+export type DesiredTimeline =
+  | "asap"
+  | "1_3_months"
+  | "3_6_months"
+  | "6_12_months"
+  | "12_plus_months"
+  | "not_sure";
 
 export interface Lead {
   uid: string;
@@ -102,7 +128,11 @@ export interface Lead {
   lastActivityAt?: number;
 }
 
-export type ProjectStatus = "in_progress" | "on_hold" | "completed" | "cancelled";
+export type ProjectStatus =
+  | "in_progress"
+  | "on_hold"
+  | "completed"
+  | "cancelled";
 
 export interface Project {
   projectId: string;

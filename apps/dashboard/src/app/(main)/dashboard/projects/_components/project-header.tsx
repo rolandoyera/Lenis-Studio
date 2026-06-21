@@ -78,7 +78,8 @@ export function ProjectHeader({
                   <Link
                     href={`/dashboard/clients/${client.uid}`}
                     prefetch={false}
-                    className="flex items-center gap-1 hover:text-primary hover:underline">
+                    className="flex items-center gap-1 hover:text-primary hover:underline"
+                  >
                     <User className="size-3.5 text-muted-foreground/80" />
                     Client: {clientName}
                   </Link>
@@ -125,7 +126,8 @@ export function ProjectHeader({
         <Tabs
           value={activeTab}
           onValueChange={onTabChange}
-          className="w-full md:w-auto">
+          className="w-full md:w-auto"
+        >
           <TabsList className="flex max-w-full flex-wrap gap-1.5">
             {PROJECT_TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>

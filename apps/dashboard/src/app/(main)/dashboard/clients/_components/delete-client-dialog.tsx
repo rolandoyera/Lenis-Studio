@@ -22,17 +22,28 @@ interface DeleteClientDialogProps {
 }
 
 /** Confirmation alert for permanently deleting a client profile. */
-export function DeleteClientDialog({ open, onOpenChange, clientName, deleting, onConfirm }: DeleteClientDialogProps) {
+export function DeleteClientDialog({
+  open,
+  onOpenChange,
+  clientName,
+  deleting,
+  onConfirm,
+}: DeleteClientDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle className="text-xl">
+            Are you absolutely sure?
+          </AlertDialogTitle>
           <AlertDialogDescription className="text-sm">
-            This action cannot be undone. This will permanently delete the client contact profile{" "}
-            <span className="font-medium text-foreground">{clientName}</span> from the studio databases.
+            This action cannot be undone. This will permanently delete the
+            client contact profile{" "}
+            <span className="font-medium text-foreground">{clientName}</span>{" "}
+            from the studio databases.
             <span className="mt-2 block font-medium text-amber-600">
-              (Linked projects and proposals will remain, but the parent client reference association will be removed).
+              (Linked projects and proposals will remain, but the parent client
+              reference association will be removed).
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -1,4 +1,10 @@
-export const orderFilters = ["All", "Needs action", "Unfulfilled", "Unpaid", "Returns"] as const;
+export const orderFilters = [
+  "All",
+  "Needs action",
+  "Unfulfilled",
+  "Unpaid",
+  "Returns",
+] as const;
 
 export type OrderFilter = (typeof orderFilters)[number];
 

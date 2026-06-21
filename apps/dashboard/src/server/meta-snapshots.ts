@@ -1,5 +1,9 @@
 import { getAdminDb } from "./firebase-admin";
-import { fetchAccountKpis, fetchFollowerCount, getStoredMetaCreds } from "./meta-graph";
+import {
+  fetchAccountKpis,
+  fetchFollowerCount,
+  getStoredMetaCreds,
+} from "./meta-graph";
 
 /** One day's Instagram metrics, stored at organizations/{org}/instagramSnapshots/{date}. */
 export interface InstagramSnapshot {
@@ -23,7 +27,9 @@ function utcDateKey(d: Date): string {
 }
 
 /** Most recent stored snapshot for an org, or null if none exist yet. */
-export async function getLatestSnapshot(organizationId: string): Promise<InstagramSnapshot | null> {
+export async function getLatestSnapshot(
+  organizationId: string,
+): Promise<InstagramSnapshot | null> {
   const snap = await getAdminDb()
     .collection("organizations")
     .doc(organizationId)
@@ -40,14 +46,19 @@ export async function getLatestSnapshot(organizationId: string): Promise<Instagr
  * the `followersCount` display cache. Returns the snapshot, or null when the org has
  * no stored Meta creds. Throws on Graph API failure so callers can isolate per-org.
  */
-export async function snapshotInstagramForOrg(organizationId: string): Promise<InstagramSnapshot | null> {
+export async function snapshotInstagramForOrg(
+  organizationId: string,
+): Promise<InstagramSnapshot | null> {
   const creds = await getStoredMetaCreds(organizationId);
   if (!creds) return null;
 
   // Measure the just-completed 24h window.
   const until = Math.floor(Date.now() / 1000);
   const since = until - 24 * 60 * 60;
-  const [followersCount, kpis] = await Promise.all([fetchFollowerCount(creds), fetchAccountKpis(creds, since, until)]);
+  const [followersCount, kpis] = await Promise.all([
+    fetchFollowerCount(creds),
+    fetchAccountKpis(creds, since, until),
+  ]);
 
   const date = utcDateKey(new Date(since * 1000));
   const snapshot: InstagramSnapshot = {
@@ -66,7 +77,9 @@ export async function snapshotInstagramForOrg(organizationId: string): Promise<I
   const orgRef = getAdminDb().collection("organizations").doc(organizationId);
   await orgRef.collection("instagramSnapshots").doc(date).set(snapshot);
   // Snapshots are the only writer of the cached follower count now.
-  await orgRef.update({ "config.metaIntegration.followersCount": followersCount });
+  await orgRef.update({
+    "config.metaIntegration.followersCount": followersCount,
+  });
 
   return snapshot;
 }
@@ -85,7 +98,12 @@ export async function snapshotAllConnectedInstagram(): Promise<SnapshotRunResult
     .where("config.metaIntegration.connected", "==", true)
     .get();
 
-  const result: SnapshotRunResult = { total: orgs.size, succeeded: 0, failed: 0, errors: [] };
+  const result: SnapshotRunResult = {
+    total: orgs.size,
+    succeeded: 0,
+    failed: 0,
+    errors: [],
+  };
 
   await Promise.all(
     orgs.docs.map(async (doc) => {

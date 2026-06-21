@@ -74,7 +74,7 @@ reuse this folder's section components in the report or try to mirror the dashbo
   and concurrency rules as above.
 - Document system: `src/components/reports/` — `ReportShell`/`ReportSection` (generic foundation,
   reused by future `ProposalReport`/`InvoiceReport`) and `analytics/AnalyticsReport.tsx` (the
-  analytics document; its own layout/typography/tables, reusing only chart *primitives*).
+  analytics document; its own layout/typography/tables, reusing only chart _primitives_).
 - Presentation lives in the components; `src/styles/report.css` is minimal — pins a light palette
   so the dark theme can't bleed in, plus `@page`/page-break primitives. PDF is the browser print
   dialog for now (Playwright-rendered PDFs of this route likely later). Company identity is from

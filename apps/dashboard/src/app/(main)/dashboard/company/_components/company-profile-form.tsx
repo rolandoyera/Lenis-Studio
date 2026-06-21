@@ -99,7 +99,8 @@ export function CompanyProfileForm() {
           patch: {
             companyProfile: formToOrganizationUpdate(data).companyProfile,
           },
-        })}>
+        })}
+      >
         {(props) => <CompanyInfoFields {...props} />}
       </SectionEditDialog>
 
@@ -128,7 +129,8 @@ export function CompanyProfileForm() {
               branding.iconDarkPath,
             ],
           };
-        }}>
+        }}
+      >
         {(props) => (
           <BrandingFields {...props} organizationId={organizationId ?? ""} />
         )}
@@ -144,7 +146,8 @@ export function CompanyProfileForm() {
         persist={persist}
         buildPatch={(data) => ({
           patch: { settings: formToOrganizationUpdate(data).settings },
-        })}>
+        })}
+      >
         {(props) => <SettingsFields {...props} />}
       </SectionEditDialog>
     </>

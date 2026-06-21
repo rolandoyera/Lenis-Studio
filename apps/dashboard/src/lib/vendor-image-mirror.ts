@@ -32,7 +32,8 @@ export async function mirrorVendorImagesToFirebase(
   if (logo && !isFirebaseHosted(logo)) {
     const result = await mirrorExternalImageUrl({
       url: logo,
-      upload: (blob, extension) => uploadVendorImageBlob(blob, "logo", vendorId, extension),
+      upload: (blob, extension) =>
+        uploadVendorImageBlob(blob, "logo", vendorId, extension),
       logPrefix: "Vendor Mirror",
     });
     if (result.mirrored) {
@@ -45,7 +46,8 @@ export async function mirrorVendorImagesToFirebase(
   if (hero && !isFirebaseHosted(hero)) {
     const result = await mirrorExternalImageUrl({
       url: hero,
-      upload: (blob, extension) => uploadVendorImageBlob(blob, "hero", vendorId, extension),
+      upload: (blob, extension) =>
+        uploadVendorImageBlob(blob, "hero", vendorId, extension),
       logPrefix: "Vendor Mirror",
     });
     if (result.mirrored) {
@@ -54,5 +56,10 @@ export async function mirrorVendorImagesToFirebase(
     }
   }
 
-  return { logoUrl: resolvedLogo, logoPath, heroImageUrl: resolvedHero, heroImagePath };
+  return {
+    logoUrl: resolvedLogo,
+    logoPath,
+    heroImageUrl: resolvedHero,
+    heroImagePath,
+  };
 }

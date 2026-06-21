@@ -4,7 +4,12 @@ import { Image, ShoppingBag } from "lucide-react";
 
 import { DashboardImage } from "@/components/dashboard-image";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import type { LibraryItem } from "@/lib/types";
 
 interface ItemGalleryCardProps {
@@ -14,7 +19,11 @@ interface ItemGalleryCardProps {
 }
 
 /** Sourcing gallery: large active preview plus a clickable thumbnail strip. */
-export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGalleryCardProps) {
+export function ItemGalleryCard({
+  item,
+  activeImage,
+  onSelectImage,
+}: ItemGalleryCardProps) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="h-6.5">
@@ -37,7 +46,9 @@ export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGaller
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 p-8 text-muted-foreground/30">
             <ShoppingBag className="size-16" />
-            <p className="text-xs uppercase tracking-wider">No photos uploaded</p>
+            <p className="text-xs uppercase tracking-wider">
+              No photos uploaded
+            </p>
           </div>
         )}
       </CardContent>
@@ -56,7 +67,12 @@ export function ItemGalleryCard({ item, activeImage, onSelectImage }: ItemGaller
                 }`}
                 onClick={() => onSelectImage(url)}
               >
-                <DashboardImage src={url} alt="thumbnail" sizes="64px" className="object-cover" />
+                <DashboardImage
+                  src={url}
+                  alt="thumbnail"
+                  sizes="64px"
+                  className="object-cover"
+                />
               </button>
             ))}
           </div>

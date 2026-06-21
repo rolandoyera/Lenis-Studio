@@ -49,11 +49,20 @@ const InstagramIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >
-      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={strokeWidth}>
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+      >
         <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
         <path d="M16 11.37A4 4 0 1 1 12.63 8A4 4 0 0 1 16 11.37m1.5-4.87h.01" />
       </g>
@@ -100,11 +109,20 @@ const PinterestIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >
-      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={strokeWidth}>
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+      >
         <path d="M12 11L8 21m1.974-4.428A5 5 0 1 0 7.67 14.5" />
         <circle cx="12" cy="12" r="10" />
       </g>
@@ -151,11 +169,20 @@ const YoutubeIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >
-      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={strokeWidth}>
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+      >
         <path d="M2.5 17a24.1 24.1 0 0 1 0-10a2 2 0 0 1 1.4-1.4a49.6 49.6 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.1 24.1 0 0 1 0 10a2 2 0 0 1-1.4 1.4a49.6 49.6 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
         <path d="m10 15l5-3l-5-3z" />
       </g>
@@ -202,7 +229,10 @@ const FacebookIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >
@@ -257,11 +287,20 @@ const GlobeIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >
-      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={strokeWidth}>
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+      >
         <circle cx="12" cy="12" r="10" />
         <path d="M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20M2 12h20" />
       </g>
@@ -308,7 +347,10 @@ const XTwitterIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >
@@ -363,7 +405,10 @@ const EditIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >
@@ -419,7 +464,10 @@ const TrashIcon = ({
       style={{
         opacity,
         transform: transforms.join(" ") || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        filter:
+          shadow > 0
+            ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+            : undefined,
         backgroundColor: background !== "transparent" ? background : undefined,
       }}
     >

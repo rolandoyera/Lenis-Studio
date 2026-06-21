@@ -26,6 +26,8 @@ export function formatSelectedOrderCount(count: number) {
   return `${count.toLocaleString()} ${orderLabel} selected`;
 }
 
-export function preventPaginationNavigation(event: React.MouseEvent<HTMLAnchorElement>) {
+export function preventPaginationNavigation(
+  event: React.MouseEvent<HTMLAnchorElement>,
+) {
   event.preventDefault();
 }

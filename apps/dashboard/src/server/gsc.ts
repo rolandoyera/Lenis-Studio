@@ -9,21 +9,28 @@ let gscClient: searchconsole_v1.Searchconsole | null = null;
  */
 function parseServiceAccountKey(raw: string): Record<string, unknown> {
   const trimmed = raw.trim();
-  const json = trimmed.startsWith("{") ? trimmed : Buffer.from(trimmed, "base64").toString("utf8");
+  const json = trimmed.startsWith("{")
+    ? trimmed
+    : Buffer.from(trimmed, "base64").toString("utf8");
   return JSON.parse(json) as Record<string, unknown>;
 }
 
 export function hasGSCCredentials(): boolean {
-  return Boolean(process.env.GSC_SERVICE_ACCOUNT_KEY || process.env.GA_SERVICE_ACCOUNT_KEY);
+  return Boolean(
+    process.env.GSC_SERVICE_ACCOUNT_KEY || process.env.GA_SERVICE_ACCOUNT_KEY,
+  );
 }
 
 function buildAuth(): GoogleAuth {
   // Reuse the GA service account by default; allow a dedicated key if set.
   // The SA email must be added under Search Console > Settings > Users and permissions.
-  const serviceAccountKey = process.env.GSC_SERVICE_ACCOUNT_KEY || process.env.GA_SERVICE_ACCOUNT_KEY;
+  const serviceAccountKey =
+    process.env.GSC_SERVICE_ACCOUNT_KEY || process.env.GA_SERVICE_ACCOUNT_KEY;
 
   if (!serviceAccountKey) {
-    throw new Error("Missing GSC_SERVICE_ACCOUNT_KEY (or GA_SERVICE_ACCOUNT_KEY) for Search Console access.");
+    throw new Error(
+      "Missing GSC_SERVICE_ACCOUNT_KEY (or GA_SERVICE_ACCOUNT_KEY) for Search Console access.",
+    );
   }
 
   return new GoogleAuth({

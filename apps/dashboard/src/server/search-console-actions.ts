@@ -7,7 +7,8 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-const CONFIG_MISSING_ERROR = "Google Search Console is not configured in .env.local yet.";
+const CONFIG_MISSING_ERROR =
+  "Google Search Console is not configured in .env.local yet.";
 
 // Search Console data lags ~2-3 days; querying up to "today" returns empty rows
 // for the most recent days, so we end the window a few days back.
@@ -25,7 +26,10 @@ function getDateRange(range?: string): { startDate: string; endDate: string } {
   if (range === "last-7-days") days = 7;
   else if (range === "last-3-months") days = 90;
   else if (range === "year-to-date") {
-    return { startDate: `${end.getFullYear()}-01-01`, endDate: formatDate(end) };
+    return {
+      startDate: `${end.getFullYear()}-01-01`,
+      endDate: formatDate(end),
+    };
   }
 
   const start = new Date(end);
@@ -83,7 +87,10 @@ export async function testGSCConnection(): Promise<GSCConnectionResult> {
     return {
       success: false,
       configMissing: false,
-      error: getErrorMessage(error, "An unexpected error occurred while communicating with the Search Console API."),
+      error: getErrorMessage(
+        error,
+        "An unexpected error occurred while communicating with the Search Console API.",
+      ),
     };
   }
 }
@@ -129,7 +136,10 @@ export async function fetchSearchTotals(
     };
   } catch (error: unknown) {
     console.error("Failed to fetch search totals from Search Console:", error);
-    return { success: false, error: getErrorMessage(error, "Failed to load Search Console totals.") };
+    return {
+      success: false,
+      error: getErrorMessage(error, "Failed to load Search Console totals."),
+    };
   }
 }
 
@@ -146,7 +156,8 @@ export async function fetchTopSearchQueries(
   range?: string,
 ): Promise<{ success: boolean; data: SearchQueryItem[]; error?: string }> {
   const siteUrl = await getConfiguredSiteUrl();
-  if (!siteUrl) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
+  if (!siteUrl)
+    return { success: false, data: [], error: CONFIG_MISSING_ERROR };
 
   try {
     const client = getGSCClient();
@@ -172,8 +183,15 @@ export async function fetchTopSearchQueries(
 
     return { success: true, data };
   } catch (error: unknown) {
-    console.error("Failed to fetch top search queries from Search Console:", error);
-    return { success: false, data: [], error: getErrorMessage(error, "Failed to load Search Console queries.") };
+    console.error(
+      "Failed to fetch top search queries from Search Console:",
+      error,
+    );
+    return {
+      success: false,
+      data: [],
+      error: getErrorMessage(error, "Failed to load Search Console queries."),
+    };
   }
 }
 
@@ -190,7 +208,8 @@ export async function fetchTopSearchPages(
   range?: string,
 ): Promise<{ success: boolean; data: SearchPageItem[]; error?: string }> {
   const siteUrl = await getConfiguredSiteUrl();
-  if (!siteUrl) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
+  if (!siteUrl)
+    return { success: false, data: [], error: CONFIG_MISSING_ERROR };
 
   try {
     const client = getGSCClient();
@@ -216,7 +235,14 @@ export async function fetchTopSearchPages(
 
     return { success: true, data };
   } catch (error: unknown) {
-    console.error("Failed to fetch top search pages from Search Console:", error);
-    return { success: false, data: [], error: getErrorMessage(error, "Failed to load Search Console pages.") };
+    console.error(
+      "Failed to fetch top search pages from Search Console:",
+      error,
+    );
+    return {
+      success: false,
+      data: [],
+      error: getErrorMessage(error, "Failed to load Search Console pages."),
+    };
   }
 }

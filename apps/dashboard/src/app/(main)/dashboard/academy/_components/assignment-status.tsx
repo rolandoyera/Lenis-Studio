@@ -3,7 +3,13 @@
 import { ArrowRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   type ChartConfig,
   ChartContainer,
@@ -72,16 +78,40 @@ export function AssignmentStatus() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-70 w-full">
-          <BarChart accessibilityLayer data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            margin={{ left: 0, right: 0, top: 0, bottom: 0 }}
+          >
             <defs>
-              <AssignmentDotPattern color="var(--color-submitted)" id="assignment-submitted-pattern" />
-              <AssignmentDotPattern color="var(--color-pending)" id="assignment-pending-pattern" />
-              <AssignmentDotPattern color="var(--color-overdue)" id="assignment-overdue-pattern" />
+              <AssignmentDotPattern
+                color="var(--color-submitted)"
+                id="assignment-submitted-pattern"
+              />
+              <AssignmentDotPattern
+                color="var(--color-pending)"
+                id="assignment-pending-pattern"
+              />
+              <AssignmentDotPattern
+                color="var(--color-overdue)"
+                id="assignment-overdue-pattern"
+              />
             </defs>
             <CartesianGrid vertical={false} />
-            <XAxis axisLine={false} dataKey="className" tickLine={false} tickMargin={10} />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideIndicator />} />
-            <ChartLegend content={<ChartLegendContent className="justify-start" />} verticalAlign="top" />
+            <XAxis
+              axisLine={false}
+              dataKey="className"
+              tickLine={false}
+              tickMargin={10}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideIndicator />}
+            />
+            <ChartLegend
+              content={<ChartLegendContent className="justify-start" />}
+              verticalAlign="top"
+            />
             <Bar
               dataKey="submitted"
               fill="url(#assignment-submitted-pattern)"

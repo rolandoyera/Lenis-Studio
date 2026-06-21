@@ -26,7 +26,9 @@ export interface MetaInstagramProfile {
 }
 
 /** Upgrades a short-lived user token to a long-lived one (~60 days). */
-export async function exchangeForLongLivedToken(shortToken: string): Promise<{ token: string; expiresAt?: number }> {
+export async function exchangeForLongLivedToken(
+  shortToken: string,
+): Promise<{ token: string; expiresAt?: number }> {
   const res = await fetch(
     `${GRAPH}/oauth/access_token?` +
       new URLSearchParams({
@@ -39,7 +41,10 @@ export async function exchangeForLongLivedToken(shortToken: string): Promise<{ t
   const data = await res.json();
   return {
     token: data.access_token ?? shortToken,
-    expiresAt: typeof data.expires_in === "number" ? Date.now() + data.expires_in * 1000 : undefined,
+    expiresAt:
+      typeof data.expires_in === "number"
+        ? Date.now() + data.expires_in * 1000
+        : undefined,
   };
 }
 
@@ -47,15 +52,19 @@ export async function exchangeForLongLivedToken(shortToken: string): Promise<{ t
 export async function fetchPages(userToken: string): Promise<MetaPage[]> {
   const res = await fetch(`${GRAPH}/me/accounts?access_token=${userToken}`);
   const data = await res.json();
-  return (data.data ?? []).map((p: { id: string; name: string; access_token: string }) => ({
-    id: p.id,
-    name: p.name,
-    accessToken: p.access_token,
-  }));
+  return (data.data ?? []).map(
+    (p: { id: string; name: string; access_token: string }) => ({
+      id: p.id,
+      name: p.name,
+      accessToken: p.access_token,
+    }),
+  );
 }
 
 /** Resolves the Instagram Business account + profile linked to a page, or null. */
-export async function fetchInstagramProfile(page: MetaPage): Promise<MetaInstagramProfile | null> {
+export async function fetchInstagramProfile(
+  page: MetaPage,
+): Promise<MetaInstagramProfile | null> {
   const igRes = await fetch(
     `${GRAPH}/${page.id}?` +
       new URLSearchParams({
@@ -70,7 +79,8 @@ export async function fetchInstagramProfile(page: MetaPage): Promise<MetaInstagr
   const profileRes = await fetch(
     `${GRAPH}/${instagramAccountId}?` +
       new URLSearchParams({
-        fields: "id,username,name,profile_picture_url,followers_count,media_count",
+        fields:
+          "id,username,name,profile_picture_url,followers_count,media_count",
         access_token: page.accessToken,
       }),
   );
@@ -167,7 +177,9 @@ export interface IgMediaItem {
 }
 
 /** Reads the stored page token + IG account id for a tenant (server-only). */
-export async function getStoredMetaCreds(organizationId: string): Promise<StoredMetaCreds | null> {
+export async function getStoredMetaCreds(
+  organizationId: string,
+): Promise<StoredMetaCreds | null> {
   const snap = await getAdminDb()
     .collection("organizations")
     .doc(organizationId)
@@ -190,14 +202,20 @@ async function graphJson(url: string): Promise<{ data?: unknown[] }> {
     error?: { message?: string; error_user_msg?: string };
   };
   if (json.error) {
-    throw new Error(json.error.error_user_msg ?? json.error.message ?? "Instagram Graph API error.");
+    throw new Error(
+      json.error.error_user_msg ??
+        json.error.message ??
+        "Instagram Graph API error.",
+    );
   }
   return json;
 }
 
 function formatDayLabel(endTime: string): string {
   const d = new Date(endTime);
-  return Number.isNaN(d.getTime()) ? endTime : d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+  return Number.isNaN(d.getTime())
+    ? endTime
+    : d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
 }
 
 // Instagram's day-period insights reject any window wider than 30 days
@@ -205,7 +223,10 @@ function formatDayLabel(endTime: string): string {
 // split longer ranges into ≤30-day chunks and aggregate the results.
 const MAX_WINDOW = 30 * 24 * 60 * 60;
 
-function splitWindow(since: number, until: number): { since: number; until: number }[] {
+function splitWindow(
+  since: number,
+  until: number,
+): { since: number; until: number }[] {
   const chunks: { since: number; until: number }[] = [];
   let cursor = since;
   while (cursor < until) {
@@ -217,12 +238,17 @@ function splitWindow(since: number, until: number): { since: number; until: numb
 }
 
 /** Account-level totals over a window: reach, views, profile visits, accounts engaged. */
-export async function fetchAccountKpis(creds: StoredMetaCreds, since: number, until: number): Promise<IgKpis> {
+export async function fetchAccountKpis(
+  creds: StoredMetaCreds,
+  since: number,
+  until: number,
+): Promise<IgKpis> {
   const chunks = await Promise.all(
     splitWindow(since, until).map((w) =>
       graphJson(
         `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
-          metric: "reach,views,profile_views,accounts_engaged,likes,comments,website_clicks",
+          metric:
+            "reach,views,profile_views,accounts_engaged,likes,comments,website_clicks",
           period: "day",
           metric_type: "total_value",
           since: String(w.since),
@@ -238,7 +264,10 @@ export async function fetchAccountKpis(creds: StoredMetaCreds, since: number, un
   // given the 30-day cap, and the standard workaround.
   const byName: Record<string, number> = {};
   for (const json of chunks) {
-    for (const m of (json.data ?? []) as { name: string; total_value?: { value?: number } }[]) {
+    for (const m of (json.data ?? []) as {
+      name: string;
+      total_value?: { value?: number };
+    }[]) {
       byName[m.name] = (byName[m.name] ?? 0) + (m.total_value?.value ?? 0);
     }
   }
@@ -255,7 +284,11 @@ export async function fetchAccountKpis(creds: StoredMetaCreds, since: number, un
 }
 
 /** Daily reach series over a window, for the trend chart. */
-export async function fetchReachTrend(creds: StoredMetaCreds, since: number, until: number): Promise<IgTrendPoint[]> {
+export async function fetchReachTrend(
+  creds: StoredMetaCreds,
+  since: number,
+  until: number,
+): Promise<IgTrendPoint[]> {
   const chunks = await Promise.all(
     splitWindow(since, until).map((w) =>
       graphJson(
@@ -273,22 +306,38 @@ export async function fetchReachTrend(creds: StoredMetaCreds, since: number, unt
   // Daily points just concatenate across chunks (in window order).
   return chunks.flatMap((json) => {
     const values =
-      ((json.data ?? [])[0] as { values?: { value?: number; end_time?: string }[] } | undefined)?.values ?? [];
-    return values.map((v) => ({ label: formatDayLabel(v.end_time ?? ""), reach: v.value ?? 0 }));
+      (
+        (json.data ?? [])[0] as
+          | { values?: { value?: number; end_time?: string }[] }
+          | undefined
+      )?.values ?? [];
+    return values.map((v) => ({
+      label: formatDayLabel(v.end_time ?? ""),
+      reach: v.value ?? 0,
+    }));
   });
 }
 
 /** Live total follower count for the IG account. */
-export async function fetchFollowerCount(creds: StoredMetaCreds): Promise<number> {
-  const res = await fetch(`${GRAPH}/${creds.igId}?fields=followers_count&access_token=${creds.token}`, {
-    cache: "no-store",
-  });
+export async function fetchFollowerCount(
+  creds: StoredMetaCreds,
+): Promise<number> {
+  const res = await fetch(
+    `${GRAPH}/${creds.igId}?fields=followers_count&access_token=${creds.token}`,
+    {
+      cache: "no-store",
+    },
+  );
   const json = (await res.json()) as {
     followers_count?: number;
     error?: { message?: string; error_user_msg?: string };
   };
   if (json.error) {
-    throw new Error(json.error.error_user_msg ?? json.error.message ?? "Instagram Graph API error.");
+    throw new Error(
+      json.error.error_user_msg ??
+        json.error.message ??
+        "Instagram Graph API error.",
+    );
   }
   return json.followers_count ?? 0;
 }
@@ -298,7 +347,11 @@ export async function fetchFollowerCount(creds: StoredMetaCreds): Promise<number
  * when the metric is unavailable — Instagram doesn't expose `follower_count` for
  * accounts under 100 followers, which we treat as "no comparison" rather than an error.
  */
-export async function fetchFollowerGains(creds: StoredMetaCreds, since: number, until: number): Promise<number | null> {
+export async function fetchFollowerGains(
+  creds: StoredMetaCreds,
+  since: number,
+  until: number,
+): Promise<number | null> {
   try {
     const json = await graphJson(
       `${GRAPH}/${creds.igId}/insights?${new URLSearchParams({
@@ -309,7 +362,9 @@ export async function fetchFollowerGains(creds: StoredMetaCreds, since: number, 
         access_token: creds.token,
       })}`,
     );
-    const values = ((json.data ?? [])[0] as { values?: { value?: number }[] } | undefined)?.values ?? [];
+    const values =
+      ((json.data ?? [])[0] as { values?: { value?: number }[] } | undefined)
+        ?.values ?? [];
     return values.reduce((sum, v) => sum + (v.value ?? 0), 0);
   } catch {
     return null;
@@ -341,20 +396,33 @@ export async function fetchFollowerDemographics(
   );
 
   const node = (json.data ?? [])[0] as
-    | { total_value?: { breakdowns?: { results?: { dimension_values?: string[]; value?: number }[] }[] } }
+    | {
+        total_value?: {
+          breakdowns?: {
+            results?: { dimension_values?: string[]; value?: number }[];
+          }[];
+        };
+      }
     | undefined;
   const results = node?.total_value?.breakdowns?.[0]?.results ?? [];
 
   return results
-    .map((r) => ({ label: (r.dimension_values ?? []).join(", "), value: r.value ?? 0 }))
+    .map((r) => ({
+      label: (r.dimension_values ?? []).join(", "),
+      value: r.value ?? 0,
+    }))
     .sort((a, b) => b.value - a.value);
 }
 
 /** Recent media with engagement counts. */
-export async function fetchRecentMedia(creds: StoredMetaCreds, limit = 10): Promise<IgMediaItem[]> {
+export async function fetchRecentMedia(
+  creds: StoredMetaCreds,
+  limit = 10,
+): Promise<IgMediaItem[]> {
   const json = await graphJson(
     `${GRAPH}/${creds.igId}/media?${new URLSearchParams({
-      fields: "id,caption,media_type,timestamp,like_count,comments_count,permalink,media_url,thumbnail_url",
+      fields:
+        "id,caption,media_type,timestamp,like_count,comments_count,permalink,media_url,thumbnail_url",
       limit: String(limit),
       access_token: creds.token,
     })}`,

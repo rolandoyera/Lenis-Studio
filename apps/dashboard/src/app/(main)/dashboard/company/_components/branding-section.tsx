@@ -14,7 +14,11 @@ import { uploadOrgBrandingImage } from "@/lib/db";
 import type { Organization } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-import { EditableCardHeader, LABEL_CLASS, type SectionDialogChildProps } from "./section-dialog";
+import {
+  EditableCardHeader,
+  LABEL_CLASS,
+  type SectionDialogChildProps,
+} from "./section-dialog";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -65,7 +69,14 @@ function BrandingImageUpload({
   return (
     <div className="flex flex-col gap-2">
       <Label className={LABEL_CLASS}>{label}</Label>
-      <input type="file" id={id} accept="image/*" onChange={handleUpload} className="hidden" disabled={uploading} />
+      <input
+        type="file"
+        id={id}
+        accept="image/*"
+        onChange={handleUpload}
+        className="hidden"
+        disabled={uploading}
+      />
       <div
         className={cn(
           "group/img relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-border transition-all hover:border-primary/50",
@@ -80,7 +91,11 @@ function BrandingImageUpload({
         ) : url ? (
           <>
             {/* biome-ignore lint/performance/noImgElement: form preview uses dynamic branding URLs. */}
-            <img src={url} alt={label} className="absolute inset-0 size-full object-contain p-3" />
+            <img
+              src={url}
+              alt={label}
+              className="absolute inset-0 size-full object-contain p-3"
+            />
             <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover/img:opacity-100">
               <Label
                 htmlFor={id}
@@ -104,7 +119,9 @@ function BrandingImageUpload({
           >
             <Upload className="size-6 text-muted-foreground/40" />
             <p className="font-medium text-[11px]">Upload {label}</p>
-            <p className="text-[9px] text-muted-foreground/50">{hint ?? "Max 5MB"}</p>
+            <p className="text-[9px] text-muted-foreground/50">
+              {hint ?? "Max 5MB"}
+            </p>
           </Label>
         )}
       </div>
@@ -150,7 +167,15 @@ function ColorField({
   );
 }
 
-function BrandingThumb({ label, url, dark }: { label: string; url?: string; dark?: boolean }) {
+function BrandingThumb({
+  label,
+  url,
+  dark,
+}: {
+  label: string;
+  url?: string;
+  dark?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-2">
       <Label className={LABEL_CLASS}>{label}</Label>
@@ -162,7 +187,11 @@ function BrandingThumb({ label, url, dark }: { label: string; url?: string; dark
       >
         {url ? (
           // biome-ignore lint/performance/noImgElement: display uses dynamic branding URLs.
-          <img src={url} alt={label} className="absolute inset-0 size-full object-contain p-3" />
+          <img
+            src={url}
+            alt={label}
+            className="absolute inset-0 size-full object-contain p-3"
+          />
         ) : (
           <span className="text-muted-foreground text-xs">Upload logo</span>
         )}
@@ -177,7 +206,10 @@ function ColorSwatch({ label, value }: { label: string; value?: string }) {
       <Label className={LABEL_CLASS}>{label}</Label>
       {value ? (
         <span className="flex items-center gap-2 text-sm">
-          <span className="size-5 rounded border border-border" style={{ backgroundColor: value }} />
+          <span
+            className="size-5 rounded border border-border"
+            style={{ backgroundColor: value }}
+          />
           {value}
         </span>
       ) : (
@@ -187,7 +219,13 @@ function ColorSwatch({ label, value }: { label: string; value?: string }) {
   );
 }
 
-export function BrandingCard({ org, onEdit }: { org: Organization; onEdit: () => void }) {
+export function BrandingCard({
+  org,
+  onEdit,
+}: {
+  org: Organization;
+  onEdit: () => void;
+}) {
   const b = org.branding;
   return (
     <Card className="pt-0 lg:col-span-2">
@@ -199,7 +237,10 @@ export function BrandingCard({ org, onEdit }: { org: Organization; onEdit: () =>
       <CardContent className="flex flex-col gap-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <BrandingThumb label="Light Logo" url={b?.logoLightUrl} dark />
-          <BrandingThumb label="Dark Logo - (For light backgrounds)" url={b?.logoDarkUrl} />
+          <BrandingThumb
+            label="Dark Logo - (For light backgrounds)"
+            url={b?.logoDarkUrl}
+          />
           <BrandingThumb label="Light Icon" url={b?.iconLightUrl} dark />
           <BrandingThumb label="Dark Icon" url={b?.iconDarkUrl} />
         </div>

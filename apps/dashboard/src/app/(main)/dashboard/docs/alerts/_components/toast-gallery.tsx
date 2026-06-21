@@ -10,35 +10,40 @@ import { Button } from "@/components/ui/button";
  */
 export function ToastGallery() {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 py-2">
       <Button
         size="sm"
         variant="outline"
-        onClick={() => toast.success("Changes saved.")}>
+        onClick={() => toast.success("Changes saved.")}
+      >
         Success
       </Button>
       <Button
         size="sm"
         variant="outline"
-        onClick={() => toast.error("Something went wrong.")}>
+        onClick={() => toast.error("Something went wrong.")}
+      >
         Error
       </Button>
       <Button
         size="sm"
         variant="outline"
-        onClick={() => toast.warning("This action can't be undone.")}>
+        onClick={() => toast.warning("This action can't be undone.")}
+      >
         Warning
       </Button>
       <Button
         size="sm"
         variant="outline"
-        onClick={() => toast.info("Heads up — syncing in the background.")}>
+        onClick={() => toast.info("Heads up — syncing in the background.")}
+      >
         Info
       </Button>
       <Button
         size="sm"
         variant="outline"
-        onClick={() => toast.loading("Working on it…")}>
+        onClick={() => toast.loading("Working on it…")}
+      >
         Loading
       </Button>
       <Button
@@ -48,7 +53,8 @@ export function ToastGallery() {
           toast.error("Couldn't load analytics", {
             description: "The request timed out. Try again in a moment.",
           })
-        }>
+        }
+      >
         With description
       </Button>
     </div>

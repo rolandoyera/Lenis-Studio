@@ -17,7 +17,9 @@ export function getDisplayUrl(url: string | null): string {
     .replace(/\/$/, "");
 }
 
-export function formatSocialHref(url: string | undefined | null): string | null {
+export function formatSocialHref(
+  url: string | undefined | null,
+): string | null {
   if (!url?.trim()) return null;
   const trimmed = url.trim();
   return trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;

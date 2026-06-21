@@ -15,7 +15,7 @@ than none — treat updating it as part of "done," not optional.
 
 `/dashboard/company` hosts **only the Company Profile** ([page.tsx](./page.tsx)) — the org's own
 identity/branding/defaults, edited by org Admins
-([_components/company-profile-form.tsx](./_components/company-profile-form.tsx)).
+([\_components/company-profile-form.tsx](./_components/company-profile-form.tsx)).
 
 The route started as the Meta/Instagram card, but that connect flow now lives entirely on
 `/dashboard/instagram` (see that folder's AGENTS.md). `page.tsx` is a plain server component; the
@@ -48,7 +48,7 @@ access (see `firestore.rules`):
 
 - **Read:** any signed-in member of that org (`orgId == userOrg()`), or any SuperAdmin.
 - **Update (client):** an **Admin of their own org**, but `hasOnly(['companyProfile', 'branding',
-  'settings'])` — they can edit *only* those three fields. SuperAdmins keep blanket update.
+'settings'])` — they can edit _only_ those three fields. SuperAdmins keep blanket update.
 - **`name`, `adminEmail`, `status`, `plan`, `config` stay SuperAdmin-only** — those are managed by
   the SuperAdmin-gated Tenants page (`../tenants/[tenantId]/page.tsx`, which writes `status` and
   `config`). Never widen the allowlist to include them, and never move profile saves to touch them.
@@ -79,7 +79,7 @@ just that section. There is no single page-wide "Save."
 
 ## Conventions that are easy to break
 
-- **Flat form ↔ nested doc mapping lives in [_components/company-constants.ts](./_components/company-constants.ts).**
+- **Flat form ↔ nested doc mapping lives in [\_components/company-constants.ts](./_components/company-constants.ts).**
   `organizationToForm` (nested → flat strings) and `formToOrganizationUpdate` (flat → nested
   `companyProfile`/`branding`/`settings`). Edit fields in one place; keep both directions in sync.
 - **Settings numbers are `number` in Firestore but strings in the form.** The schema validates them

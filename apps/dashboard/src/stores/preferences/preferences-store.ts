@@ -2,7 +2,11 @@ import { createStore } from "zustand/vanilla";
 
 import type { FontKey } from "@/lib/fonts/registry";
 import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config";
-import type { ResolvedThemeMode, ThemeMode, ThemePreset } from "@/lib/preferences/theme";
+import type {
+  ResolvedThemeMode,
+  ThemeMode,
+  ThemePreset,
+} from "@/lib/preferences/theme";
 
 export type PreferencesState = {
   themeMode: ThemeMode;

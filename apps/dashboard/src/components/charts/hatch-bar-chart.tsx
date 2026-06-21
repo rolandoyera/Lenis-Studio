@@ -1,8 +1,21 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, LabelList, type LabelProps, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  type LabelProps,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 export interface HatchBarDatum {
   /** Text shown inside the bar (e.g. a channel name or country code). */
@@ -69,7 +82,11 @@ export function HatchBarChart({
   };
 
   if (data.length === 0) {
-    return <div className="flex h-64 items-center justify-center text-muted-foreground text-sm">{emptyMessage}</div>;
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground text-sm">
+        {emptyMessage}
+      </div>
+    );
   }
 
   // YAxis category drives the tooltip's heading, so resolve the fallback up front.
@@ -110,10 +127,25 @@ export function HatchBarChart({
   };
 
   return (
-    <ChartContainer config={config} className={className} style={{ height: rows.length * rowHeight }}>
-      <BarChart accessibilityLayer data={rows} layout="vertical" margin={{ left: hasFlags ? FLAG_SLOT : 0, right: 48 }}>
+    <ChartContainer
+      config={config}
+      className={className}
+      style={{ height: rows.length * rowHeight }}
+    >
+      <BarChart
+        accessibilityLayer
+        data={rows}
+        layout="vertical"
+        margin={{ left: hasFlags ? FLAG_SLOT : 0, right: 48 }}
+      >
         <defs>
-          <pattern height="4" id={PATTERN_ID} patternTransform="rotate(45)" patternUnits="userSpaceOnUse" width="4">
+          <pattern
+            height="4"
+            id={PATTERN_ID}
+            patternTransform="rotate(45)"
+            patternUnits="userSpaceOnUse"
+            width="4"
+          >
             <rect height="6" width="6" fill="var(--muted)" fillOpacity="0.5" />
             <line
               stroke="var(--muted-foreground)"
@@ -127,7 +159,13 @@ export function HatchBarChart({
           </pattern>
         </defs>
         <CartesianGrid horizontal={false} vertical={false} />
-        <YAxis dataKey="tooltipLabel" hide tickLine={false} tickMargin={10} type="category" />
+        <YAxis
+          dataKey="tooltipLabel"
+          hide
+          tickLine={false}
+          tickMargin={10}
+          type="category"
+        />
         <XAxis dataKey="value" hide type="number" />
         <ChartTooltip
           cursor={false}
@@ -141,7 +179,11 @@ export function HatchBarChart({
                       return (
                         <span>
                           {value as string}
-                          {typeof pct === "number" && <span className="ml-1 text-muted-foreground">({pct}%)</span>}
+                          {typeof pct === "number" && (
+                            <span className="ml-1 text-muted-foreground">
+                              ({pct}%)
+                            </span>
+                          )}
                         </span>
                       );
                     }
@@ -158,7 +200,13 @@ export function HatchBarChart({
           fillOpacity={0.5}
           radius={8}
         >
-          <LabelList className="fill-foreground" dataKey="barText" fontSize={14} offset={12} position="insideLeft" />
+          <LabelList
+            className="fill-foreground"
+            dataKey="barText"
+            fontSize={14}
+            offset={12}
+            position="insideLeft"
+          />
           {hasFlags && <LabelList content={renderFlag} dataKey="flagCode" />}
           <LabelList content={renderValueLabel} dataKey="valueLabel" />
         </Bar>

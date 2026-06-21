@@ -4,9 +4,16 @@ import type { ImgHTMLAttributes } from "react";
 
 import NextImage from "next/image";
 
-const NEXT_IMAGE_HOSTS = new Set(["firebasestorage.googleapis.com", "storage.googleapis.com", "cdn.weatherapi.com"]);
+const NEXT_IMAGE_HOSTS = new Set([
+  "firebasestorage.googleapis.com",
+  "storage.googleapis.com",
+  "cdn.weatherapi.com",
+]);
 
-interface DashboardImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "height" | "width"> {
+interface DashboardImageProps extends Omit<
+  ImgHTMLAttributes<HTMLImageElement>,
+  "src" | "height" | "width"
+> {
   src: string;
   alt: string;
   sizes: string;
@@ -24,10 +31,24 @@ function canUseNextImage(src: string) {
   }
 }
 
-export function DashboardImage({ src, alt, sizes, priority, className, ...props }: DashboardImageProps) {
+export function DashboardImage({
+  src,
+  alt,
+  sizes,
+  priority,
+  className,
+  ...props
+}: DashboardImageProps) {
   if (!canUseNextImage(src)) {
     // biome-ignore lint/performance/noImgElement: Unknown scraped/vendor hosts cannot use next/image without broad allow-listing.
-    return <img src={src} alt={alt} className={`absolute inset-0 size-full ${className ?? ""}`} {...props} />;
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className={`absolute inset-0 size-full ${className ?? ""}`}
+        {...props}
+      />
+    );
   }
 
   return (

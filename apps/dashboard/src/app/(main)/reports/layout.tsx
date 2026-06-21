@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 // cleanly. Auth still applies via the parent (main) layout's AuthGuard.
 import "@/styles/report.css";
 
-export default function ReportsLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function ReportsLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   return children;
 }

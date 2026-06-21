@@ -14,7 +14,14 @@ import {
   DropdownMenuTrigger,
   TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function AnalyticsToolbar() {
   const router = useRouter();
@@ -55,7 +62,11 @@ export function AnalyticsToolbar() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onClick={() => window.open(`/reports/analytics?range=${currentRange}`, "_blank")}>
+          <DropdownMenuItem
+            onClick={() =>
+              window.open(`/reports/analytics?range=${currentRange}`, "_blank")
+            }
+          >
             <FileDown />
             Export report
           </DropdownMenuItem>

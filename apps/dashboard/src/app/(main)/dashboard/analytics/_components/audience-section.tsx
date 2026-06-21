@@ -24,7 +24,11 @@ export async function AudienceSection({ range }: { range?: string }) {
   if (!result.success || !result.data) {
     return (
       <div className="rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
-        <AnalyticsSetupRequired error={result.error} title="Audience Error" className="min-h-[200px]" />
+        <AnalyticsSetupRequired
+          error={result.error}
+          title="Audience Error"
+          className="min-h-[200px]"
+        />
       </div>
     );
   }
@@ -38,7 +42,9 @@ export async function AudienceSection({ range }: { range?: string }) {
           <CardTitle className="font-normal">Devices</CardTitle>
         </CardHeader>
         <CardContent>
-          <Label className="ml-auto w-fit mb-4 -mt-4 text-card-foreground">Visitors</Label>
+          <Label className="ml-auto w-fit mb-4 -mt-4 text-card-foreground">
+            Visitors
+          </Label>
           <HatchBarChart
             seriesLabel="Users"
             showPercentage
@@ -56,7 +62,9 @@ export async function AudienceSection({ range }: { range?: string }) {
           <CardTitle className="font-normal">New vs Returning</CardTitle>
         </CardHeader>
         <CardContent>
-          <Label className="ml-auto w-fit mb-4 -mt-4 text-card-foreground">Visitors</Label>
+          <Label className="ml-auto w-fit mb-4 -mt-4 text-card-foreground">
+            Visitors
+          </Label>
           <HatchBarChart
             seriesLabel="Users"
             showPercentage

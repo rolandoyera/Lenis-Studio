@@ -11,7 +11,11 @@ import type { FontKey } from "@/lib/fonts/registry";
 
 import type { ThemeMode, ThemePreset } from "./theme";
 
-export type PreferencePersistence = "none" | "client-cookie" | "server-cookie" | "localStorage";
+export type PreferencePersistence =
+  | "none"
+  | "client-cookie"
+  | "server-cookie"
+  | "localStorage";
 
 /**
  * All available preference keys and their value types.
@@ -37,7 +41,10 @@ export const PREFERENCE_DEFAULTS: PreferenceValueMap = {
  * How each preference is persisted.
  * You can change these per-key.
  */
-export const PREFERENCE_PERSISTENCE: Record<PreferenceKey, PreferencePersistence> = {
+export const PREFERENCE_PERSISTENCE: Record<
+  PreferenceKey,
+  PreferencePersistence
+> = {
   theme_mode: "client-cookie",
   theme_preset: "client-cookie",
   font: "client-cookie",

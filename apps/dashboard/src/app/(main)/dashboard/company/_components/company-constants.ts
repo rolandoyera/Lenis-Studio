@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import type { CompanyProfile, OrgBranding, Organization, OrgSettings } from "@/lib/types";
+import type {
+  CompanyProfile,
+  OrgBranding,
+  Organization,
+  OrgSettings,
+} from "@/lib/types";
 import { formatVendorPhone, isValidVendorPhone } from "@/lib/utils";
 
 import { formatVendorAddress } from "../../vendors/_components/vendor-constants";
@@ -21,14 +26,20 @@ function numberOrUndef(value: string | undefined): number | undefined {
   return Number.isNaN(n) ? undefined : n;
 }
 
-const numericOrEmpty = (value: string) => value.trim() === "" || !Number.isNaN(Number(value.trim()));
+const numericOrEmpty = (value: string) =>
+  value.trim() === "" || !Number.isNaN(Number(value.trim()));
 
 const hexColor = z.union([
-  z.string().regex(/^#[0-9a-fA-F]{6}$/, "Enter a 6-digit hex color (e.g. #1A2B3C)."),
+  z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Enter a 6-digit hex color (e.g. #1A2B3C)."),
   z.literal(""),
 ]);
 
-const optionalUrl = z.union([z.string().url("Enter a valid URL."), z.literal("")]);
+const optionalUrl = z.union([
+  z.string().url("Enter a valid URL."),
+  z.literal(""),
+]);
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
 
@@ -37,7 +48,10 @@ export const companyProfileSchema = z
     // Company information
     displayName: z.string().min(1, "Company name is required."),
     legalName: z.string(),
-    email: z.union([z.string().email("Please enter a valid email address."), z.literal("")]),
+    email: z.union([
+      z.string().email("Please enter a valid email address."),
+      z.literal(""),
+    ]),
     // Phone is validated against its `phoneCountry` in the superRefine below.
     phone: z.string(),
     phoneCountry: z.string(),
@@ -66,10 +80,16 @@ export const companyProfileSchema = z
     // Settings
     timezone: z.string(),
     currency: z.string(),
-    measurementUnit: z.union([z.literal(""), z.literal("imperial"), z.literal("metric")]),
+    measurementUnit: z.union([
+      z.literal(""),
+      z.literal("imperial"),
+      z.literal("metric"),
+    ]),
     defaultMarkupPercent: z.string().refine(numericOrEmpty, "Enter a number."),
     defaultTaxRate: z.string().refine(numericOrEmpty, "Enter a number."),
-    proposalExpirationDays: z.string().refine(numericOrEmpty, "Enter a whole number of days."),
+    proposalExpirationDays: z
+      .string()
+      .refine(numericOrEmpty, "Enter a whole number of days."),
   })
   // US/CA phone numbers (without a leading +) must be a complete 10-digit number;
   // international numbers are validated loosely (see isValidVendorPhone).
@@ -119,7 +139,8 @@ export const EMPTY_COMPANY_PROFILE_FORM: CompanyProfileFormData = {
   proposalExpirationDays: "",
 };
 
-const numToStr = (n: number | undefined): string => (typeof n === "number" ? String(n) : "");
+const numToStr = (n: number | undefined): string =>
+  typeof n === "number" ? String(n) : "";
 
 /** Map a stored organization document to the flat form shape. */
 export function organizationToForm(org: Organization): CompanyProfileFormData {
@@ -218,7 +239,8 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
   const settings: OrgSettings = {
     timezone: emptyToUndef(data.timezone),
     currency: emptyToUndef(data.currency),
-    measurementUnit: data.measurementUnit === "" ? undefined : data.measurementUnit,
+    measurementUnit:
+      data.measurementUnit === "" ? undefined : data.measurementUnit,
     defaultMarkupPercent: numberOrUndef(data.defaultMarkupPercent),
     defaultTaxRate: numberOrUndef(data.defaultTaxRate),
     proposalExpirationDays: numberOrUndef(data.proposalExpirationDays),
@@ -243,7 +265,9 @@ export const CURRENCY_OPTIONS = [
 /** All IANA time zones when the runtime supports it, else a small common fallback. */
 export const TIMEZONE_OPTIONS: string[] = (() => {
   try {
-    const supported = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+    const supported = (
+      Intl as unknown as { supportedValuesOf?: (k: string) => string[] }
+    ).supportedValuesOf;
     if (typeof supported === "function") return supported("timeZone");
   } catch {
     // fall through

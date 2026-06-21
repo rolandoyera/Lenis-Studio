@@ -7,6 +7,17 @@ import { cn } from "@/lib/utils";
  * a soft fade-in that rises slightly into place on mount. Handy for tab panels that
  * mount on demand.
  */
-export function FadeIn({ className, ...props }: ComponentPropsWithoutRef<"div">) {
-  return <div className={cn("fade-in slide-in-from-bottom-2 animate-in duration-300", className)} {...props} />;
+export function FadeIn({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<"div">) {
+  return (
+    <div
+      className={cn(
+        "fade-in slide-in-from-bottom-2 animate-in duration-300",
+        className,
+      )}
+      {...props}
+    />
+  );
 }

@@ -2,7 +2,12 @@ import { getData, getName } from "country-list";
 import { z } from "zod";
 
 import type { Vendor } from "@/lib/types";
-import { formatUsZip, formatVendorPhone, isValidUsZip, isValidVendorPhone } from "@/lib/utils";
+import {
+  formatUsZip,
+  formatVendorPhone,
+  isValidUsZip,
+  isValidVendorPhone,
+} from "@/lib/utils";
 
 export const VENDOR_CATEGORIES = [
   "Appliances",
@@ -51,8 +56,13 @@ export const COUNTRIES: CountryOption[] = (() => {
     code,
     name: countryName(code),
   }));
-  const pinned = PINNED_COUNTRY_CODES.map((code) => ({ code, name: countryName(code) }));
-  const rest = all.filter((c) => !PINNED_COUNTRY_CODES.includes(c.code)).sort((a, b) => a.name.localeCompare(b.name));
+  const pinned = PINNED_COUNTRY_CODES.map((code) => ({
+    code,
+    name: countryName(code),
+  }));
+  const rest = all
+    .filter((c) => !PINNED_COUNTRY_CODES.includes(c.code))
+    .sort((a, b) => a.name.localeCompare(b.name));
   return [...pinned, ...rest];
 })();
 
@@ -76,9 +86,14 @@ export function formatVendorAddress(parts: {
   country?: string;
 }): string {
   const cityLine = [parts.city, parts.region].filter(Boolean).join(", ");
-  const cityRegionPostal = [cityLine, parts.postalCode].filter(Boolean).join(" ");
-  const country = parts.country && parts.country !== "US" ? countryName(parts.country) : "";
-  return [parts.addressLine1, parts.addressLine2, cityRegionPostal, country].filter(Boolean).join(", ");
+  const cityRegionPostal = [cityLine, parts.postalCode]
+    .filter(Boolean)
+    .join(" ");
+  const country =
+    parts.country && parts.country !== "US" ? countryName(parts.country) : "";
+  return [parts.addressLine1, parts.addressLine2, cityRegionPostal, country]
+    .filter(Boolean)
+    .join(", ");
 }
 
 // ─── Schema ─────────────────────────────────────────────────────────────────
@@ -102,7 +117,10 @@ export const vendorSchema = z
     heroImageUrl: z.string(),
     heroImagePath: z.string().optional(),
     repName: z.string(),
-    repEmail: z.union([z.string().email("Please enter a valid email address."), z.literal("")]),
+    repEmail: z.union([
+      z.string().email("Please enter a valid email address."),
+      z.literal(""),
+    ]),
     repPhone: z.string(),
     repPhoneCountry: z.string(),
     notes: z.string(),

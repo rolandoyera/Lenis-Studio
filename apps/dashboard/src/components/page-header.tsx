@@ -8,7 +8,11 @@ interface PageHeaderProps {
   titleAccessory?: ReactNode;
 }
 
-export default function PageHeader({ title, description, titleAccessory }: PageHeaderProps) {
+export default function PageHeader({
+  title,
+  description,
+  titleAccessory,
+}: PageHeaderProps) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2.5">

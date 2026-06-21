@@ -58,9 +58,18 @@ function getAvatarTone(name: string) {
   return tones[name.length % tones.length];
 }
 
-function AvatarCell({ lastActive, name, status }: { lastActive: number; name: string; status: string }) {
+function AvatarCell({
+  lastActive,
+  name,
+  status,
+}: {
+  lastActive: number;
+  name: string;
+  status: string;
+}) {
   // 1. If administratively Suspended, Locked, or Deactivated, show a solid red dot
-  const isPaused = status === "Suspended" || status === "Locked" || status === "Deactivated";
+  const isPaused =
+    status === "Suspended" || status === "Locked" || status === "Deactivated";
 
   if (isPaused) {
     return (
@@ -81,7 +90,8 @@ function AvatarCell({ lastActive, name, status }: { lastActive: number; name: st
   const isOnline = lastActive > 0 && Math.abs(elapsedMs) < 30 * 60 * 1000;
 
   // Idle if active within the last 1 hour
-  const isIdle = lastActive > 0 && !isOnline && Math.abs(elapsedMs) < 60 * 60 * 1000;
+  const isIdle =
+    lastActive > 0 && !isOnline && Math.abs(elapsedMs) < 60 * 60 * 1000;
 
   if (isOnline) {
     return (
@@ -126,7 +136,10 @@ export const usersColumns: ColumnDef<UserRow>[] = [
       <div className="flex items-center justify-center">
         <Checkbox
           aria-label="Select all users"
-          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         />
       </div>
@@ -163,10 +176,18 @@ export const usersColumns: ColumnDef<UserRow>[] = [
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-3">
-        <AvatarCell name={row.original.name} lastActive={row.original.lastActive} status={row.original.status} />
+        <AvatarCell
+          name={row.original.name}
+          lastActive={row.original.lastActive}
+          status={row.original.status}
+        />
         <div className="min-w-0">
-          <div className="truncate font-medium text-foreground text-sm">{row.original.name}</div>
-          <div className="truncate text-muted-foreground text-sm">{row.original.email}</div>
+          <div className="truncate font-medium text-foreground text-sm">
+            {row.original.name}
+          </div>
+          <div className="truncate text-muted-foreground text-sm">
+            {row.original.email}
+          </div>
         </div>
       </div>
     ),
@@ -194,9 +215,12 @@ export const usersColumns: ColumnDef<UserRow>[] = [
   },
   {
     id: "joinedDate",
-    accessorFn: (row) => parse(row.joinedDate, "dd MMM yyyy, h:mm a", new Date()).getTime(),
+    accessorFn: (row) =>
+      parse(row.joinedDate, "dd MMM yyyy, h:mm a", new Date()).getTime(),
     header: "Joined date",
-    cell: ({ row }) => <div className="text-foreground text-sm">{row.original.joinedDate}</div>,
+    cell: ({ row }) => (
+      <div className="text-foreground text-sm">{row.original.joinedDate}</div>
+    ),
   },
   {
     id: "actions",
@@ -204,7 +228,9 @@ export const usersColumns: ColumnDef<UserRow>[] = [
     cell: ({ row }) => (
       <div className="text-right">
         <Button asChild size="sm" variant="outline">
-          <Link href={`/dashboard/profile?uid=${row.original.uid || ""}`}>View Profile</Link>
+          <Link href={`/dashboard/profile?uid=${row.original.uid || ""}`}>
+            View Profile
+          </Link>
         </Button>
       </div>
     ),

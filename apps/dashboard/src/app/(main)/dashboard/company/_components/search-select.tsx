@@ -49,12 +49,22 @@ export function SearchSelect({
       value={selected}
       onValueChange={(item: ComboItem | null) => onChange(item?.code ?? "")}
       items={items}
-      filter={(item: ComboItem, inputValue: string) => item.name.toLowerCase().includes(inputValue.toLowerCase())}
+      filter={(item: ComboItem, inputValue: string) =>
+        item.name.toLowerCase().includes(inputValue.toLowerCase())
+      }
     >
       <ComboboxTrigger
         render={
-          <button type="button" className={cn(COMBO_TRIGGER_CLASS, !selected && "text-muted-foreground")}>
-            <span className="truncate">{selected ? selected.name : placeholder}</span>
+          <button
+            type="button"
+            className={cn(
+              COMBO_TRIGGER_CLASS,
+              !selected && "text-muted-foreground",
+            )}
+          >
+            <span className="truncate">
+              {selected ? selected.name : placeholder}
+            </span>
             <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
           </button>
         }

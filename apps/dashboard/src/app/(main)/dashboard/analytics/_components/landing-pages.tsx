@@ -62,7 +62,8 @@ export async function LandingPages({ range }: { range?: string }) {
               <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={4}
-                  className="h-32 py-4 text-center text-muted-foreground text-sm">
+                  className="h-32 py-4 text-center text-muted-foreground text-sm"
+                >
                   No landing page data available.
                 </TableCell>
               </TableRow>

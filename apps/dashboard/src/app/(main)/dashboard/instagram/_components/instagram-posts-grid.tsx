@@ -16,7 +16,9 @@ export async function InstagramPostsGrid() {
 
   if (result.data.length === 0) {
     return (
-      <Card className="flex h-32 items-center justify-center p-4 text-muted-foreground text-sm">No posts yet.</Card>
+      <Card className="flex h-32 items-center justify-center p-4 text-muted-foreground text-sm">
+        No posts yet.
+      </Card>
     );
   }
 

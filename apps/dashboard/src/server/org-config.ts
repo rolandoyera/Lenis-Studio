@@ -31,7 +31,10 @@ export const getActiveOrgConfig = cache(async (): Promise<OrgConfig | null> => {
   if (!organizationId) return null;
 
   try {
-    const orgSnap = await getAdminDb().collection("organizations").doc(organizationId).get();
+    const orgSnap = await getAdminDb()
+      .collection("organizations")
+      .doc(organizationId)
+      .get();
     return orgSnap.exists ? ((orgSnap.data()?.config ?? {}) as OrgConfig) : {};
   } catch (error) {
     console.error("Failed to resolve organization config:", error);

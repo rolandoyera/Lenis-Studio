@@ -44,7 +44,8 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       // we only own layout (padding, rounding, scroll).
       <pre
         className="overflow-x-auto rounded-lg p-4 text-sm [&>code]:bg-transparent [&>code]:p-0"
-        {...props}>
+        {...props}
+      >
         {children}
       </pre>
     ),

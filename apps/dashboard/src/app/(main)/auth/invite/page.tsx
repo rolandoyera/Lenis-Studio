@@ -26,13 +26,21 @@ const inviteFormSchema = z
       .string()
       .min(1, "Please enter your name.")
       .max(100)
-      .refine((val) => val.trim().split(/\s+/).length >= 2, "Please enter both your first and last name."),
+      .refine(
+        (val) => val.trim().split(/\s+/).length >= 2,
+        "Please enter both your first and last name.",
+      ),
     displayName: z
       .string()
       .min(3, "Username must be at least 3 characters.")
       .max(30, "Username must be 30 characters or less.")
-      .regex(/^[a-zA-Z0-9_-]+$/, "Username can only contain letters, numbers, underscores, and hyphens (no spaces)."),
-    location: z.string().regex(/^\d{5}$/, "Please enter a valid 5-digit ZIP code."),
+      .regex(
+        /^[a-zA-Z0-9_-]+$/,
+        "Username can only contain letters, numbers, underscores, and hyphens (no spaces).",
+      ),
+    location: z
+      .string()
+      .regex(/^\d{5}$/, "Please enter a valid 5-digit ZIP code."),
     phone: z
       .string()
       .min(1, "Please enter your phone number.")
@@ -61,7 +69,12 @@ interface PendingInviteData {
 }
 
 function hasFirebaseCode(error: unknown, code: string) {
-  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === code
+  );
 }
 
 function InviteContent() {
@@ -71,7 +84,9 @@ function InviteContent() {
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [isValid, setIsValid] = useState(false);
-  const [pendingData, setPendingData] = useState<PendingInviteData | null>(null);
+  const [pendingData, setPendingData] = useState<PendingInviteData | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -125,7 +140,9 @@ function InviteContent() {
     if (!email) return;
     // Access is invite-only: the pending doc must name the org and role.
     if (!pendingData?.organizationId || !pendingData?.role) {
-      toast.error("This invitation is incomplete. Ask your administrator to send a new invite.");
+      toast.error(
+        "This invitation is incomplete. Ask your administrator to send a new invite.",
+      );
       return;
     }
     setIsSubmitting(true);
@@ -134,7 +151,11 @@ function InviteContent() {
       const emailKey = email.trim().toLowerCase();
 
       // 1. Create user in Firebase Authentication
-      const userCred = await createUserWithEmailAndPassword(auth, emailKey, data.password);
+      const userCred = await createUserWithEmailAndPassword(
+        auth,
+        emailKey,
+        data.password,
+      );
 
       // Update the user's Auth profile with the entered Display Name
       await updateProfile(userCred.user, {
@@ -197,7 +218,8 @@ function InviteContent() {
         <div className="space-y-2">
           <h1 className="font-semibold text-2xl">Invalid or Expired Invite</h1>
           <p className="text-muted-foreground text-sm">
-            This invitation link has expired, is invalid, or has already been used. Please contact your administrator.
+            This invitation link has expired, is invalid, or has already been
+            used. Please contact your administrator.
           </p>
         </div>
         <Button asChild className="w-full">
@@ -212,8 +234,11 @@ function InviteContent() {
       <div className="space-y-2 text-center">
         <h1 className="font-medium text-3xl">Set up your account</h1>
         <p className="text-muted-foreground text-sm leading-snug">
-          Welcome, <span className="font-medium text-foreground">{pendingData?.fullName}</span>! Please complete your
-          details to activate your account.
+          Welcome,{" "}
+          <span className="font-medium text-foreground">
+            {pendingData?.fullName}
+          </span>
+          ! Please complete your details to activate your account.
         </p>
       </div>
 
@@ -238,7 +263,12 @@ function InviteContent() {
           render={({ field, fieldState }) => (
             <Field className="gap-1.5" data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="invite-fullName">Full Name</FieldLabel>
-              <Input {...field} id="invite-fullName" disabled={isSubmitting} aria-invalid={fieldState.invalid} />
+              <Input
+                {...field}
+                id="invite-fullName"
+                disabled={isSubmitting}
+                aria-invalid={fieldState.invalid}
+              />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}
@@ -250,7 +280,9 @@ function InviteContent() {
           name="displayName"
           render={({ field, fieldState }) => (
             <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="invite-displayName">Username / Display Name</FieldLabel>
+              <FieldLabel htmlFor="invite-displayName">
+                Username / Display Name
+              </FieldLabel>
               <Input
                 {...field}
                 id="invite-displayName"
@@ -334,7 +366,11 @@ function InviteContent() {
                   disabled={isSubmitting}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               </div>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -348,7 +384,9 @@ function InviteContent() {
           name="confirmPassword"
           render={({ field, fieldState }) => (
             <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="invite-confirmPassword">Confirm Password</FieldLabel>
+              <FieldLabel htmlFor="invite-confirmPassword">
+                Confirm Password
+              </FieldLabel>
               <div className="relative flex items-center">
                 <Input
                   {...field}
@@ -364,9 +402,15 @@ function InviteContent() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3 flex cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground focus:outline-none"
                   disabled={isSubmitting}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  aria-label={
+                    showConfirmPassword ? "Hide password" : "Show password"
+                  }
                 >
-                  {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               </div>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

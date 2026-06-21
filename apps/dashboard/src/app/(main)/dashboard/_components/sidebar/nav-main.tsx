@@ -3,10 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Building2, ChevronDown, ChevronRight, Hammer, PlusCircleIcon, ShoppingBag, UserPlus } from "lucide-react";
+import {
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  Hammer,
+  PlusCircleIcon,
+  ShoppingBag,
+  UserPlus,
+} from "lucide-react";
 
 import { useAuth } from "@/components/auth-context";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +44,9 @@ interface NavMainProps {
 }
 
 const IsComingSoon = () => (
-  <span className="ml-auto rounded-md bg-gray-200 px-2 py-1 text-xs dark:text-gray-800">Soon</span>
+  <span className="ml-auto rounded-md bg-gray-200 px-2 py-1 text-xs dark:text-gray-800">
+    Soon
+  </span>
 );
 
 const NavItemExpanded = ({
@@ -49,7 +63,12 @@ const NavItemExpanded = ({
     if (isMobile) setOpenMobile(false);
   };
   return (
-    <Collapsible key={item.title} asChild defaultOpen={isSubmenuOpen(item.subItems)} className="group/collapsible">
+    <Collapsible
+      key={item.title}
+      asChild
+      defaultOpen={isSubmenuOpen(item.subItems)}
+      className="group/collapsible"
+    >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
           {item.subItems ? (
@@ -88,7 +107,11 @@ const NavItemExpanded = ({
             <SidebarMenuSub>
               {item.subItems.map((subItem) => (
                 <SidebarMenuSubItem key={subItem.title}>
-                  <SidebarMenuSubButton aria-disabled={subItem.comingSoon} isActive={isActive(subItem.url)} asChild>
+                  <SidebarMenuSubButton
+                    aria-disabled={subItem.comingSoon}
+                    isActive={isActive(subItem.url)}
+                    asChild
+                  >
                     <Link
                       prefetch={false}
                       href={subItem.url}
@@ -131,7 +154,11 @@ const NavItemCollapsed = ({
             <ChevronRight />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-50 space-y-1" side="right" align="start">
+        <DropdownMenuContent
+          className="w-50 space-y-1"
+          side="right"
+          align="start"
+        >
           {item.subItems?.map((subItem) => (
             <DropdownMenuItem key={subItem.title} asChild>
               <SidebarMenuSubButton
@@ -141,8 +168,14 @@ const NavItemCollapsed = ({
                 aria-disabled={subItem.comingSoon}
                 isActive={isActive(subItem.url)}
               >
-                <Link prefetch={false} href={subItem.url} target={subItem.newTab ? "_blank" : undefined}>
-                  {subItem.icon && <subItem.icon className="[&>svg]:text-sidebar-foreground" />}
+                <Link
+                  prefetch={false}
+                  href={subItem.url}
+                  target={subItem.newTab ? "_blank" : undefined}
+                >
+                  {subItem.icon && (
+                    <subItem.icon className="[&>svg]:text-sidebar-foreground" />
+                  )}
                   <span>{subItem.title}</span>
                   {subItem.comingSoon && <IsComingSoon />}
                 </Link>
@@ -188,7 +221,9 @@ export function NavMain({ items }: NavMainProps) {
                     className="flex w-full min-w-8 items-center gap-2 bg-primary text-primary-foreground duration-200 ease-linear hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground"
                   >
                     <PlusCircleIcon className="size-4 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden">Quick Create</span>
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Quick Create
+                    </span>
                     <ChevronDown className="ml-auto size-3.5 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
@@ -245,13 +280,20 @@ export function NavMain({ items }: NavMainProps) {
           <SidebarGroupContent className="flex flex-col gap-2">
             <SidebarMenu>
               {group.items.map((item) => {
-                if (item.title === "Users" && userRole !== "Admin" && userRole !== "SuperAdmin") {
+                if (
+                  item.title === "Users" &&
+                  userRole !== "Admin" &&
+                  userRole !== "SuperAdmin"
+                ) {
                   return null;
                 }
                 if (item.title === "Tenants" && userRole !== "SuperAdmin") {
                   return null;
                 }
-                if (item.title === "AI Diagnostics" && userRole !== "SuperAdmin") {
+                if (
+                  item.title === "AI Diagnostics" &&
+                  userRole !== "SuperAdmin"
+                ) {
                   return null;
                 }
                 if (state === "collapsed" && !isMobile) {
@@ -265,7 +307,11 @@ export function NavMain({ items }: NavMainProps) {
                           tooltip={item.title}
                           isActive={isItemActive(item.url)}
                         >
-                          <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined}>
+                          <Link
+                            prefetch={false}
+                            href={item.url}
+                            target={item.newTab ? "_blank" : undefined}
+                          >
                             {item.icon && <item.icon />}
                             <span>{item.title}</span>
                           </Link>
@@ -274,11 +320,22 @@ export function NavMain({ items }: NavMainProps) {
                     );
                   }
                   // Otherwise, render the dropdown as before
-                  return <NavItemCollapsed key={item.title} item={item} isActive={isItemActive} />;
+                  return (
+                    <NavItemCollapsed
+                      key={item.title}
+                      item={item}
+                      isActive={isItemActive}
+                    />
+                  );
                 }
                 // Expanded view
                 return (
-                  <NavItemExpanded key={item.title} item={item} isActive={isItemActive} isSubmenuOpen={isSubmenuOpen} />
+                  <NavItemExpanded
+                    key={item.title}
+                    item={item}
+                    isActive={isItemActive}
+                    isSubmenuOpen={isSubmenuOpen}
+                  />
                 );
               })}
             </SidebarMenu>

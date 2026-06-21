@@ -61,13 +61,13 @@ rename `GA_PROPERTY_ID` in `.env.local` and restart.
 
 Events sent by the marketing site via `gtag` (see `oshrat/web/src/lib/gtag.ts`):
 
-| Event | Fires when | Params |
-| --- | --- | --- |
-| `project_button_click` | "Start a project" CTA pressed | `button_location`, `button_text` |
-| `contact_drawer_open` | Navbar contact drawer opened | — |
-| `form_start` | First focus inside a form (once per mount) | `form_type`: `navbar_drawer` \| `modal` |
-| `contact_form_submit` | Contact drawer form sent successfully | `form_type: navbar_drawer` |
-| `project_form_submit` | Project modal form sent successfully | `form_type: modal` |
-| `phone_click` | `tel:` link clicked | `link_location` |
-| `email_click` | `mailto:` link clicked | `link_location` |
-| `whatsapp_click` | WhatsApp link clicked | `link_location` |
+| Event                  | Fires when                                 | Params                                  |
+| ---------------------- | ------------------------------------------ | --------------------------------------- |
+| `project_button_click` | "Start a project" CTA pressed              | `button_location`, `button_text`        |
+| `contact_drawer_open`  | Navbar contact drawer opened               | —                                       |
+| `form_start`           | First focus inside a form (once per mount) | `form_type`: `navbar_drawer` \| `modal` |
+| `contact_form_submit`  | Contact drawer form sent successfully      | `form_type: navbar_drawer`              |
+| `project_form_submit`  | Project modal form sent successfully       | `form_type: modal`                      |
+| `phone_click`          | `tel:` link clicked                        | `link_location`                         |
+| `email_click`          | `mailto:` link clicked                     | `link_location`                         |
+| `whatsapp_click`       | WhatsApp link clicked                      | `link_location`                         |

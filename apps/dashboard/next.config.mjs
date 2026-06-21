@@ -62,7 +62,10 @@ const withMDX = createMDX({
     ],
     rehypePlugins: [
       // Shiki-based build-time syntax highlighting for fenced code blocks.
-      ["rehype-pretty-code", { theme: "github-dark-default", keepBackground: true }],
+      [
+        "rehype-pretty-code",
+        { theme: "github-dark-default", keepBackground: true },
+      ],
     ],
   },
 });

@@ -8,7 +8,13 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import { deleteLibraryItem, deleteReplacedStorageFiles, getLibraryItem, getVendors, updateLibraryItem } from "@/lib/db";
+import {
+  deleteLibraryItem,
+  deleteReplacedStorageFiles,
+  getLibraryItem,
+  getVendors,
+  updateLibraryItem,
+} from "@/lib/db";
 import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
 
@@ -56,7 +62,10 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
 
     async function loadData() {
       try {
-        const [itemData, vendorsData] = await Promise.all([getLibraryItem(itemId), getVendors(id)]);
+        const [itemData, vendorsData] = await Promise.all([
+          getLibraryItem(itemId),
+          getVendors(id),
+        ]);
 
         if (!itemData || itemData.organizationId !== id) {
           toast.error("Product catalog item not found.");
@@ -66,7 +75,9 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
 
         setItem(itemData);
         setVendors(vendorsData);
-        setActivePreviewImage(itemData.coverImageUrl || itemData.imageUrls?.[0] || "");
+        setActivePreviewImage(
+          itemData.coverImageUrl || itemData.imageUrls?.[0] || "",
+        );
       } catch (error) {
         console.error("Failed to load library catalog item:", error);
         toast.error("Failed to retrieve catalog item specifications.");
@@ -88,15 +99,16 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
     setUpdatingCatalog(true);
     try {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
-      const { imageUrls, coverImageUrl, coverImagePath, images } = await mirrorExternalImagesToFirebase(
-        {
-          imageUrls: form.formData.imageUrls,
-          coverImageUrl: form.formData.coverImageUrl,
-          coverImagePath: form.formData.coverImagePath,
-          images: form.formData.images,
-        },
-        item.itemId,
-      );
+      const { imageUrls, coverImageUrl, coverImagePath, images } =
+        await mirrorExternalImagesToFirebase(
+          {
+            imageUrls: form.formData.imageUrls,
+            coverImageUrl: form.formData.coverImageUrl,
+            coverImagePath: form.formData.coverImagePath,
+            images: form.formData.images,
+          },
+          item.itemId,
+        );
       const updated = {
         ...form.formData,
         imageUrls,
@@ -108,10 +120,15 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       try {
         await deleteReplacedStorageFiles(
           [item.coverImagePath, ...(item.images || []).map((img) => img.path)],
-          [updated.coverImagePath, ...(updated.images || []).map((img) => img.path)],
+          [
+            updated.coverImagePath,
+            ...(updated.images || []).map((img) => img.path),
+          ],
         );
       } catch (error) {
-        toast.error(`Failed to clean up replaced product images: ${getErrorMessage(error, "Unknown error")}`);
+        toast.error(
+          `Failed to clean up replaced product images: ${getErrorMessage(error, "Unknown error")}`,
+        );
         return; // Abort saving if storage cleanup fails
       }
 
@@ -122,7 +139,9 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
       toast.success("Catalog item updated successfully!");
     } catch (error: unknown) {
       console.error(error);
-      toast.error(getErrorMessage(error, "Failed to update library item details."));
+      toast.error(
+        getErrorMessage(error, "Failed to update library item details."),
+      );
     } finally {
       setUpdatingCatalog(false);
     }
@@ -170,7 +189,11 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <div className="flex flex-col gap-4 lg:col-span-4">
-          <ItemGalleryCard item={item} activeImage={activePreviewImage} onSelectImage={setActivePreviewImage} />
+          <ItemGalleryCard
+            item={item}
+            activeImage={activePreviewImage}
+            onSelectImage={setActivePreviewImage}
+          />
         </div>
 
         <div className="flex flex-col gap-6 lg:col-span-8">

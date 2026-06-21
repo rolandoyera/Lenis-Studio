@@ -120,7 +120,8 @@ export async function GoogleSearchSection({ range }: { range?: string }) {
                   <TableRow className="hover:bg-transparent">
                     <TableCell
                       colSpan={5}
-                      className="h-32 py-4 text-center text-muted-foreground text-sm">
+                      className="h-32 py-4 text-center text-muted-foreground text-sm"
+                    >
                       No query data available for this range.
                     </TableCell>
                   </TableRow>
@@ -192,7 +193,8 @@ export async function GoogleSearchSection({ range }: { range?: string }) {
                   <TableRow className="hover:bg-transparent">
                     <TableCell
                       colSpan={5}
-                      className="h-32 py-4 text-center text-muted-foreground text-sm">
+                      className="h-32 py-4 text-center text-muted-foreground text-sm"
+                    >
                       No page data available for this range.
                     </TableCell>
                   </TableRow>

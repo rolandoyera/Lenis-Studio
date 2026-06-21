@@ -69,7 +69,8 @@ export async function AcquisitionSection({ range }: { range?: string }) {
                 <TableRow className="hover:bg-transparent">
                   <TableCell
                     colSpan={5}
-                    className="h-32 py-4 text-center text-muted-foreground text-sm">
+                    className="h-32 py-4 text-center text-muted-foreground text-sm"
+                  >
                     No channel data available for this range.
                   </TableCell>
                 </TableRow>
@@ -125,7 +126,8 @@ export async function AcquisitionSection({ range }: { range?: string }) {
                 <TableRow className="hover:bg-transparent">
                   <TableCell
                     colSpan={4}
-                    className="h-32 py-4 text-center text-muted-foreground text-sm">
+                    className="h-32 py-4 text-center text-muted-foreground text-sm"
+                  >
                     No source/medium data available for this range.
                   </TableCell>
                 </TableRow>
@@ -133,7 +135,8 @@ export async function AcquisitionSection({ range }: { range?: string }) {
                 sourceMedium.map((row) => (
                   <TableRow
                     className="hover:bg-transparent"
-                    key={`${row.source}/${row.medium}`}>
+                    key={`${row.source}/${row.medium}`}
+                  >
                     <TableCell className="max-w-0 truncate py-4 font-medium">
                       {row.source}
                     </TableCell>

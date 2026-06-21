@@ -1,4 +1,7 @@
-import { HatchBarChart, type HatchBarDatum } from "@/components/charts/hatch-bar-chart";
+import {
+  HatchBarChart,
+  type HatchBarDatum,
+} from "@/components/charts/hatch-bar-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { H3 } from "@/components/ui/typography";
 import { fetchInstagramDemographics } from "@/server/meta-actions";
@@ -55,7 +58,12 @@ export async function InstagramDemographics() {
   const { cities, countries, age, gender } = result.data;
 
   // Everything empty usually means the account is under Meta's 100-follower minimum.
-  if (cities.length === 0 && countries.length === 0 && age.length === 0 && gender.length === 0) {
+  if (
+    cities.length === 0 &&
+    countries.length === 0 &&
+    age.length === 0 &&
+    gender.length === 0
+  ) {
     return (
       <Card className="p-6 text-center text-muted-foreground text-sm">
         Audience demographics need at least 100 followers to show.
@@ -71,8 +79,14 @@ export async function InstagramDemographics() {
     valueLabel: String(c.value),
     flagCode: c.label || undefined,
   }));
-  const ageBars = toBars([...age].sort((a, b) => AGE_ORDER.indexOf(a.label) - AGE_ORDER.indexOf(b.label)).slice(0, 6));
-  const genderBars = toBars(gender.map((g) => ({ ...g, label: GENDER_LABELS[g.label] ?? g.label })));
+  const ageBars = toBars(
+    [...age]
+      .sort((a, b) => AGE_ORDER.indexOf(a.label) - AGE_ORDER.indexOf(b.label))
+      .slice(0, 6),
+  );
+  const genderBars = toBars(
+    gender.map((g) => ({ ...g, label: GENDER_LABELS[g.label] ?? g.label })),
+  );
 
   return (
     <>

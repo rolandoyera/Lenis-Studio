@@ -63,7 +63,12 @@ export interface KpiMetric {
 /** Percent change of `current` vs `previous`, mirroring the GA4 KPI comparison. */
 function compareMetric(current: number, previous: number): KpiMetric {
   if (previous === 0) {
-    return { value: current, previousValue: previous, change: "0.0%", isPositive: true };
+    return {
+      value: current,
+      previousValue: previous,
+      change: "0.0%",
+      isPositive: true,
+    };
   }
   const pct = ((current - previous) / previous) * 100;
   return {
@@ -85,8 +90,15 @@ export async function getMetaConnection(): Promise<MetaIntegrationConfig | null>
   if (!organizationId) return null;
 
   try {
-    const snap = await getAdminDb().collection("organizations").doc(organizationId).get();
-    const meta = snap.exists ? (snap.data()?.config?.metaIntegration as MetaIntegrationConfig | undefined) : undefined;
+    const snap = await getAdminDb()
+      .collection("organizations")
+      .doc(organizationId)
+      .get();
+    const meta = snap.exists
+      ? (snap.data()?.config?.metaIntegration as
+          | MetaIntegrationConfig
+          | undefined)
+      : undefined;
     return meta?.connected ? meta : null;
   } catch (error) {
     console.error("Failed to load Meta connection:", error);
@@ -139,33 +151,56 @@ export async function getMetaPendingPages(): Promise<MetaPendingPage[]> {
 /** Connects the chosen Page from the picker and clears the pending selection. */
 export async function selectMetaPage(
   pageId: string,
-): Promise<{ success: boolean; error?: string; connection?: MetaIntegrationConfig }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  connection?: MetaIntegrationConfig;
+}> {
   const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, error: "No active organization." };
+  if (!organizationId)
+    return { success: false, error: "No active organization." };
 
   try {
     const orgRef = getAdminDb().collection("organizations").doc(organizationId);
-    const pendingSnap = await orgRef.collection("secrets").doc("metaPending").get();
+    const pendingSnap = await orgRef
+      .collection("secrets")
+      .doc("metaPending")
+      .get();
     const data = pendingSnap.exists ? pendingSnap.data() : undefined;
 
     const userAccessToken = data?.userAccessToken as string | undefined;
     if (!userAccessToken) {
-      return { success: false, error: "Connection session expired. Please reconnect." };
+      return {
+        success: false,
+        error: "Connection session expired. Please reconnect.",
+      };
     }
-    const expiresAt = typeof data?.expiresAt === "number" ? data.expiresAt : undefined;
+    const expiresAt =
+      typeof data?.expiresAt === "number" ? data.expiresAt : undefined;
 
     const pages = await fetchPages(userAccessToken);
     const page = pages.find((p) => p.id === pageId);
     if (!page) {
-      return { success: false, error: "That page is no longer available. Please reconnect." };
+      return {
+        success: false,
+        error: "That page is no longer available. Please reconnect.",
+      };
     }
 
     const profile = await fetchInstagramProfile(page);
     if (!profile) {
-      return { success: false, error: "That page has no linked Instagram account." };
+      return {
+        success: false,
+        error: "That page has no linked Instagram account.",
+      };
     }
 
-    const connection = await storeMetaConnection(organizationId, page, profile, expiresAt);
+    const connection = await storeMetaConnection(
+      organizationId,
+      page,
+      profile,
+      expiresAt,
+    );
     await orgRef.collection("secrets").doc("metaPending").delete();
     revalidatePath("/dashboard/instagram");
     return { success: true, connection };
@@ -200,7 +235,9 @@ function flatMetric(value: number): KpiMetric {
 }
 
 /** Account KPI totals (reach, views, profile visits, accounts engaged) with vs-previous comparison. */
-export async function fetchInstagramKpis(range?: string): Promise<InstagramKpiResult> {
+export async function fetchInstagramKpis(
+  range?: string,
+): Promise<InstagramKpiResult> {
   const organizationId = await getActiveOrgId();
   if (!organizationId) return { success: false, error: NOT_CONNECTED };
   const creds = await getStoredMetaCreds(organizationId);
@@ -219,13 +256,19 @@ export async function fetchInstagramKpis(range?: string): Promise<InstagramKpiRe
         reach: compareMetric(cur.reach, prev.reach),
         views: compareMetric(cur.views, prev.views),
         profileViews: compareMetric(cur.profileViews, prev.profileViews),
-        accountsEngaged: compareMetric(cur.accountsEngaged, prev.accountsEngaged),
+        accountsEngaged: compareMetric(
+          cur.accountsEngaged,
+          prev.accountsEngaged,
+        ),
         websiteClicks: compareMetric(cur.websiteClicks, prev.websiteClicks),
         comparisonLabel,
       },
     };
   } catch (error) {
-    console.error("Failed to fetch Instagram KPIs, trying snapshot fallback:", error);
+    console.error(
+      "Failed to fetch Instagram KPIs, trying snapshot fallback:",
+      error,
+    );
     // Live Graph call failed — serve the last stored snapshot so the strip isn't empty.
     const snapshot = await getLatestSnapshot(organizationId);
     if (snapshot) {
@@ -243,7 +286,13 @@ export async function fetchInstagramKpis(range?: string): Promise<InstagramKpiRe
         },
       };
     }
-    return { success: false, error: error instanceof Error ? error.message : "Failed to load Instagram metrics." };
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to load Instagram metrics.",
+    };
   }
 }
 
@@ -264,13 +313,21 @@ export async function fetchInstagramFollowers(): Promise<{
   try {
     const until = Math.floor(Date.now() / 1000);
     const since = until - 30 * 24 * 60 * 60;
-    const [followers, gains] = await Promise.all([fetchFollowerCount(creds), fetchFollowerGains(creds, since, until)]);
+    const [followers, gains] = await Promise.all([
+      fetchFollowerCount(creds),
+      fetchFollowerGains(creds, since, until),
+    ]);
     // followers 30 days ago = current total minus net gains over the window.
-    const comparison = gains === null ? null : compareMetric(followers, followers - gains);
+    const comparison =
+      gains === null ? null : compareMetric(followers, followers - gains);
     return { success: true, data: { followers, comparison } };
   } catch (error) {
     console.error("Failed to fetch Instagram followers:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to load followers." };
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to load followers.",
+    };
   }
 }
 
@@ -302,11 +359,19 @@ export async function fetchInstagramHeadline(): Promise<{
     ]);
     return {
       success: true,
-      data: { newFollowers: gains, likes: kpis.likes, comments: kpis.comments, profileViews: kpis.profileViews },
+      data: {
+        newFollowers: gains,
+        likes: kpis.likes,
+        comments: kpis.comments,
+        profileViews: kpis.profileViews,
+      },
     };
   } catch (error) {
     console.error("Failed to fetch Instagram headline:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to load metrics." };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to load metrics.",
+    };
   }
 }
 
@@ -353,11 +418,18 @@ export async function fetchInstagramReachTrend(
     }));
     return {
       success: true,
-      data: { points, comparison: compareMetric(total, previousTotal), comparisonLabel },
+      data: {
+        points,
+        comparison: compareMetric(total, previousTotal),
+        comparisonLabel,
+      },
     };
   } catch (error) {
     console.error("Failed to fetch Instagram reach trend:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to load reach." };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to load reach.",
+    };
   }
 }
 
@@ -368,7 +440,8 @@ export async function fetchInstagramMedia(limit = 10): Promise<{
   error?: string;
 }> {
   const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, data: [], error: NOT_CONNECTED };
+  if (!organizationId)
+    return { success: false, data: [], error: NOT_CONNECTED };
   const creds = await getStoredMetaCreds(organizationId);
   if (!creds) return { success: false, data: [], error: NOT_CONNECTED };
 
@@ -388,7 +461,11 @@ export async function fetchInstagramMedia(limit = 10): Promise<{
     return { success: true, data };
   } catch (error) {
     console.error("Failed to fetch Instagram media:", error);
-    return { success: false, data: [], error: error instanceof Error ? error.message : "Failed to load posts." };
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : "Failed to load posts.",
+    };
   }
 }
 
@@ -420,7 +497,11 @@ export async function fetchInstagramDemographics(): Promise<{
     return { success: true, data: { cities, countries, age, gender } };
   } catch (error) {
     console.error("Failed to fetch Instagram demographics:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Failed to load demographics." };
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to load demographics.",
+    };
   }
 }
 
@@ -431,7 +512,10 @@ export async function disconnectMeta(): Promise<{ success: boolean }> {
 
   try {
     const orgRef = getAdminDb().collection("organizations").doc(organizationId);
-    await orgRef.set({ config: { metaIntegration: FieldValue.delete() } }, { merge: true });
+    await orgRef.set(
+      { config: { metaIntegration: FieldValue.delete() } },
+      { merge: true },
+    );
     await orgRef.collection("secrets").doc("meta").delete();
     revalidatePath("/dashboard/instagram");
     return { success: true };

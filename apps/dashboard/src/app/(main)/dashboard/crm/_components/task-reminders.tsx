@@ -1,19 +1,32 @@
 import { CalendarDays, CalendarRange } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const proposalSent = 12;
 const proposalGoal = 18;
-const proposalProgressPercentage = Math.round((proposalSent / proposalGoal) * 100);
+const proposalProgressPercentage = Math.round(
+  (proposalSent / proposalGoal) * 100,
+);
 const proposalGoalBarCount = 42;
-const activeProposalBars = Math.round((proposalSent / proposalGoal) * proposalGoalBarCount);
+const activeProposalBars = Math.round(
+  (proposalSent / proposalGoal) * proposalGoalBarCount,
+);
 
-const proposalGoalBars = Array.from({ length: proposalGoalBarCount }, (_, index) => ({
-  id: `proposal-goal-${index + 1}`,
-  active: index < activeProposalBars,
-}));
+const proposalGoalBars = Array.from(
+  { length: proposalGoalBarCount },
+  (_, index) => ({
+    id: `proposal-goal-${index + 1}`,
+    active: index < activeProposalBars,
+  }),
+);
 
 export function TaskReminders() {
   return (
@@ -60,7 +73,9 @@ export function TaskReminders() {
                     <div className="truncate font-medium text-primary-foreground text-xs leading-none">
                       Product demo with Tim
                     </div>
-                    <div className="truncate text-[10px] text-primary-foreground/75">SDG Studio</div>
+                    <div className="truncate text-[10px] text-primary-foreground/75">
+                      SDG Studio
+                    </div>
                   </div>
                 </div>
               </div>
@@ -77,9 +92,14 @@ export function TaskReminders() {
         <CardContent className="flex flex-col gap-1">
           <div className="flex items-end justify-between gap-3">
             <div className="font-medium text-2xl tabular-nums leading-none">
-              {proposalSent} <span className="font-normal text-base text-muted-foreground">sent</span>
+              {proposalSent}{" "}
+              <span className="font-normal text-base text-muted-foreground">
+                sent
+              </span>
             </div>
-            <div className="text-muted-foreground text-sm tabular-nums">{proposalGoal} target</div>
+            <div className="text-muted-foreground text-sm tabular-nums">
+              {proposalGoal} target
+            </div>
           </div>
           <div className="flex h-10 w-full items-end gap-0.5">
             {proposalGoalBars.map((bar) => (
@@ -87,14 +107,17 @@ export function TaskReminders() {
                 <div
                   className={cn(
                     "h-10 w-1.5 rounded-full",
-                    bar.active ? "bg-muted-foreground/75" : "bg-muted-foreground/25",
+                    bar.active
+                      ? "bg-muted-foreground/75"
+                      : "bg-muted-foreground/25",
                   )}
                 />
               </div>
             ))}
           </div>
           <p className="text-muted-foreground text-sm">
-            {proposalProgressPercentage}% of this month&apos;s proposal target reached.
+            {proposalProgressPercentage}% of this month&apos;s proposal target
+            reached.
           </p>
         </CardContent>
       </Card>

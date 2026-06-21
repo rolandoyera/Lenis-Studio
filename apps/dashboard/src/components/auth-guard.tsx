@@ -26,7 +26,8 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
     if (!user && !isAuthRoute) {
       const isExplicitLogout =
-        typeof window !== "undefined" && window.sessionStorage.getItem("explicit_logout") === "true";
+        typeof window !== "undefined" &&
+        window.sessionStorage.getItem("explicit_logout") === "true";
       if (isExplicitLogout) {
         window.sessionStorage.removeItem("explicit_logout");
         router.push("/");
@@ -53,7 +54,11 @@ export function AuthGuard({ children }: { children: ReactNode }) {
             const pendingDocRef = doc(db, "users", emailKey);
             const pendingDocSnap = await getDoc(pendingDocRef);
 
-            if (pendingDocSnap.exists() && pendingDocSnap.data().organizationId && pendingDocSnap.data().role) {
+            if (
+              pendingDocSnap.exists() &&
+              pendingDocSnap.data().organizationId &&
+              pendingDocSnap.data().role
+            ) {
               const pendingData = pendingDocSnap.data();
               await setDoc(userDocRef, {
                 fullName: pendingData.fullName || user.displayName || "User",
@@ -68,7 +73,9 @@ export function AuthGuard({ children }: { children: ReactNode }) {
             } else {
               // Access is invite-only: an account without a profile or pending
               // invite gets no organization and no session.
-              toast.error("This account has no invitation. Ask your administrator for an invite.");
+              toast.error(
+                "This account has no invitation. Ask your administrator for an invite.",
+              );
               await signOut();
             }
           }
@@ -123,5 +130,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   }
 
   // Safe fallback while redirect is executing
-  return <div className="flex h-screen w-screen items-center justify-center bg-background" />;
+  return (
+    <div className="flex h-screen w-screen items-center justify-center bg-background" />
+  );
 }

@@ -9,7 +9,10 @@ interface AnalyticsErrorToastProps {
   title?: string;
 }
 
-export function AnalyticsErrorToast({ error, title = "GA4 Connection Error" }: AnalyticsErrorToastProps) {
+export function AnalyticsErrorToast({
+  error,
+  title = "GA4 Connection Error",
+}: AnalyticsErrorToastProps) {
   useEffect(() => {
     if (error) {
       toast.error(title, {

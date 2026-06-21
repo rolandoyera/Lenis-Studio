@@ -204,14 +204,16 @@ export default function LeadDetailPage({ params }: PageProps) {
           <Button
             variant="outline"
             onClick={() => setIsEditOpen(true)}
-            className="flex items-center gap-2">
+            className="flex items-center gap-2"
+          >
             <Pencil className="size-4" />
             Edit
           </Button>
           <Button
             onClick={() => setIsConvertOpen(true)}
             disabled={isConverted}
-            className="flex items-center gap-2">
+            className="flex items-center gap-2"
+          >
             <ArrowRightLeft className="size-4" />
             {isConverted ? "Converted" : "Convert to Client"}
           </Button>
@@ -260,7 +262,8 @@ export default function LeadDetailPage({ params }: PageProps) {
                 {lead.phone ? (
                   <a
                     href={`tel:${normalizePhone(lead.phone)}`}
-                    className="hover:text-primary">
+                    className="hover:text-primary"
+                  >
                     {formatPhone(lead.phone)}
                   </a>
                 ) : (
@@ -408,7 +411,8 @@ export default function LeadDetailPage({ params }: PageProps) {
                 void handleConvert();
               }}
               disabled={converting}
-              className="flex items-center gap-1.5">
+              className="flex items-center gap-1.5"
+            >
               {converting && <Loader2 className="size-4 animate-spin" />}
               Convert to Client
             </AlertDialogAction>

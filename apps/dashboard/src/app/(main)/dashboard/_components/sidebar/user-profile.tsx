@@ -40,7 +40,9 @@ export function UserProfile() {
   };
 
   if (!profile) {
-    return <div className="size-8 animate-pulse rounded-lg border border-border/20 bg-muted/60" />;
+    return (
+      <div className="size-8 animate-pulse rounded-lg border border-border/20 bg-muted/60" />
+    );
   }
 
   return (
@@ -50,7 +52,12 @@ export function UserProfile() {
           {getInitials(profile.fullName)}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="mt-2 min-w-56 space-y-1 rounded-lg" side="bottom" align="end" sideOffset={4}>
+      <DropdownMenuContent
+        className="mt-2 min-w-56 space-y-1 rounded-lg"
+        side="bottom"
+        align="end"
+        sideOffset={4}
+      >
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/profile" className="hover:cursor-pointer">

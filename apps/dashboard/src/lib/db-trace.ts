@@ -38,8 +38,14 @@ function record(entry: DbTraceEntry): void {
 
   if (!isDev) return;
   const status = entry.ok ? "✓" : "✗";
-  const tail = entry.ok ? (entry.detail ? ` → ${entry.detail}` : "") : ` ${entry.error ?? ""}`;
-  console.debug(`[db] ${entry.section} · ${entry.op} ${entry.fn}${tail} (${entry.ms}ms) ${status}`);
+  const tail = entry.ok
+    ? entry.detail
+      ? ` → ${entry.detail}`
+      : ""
+    : ` ${entry.error ?? ""}`;
+  console.debug(
+    `[db] ${entry.section} · ${entry.op} ${entry.fn}${tail} (${entry.ms}ms) ${status}`,
+  );
 }
 
 /**
@@ -145,10 +151,14 @@ function summarize(s: PageStats): void {
   console.groupCollapsed(
     `=== ${s.path} ===  reads:${s.reads}  writes:${s.writes}  queries:${s.queries}  db:${Math.round(s.dbMs)}ms`,
   );
-  const rows = [...s.byFn.entries()].sort((a, b) => b[1].reads - a[1].reads || b[1].calls - a[1].calls);
+  const rows = [...s.byFn.entries()].sort(
+    (a, b) => b[1].reads - a[1].reads || b[1].calls - a[1].calls,
+  );
   for (const [fn, f] of rows) {
     const metric = f.reads > 0 ? `${f.reads} reads` : `${f.writes} writes`;
-    console.debug(`  ${fn.padEnd(24)} ${metric}  (${f.calls} call${f.calls === 1 ? "" : "s"})`);
+    console.debug(
+      `  ${fn.padEnd(24)} ${metric}  (${f.calls} call${f.calls === 1 ? "" : "s"})`,
+    );
   }
   console.groupEnd();
 }
@@ -156,7 +166,15 @@ function summarize(s: PageStats): void {
 /** Flush the previous page's summary and begin a fresh scope. Called on route change. */
 export function startPageScope(path: string): void {
   if (current) summarize(current);
-  current = { path, startedAt: Date.now(), reads: 0, writes: 0, queries: 0, dbMs: 0, byFn: new Map() };
+  current = {
+    path,
+    startedAt: Date.now(),
+    reads: 0,
+    writes: 0,
+    queries: 0,
+    dbMs: 0,
+    byFn: new Map(),
+  };
 }
 
 /** Plain snapshot of the live page scope for devtools inspection. */

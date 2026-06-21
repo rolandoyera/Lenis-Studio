@@ -20,10 +20,21 @@ interface AnalyticsSetupRequiredProps {
  * Real API errors (anything beyond missing configuration) also surface
  * their detail via the shared error toast.
  */
-export function AnalyticsSetupRequired({ error, title, className }: AnalyticsSetupRequiredProps) {
+export function AnalyticsSetupRequired({
+  error,
+  title,
+  className,
+}: AnalyticsSetupRequiredProps) {
   return (
-    <div className={cn("flex min-h-48 flex-1 items-center justify-center", className)}>
-      {!isConfigMissing(error) && <AnalyticsErrorToast error={error} title={title} />}
+    <div
+      className={cn(
+        "flex min-h-48 flex-1 items-center justify-center",
+        className,
+      )}
+    >
+      {!isConfigMissing(error) && (
+        <AnalyticsErrorToast error={error} title={title} />
+      )}
       <Badge variant="warning">Setup required</Badge>
     </div>
   );

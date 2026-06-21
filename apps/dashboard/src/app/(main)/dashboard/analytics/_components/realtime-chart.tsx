@@ -2,7 +2,12 @@
 
 import { Bar, BarChart, type BarShapeProps, XAxis, YAxis } from "recharts";
 
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import type { RealtimeData } from "@/server/analytics-actions";
 
 const chartConfig = {
@@ -59,11 +64,22 @@ export function RealtimeChart({ data }: { data: RealtimeData["perMinute"] }) {
 
   return (
     <ChartContainer config={chartConfig} className="h-36 w-full">
-      <BarChart data={data} margin={{ bottom: 0, left: 0, right: 0, top: 0 }} barCategoryGap={3}>
+      <BarChart
+        data={data}
+        margin={{ bottom: 0, left: 0, right: 0, top: 0 }}
+        barCategoryGap={3}
+      >
         <XAxis dataKey="minute" hide />
         <YAxis hide domain={[0, maxVisitors + 2]} />
-        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-        <Bar dataKey="visitors" fill="var(--color-visitors)" shape={RealtimeBarShape} />
+        <ChartTooltip
+          cursor={false}
+          content={<ChartTooltipContent hideLabel />}
+        />
+        <Bar
+          dataKey="visitors"
+          fill="var(--color-visitors)"
+          shape={RealtimeBarShape}
+        />
       </BarChart>
     </ChartContainer>
   );

@@ -3,13 +3,28 @@ import type { ComponentProps } from "react";
 import { z } from "zod";
 
 import type { Badge } from "@/components/ui/badge";
-import type { BudgetRange, DesiredTimeline, Lead, LeadSource, LeadStage, PropertyType } from "@/lib/types";
+import type {
+  BudgetRange,
+  DesiredTimeline,
+  Lead,
+  LeadSource,
+  LeadStage,
+  PropertyType,
+} from "@/lib/types";
 import { isValidUsPhone, isValidUsZip } from "@/lib/utils";
 
 /** Sentinel used by optional enum selects (Radix Select cannot hold an empty-string value). */
 export const NONE = "none";
 
-export const LEAD_STAGES: LeadStage[] = ["new", "contacted", "qualified", "proposal_sent", "won", "lost", "on_hold"];
+export const LEAD_STAGES: LeadStage[] = [
+  "new",
+  "contacted",
+  "qualified",
+  "proposal_sent",
+  "won",
+  "lost",
+  "on_hold",
+];
 
 export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
   new: "New",
@@ -85,7 +100,14 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   other: "Other",
 };
 
-export const BUDGET_RANGES: BudgetRange[] = ["under_50k", "50k_100k", "100k_250k", "250k_500k", "500k_1m", "over_1m"];
+export const BUDGET_RANGES: BudgetRange[] = [
+  "under_50k",
+  "50k_100k",
+  "100k_250k",
+  "250k_500k",
+  "500k_1m",
+  "over_1m",
+];
 
 export const BUDGET_RANGE_LABELS: Record<BudgetRange, string> = {
   under_50k: "Under $50k",
@@ -120,15 +142,36 @@ export const leadSchema = z
     company: z.string(),
     firstName: z.string(),
     lastName: z.string(),
-    email: z.union([z.string().email("Please enter a valid email address."), z.literal("")]),
-    phone: z.string().refine((v) => v === "" || isValidUsPhone(v), "Enter a valid 10-digit US phone number."),
+    email: z.union([
+      z.string().email("Please enter a valid email address."),
+      z.literal(""),
+    ]),
+    phone: z
+      .string()
+      .refine(
+        (v) => v === "" || isValidUsPhone(v),
+        "Enter a valid 10-digit US phone number.",
+      ),
     phoneCountry: z.string(),
     street: z.string(),
     city: z.string(),
     state: z.string(),
-    zip: z.string().refine((v) => v === "" || isValidUsZip(v), "Enter a valid 5-digit ZIP code."),
+    zip: z
+      .string()
+      .refine(
+        (v) => v === "" || isValidUsZip(v),
+        "Enter a valid 5-digit ZIP code.",
+      ),
     country: z.string(),
-    stage: z.enum(["new", "contacted", "qualified", "proposal_sent", "won", "lost", "on_hold"]),
+    stage: z.enum([
+      "new",
+      "contacted",
+      "qualified",
+      "proposal_sent",
+      "won",
+      "lost",
+      "on_hold",
+    ]),
     assignedTo: z.string(),
     source: z.string(),
     sourceDetail: z.string(),
@@ -226,9 +269,16 @@ export function leadFormToFields(data: LeadFormData): LeadFormFields {
     assignedTo: data.assignedTo === NONE ? "" : data.assignedTo,
     source: data.source === NONE ? undefined : (data.source as LeadSource),
     sourceDetail: cleanText(data.sourceDetail),
-    propertyType: data.propertyType === NONE ? undefined : (data.propertyType as PropertyType),
-    budgetRange: data.budgetRange === NONE ? undefined : (data.budgetRange as BudgetRange),
-    desiredTimeline: data.desiredTimeline === NONE ? undefined : (data.desiredTimeline as DesiredTimeline),
+    propertyType:
+      data.propertyType === NONE
+        ? undefined
+        : (data.propertyType as PropertyType),
+    budgetRange:
+      data.budgetRange === NONE ? undefined : (data.budgetRange as BudgetRange),
+    desiredTimeline:
+      data.desiredTimeline === NONE
+        ? undefined
+        : (data.desiredTimeline as DesiredTimeline),
     notes: cleanText(data.notes),
   };
 }

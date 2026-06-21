@@ -1,8 +1,19 @@
 "use client";
 
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-import { signOut as firebaseSignOut, onAuthStateChanged, type User } from "firebase/auth";
+import {
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  type User,
+} from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 
 import { deleteClientCookie, setClientCookie } from "@/lib/cookie.client";
@@ -81,7 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Access is invite-only: a server-confirmed profile without an
             // organization is invalid and must never inherit another tenant's context.
             if (snapshot.exists()) {
-              console.error("User profile is missing organizationId; treating session as unauthorized.");
+              console.error(
+                "User profile is missing organizationId; treating session as unauthorized.",
+              );
             }
             setProfile(null);
             deleteClientCookie(ACTIVE_ORG_COOKIE);

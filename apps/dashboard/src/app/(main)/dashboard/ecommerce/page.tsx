@@ -2,7 +2,14 @@ import { format } from "date-fns";
 import { Settings2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
 import { CustomerReviews } from "./_components/customer-reviews";
@@ -20,7 +27,9 @@ export default function Page() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl leading-none tracking-tight">Store Overview</h1>
+          <h1 className="text-3xl leading-none tracking-tight">
+            Store Overview
+          </h1>
           <p className="text-muted-foreground text-sm">{formattedDate}</p>
         </div>
 

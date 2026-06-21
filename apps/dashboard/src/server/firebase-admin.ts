@@ -10,7 +10,9 @@ let adminDb: Firestore | null = null;
  */
 function parseServiceAccountKey(raw: string): Record<string, string> {
   const trimmed = raw.trim();
-  const json = trimmed.startsWith("{") ? trimmed : Buffer.from(trimmed, "base64").toString("utf8");
+  const json = trimmed.startsWith("{")
+    ? trimmed
+    : Buffer.from(trimmed, "base64").toString("utf8");
   return JSON.parse(json) as Record<string, string>;
 }
 
@@ -26,7 +28,9 @@ function getAdminApp(): App {
 
   const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (!serviceAccountKey) {
-    throw new Error("Missing FIREBASE_SERVICE_ACCOUNT_KEY in environment variables.");
+    throw new Error(
+      "Missing FIREBASE_SERVICE_ACCOUNT_KEY in environment variables.",
+    );
   }
 
   adminApp = initializeApp({

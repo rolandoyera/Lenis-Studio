@@ -28,7 +28,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="group-data-[collapsible=icon]:p-0.5!">
+              className="group-data-[collapsible=icon]:p-0.5!"
+            >
               <Link prefetch={false} href="/dashboard/home">
                 <Image
                   src={APP_CONFIG.image.src}

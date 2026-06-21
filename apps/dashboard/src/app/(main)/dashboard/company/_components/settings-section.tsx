@@ -6,13 +6,21 @@ import { Controller } from "react-hook-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import type { Organization } from "@/lib/types";
 
 import { TIMEZONE_OPTIONS } from "./company-constants";
 import { type ComboItem, SearchSelect } from "./search-select";
-import { EditableCardHeader, LABEL_CLASS, type SectionDialogChildProps } from "./section-dialog";
+import {
+  EditableCardHeader,
+  LABEL_CLASS,
+  type SectionDialogChildProps,
+} from "./section-dialog";
 
 const TIMEZONE_ITEMS: ComboItem[] = TIMEZONE_OPTIONS.map((tz) => ({
   code: tz,
@@ -29,7 +37,13 @@ function sanitizeDecimal(value: string): string {
 /** Keep only digits (whole numbers, e.g. expiration days). */
 const sanitizeInteger = (value: string): string => value.replace(/\D/g, "");
 
-export function SettingsCard({ org, onEdit }: { org: Organization; onEdit: () => void }) {
+export function SettingsCard({
+  org,
+  onEdit,
+}: {
+  org: Organization;
+  onEdit: () => void;
+}) {
   const s = org.settings;
   return (
     <Card className="pt-0">
@@ -42,11 +56,19 @@ export function SettingsCard({ org, onEdit }: { org: Organization; onEdit: () =>
       <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-6">
           <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">Timezone</Label>
-            {s?.timezone ? <p>{s?.timezone}</p> : <p className="text-muted-foreground">—</p>}
+            <Label className="mb-1 text-muted-foreground text-xs">
+              Timezone
+            </Label>
+            {s?.timezone ? (
+              <p>{s?.timezone}</p>
+            ) : (
+              <p className="text-muted-foreground">—</p>
+            )}
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">Proposal Expiration</Label>
+            <Label className="mb-1 text-muted-foreground text-xs">
+              Proposal Expiration
+            </Label>
             {typeof s?.proposalExpirationDays === "number" ? (
               <p>{s?.proposalExpirationDays} days</p>
             ) : (
@@ -56,7 +78,9 @@ export function SettingsCard({ org, onEdit }: { org: Organization; onEdit: () =>
         </div>
         <div className="space-y-6">
           <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">Default Markup</Label>
+            <Label className="mb-1 text-muted-foreground text-xs">
+              Default Markup
+            </Label>
             {typeof s?.defaultMarkupPercent === "number" ? (
               <p>{s.defaultMarkupPercent}%</p>
             ) : (
@@ -64,7 +88,9 @@ export function SettingsCard({ org, onEdit }: { org: Organization; onEdit: () =>
             )}
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">Default Tax Rate</Label>
+            <Label className="mb-1 text-muted-foreground text-xs">
+              Default Tax Rate
+            </Label>
             {typeof s?.defaultTaxRate === "number" ? (
               <p>{s.defaultTaxRate}%</p>
             ) : (
@@ -77,7 +103,10 @@ export function SettingsCard({ org, onEdit }: { org: Organization; onEdit: () =>
   );
 }
 
-export function SettingsFields({ control, container }: SectionDialogChildProps) {
+export function SettingsFields({
+  control,
+  container,
+}: SectionDialogChildProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <Controller
@@ -102,7 +131,10 @@ export function SettingsFields({ control, container }: SectionDialogChildProps) 
         control={control}
         name="defaultMarkupPercent"
         render={({ field, fieldState }) => (
-          <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+          <Field
+            className="flex flex-col gap-1.5"
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Default Markup</Label>
             <InputGroup>
               <InputGroupInput
@@ -110,7 +142,9 @@ export function SettingsFields({ control, container }: SectionDialogChildProps) 
                 inputMode="decimal"
                 placeholder="e.g. 15"
                 aria-invalid={fieldState.invalid}
-                onChange={(e) => field.onChange(sanitizeDecimal(e.target.value))}
+                onChange={(e) =>
+                  field.onChange(sanitizeDecimal(e.target.value))
+                }
               />
               <InputGroupAddon align="inline-end">
                 <Percent />
@@ -124,7 +158,10 @@ export function SettingsFields({ control, container }: SectionDialogChildProps) 
         control={control}
         name="defaultTaxRate"
         render={({ field, fieldState }) => (
-          <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+          <Field
+            className="flex flex-col gap-1.5"
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Default Tax Rate</Label>
             <InputGroup>
               <InputGroupInput
@@ -132,7 +169,9 @@ export function SettingsFields({ control, container }: SectionDialogChildProps) 
                 inputMode="decimal"
                 placeholder="e.g. 8.25"
                 aria-invalid={fieldState.invalid}
-                onChange={(e) => field.onChange(sanitizeDecimal(e.target.value))}
+                onChange={(e) =>
+                  field.onChange(sanitizeDecimal(e.target.value))
+                }
               />
               <InputGroupAddon align="inline-end">
                 <Percent />
@@ -146,7 +185,10 @@ export function SettingsFields({ control, container }: SectionDialogChildProps) 
         control={control}
         name="proposalExpirationDays"
         render={({ field, fieldState }) => (
-          <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+          <Field
+            className="flex flex-col gap-1.5"
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Proposal Expiration (days)</Label>
             <Input
               {...field}

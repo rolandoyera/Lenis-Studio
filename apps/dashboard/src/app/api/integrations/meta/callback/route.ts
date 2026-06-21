@@ -3,7 +3,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { getAdminDb } from "@/server/firebase-admin";
-import { exchangeForLongLivedToken, fetchInstagramProfile, fetchPages, storeMetaConnection } from "@/server/meta-graph";
+import {
+  exchangeForLongLivedToken,
+  fetchInstagramProfile,
+  fetchPages,
+  storeMetaConnection,
+} from "@/server/meta-graph";
 import type { MetaPendingConnection } from "@/types/meta";
 
 import { META_OAUTH_STATE_COOKIE } from "../login/route";
@@ -14,11 +19,16 @@ function redirect(req: NextRequest, path: string) {
   return res;
 }
 
-function parseState(raw: string | null): { organizationId: string; nonce: string } | null {
+function parseState(
+  raw: string | null,
+): { organizationId: string; nonce: string } | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(Buffer.from(raw, "base64url").toString("utf8"));
-    if (typeof parsed?.organizationId === "string" && typeof parsed?.nonce === "string") {
+    if (
+      typeof parsed?.organizationId === "string" &&
+      typeof parsed?.nonce === "string"
+    ) {
       return { organizationId: parsed.organizationId, nonce: parsed.nonce };
     }
   } catch {
@@ -62,7 +72,9 @@ export async function GET(req: NextRequest) {
 
   // Upgrade to a long-lived user token (~60 days). Page tokens derived from it
   // are themselves long-lived, so the integration survives past the first hour.
-  const { token: userAccessToken, expiresAt } = await exchangeForLongLivedToken(tokenData.access_token);
+  const { token: userAccessToken, expiresAt } = await exchangeForLongLivedToken(
+    tokenData.access_token,
+  );
 
   const pages = await fetchPages(userAccessToken);
 

@@ -36,11 +36,19 @@ export function AccountSwitcher({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="size-8 rounded-lg">
-          <AvatarImage src={activeUser.avatar || undefined} alt={activeUser.name} />
+          <AvatarImage
+            src={activeUser.avatar || undefined}
+            alt={activeUser.name}
+          />
           <AvatarFallback>{getInitials(activeUser.name)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="min-w-56 space-y-1 rounded-lg" side="bottom" align="end" sideOffset={4}>
+      <DropdownMenuContent
+        className="min-w-56 space-y-1 rounded-lg"
+        side="bottom"
+        align="end"
+        sideOffset={4}
+      >
         {users.map((user) => (
           <DropdownMenuItem
             key={user.email}

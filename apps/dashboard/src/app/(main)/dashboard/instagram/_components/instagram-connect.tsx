@@ -34,7 +34,9 @@ export function InstagramConnect({
   pendingPages: MetaPendingPage[];
   justConnected: boolean;
 }) {
-  const [successOpen, setSuccessOpen] = useState(justConnected && connection !== null);
+  const [successOpen, setSuccessOpen] = useState(
+    justConnected && connection !== null,
+  );
   const [pickerOpen, setPickerOpen] = useState(pendingPages.length > 0);
   const [isPending, startTransition] = useTransition();
   const [selecting, setSelecting] = useState<string | null>(null);
@@ -74,7 +76,8 @@ export function InstagramConnect({
             <div className="space-y-1">
               <h3 className="font-semibold text-lg">Connect your Instagram</h3>
               <p className="mx-auto max-w-sm text-muted-foreground text-sm">
-                Link your Instagram Business account to track reach, engagement, and audience insights here.
+                Link your Instagram Business account to track reach, engagement,
+                and audience insights here.
               </p>
             </div>
             <Button asChild>
@@ -112,15 +115,23 @@ export function InstagramConnect({
           <DialogHeader>
             <DialogTitle>Choose an account</DialogTitle>
             <DialogDescription>
-              You granted access to multiple Pages. Pick the Instagram account you want to track.
+              You granted access to multiple Pages. Pick the Instagram account
+              you want to track.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             {error ? <p className="text-destructive text-sm">{error}</p> : null}
             {pendingPages.map((page) => (
-              <div key={page.pageId} className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <div
+                key={page.pageId}
+                className="flex items-center gap-3 rounded-lg border border-border p-3"
+              >
                 <Avatar>
-                  <AvatarFallback>{(page.instagramUsername ?? page.pageName).slice(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>
+                    {(page.instagramUsername ?? page.pageName)
+                      .slice(0, 2)
+                      .toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{page.pageName}</p>

@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 
 import { AppSidebar } from "@/app/(main)/dashboard/_components/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
 import { DbStatsProbe } from "./_components/db-stats-probe";
@@ -13,7 +17,9 @@ import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { UserProfile } from "./_components/sidebar/user-profile";
 
-export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function Layout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
@@ -28,7 +34,12 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
     >
       <DbStatsProbe />
       <AppSidebar variant="inset" collapsible="icon" />
-      <SidebarInset className={cn("peer-data-[variant=inset]:border", "[--dashboard-header-height:--spacing(12)]")}>
+      <SidebarInset
+        className={cn(
+          "peer-data-[variant=inset]:border",
+          "[--dashboard-header-height:--spacing(12)]",
+        )}
+      >
         <header
           className={cn(
             "flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",

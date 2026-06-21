@@ -205,7 +205,8 @@ export default function ProjectsPage() {
             {!searchQuery && clients.length > 0 && (
               <Button
                 onClick={handleOpenAdd}
-                className="mt-4 flex items-center gap-2">
+                className="mt-4 flex items-center gap-2"
+              >
                 <Plus className="size-4" />
                 Start Project
               </Button>
@@ -221,7 +222,8 @@ export default function ProjectsPage() {
               return (
                 <Card
                   key={project.projectId}
-                  className="group relative overflow-hidden">
+                  className="group relative overflow-hidden"
+                >
                   <CardHeader className="flex flex-col gap-1.5 pb-3">
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
@@ -232,7 +234,8 @@ export default function ProjectsPage() {
                     <CardTitle className="line-clamp-1 font-heading font-semibold text-lg leading-tight transition-colors hover:text-primary">
                       <Link
                         href={`/dashboard/projects/${project.projectId}`}
-                        prefetch={false}>
+                        prefetch={false}
+                      >
                         {project.name}
                       </Link>
                     </CardTitle>
@@ -297,7 +300,8 @@ export default function ProjectsPage() {
                       <Link
                         href={`/dashboard/proposals?projectId=${project.projectId}`}
                         prefetch={false}
-                        className="group/btn flex items-center gap-0.5 font-semibold text-primary hover:underline">
+                        className="group/btn flex items-center gap-0.5 font-semibold text-primary hover:underline"
+                      >
                         View Proposals
                         <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-0.5" />
                       </Link>

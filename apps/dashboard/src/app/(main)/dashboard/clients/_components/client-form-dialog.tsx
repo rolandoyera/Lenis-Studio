@@ -20,9 +20,18 @@ import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { formatPhone, formatTaxId, formatZip, normalizeTaxId } from "@/lib/utils";
+import {
+  formatPhone,
+  formatTaxId,
+  formatZip,
+  normalizeTaxId,
+} from "@/lib/utils";
 
-import { type ClientFormData, clientSchema, EMPTY_CLIENT_FORM } from "./client-constants";
+import {
+  type ClientFormData,
+  clientSchema,
+  EMPTY_CLIENT_FORM,
+} from "./client-constants";
 
 interface ClientFormDialogProps {
   open: boolean;
@@ -58,7 +67,9 @@ export function ClientFormDialog({
     defaultValues: {
       ...EMPTY_CLIENT_FORM,
       ...defaultValues,
-      isCompany: defaultValues?.isCompany ?? (!!defaultValues?.company || !!defaultValues?.taxId),
+      isCompany:
+        defaultValues?.isCompany ??
+        (!!defaultValues?.company || !!defaultValues?.taxId),
       phone: formatPhone(defaultValues?.phone ?? ""),
       taxId: formatTaxId(defaultValues?.taxId ?? ""),
     },
@@ -72,7 +83,9 @@ export function ClientFormDialog({
       reset({
         ...EMPTY_CLIENT_FORM,
         ...defaultValues,
-        isCompany: defaultValues?.isCompany ?? (!!defaultValues?.company || !!defaultValues?.taxId),
+        isCompany:
+          defaultValues?.isCompany ??
+          (!!defaultValues?.company || !!defaultValues?.taxId),
         phone: formatPhone(defaultValues?.phone ?? ""),
         taxId: formatTaxId(defaultValues?.taxId ?? ""),
       });
@@ -90,7 +103,11 @@ export function ClientFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col gap-4" noValidate>
+        <form
+          onSubmit={handleSubmit(handleFormSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
+        >
           <DialogHeader className="mb-4">
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -98,7 +115,11 @@ export function ClientFormDialog({
 
           {/* Country is fixed to "US" for now; persisted via a hidden field so the
               schema/data stay forward-compatible if multi-country support lands later. */}
-          <Controller control={control} name="country" render={({ field }) => <input type="hidden" {...field} />} />
+          <Controller
+            control={control}
+            name="country"
+            render={({ field }) => <input type="hidden" {...field} />}
+          />
 
           <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
             <Controller
@@ -106,8 +127,16 @@ export function ClientFormDialog({
               name="isCompany"
               render={({ field }) => (
                 <div className="flex items-center gap-2">
-                  <Checkbox id="is-company-checkbox" checked={field.value} onCheckedChange={field.onChange} />
-                  <Label size="large" htmlFor="is-company-checkbox" className="cursor-pointer select-none leading-none">
+                  <Checkbox
+                    id="is-company-checkbox"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                  <Label
+                    size="large"
+                    htmlFor="is-company-checkbox"
+                    className="cursor-pointer select-none leading-none"
+                  >
                     This is a company or commercial entity
                   </Label>
                 </div>
@@ -119,8 +148,16 @@ export function ClientFormDialog({
               name="taxable"
               render={({ field }) => (
                 <div className="flex items-center gap-2">
-                  <Checkbox id="taxable-checkbox" checked={field.value} onCheckedChange={field.onChange} />
-                  <Label size="large" htmlFor="taxable-checkbox" className="cursor-pointer select-none">
+                  <Checkbox
+                    id="taxable-checkbox"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                  <Label
+                    size="large"
+                    htmlFor="taxable-checkbox"
+                    className="cursor-pointer select-none"
+                  >
                     This client is taxable
                   </Label>
                 </div>
@@ -139,12 +176,20 @@ export function ClientFormDialog({
                     control={control}
                     name="company"
                     render={({ field, fieldState }) => (
-                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                      <Field
+                        className="flex flex-col gap-1.5"
+                        data-invalid={fieldState.invalid}
+                      >
                         <Label className={LABEL_CLASS}>
-                          Company Name {isCompany && <span className="ml-0.5 text-destructive">*</span>}
+                          Company Name{" "}
+                          {isCompany && (
+                            <span className="ml-0.5 text-destructive">*</span>
+                          )}
                         </Label>
                         <Input {...field} aria-invalid={fieldState.invalid} />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -152,15 +197,22 @@ export function ClientFormDialog({
                     control={control}
                     name="taxId"
                     render={({ field, fieldState }) => (
-                      <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                      <Field
+                        className="flex flex-col gap-1.5"
+                        data-invalid={fieldState.invalid}
+                      >
                         <Label className={LABEL_CLASS}>Tax ID</Label>
                         <Input
                           {...field}
                           placeholder="xx-xxxxxxx"
                           aria-invalid={fieldState.invalid}
-                          onChange={(e) => field.onChange(formatTaxId(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(formatTaxId(e.target.value))
+                          }
                         />
-                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
                       </Field>
                     )}
                   />
@@ -172,12 +224,18 @@ export function ClientFormDialog({
                 control={control}
                 name="firstName"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label className={LABEL_CLASS}>
-                      First Name <span className="ml-0.5 text-destructive">*</span>
+                      First Name{" "}
+                      <span className="ml-0.5 text-destructive">*</span>
                     </Label>
                     <Input {...field} aria-invalid={fieldState.invalid} />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -185,12 +243,18 @@ export function ClientFormDialog({
                 control={control}
                 name="lastName"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label className={LABEL_CLASS}>
-                      Last Name <span className="ml-0.5 text-destructive">*</span>
+                      Last Name{" "}
+                      <span className="ml-0.5 text-destructive">*</span>
                     </Label>
                     <Input {...field} aria-invalid={fieldState.invalid} />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -201,10 +265,19 @@ export function ClientFormDialog({
                 control={control}
                 name="email"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label className={LABEL_CLASS}>Email Address</Label>
-                    <Input {...field} type="email" aria-invalid={fieldState.invalid} />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    <Input
+                      {...field}
+                      type="email"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -212,15 +285,22 @@ export function ClientFormDialog({
                 control={control}
                 name="phone"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label className={LABEL_CLASS}>Phone Number</Label>
                     <Input
                       {...field}
                       placeholder="(555) 000-0000"
                       aria-invalid={fieldState.invalid}
-                      onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                      onChange={(e) =>
+                        field.onChange(formatPhone(e.target.value))
+                      }
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -230,10 +310,15 @@ export function ClientFormDialog({
               control={control}
               name="street"
               render={({ field, fieldState }) => (
-                <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                <Field
+                  className="flex flex-col gap-1.5"
+                  data-invalid={fieldState.invalid}
+                >
                   <Label className={LABEL_CLASS}>Street Address</Label>
                   <Input {...field} aria-invalid={fieldState.invalid} />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -243,10 +328,15 @@ export function ClientFormDialog({
                 control={control}
                 name="city"
                 render={({ field, fieldState }) => (
-                  <Field className="col-span-2 flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="col-span-2 flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label className={LABEL_CLASS}>City</Label>
                     <Input {...field} aria-invalid={fieldState.invalid} />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -254,10 +344,19 @@ export function ClientFormDialog({
                 control={control}
                 name="state"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label className={LABEL_CLASS}>State</Label>
-                    <Input {...field} maxLength={2} aria-invalid={fieldState.invalid} />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    <Input
+                      {...field}
+                      maxLength={2}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -265,16 +364,23 @@ export function ClientFormDialog({
                 control={control}
                 name="zip"
                 render={({ field, fieldState }) => (
-                  <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                  <Field
+                    className="flex flex-col gap-1.5"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label className={LABEL_CLASS}>ZIP Code</Label>
                     <Input
                       {...field}
                       inputMode="numeric"
                       maxLength={5}
                       aria-invalid={fieldState.invalid}
-                      onChange={(e) => field.onChange(formatZip(e.target.value))}
+                      onChange={(e) =>
+                        field.onChange(formatZip(e.target.value))
+                      }
                     />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
                   </Field>
                 )}
               />
@@ -284,7 +390,10 @@ export function ClientFormDialog({
               control={control}
               name="notes"
               render={({ field, fieldState }) => (
-                <Field className="flex flex-col gap-1.5" data-invalid={fieldState.invalid}>
+                <Field
+                  className="flex flex-col gap-1.5"
+                  data-invalid={fieldState.invalid}
+                >
                   <Label className={LABEL_CLASS}>General Notes</Label>
                   <Textarea
                     {...field}
@@ -292,17 +401,28 @@ export function ClientFormDialog({
                     aria-invalid={fieldState.invalid}
                     className="min-h-[80px]"
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
           </div>
 
           <DialogFooter className="mt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting} className="flex items-center gap-2">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="flex items-center gap-2"
+            >
               {submitting && <Loader2 className="size-4 animate-spin" />}
               {submitLabel}
             </Button>

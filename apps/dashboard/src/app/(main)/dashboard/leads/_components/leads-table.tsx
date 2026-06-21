@@ -16,7 +16,14 @@ import {
 import { ChevronDownIcon, ListFilter, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +41,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { Lead } from "@/lib/types";
 
 import { LEAD_STAGE_LABELS, LEAD_STAGES } from "./lead-constants";
@@ -49,23 +63,44 @@ interface LeadsTableProps {
   onAddLead: () => void;
 }
 
-function preventPaginationNavigation(event: React.MouseEvent<HTMLAnchorElement>) {
+function preventPaginationNavigation(
+  event: React.MouseEvent<HTMLAnchorElement>,
+) {
   event.preventDefault();
 }
 
-export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTableProps) {
-  const columns = React.useMemo(() => getLeadsColumns(userMap, currentUserId), [userMap, currentUserId]);
+export function LeadsTable({
+  leads,
+  userMap,
+  currentUserId,
+  onAddLead,
+}: LeadsTableProps) {
+  const columns = React.useMemo(
+    () => getLeadsColumns(userMap, currentUserId),
+    [userMap, currentUserId],
+  );
 
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
   const [columnVisibility] = React.useState<VisibilityState>({ search: false });
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [pagination, setPagination] = React.useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
   const table = useReactTable({
     data: leads,
     columns,
-    state: { rowSelection, columnFilters, columnVisibility, globalFilter, pagination },
+    state: {
+      rowSelection,
+      columnFilters,
+      columnVisibility,
+      globalFilter,
+      pagination,
+    },
     getRowId: (row) => row.uid,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
@@ -79,16 +114,19 @@ export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTa
   });
 
   const searchQuery = table.getState().globalFilter ?? "";
-  const stageFilter = (table.getColumn("stage")?.getFilterValue() as string) ?? "all";
+  const stageFilter =
+    (table.getColumn("stage")?.getFilterValue() as string) ?? "all";
   const currentPage = table.getState().pagination.pageIndex + 1;
   const pageCount = table.getPageCount();
   const filteredCount = table.getFilteredRowModel().rows.length;
   const visibleCount = table.getRowModel().rows.length;
 
   const pageNumbers = React.useMemo(() => {
-    if (pageCount <= 3) return Array.from({ length: pageCount }, (_, index) => index + 1);
+    if (pageCount <= 3)
+      return Array.from({ length: pageCount }, (_, index) => index + 1);
     if (currentPage <= 2) return [1, 2, 3];
-    if (currentPage >= pageCount - 1) return [pageCount - 2, pageCount - 1, pageCount];
+    if (currentPage >= pageCount - 1)
+      return [pageCount - 2, pageCount - 1, pageCount];
     return [currentPage - 1, currentPage, currentPage + 1];
   }, [currentPage, pageCount]);
 
@@ -120,11 +158,15 @@ export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTa
                 <DropdownMenuRadioGroup
                   value={stageFilter}
                   onValueChange={(value) => {
-                    table.getColumn("stage")?.setFilterValue(value === "all" ? undefined : value);
+                    table
+                      .getColumn("stage")
+                      ?.setFilterValue(value === "all" ? undefined : value);
                     table.setPageIndex(0);
                   }}
                 >
-                  <DropdownMenuRadioItem value="all">All stages</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="all">
+                    All stages
+                  </DropdownMenuRadioItem>
                   {LEAD_STAGES.map((stage) => (
                     <DropdownMenuRadioItem key={stage} value={stage}>
                       {LEAD_STAGE_LABELS[stage]}
@@ -148,7 +190,12 @@ export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTa
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <TableHead key={header.id} colSpan={header.colSpan}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   ))}
                 </TableRow>
@@ -157,15 +204,26 @@ export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTa
             <TableBody className="**:data-[slot='table-row']:border-border/50 **:data-[slot='table-row']:hover:bg-transparent">
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-24 text-center">
+                  <TableCell
+                    colSpan={table.getVisibleLeafColumns().length}
+                    className="h-24 text-center"
+                  >
                     No leads found.
                   </TableCell>
                 </TableRow>
@@ -183,7 +241,11 @@ export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTa
               <PaginationItem>
                 <PaginationPrevious
                   href="#"
-                  className={!table.getCanPreviousPage() ? "pointer-events-none opacity-50" : undefined}
+                  className={
+                    !table.getCanPreviousPage()
+                      ? "pointer-events-none opacity-50"
+                      : undefined
+                  }
                   onClick={(event) => {
                     preventPaginationNavigation(event);
                     table.previousPage();
@@ -199,7 +261,9 @@ export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTa
                 <PaginationItem key={`page-${pageNumber}`}>
                   <PaginationLink
                     href="#"
-                    isActive={table.getState().pagination.pageIndex === pageNumber - 1}
+                    isActive={
+                      table.getState().pagination.pageIndex === pageNumber - 1
+                    }
                     onClick={(event) => {
                       preventPaginationNavigation(event);
                       table.setPageIndex(pageNumber - 1);
@@ -217,7 +281,11 @@ export function LeadsTable({ leads, userMap, currentUserId, onAddLead }: LeadsTa
               <PaginationItem>
                 <PaginationNext
                   href="#"
-                  className={!table.getCanNextPage() ? "pointer-events-none opacity-50" : undefined}
+                  className={
+                    !table.getCanNextPage()
+                      ? "pointer-events-none opacity-50"
+                      : undefined
+                  }
                   onClick={(event) => {
                     preventPaginationNavigation(event);
                     table.nextPage();

@@ -34,7 +34,13 @@ interface ReportShellProps {
  * Company identity comes from APP_CONFIG for now — swap to a per-org company
  * record here once that section exists in the DB.
  */
-export function ReportShell({ title, subtitle, headerMeta, children, footer }: ReportShellProps) {
+export function ReportShell({
+  title,
+  subtitle,
+  headerMeta,
+  children,
+  footer,
+}: ReportShellProps) {
   const generatedOn = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -47,16 +53,32 @@ export function ReportShell({ title, subtitle, headerMeta, children, footer }: R
         <div className="flex flex-col gap-10 p-10 md:p-14">
           <header className="report-keep-together flex items-start justify-between gap-6 border-b pb-6">
             <div className="flex items-center gap-3">
-              <Image src={APP_CONFIG.image.src} alt={APP_CONFIG.name} width={40} height={40} priority />
+              <Image
+                src={APP_CONFIG.image.src}
+                alt={APP_CONFIG.name}
+                width={40}
+                height={40}
+                priority
+              />
               <div>
-                <p className="font-semibold text-lg leading-tight">{APP_CONFIG.name}</p>
-                <p className="text-muted-foreground text-xs">{APP_CONFIG.copyright}</p>
+                <p className="font-semibold text-lg leading-tight">
+                  {APP_CONFIG.name}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {APP_CONFIG.copyright}
+                </p>
               </div>
             </div>
             <div className="text-right">
               <p className="font-semibold text-xl leading-tight">{title}</p>
-              {subtitle ? <p className="mt-1 text-muted-foreground text-sm">{subtitle}</p> : null}
-              {headerMeta ?? <p className="mt-0.5 text-muted-foreground text-xs">Generated {generatedOn}</p>}
+              {subtitle ? (
+                <p className="mt-1 text-muted-foreground text-sm">{subtitle}</p>
+              ) : null}
+              {headerMeta ?? (
+                <p className="mt-0.5 text-muted-foreground text-xs">
+                  Generated {generatedOn}
+                </p>
+              )}
             </div>
           </header>
 
@@ -110,7 +132,9 @@ export function ReportSection({
     >
       <div className="flex flex-col gap-1">
         <h2 className="font-semibold text-base tracking-tight">{title}</h2>
-        {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
+        {description ? (
+          <p className="text-muted-foreground text-sm">{description}</p>
+        ) : null}
       </div>
       {children}
     </section>

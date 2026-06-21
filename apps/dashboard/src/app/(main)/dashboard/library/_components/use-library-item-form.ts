@@ -12,7 +12,12 @@ import { runAiActionWithRetry } from "@/lib/ai-retry";
 import { uploadLibraryImage } from "@/lib/db";
 import { autofillProductFromUrl } from "@/server/ai-actions";
 
-import { EMPTY_LIBRARY_ITEM_FORM, type LibraryItemFormData, libraryItemSchema, MAX_IMAGES } from "./library-constants";
+import {
+  EMPTY_LIBRARY_ITEM_FORM,
+  type LibraryItemFormData,
+  libraryItemSchema,
+  MAX_IMAGES,
+} from "./library-constants";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -29,10 +34,17 @@ export function useLibraryItemForm() {
   // Compatibility setter: mirrors the previous useState pattern so the dialog
   // doesn't need wholesale rewrites on every field.
   const setFormData = useCallback(
-    (updater: LibraryItemFormData | ((prev: LibraryItemFormData) => LibraryItemFormData)) => {
+    (
+      updater:
+        | LibraryItemFormData
+        | ((prev: LibraryItemFormData) => LibraryItemFormData),
+    ) => {
       const current = rhfForm.getValues();
       const next = typeof updater === "function" ? updater(current) : updater;
-      const setFormValue = <K extends keyof LibraryItemFormData>(key: K, value: LibraryItemFormData[K]) => {
+      const setFormValue = <K extends keyof LibraryItemFormData>(
+        key: K,
+        value: LibraryItemFormData[K],
+      ) => {
         rhfForm.setValue(key, value, { shouldDirty: true });
       };
       (Object.keys(next) as (keyof LibraryItemFormData)[]).forEach((key) => {
@@ -52,7 +64,9 @@ export function useLibraryItemForm() {
   const reset = useCallback(
     (values?: Partial<LibraryItemFormData>, customItemId?: string) => {
       rhfForm.reset({ ...EMPTY_LIBRARY_ITEM_FORM, ...values });
-      setTempItemId(customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`);
+      setTempItemId(
+        customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`,
+      );
     },
     [rhfForm],
   );
@@ -75,7 +89,9 @@ export function useLibraryItemForm() {
   const setSellingPrice = (value: number) => {
     setFormData((prev) => {
       const markup =
-        prev.unitCost > 0 ? Number((((value - prev.unitCost) / prev.unitCost) * 100).toFixed(2)) : prev.markup;
+        prev.unitCost > 0
+          ? Number((((value - prev.unitCost) / prev.unitCost) * 100).toFixed(2))
+          : prev.markup;
       return { ...prev, sellingPrice: value, markup };
     });
   };
@@ -90,15 +106,21 @@ export function useLibraryItemForm() {
     setAiLoading(true);
     const lunaToast = startLunaProductAutofillToast();
     try {
-      const res = await runAiActionWithRetry(() => autofillProductFromUrl(url), {
-        toastId: lunaToast.id,
-        onRetry: lunaToast.showRetry,
-      });
+      const res = await runAiActionWithRetry(
+        () => autofillProductFromUrl(url),
+        {
+          toastId: lunaToast.id,
+          onRetry: lunaToast.showRetry,
+        },
+      );
       if (!res.success || !res.data) {
-        toast.error(res.error || "Failed to extract product specs from the link.", {
-          id: lunaToast.id,
-          duration: 8000,
-        });
+        toast.error(
+          res.error || "Failed to extract product specs from the link.",
+          {
+            id: lunaToast.id,
+            duration: 8000,
+          },
+        );
         return;
       }
 
@@ -112,21 +134,31 @@ export function useLibraryItemForm() {
         // because a saved item's AI images are Firebase-mirrored copies of the very photos
         // the scraper returns again as raw vendor URLs (same picture, different string).
         const prevImages = prev.imageUrls ?? [];
-        const manualImages = (prev.manualImageUrls ?? []).filter((u) => prevImages.includes(u));
+        const manualImages = (prev.manualImageUrls ?? []).filter((u) =>
+          prevImages.includes(u),
+        );
 
         const aiImages: string[] = [];
         const seen = new Set<string>(manualImages);
         for (const img of ext.imageUrls ?? []) {
           const url = img.trim();
-          if (!url || seen.has(url) || manualImages.length + aiImages.length >= MAX_IMAGES) continue;
+          if (
+            !url ||
+            seen.has(url) ||
+            manualImages.length + aiImages.length >= MAX_IMAGES
+          )
+            continue;
           seen.add(url);
           aiImages.push(url);
         }
 
         // Only swap the AI portion when the scrape actually returned images.
-        const newImages = aiImages.length > 0 ? [...manualImages, ...aiImages] : prevImages;
+        const newImages =
+          aiImages.length > 0 ? [...manualImages, ...aiImages] : prevImages;
         const coverImageUrl =
-          prev.coverImageUrl && newImages.includes(prev.coverImageUrl) ? prev.coverImageUrl : (newImages[0] ?? "");
+          prev.coverImageUrl && newImages.includes(prev.coverImageUrl)
+            ? prev.coverImageUrl
+            : (newImages[0] ?? "");
 
         const updated = {
           ...prev,
@@ -152,14 +184,19 @@ export function useLibraryItemForm() {
           },
         };
 
-        const sellingPrice = Number((prev.unitCost * (1 + prev.markup / 100)).toFixed(2));
+        const sellingPrice = Number(
+          (prev.unitCost * (1 + prev.markup / 100)).toFixed(2),
+        );
         return { ...updated, sellingPrice };
       });
 
-      toast.success(`Product specs successfully filled with ${AI_ASSISTANT_NAME} (Review before saving)!`, {
-        id: lunaToast.id,
-        duration: 5000,
-      });
+      toast.success(
+        `Product specs successfully filled with ${AI_ASSISTANT_NAME} (Review before saving)!`,
+        {
+          id: lunaToast.id,
+          duration: 5000,
+        },
+      );
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       toast.error(errMsg || "An unexpected error occurred during autofill.", {
@@ -187,7 +224,10 @@ export function useLibraryItemForm() {
       const { url, path } = await uploadLibraryImage(file, tempItemId);
       setFormData((prev) => {
         const nextUrls = [...(prev.imageUrls ?? []), url].slice(0, MAX_IMAGES);
-        const nextImages = [...(prev.images ?? []), { url, path }].slice(0, MAX_IMAGES);
+        const nextImages = [...(prev.images ?? []), { url, path }].slice(
+          0,
+          MAX_IMAGES,
+        );
         return {
           ...prev,
           imageUrls: nextUrls,
@@ -218,7 +258,9 @@ export function useLibraryItemForm() {
 
         const images = prev.images ?? [];
         const matchedImage = images.find((img) => img.url === url);
-        const nextImages = matchedImage ? [matchedImage, ...images.filter((img) => img.url !== url)] : images;
+        const nextImages = matchedImage
+          ? [matchedImage, ...images.filter((img) => img.url !== url)]
+          : images;
 
         return {
           ...prev,
@@ -238,7 +280,12 @@ export function useLibraryItemForm() {
       setFormData((prev) => {
         const urls = [...(prev.imageUrls ?? [])];
         const images = [...(prev.images ?? [])];
-        if (sourceIndex < 0 || sourceIndex >= urls.length || targetIndex < 0 || targetIndex >= urls.length) {
+        if (
+          sourceIndex < 0 ||
+          sourceIndex >= urls.length ||
+          targetIndex < 0 ||
+          targetIndex >= urls.length
+        ) {
           return prev;
         }
         const [removedUrl] = urls.splice(sourceIndex, 1);
@@ -266,12 +313,16 @@ export function useLibraryItemForm() {
     (url: string) => {
       setFormData((prev) => {
         const filtered = (prev.imageUrls ?? []).filter((u) => u !== url);
-        const filteredImages = (prev.images ?? []).filter((img) => img.url !== url);
+        const filteredImages = (prev.images ?? []).filter(
+          (img) => img.url !== url,
+        );
         const firstImage = filteredImages[0];
         return {
           ...prev,
           imageUrls: filtered,
-          manualImageUrls: (prev.manualImageUrls ?? []).filter((u) => u !== url),
+          manualImageUrls: (prev.manualImageUrls ?? []).filter(
+            (u) => u !== url,
+          ),
           coverImageUrl: filtered[0] || "",
           coverImagePath: firstImage?.path || "",
           images: filteredImages,

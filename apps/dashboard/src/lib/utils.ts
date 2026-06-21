@@ -55,8 +55,17 @@ export function formatCurrency(
  * `noDecimals` for whole-dollar fields. Pair with a focus bridge so the raw digits are
  * shown while editing.
  */
-export function formatCurrencyInput(value: number | undefined, opts?: { noDecimals?: boolean }): string {
-  if (value === undefined || value === null || Number.isNaN(value) || value === 0) return "";
+export function formatCurrencyInput(
+  value: number | undefined,
+  opts?: { noDecimals?: boolean },
+): string {
+  if (
+    value === undefined ||
+    value === null ||
+    Number.isNaN(value) ||
+    value === 0
+  )
+    return "";
   return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: opts?.noDecimals ? 0 : 2,
     maximumFractionDigits: opts?.noDecimals ? 0 : 2,
@@ -106,7 +115,10 @@ function sanitizeIntlPhone(value: string): string {
  * - US/CA without a leading `+` use the standard `formatPhone`.
  * - Any other country keeps free-form input (+, digits, spaces, () . -).
  */
-export function formatVendorPhone(value: string, phoneCountry: string | undefined | null): string {
+export function formatVendorPhone(
+  value: string,
+  phoneCountry: string | undefined | null,
+): string {
   const raw = value ?? "";
   if (raw.trim().startsWith("+")) return sanitizeIntlPhone(raw);
   if (usesUsPhoneFormat(phoneCountry)) return formatPhone(raw);
@@ -118,10 +130,14 @@ export function formatVendorPhone(value: string, phoneCountry: string | undefine
  * a leading `+` must be a complete US number; everything else is free-form and only
  * needs to contain at least one digit using the allowed phone characters.
  */
-export function isValidVendorPhone(value: string, phoneCountry: string | undefined | null): boolean {
+export function isValidVendorPhone(
+  value: string,
+  phoneCountry: string | undefined | null,
+): boolean {
   const raw = (value ?? "").trim();
   if (raw.length === 0) return true;
-  if (!raw.startsWith("+") && usesUsPhoneFormat(phoneCountry)) return isValidUsPhone(raw);
+  if (!raw.startsWith("+") && usesUsPhoneFormat(phoneCountry))
+    return isValidUsPhone(raw);
   return /^\+?[\d\s().-]+$/.test(raw) && /\d/.test(raw);
 }
 
@@ -130,10 +146,14 @@ export function isValidVendorPhone(value: string, phoneCountry: string | undefin
  * non-US/CA phone country) keep their `+` and digits; US/CA fall back to the
  * 10-digit `normalizePhone`.
  */
-export function vendorPhoneTel(value: string, phoneCountry?: string | null): string {
+export function vendorPhoneTel(
+  value: string,
+  phoneCountry?: string | null,
+): string {
   const raw = (value ?? "").trim();
   if (raw.startsWith("+")) return `+${raw.replace(/\D/g, "")}`;
-  if (usesUsPhoneFormat(phoneCountry) || !phoneCountry) return normalizePhone(raw);
+  if (usesUsPhoneFormat(phoneCountry) || !phoneCountry)
+    return normalizePhone(raw);
   return raw.replace(/\D/g, "");
 }
 

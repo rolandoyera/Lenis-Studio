@@ -86,7 +86,8 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
                 <TableRow
                   key={row.id}
                   className="border-border/60 hover:bg-white/2.5"
-                  data-state={row.getIsSelected() && "selected"}>
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-3 py-4 align-middle">
                       {flexRender(
@@ -101,7 +102,8 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
               <TableRow>
                 <TableCell
                   colSpan={table.getVisibleLeafColumns().length}
-                  className="h-24 text-center">
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -118,11 +120,13 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
             <span>Rows per page</span>
             <Select
               value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => table.setPageSize(Number(value))}>
+              onValueChange={(value) => table.setPageSize(Number(value))}
+            >
               <SelectTrigger
                 size="sm"
                 className="w-20"
-                id="users-rows-per-page">
+                id="users-rows-per-page"
+              >
                 <SelectValue placeholder={rowsPerPage} />
               </SelectTrigger>
               <SelectContent side="top">
@@ -173,7 +177,8 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
                   onClick={(event) => {
                     preventPaginationNavigation(event);
                     table.setPageIndex(pageNumber - 1);
-                  }}>
+                  }}
+                >
                   {pageNumber}
                 </PaginationLink>
               </PaginationItem>

@@ -2,7 +2,14 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function InstagramToolbar() {
   const router = useRouter();

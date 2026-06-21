@@ -58,7 +58,13 @@ export async function mirrorExternalImagesToFirebase(
       const result = await mirrorExternalImageUrl({
         url,
         upload: (blob, extension) =>
-          uploadLibraryImageBlob(blob, itemId, url === cover ? "cover" : "gallery", undefined, extension),
+          uploadLibraryImageBlob(
+            blob,
+            itemId,
+            url === cover ? "cover" : "gallery",
+            undefined,
+            extension,
+          ),
         logPrefix: "Image Mirror",
       });
 
@@ -84,9 +90,18 @@ export async function mirrorExternalImagesToFirebase(
   const imageUrls = resolvedImages.map((ri) => ri.url);
   const images = resolvedImages.filter((ri) => ri.path);
 
-  const resolvedCover = cover ? resolve(cover) : (resolvedImages[0] ?? { url: "", path: "" });
+  const resolvedCover = cover
+    ? resolve(cover)
+    : (resolvedImages[0] ?? { url: "", path: "" });
   const coverImageUrl = resolvedCover.url;
   const coverImagePath = resolvedCover.path;
 
-  return { imageUrls, coverImageUrl, coverImagePath, images, mirroredCount, failedCount };
+  return {
+    imageUrls,
+    coverImageUrl,
+    coverImagePath,
+    images,
+    mirroredCount,
+    failedCount,
+  };
 }

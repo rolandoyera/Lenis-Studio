@@ -45,11 +45,17 @@ interface GeminiFetchResult {
  * Executes a Gemini API request with an automatic transparent fallback if the primary model returns a rate limit (429), service unavailable (503),
  * or times out.
  */
-async function fetchGeminiWithFallback(apiKey: string, body: string, signal: AbortSignal): Promise<GeminiFetchResult> {
+async function fetchGeminiWithFallback(
+  apiKey: string,
+  body: string,
+  signal: AbortSignal,
+): Promise<GeminiFetchResult> {
   const primaryModel = SCRAPER_CONFIG.primaryModel;
   const fallbackModel = SCRAPER_CONFIG.fallbackModel;
 
-  console.log(`[AI Fallback] Sending request to primary model: ${primaryModel}`);
+  console.log(
+    `[AI Fallback] Sending request to primary model: ${primaryModel}`,
+  );
   const primaryUrl = `https://generativelanguage.googleapis.com/v1beta/models/${primaryModel}:generateContent?key=${apiKey}`;
 
   let res: Response | null = null;
@@ -70,7 +76,10 @@ async function fetchGeminiWithFallback(apiKey: string, body: string, signal: Abo
     }
   } catch (err) {
     primaryFailed = true;
-    console.error(`[AI Fallback] Primary model ${primaryModel} fetch error or timeout:`, err);
+    console.error(
+      `[AI Fallback] Primary model ${primaryModel} fetch error or timeout:`,
+      err,
+    );
   }
 
   // Fall back if primary failed
@@ -83,10 +92,15 @@ async function fetchGeminiWithFallback(apiKey: string, body: string, signal: Abo
         body,
         signal,
       });
-      console.log(`[AI Fallback] Fallback model ${fallbackModel} completed with status ${fallbackRes.status}`);
+      console.log(
+        `[AI Fallback] Fallback model ${fallbackModel} completed with status ${fallbackRes.status}`,
+      );
       return { response: fallbackRes, modelUsed: fallbackModel };
     } catch (fallbackErr) {
-      console.error(`[AI Fallback] Fallback model ${fallbackModel} fetch error:`, fallbackErr);
+      console.error(
+        `[AI Fallback] Fallback model ${fallbackModel} fetch error:`,
+        fallbackErr,
+      );
       if (res) return { response: res, modelUsed: primaryModel };
       throw fallbackErr;
     }
@@ -131,13 +145,19 @@ function cleanImageUrlSize(url: string): string {
     const parsed = new URL(url);
     const path = parsed.pathname;
     // Strip common Shopify and WordPress thumbnail suffixes (e.g., _170x, _170x170, _large, etc.)
-    const cleanedPath = path.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+    const cleanedPath = path.replace(
+      /[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i,
+      "",
+    );
     if (cleanedPath !== path) {
       parsed.pathname = cleanedPath;
       return parsed.toString();
     }
   } catch {
-    return url.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+    return url.replace(
+      /[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i,
+      "",
+    );
   }
   return url;
 }
@@ -147,12 +167,18 @@ function imageDedupKey(url: string): string {
     const cleanUrl = url.split("?")[0].split("#")[0];
     const parsed = new URL(cleanUrl);
     const filename = parsed.pathname.split("/").pop() || "";
-    const cleaned = filename.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+    const cleaned = filename.replace(
+      /[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i,
+      "",
+    );
     return cleaned.toLowerCase();
   } catch {
     const cleanUrl = url.split("?")[0].split("#")[0];
     const filename = cleanUrl.split("/").pop() || "";
-    const cleaned = filename.replace(/[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i, "");
+    const cleaned = filename.replace(
+      /[_-](?:\d+x\d*|x\d+|large|medium|small|grande|master)(?=\.[a-z]+$)/i,
+      "",
+    );
     return cleaned.toLowerCase();
   }
 }
@@ -192,11 +218,19 @@ function collectJsonLdImages(node: unknown, out: string[]): void {
     } else if (Array.isArray(img)) {
       for (const i of img) {
         if (typeof i === "string") out.push(i);
-        else if (i && typeof i === "object" && typeof (i as Record<string, unknown>).url === "string") {
+        else if (
+          i &&
+          typeof i === "object" &&
+          typeof (i as Record<string, unknown>).url === "string"
+        ) {
           out.push((i as Record<string, string>).url);
         }
       }
-    } else if (img && typeof img === "object" && typeof (img as Record<string, unknown>).url === "string") {
+    } else if (
+      img &&
+      typeof img === "object" &&
+      typeof (img as Record<string, unknown>).url === "string"
+    ) {
       out.push((img as Record<string, string>).url);
     }
     if (Array.isArray(obj["@graph"])) collectJsonLdImages(obj["@graph"], out);
@@ -225,13 +259,20 @@ function extractProductImagesFromHtml(html: string, base: string): string[] {
 
   // 1. og:image / twitter:image — canonical hero (highest priority)
   const ogImage =
-    /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)["']/i.exec(html)?.[1] ??
-    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(html)?.[1] ??
-    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i.exec(html)?.[1];
+    /<meta[^>]+property=["']og:image(?::secure_url)?["'][^>]+content=["']([^"']+)["']/i.exec(
+      html,
+    )?.[1] ??
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(
+      html,
+    )?.[1] ??
+    /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i.exec(
+      html,
+    )?.[1];
   add(ogImage);
 
   // 2. JSON-LD Product.image
-  const ldRe = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const ldRe =
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let ld = ldRe.exec(html);
   while (ld !== null) {
     try {
@@ -268,7 +309,9 @@ function extractProductImagesFromHtml(html: string, base: string): string[] {
  * markdown to Gemini. Returns structured, verified JSON content
  * alongside confidence ratings and a raw snapshot of the page contents.
  */
-export async function autofillProductFromUrl(url: string): Promise<AutofillResult> {
+export async function autofillProductFromUrl(
+  url: string,
+): Promise<AutofillResult> {
   try {
     if (!url || url.trim() === "") {
       return {
@@ -281,12 +324,15 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     if (!apiKey) {
       return {
         success: false,
-        error: "GEMINI_API_KEY is not defined. Please add it to your apps/dashboard/.env.local file.",
+        error:
+          "GEMINI_API_KEY is not defined. Please add it to your apps/dashboard/.env.local file.",
       };
     }
 
     const normalizedUrl = withProtocol(url.trim());
-    console.log(`[AI Autofill] Starting scraping via Jina Reader for: ${normalizedUrl}`);
+    console.log(
+      `[AI Autofill] Starting scraping via Jina Reader for: ${normalizedUrl}`,
+    );
 
     // 1. Fetch the raw page contents converted to clean Markdown via Jina Reader
     const jinaHeaders: Record<string, string> = {
@@ -309,14 +355,19 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       .then((r) => (r.ok ? r.text() : ""))
       .catch(() => "");
 
-    const jinaRes = await fetch(`${SCRAPER_CONFIG.jinaReaderUrl}${normalizedUrl}`, {
-      headers: jinaHeaders,
-      next: { revalidate: 0 }, // Prevent Next.js from caching pages so it grabs fresh pricing
-      signal: AbortSignal.timeout(20000), // 20 seconds timeout to prevent infinite hanging
-    });
+    const jinaRes = await fetch(
+      `${SCRAPER_CONFIG.jinaReaderUrl}${normalizedUrl}`,
+      {
+        headers: jinaHeaders,
+        next: { revalidate: 0 }, // Prevent Next.js from caching pages so it grabs fresh pricing
+        signal: AbortSignal.timeout(20000), // 20 seconds timeout to prevent infinite hanging
+      },
+    );
 
     if (!jinaRes.ok) {
-      console.error(`[AI Autofill] Jina Reader failed with status ${jinaRes.status}`);
+      console.error(
+        `[AI Autofill] Jina Reader failed with status ${jinaRes.status}`,
+      );
       return {
         success: false,
         error: `Could not reach the website via AI Scraper (Jina Reader status: ${jinaRes.status}).`,
@@ -337,29 +388,42 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       console.error(`[AI Autofill] Cleaned markdown is empty`);
       return {
         success: false,
-        error: "The scraper was unable to extract readable content from that webpage.",
+        error:
+          "The scraper was unable to extract readable content from that webpage.",
       };
     }
 
     // Intercept Jina Reader upstream block/HTTP errors hidden in successful text responses
     if (markdownText.includes("Warning: Target URL returned error")) {
       const errorLine =
-        markdownText.split("\n").find((line) => line.includes("Warning: Target URL returned error")) || "";
-      console.error(`[AI Autofill] Jina Reader scraped a target site error: ${errorLine}`);
+        markdownText
+          .split("\n")
+          .find((line) =>
+            line.includes("Warning: Target URL returned error"),
+          ) || "";
+      console.error(
+        `[AI Autofill] Jina Reader scraped a target site error: ${errorLine}`,
+      );
 
-      let friendlyError = "Fetching data was blocked or could not read this website. Please input specs manually.";
+      let friendlyError =
+        "Fetching data was blocked or could not read this website. Please input specs manually.";
       if (errorLine.includes("403")) {
-        friendlyError = "This website is protected against AI. Please input specifications manually.";
+        friendlyError =
+          "This website is protected against AI. Please input specifications manually.";
       } else if (errorLine.includes("404")) {
-        friendlyError = "This product page was not found. Please verify the link.";
+        friendlyError =
+          "This product page was not found. Please verify the link.";
       } else if (errorLine.includes("503") || errorLine.includes("502")) {
-        friendlyError = "The website is temporarily unavailable. Please try again later or type details manually.";
+        friendlyError =
+          "The website is temporarily unavailable. Please try again later or type details manually.";
       }
 
       return { success: false, error: friendlyError };
     }
 
-    console.log(`[AI Autofill] Scraped Markdown successfully. Length: ${markdownText.length} characters.`);
+    console.log(
+      `[AI Autofill] Scraped Markdown successfully. Length: ${markdownText.length} characters.`,
+    );
 
     // 2. High-Density Payload Extraction (Multi-Strategy Image URL Crawler)
     const markdownCandidates: { url: string; highPriority: boolean }[] = [];
@@ -385,15 +449,24 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       }
     }
 
-    const addMarkdownCandidate = (src: string, matchIndex: number, matchLength: number) => {
+    const addMarkdownCandidate = (
+      src: string,
+      matchIndex: number,
+      matchLength: number,
+    ) => {
       const trimmed = src.trim();
       if (!trimmed || seenMarkdownUrls.has(trimmed)) return;
       seenMarkdownUrls.add(trimmed);
 
       // Check if near "View larger image"
       const startRange = Math.max(0, matchIndex - 120);
-      const endRange = Math.min(markdownText.length, matchIndex + matchLength + 120);
-      const surroundingContext = markdownText.substring(startRange, endRange).toLowerCase();
+      const endRange = Math.min(
+        markdownText.length,
+        matchIndex + matchLength + 120,
+      );
+      const surroundingContext = markdownText
+        .substring(startRange, endRange)
+        .toLowerCase();
       const isNearViewLarger = surroundingContext.includes("view larger image");
 
       // Check if before specifications
@@ -425,19 +498,25 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
 
     // Strategy C: Markdown links containing image keywords or standard extensions `[Alt text](url)`
     const mdLinkRegex = /\[.*?\]\((https?:\/\/[^)\s]+)\)/gi;
-    const imgExtensionOrPathPattern = /\.(jpg|jpeg|png|webp|gif|svg|tiff)(\?.*)?$/i;
-    const imageKeywordPattern = /image|product|asset|media|photo|picture|thumb/i;
+    const imgExtensionOrPathPattern =
+      /\.(jpg|jpeg|png|webp|gif|svg|tiff)(\?.*)?$/i;
+    const imageKeywordPattern =
+      /image|product|asset|media|photo|picture|thumb/i;
     match = mdLinkRegex.exec(markdownText);
     while (match !== null) {
       const src = match[1].trim();
-      if (imgExtensionOrPathPattern.test(src) || imageKeywordPattern.test(src)) {
+      if (
+        imgExtensionOrPathPattern.test(src) ||
+        imageKeywordPattern.test(src)
+      ) {
         addMarkdownCandidate(src, match.index, match[0].length);
       }
       match = mdLinkRegex.exec(markdownText);
     }
 
     // Strategy D: Raw absolute URLs in the text ending with classic image extensions (with optional queries)
-    const rawUrlRegex = /(https?:\/\/[^\s"'<>()]+?\.(?:jpg|jpeg|png|webp|gif|svg)(?:\?[^\s"'<>()]*)?)/gi;
+    const rawUrlRegex =
+      /(https?:\/\/[^\s"'<>()]+?\.(?:jpg|jpeg|png|webp|gif|svg)(?:\?[^\s"'<>()]*)?)/gi;
     match = rawUrlRegex.exec(markdownText);
     while (match !== null) {
       const src = match[1].trim();
@@ -448,8 +527,12 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
     // Strategy E: Standards-based extraction from raw HTML (og:image, JSON-LD, srcset).
     // These are canonical, high-resolution sources, so they lead the candidate list.
     const rawHtml = await rawHtmlPromise;
-    const htmlImages = rawHtml ? extractProductImagesFromHtml(rawHtml, normalizedUrl) : [];
-    console.log(`[AI Autofill] HTML-derived image candidates: ${htmlImages.length}`);
+    const htmlImages = rawHtml
+      ? extractProductImagesFromHtml(rawHtml, normalizedUrl)
+      : [];
+    console.log(
+      `[AI Autofill] HTML-derived image candidates: ${htmlImages.length}`,
+    );
 
     // Merge HTML-derived (priority) ahead of markdown candidates, collapsing size
     // variants of the same photo so the largest/canonical version wins each slot.
@@ -487,10 +570,19 @@ export async function autofillProductFromUrl(url: string): Promise<AutofillResul
       }
     }
 
-    const filteredImages = mergedImages.slice(0, SCRAPER_CONFIG.maxImageCandidates);
-    console.log(`[AI Autofill] Filtered image candidates count: ${filteredImages.length}`, filteredImages);
+    const filteredImages = mergedImages.slice(
+      0,
+      SCRAPER_CONFIG.maxImageCandidates,
+    );
+    console.log(
+      `[AI Autofill] Filtered image candidates count: ${filteredImages.length}`,
+      filteredImages,
+    );
 
-    const optimizedMarkdown = markdownText.substring(0, SCRAPER_CONFIG.maxCharacters);
+    const optimizedMarkdown = markdownText.substring(
+      0,
+      SCRAPER_CONFIG.maxCharacters,
+    );
 
     // 3. Formulate Query to Gemini 3.5 Flash with fallback
     console.log(`[AI Autofill] Sending optimized markdown to Gemini...`);
@@ -604,7 +696,9 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
       requestBody,
       AbortSignal.timeout(45000),
     );
-    console.log(`[AI Autofill] Gemini response received with status: ${geminiRes.status}`);
+    console.log(
+      `[AI Autofill] Gemini response received with status: ${geminiRes.status}`,
+    );
 
     if (!geminiRes.ok) {
       const errorText = await geminiRes.text();
@@ -613,7 +707,9 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
       return {
         success: false,
         retryable,
-        error: message ?? "The Gemini AI model failed to extract product data from the scraped webpage.",
+        error:
+          message ??
+          "The Gemini AI model failed to extract product data from the scraped webpage.",
       };
     }
 
@@ -622,13 +718,17 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
     if (!parsedText) {
       return {
         success: false,
-        error: "The AI model returned an empty response. Product could not be parsed.",
+        error:
+          "The AI model returned an empty response. Product could not be parsed.",
       };
     }
 
     const data = parseGeminiJson(parsedText);
     const sanitizedData = sanitizeProductData(data);
-    console.log(`[AI Autofill] Gemini response successfully parsed and sanitized! Data:`, sanitizedData);
+    console.log(
+      `[AI Autofill] Gemini response successfully parsed and sanitized! Data:`,
+      sanitizedData,
+    );
 
     // Save diagnostic run in Firestore background (non-blocking)
     void saveDiagnosticRun({
@@ -636,7 +736,10 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
       url: normalizedUrl,
       scrapedMarkdown: markdownText,
       prompt:
-        typeof requestBody === "string" ? JSON.parse(requestBody).contents?.[0]?.parts?.[0]?.text || requestBody : "",
+        typeof requestBody === "string"
+          ? JSON.parse(requestBody).contents?.[0]?.parts?.[0]?.text ||
+            requestBody
+          : "",
       rawResponse: parsedText,
       parsedData: sanitizedData,
     });
@@ -656,7 +759,8 @@ CRITICAL: You MUST return 100% valid JSON. Do not include raw unescaped newlines
       return {
         success: false,
         retryable: true,
-        error: "AI scraping timed out. The website is taking too long to respond. Please try again.",
+        error:
+          "AI scraping timed out. The website is taking too long to respond. Please try again.",
       };
     }
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -716,7 +820,9 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
     });
 
     if (!res.ok) {
-      console.warn(`[fetchImageBytes] Direct fetch failed (status ${res.status}). Retrying via images.weserv.nl...`);
+      console.warn(
+        `[fetchImageBytes] Direct fetch failed (status ${res.status}). Retrying via images.weserv.nl...`,
+      );
       const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
       res = await fetch(proxyUrl, {
         headers: {
@@ -751,7 +857,10 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
     return { success: true, base64: buffer.toString("base64"), contentType };
   } catch (error: unknown) {
     try {
-      console.warn(`[fetchImageBytes] Direct fetch threw error. Retrying via images.weserv.nl...`, error);
+      console.warn(
+        `[fetchImageBytes] Direct fetch threw error. Retrying via images.weserv.nl...`,
+        error,
+      );
       const proxyUrl = `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
       const res = await fetch(proxyUrl, {
         headers: {
@@ -766,17 +875,27 @@ export async function fetchImageBytes(url: string): Promise<FetchedImage> {
         if (contentType.startsWith("image/")) {
           const buffer = Buffer.from(await res.arrayBuffer());
           if (buffer.byteLength > 0 && buffer.byteLength <= MAX_MIRROR_BYTES) {
-            return { success: true, base64: buffer.toString("base64"), contentType };
+            return {
+              success: true,
+              base64: buffer.toString("base64"),
+              contentType,
+            };
           }
         }
       }
     } catch (fallbackError) {
-      console.error("[fetchImageBytes] Fallback proxy also failed:", fallbackError);
+      console.error(
+        "[fetchImageBytes] Fallback proxy also failed:",
+        fallbackError,
+      );
     }
 
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unexpected error fetching the image.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unexpected error fetching the image.",
     };
   }
 }
@@ -887,10 +1006,13 @@ function extractOgMeta(html: string, base: string): OgMeta {
     /<link[^>]+rel=["']icon["'][^>]+type=["']image\/(?:png|svg[^"']*)["'][^>]+href=["']([^"']+)["']/i,
     /<link[^>]+href=["']([^"']+)["'][^>]+rel=["']icon["']/i,
   ]);
-  const faviconUrl = rawFavicon ? resolveAbsoluteUrl(rawFavicon, base) : undefined;
+  const faviconUrl = rawFavicon
+    ? resolveAbsoluteUrl(rawFavicon, base)
+    : undefined;
 
   let schemaLogo: string | undefined;
-  const jsonLdRe = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  const jsonLdRe =
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let ldMatch = jsonLdRe.exec(head);
   while (ldMatch !== null) {
     try {
@@ -900,7 +1022,9 @@ function extractOgMeta(html: string, base: string): OgMeta {
         typeof ld?.logo === "string" ? ld.logo : undefined,
         (ld?.image as Record<string, string>)?.url,
         typeof ld?.image === "string" ? ld.image : undefined,
-      ].filter((v): v is string => typeof v === "string" && v.startsWith("http"));
+      ].filter(
+        (v): v is string => typeof v === "string" && v.startsWith("http"),
+      );
       if (candidates[0]) {
         schemaLogo = candidates[0];
         break;
@@ -942,7 +1066,8 @@ function extractVendorImageCandidates(markdown: string): {
     m = htmlImgRe.exec(markdown);
   }
 
-  const rawUrlRe = /(https?:\/\/[^\s"'<>()]+?\.(?:jpg|jpeg|png|webp|gif|svg)(?:\?[^\s"'<>()]*)?)/gi;
+  const rawUrlRe =
+    /(https?:\/\/[^\s"'<>()]+?\.(?:jpg|jpeg|png|webp|gif|svg)(?:\?[^\s"'<>()]*)?)/gi;
   m = rawUrlRe.exec(markdown);
   while (m !== null) {
     const src = m[1].trim();
@@ -961,16 +1086,20 @@ function extractVendorImageCandidates(markdown: string): {
     if (junkRe.test(src)) continue;
     const cleanUrl = cleanImageUrlSize(src);
     if (logoKeyRe.test(cleanUrl)) {
-      if (logoCandidates.length < 6 && !logoCandidates.includes(cleanUrl)) logoCandidates.push(cleanUrl);
+      if (logoCandidates.length < 6 && !logoCandidates.includes(cleanUrl))
+        logoCandidates.push(cleanUrl);
     } else {
-      if (imageCandidates.length < 6 && !imageCandidates.includes(cleanUrl)) imageCandidates.push(cleanUrl);
+      if (imageCandidates.length < 6 && !imageCandidates.includes(cleanUrl))
+        imageCandidates.push(cleanUrl);
     }
   }
 
   return { logoCandidates, imageCandidates };
 }
 
-export async function autofillVendorFromUrl(url: string): Promise<VendorAutofillResult> {
+export async function autofillVendorFromUrl(
+  url: string,
+): Promise<VendorAutofillResult> {
   try {
     if (!url?.trim()) {
       return { success: false, error: "Please enter a vendor website URL." };
@@ -985,7 +1114,8 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
     console.log(`[Vendor Autofill] Fetching: ${vendorUrl}`);
 
     const jinaHeaders: Record<string, string> = { "X-No-Cache": "true" };
-    if (process.env.JINA_API_KEY) jinaHeaders.Authorization = `Bearer ${process.env.JINA_API_KEY}`;
+    if (process.env.JINA_API_KEY)
+      jinaHeaders.Authorization = `Bearer ${process.env.JINA_API_KEY}`;
 
     const [htmlSettled, jinaSettled] = await Promise.allSettled([
       fetch(vendorUrl, {
@@ -1000,18 +1130,21 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
     ]);
 
     const rawHtml = htmlSettled.status === "fulfilled" ? htmlSettled.value : "";
-    const rawMarkdownText = jinaSettled.status === "fulfilled" ? jinaSettled.value : "";
+    const rawMarkdownText =
+      jinaSettled.status === "fulfilled" ? jinaSettled.value : "";
     const markdownText = cleanScrapedMarkdown(rawMarkdownText);
 
     if (!markdownText && !rawHtml) {
       return {
         success: false,
-        error: "Could not reach the vendor website. Please try again or fill manually.",
+        error:
+          "Could not reach the vendor website. Please try again or fill manually.",
       };
     }
 
     const ogMeta = rawHtml ? extractOgMeta(rawHtml, vendorUrl) : {};
-    const { logoCandidates, imageCandidates } = extractVendorImageCandidates(markdownText);
+    const { logoCandidates, imageCandidates } =
+      extractVendorImageCandidates(markdownText);
 
     console.log(`[Vendor Autofill] OG:`, ogMeta);
     console.log(
@@ -1019,21 +1152,34 @@ export async function autofillVendorFromUrl(url: string): Promise<VendorAutofill
     );
 
     const logoSourceLines = [
-      ogMeta.schemaLogo ? `Schema.org logo (highest priority): ${cleanImageUrlSize(ogMeta.schemaLogo)}` : null,
-      ogMeta.faviconUrl ? `Apple touch icon / favicon: ${cleanImageUrlSize(ogMeta.faviconUrl)}` : null,
-      logoCandidates.length > 0 ? `Logo URL candidates from page: ${JSON.stringify(logoCandidates)}` : null,
+      ogMeta.schemaLogo
+        ? `Schema.org logo (highest priority): ${cleanImageUrlSize(ogMeta.schemaLogo)}`
+        : null,
+      ogMeta.faviconUrl
+        ? `Apple touch icon / favicon: ${cleanImageUrlSize(ogMeta.faviconUrl)}`
+        : null,
+      logoCandidates.length > 0
+        ? `Logo URL candidates from page: ${JSON.stringify(logoCandidates)}`
+        : null,
     ]
       .filter(Boolean)
       .join("\n");
 
     const heroSourceLines = [
-      ogMeta.ogImage ? `og:image (highest priority): ${cleanImageUrlSize(ogMeta.ogImage)}` : null,
-      imageCandidates.length > 0 ? `Hero image candidates from page: ${JSON.stringify(imageCandidates)}` : null,
+      ogMeta.ogImage
+        ? `og:image (highest priority): ${cleanImageUrlSize(ogMeta.ogImage)}`
+        : null,
+      imageCandidates.length > 0
+        ? `Hero image candidates from page: ${JSON.stringify(imageCandidates)}`
+        : null,
     ]
       .filter(Boolean)
       .join("\n");
 
-    const optimizedMarkdown = markdownText.substring(0, SCRAPER_CONFIG.maxCharacters);
+    const optimizedMarkdown = markdownText.substring(
+      0,
+      SCRAPER_CONFIG.maxCharacters,
+    );
 
     const prompt = `You are an expert business data extractor for an interior design CRM. Parse the vendor/supplier website content below and extract structured contact and brand information.
 
@@ -1190,7 +1336,9 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
     }
 
     const geminiJson = await geminiRes.json();
-    const parsedText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+    const parsedText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text as
+      | string
+      | undefined;
     if (!parsedText) {
       return { success: false, error: "AI returned an empty response." };
     }
@@ -1205,15 +1353,27 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
     const showImagePicker = needLogoPicker || needHeroPicker;
 
     const logoUrl = needLogoPicker ? "" : (extracted.logoUrl as string) || "";
-    const heroImageUrl = needHeroPicker ? "" : (extracted.heroImageUrl as string) || "";
+    const heroImageUrl = needHeroPicker
+      ? ""
+      : (extracted.heroImageUrl as string) || "";
 
     const pickerLogoCandidates =
       logoCandidates.length > 0
-        ? [...new Set([extracted.logoUrl as string, ...logoCandidates].filter(Boolean))]
+        ? [
+            ...new Set(
+              [extracted.logoUrl as string, ...logoCandidates].filter(Boolean),
+            ),
+          ]
         : undefined;
     const pickerImageCandidates =
       imageCandidates.length > 0
-        ? [...new Set([extracted.heroImageUrl as string, ...imageCandidates].filter(Boolean))]
+        ? [
+            ...new Set(
+              [extracted.heroImageUrl as string, ...imageCandidates].filter(
+                Boolean,
+              ),
+            ),
+          ]
         : undefined;
 
     const rawReturnedData = {
@@ -1265,12 +1425,16 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
       return {
         success: false,
         retryable: true,
-        error: "Request timed out. The website may be slow or blocking scrapers.",
+        error:
+          "Request timed out. The website may be slow or blocking scrapers.",
       };
     }
     return {
       success: false,
-      error: error instanceof Error ? error.message : "An unexpected error occurred.",
+      error:
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.",
     };
   }
 }
@@ -1294,21 +1458,32 @@ function parseGeminiJson(rawText: string): unknown {
   try {
     return JSON.parse(text);
   } catch (firstError) {
-    console.warn("[AI Autofill] Initial JSON.parse failed. Attempting self-healing cleanup...", firstError);
+    console.warn(
+      "[AI Autofill] Initial JSON.parse failed. Attempting self-healing cleanup...",
+      firstError,
+    );
 
     try {
       // 2. Self-healing: Escape raw newlines, carriage returns, and tabs in string values
-      let cleaned = text.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (_match, p1) => {
-        return `"${p1.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t")}"`;
-      });
+      let cleaned = text.replace(
+        /"([^"\\]*(?:\\.[^"\\]*)*)"/g,
+        (_match, p1) => {
+          return `"${p1.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t")}"`;
+        },
+      );
 
       // 3. Self-healing: Remove trailing commas in arrays/objects which violate JSON standard
       cleaned = cleaned.replace(/,\s*([\]}])/g, "$1");
 
       return JSON.parse(cleaned);
     } catch (secondError) {
-      console.error("[AI Autofill] Both JSON parsing attempts failed.", secondError);
-      throw new Error("The AI returned formatted data that could not be parsed as clean JSON. Please try again.");
+      console.error(
+        "[AI Autofill] Both JSON parsing attempts failed.",
+        secondError,
+      );
+      throw new Error(
+        "The AI returned formatted data that could not be parsed as clean JSON. Please try again.",
+      );
     }
   }
 }
@@ -1334,10 +1509,16 @@ function cleanScrapedMarkdown(text: string): string {
   );
 
   // 3. Clean up loose bulleted cookie details tables (Name, Provider, Domain, Path, Retention, Purpose)
-  cleaned = cleaned.replace(/\*\s+Name\s+[a-zA-Z0-9_*.-]+\s+Provider[\s\S]*?(?=\n\n|\n[^\s*]|$)/gi, "");
+  cleaned = cleaned.replace(
+    /\*\s+Name\s+[a-zA-Z0-9_*.-]+\s+Provider[\s\S]*?(?=\n\n|\n[^\s*]|$)/gi,
+    "",
+  );
 
   // 4. Clean up any left-over consent button/decline list details
-  cleaned = cleaned.replace(/(?:Preferences Decline Accept|Manage consent preferences|Deny all Accept all)/gi, "");
+  cleaned = cleaned.replace(
+    /(?:Preferences Decline Accept|Manage consent preferences|Deny all Accept all)/gi,
+    "",
+  );
 
   // 5. Remove consecutive empty line spaces left behind by stripped chunks
   cleaned = cleaned.replace(/\n{3,}/g, "\n\n");
@@ -1350,7 +1531,12 @@ function cleanScrapedMarkdown(text: string): string {
  * or conversational text mistakenly placed in structured fields,
  * and truncate them to a reasonable length.
  */
-function sanitizeField(value: unknown, maxLength = 80, fieldName = "", allowParagraphs = false): string {
+function sanitizeField(
+  value: unknown,
+  maxLength = 80,
+  fieldName = "",
+  allowParagraphs = false,
+): string {
   if (value === undefined || value === null) return "";
   const str = String(value).trim();
   if (str === "") return "";
@@ -1383,7 +1569,9 @@ function sanitizeField(value: unknown, maxLength = 80, fieldName = "", allowPara
         str.split(/\s+/).length > 8));
 
   if (isReasoning || str.length > maxLength) {
-    console.warn(`[AI Sanitizer] Stripped conversational text for field '${fieldName}': "${str.substring(0, 60)}..."`);
+    console.warn(
+      `[AI Sanitizer] Stripped conversational text for field '${fieldName}': "${str.substring(0, 60)}..."`,
+    );
     if (fieldName === "name") {
       return "Unnamed Product";
     }
@@ -1393,14 +1581,21 @@ function sanitizeField(value: unknown, maxLength = 80, fieldName = "", allowPara
   return str;
 }
 
-function sanitizeProductData(data: unknown): NonNullable<AutofillResult["data"]> {
+function sanitizeProductData(
+  data: unknown,
+): NonNullable<AutofillResult["data"]> {
   if (!data || typeof data !== "object") return { name: "Unnamed Product" };
   const product = data as Record<string, unknown>;
 
   const name = sanitizeField(product.name, 150, "name");
   const sku = sanitizeField(product.sku, 50, "sku");
   const category = sanitizeField(product.category, 50, "category");
-  const description = sanitizeField(product.description, 1000, "description", true);
+  const description = sanitizeField(
+    product.description,
+    1000,
+    "description",
+    true,
+  );
   const finishColor = sanitizeField(product.finishColor, 80, "finishColor");
   const manufacturer = sanitizeField(product.manufacturer, 100, "manufacturer");
   const materials = sanitizeField(product.materials, 150, "materials");
@@ -1419,24 +1614,40 @@ function sanitizeProductData(data: unknown): NonNullable<AutofillResult["data"]>
   };
 }
 
-function sanitizeVendorData(data: unknown): NonNullable<VendorAutofillResult["data"]> {
+function sanitizeVendorData(
+  data: unknown,
+): NonNullable<VendorAutofillResult["data"]> {
   if (!data || typeof data !== "object") return {};
   const vendor = data as Record<string, unknown>;
 
   const name = sanitizeField(vendor.name, 150, "name");
   const category = sanitizeField(vendor.category, 50, "category");
-  const description = sanitizeField(vendor.description, 1000, "description", true);
+  const description = sanitizeField(
+    vendor.description,
+    1000,
+    "description",
+    true,
+  );
   const addressLine1 = sanitizeField(vendor.addressLine1, 150, "addressLine1");
   const addressLine2 = sanitizeField(vendor.addressLine2, 100, "addressLine2");
   const city = sanitizeField(vendor.city, 80, "city");
   const region = sanitizeField(vendor.region, 60, "region");
   const postalCode = sanitizeField(vendor.postalCode, 20, "postalCode");
   const country = sanitizeField(vendor.country, 60, "country");
-  const formattedAddress = sanitizeField(vendor.formattedAddress, 250, "formattedAddress");
+  const formattedAddress = sanitizeField(
+    vendor.formattedAddress,
+    250,
+    "formattedAddress",
+  );
   const repPhone = sanitizeField(vendor.repPhone, 40, "repPhone");
   const repEmail = sanitizeField(vendor.repEmail, 80, "repEmail");
   const logoUrl = sanitizeField(vendor.logoUrl, 1000, "logoUrl", true);
-  const heroImageUrl = sanitizeField(vendor.heroImageUrl, 1000, "heroImageUrl", true);
+  const heroImageUrl = sanitizeField(
+    vendor.heroImageUrl,
+    1000,
+    "heroImageUrl",
+    true,
+  );
   const instagram = sanitizeField(vendor.instagram, 500, "instagram", true);
   const pinterest = sanitizeField(vendor.pinterest, 500, "pinterest", true);
   const facebook = sanitizeField(vendor.facebook, 500, "facebook", true);

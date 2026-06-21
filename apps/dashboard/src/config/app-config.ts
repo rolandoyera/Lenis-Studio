@@ -8,7 +8,8 @@ export const APP_CONFIG = {
   copyright: `© ${currentYear}, Lenis Studio.`,
   meta: {
     title: "Lenis Studio",
-    description: "Lenis Studio is a modern dashboard built by creatives for creatives. Sorry, accountants.",
+    description:
+      "Lenis Studio is a modern dashboard built by creatives for creatives. Sorry, accountants.",
   },
   image: {
     src: "/badge.svg",

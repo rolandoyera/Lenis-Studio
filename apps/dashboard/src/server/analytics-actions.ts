@@ -75,7 +75,10 @@ export async function testGA4Connection(): Promise<GA4ConnectionResult> {
     return {
       success: false,
       configMissing: false,
-      error: getErrorMessage(error, "An unexpected error occurred while communicating with the GA4 API."),
+      error: getErrorMessage(
+        error,
+        "An unexpected error occurred while communicating with the GA4 API.",
+      ),
     };
   }
 }
@@ -146,7 +149,8 @@ export async function fetchTopPagesData(
 
       // Format views: e.g. 1000 -> 1.0k
       const viewsNum = parseInt(viewsVal, 10);
-      const viewsFormatted = viewsNum >= 1000 ? `${(viewsNum / 1000).toFixed(1)}k` : viewsVal;
+      const viewsFormatted =
+        viewsNum >= 1000 ? `${(viewsNum / 1000).toFixed(1)}k` : viewsVal;
 
       // Calculate Average Engagement Time = Total Duration / Active Users
       const durationNum = parseFloat(durationVal);
@@ -155,7 +159,8 @@ export async function fetchTopPagesData(
 
       const mins = Math.floor(avgSecsTotal / 60);
       const secs = Math.round(avgSecsTotal % 60);
-      const timeFormatted = mins > 0 ? `${mins}m ${secs.toString().padStart(2, "0")}s` : `${secs}s`;
+      const timeFormatted =
+        mins > 0 ? `${mins}m ${secs.toString().padStart(2, "0")}s` : `${secs}s`;
 
       // Generate a realistic, stable bounce rate based on a hash of the page path (between 18% and 44%)
       let hash = 0;
@@ -376,9 +381,17 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
       return val.toString();
     };
 
-    const getKpiMetrics = (current: number, previous: number, isPercent = false): KpiCardData => {
-      const currentStr = isPercent ? `${(current * 100).toFixed(1)}%` : formatGAValue(current);
-      const previousStr = isPercent ? `${(previous * 100).toFixed(1)}%` : formatGAValue(previous);
+    const getKpiMetrics = (
+      current: number,
+      previous: number,
+      isPercent = false,
+    ): KpiCardData => {
+      const currentStr = isPercent
+        ? `${(current * 100).toFixed(1)}%`
+        : formatGAValue(current);
+      const previousStr = isPercent
+        ? `${(previous * 100).toFixed(1)}%`
+        : formatGAValue(previous);
 
       if (previous === 0) {
         return {
@@ -404,11 +417,28 @@ export async function fetchKpiData(range?: string): Promise<FetchKpiResult> {
     return {
       success: true,
       data: {
-        uniqueVisitors: getKpiMetrics(currentData.activeUsers, previousData.activeUsers),
-        visitors: getKpiMetrics(currentData.totalUsers, previousData.totalUsers),
-        pageviews: getKpiMetrics(currentData.screenPageViews, previousData.screenPageViews),
-        engagementRate: getKpiMetrics(currentData.engagementRate, previousData.engagementRate, true),
-        conversionRate: getKpiMetrics(currentData.sessionConversionRate, previousData.sessionConversionRate, true),
+        uniqueVisitors: getKpiMetrics(
+          currentData.activeUsers,
+          previousData.activeUsers,
+        ),
+        visitors: getKpiMetrics(
+          currentData.totalUsers,
+          previousData.totalUsers,
+        ),
+        pageviews: getKpiMetrics(
+          currentData.screenPageViews,
+          previousData.screenPageViews,
+        ),
+        engagementRate: getKpiMetrics(
+          currentData.engagementRate,
+          previousData.engagementRate,
+          true,
+        ),
+        conversionRate: getKpiMetrics(
+          currentData.sessionConversionRate,
+          previousData.sessionConversionRate,
+          true,
+        ),
       },
       label: dateRanges.label,
       comparisonLabel: dateRanges.comparisonLabel,
@@ -449,7 +479,8 @@ async function getConfiguredPropertyId(): Promise<string | null> {
   return propertyId;
 }
 
-const CONFIG_MISSING_ERROR = "Google Analytics 4 is not configured in .env.local yet.";
+const CONFIG_MISSING_ERROR =
+  "Google Analytics 4 is not configured in .env.local yet.";
 
 function rangeToStartDate(range?: string): string {
   if (range === "last-24-hours") return "1daysAgo";
@@ -485,7 +516,8 @@ export async function fetchTrafficTrend(
   range?: string,
 ): Promise<{ success: boolean; data: TrendPoint[]; error?: string }> {
   const propertyId = await getConfiguredPropertyId();
-  if (!propertyId) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
+  if (!propertyId)
+    return { success: false, data: [], error: CONFIG_MISSING_ERROR };
 
   const hourly = range === "last-24-hours";
   const dimension = hourly ? "dateHour" : "date";
@@ -510,7 +542,11 @@ export async function fetchTrafficTrend(
     return { success: true, data };
   } catch (error: unknown) {
     console.error("Failed to fetch traffic trend from GA4:", error);
-    return { success: false, data: [], error: getErrorMessage(error, "Failed to load GA4 traffic trend.") };
+    return {
+      success: false,
+      data: [],
+      error: getErrorMessage(error, "Failed to load GA4 traffic trend."),
+    };
   }
 }
 
@@ -571,7 +607,10 @@ export async function fetchTrafficSources(
     return { success: true, data: { channels, sources, campaigns } };
   } catch (error: unknown) {
     console.error("Failed to fetch traffic sources from GA4:", error);
-    return { success: false, error: getErrorMessage(error, "Failed to load GA4 traffic sources.") };
+    return {
+      success: false,
+      error: getErrorMessage(error, "Failed to load GA4 traffic sources."),
+    };
   }
 }
 
@@ -585,7 +624,11 @@ export interface RealtimeData {
   countries: { code: string; name: string; visitors: number }[];
 }
 
-export async function fetchRealtimeData(): Promise<{ success: boolean; data?: RealtimeData; error?: string }> {
+export async function fetchRealtimeData(): Promise<{
+  success: boolean;
+  data?: RealtimeData;
+  error?: string;
+}> {
   const propertyId = await getConfiguredPropertyId();
   if (!propertyId) return { success: false, error: CONFIG_MISSING_ERROR };
 
@@ -609,7 +652,10 @@ export async function fetchRealtimeData(): Promise<{ success: boolean; data?: Re
     const byMinute = new Map<number, number>();
     for (const row of minuteResponse.rows || []) {
       const minutesAgo = parseInt(row.dimensionValues?.[0]?.value || "0", 10);
-      byMinute.set(minutesAgo, parseInt(row.metricValues?.[0]?.value || "0", 10));
+      byMinute.set(
+        minutesAgo,
+        parseInt(row.metricValues?.[0]?.value || "0", 10),
+      );
     }
     const perMinute = Array.from({ length: 30 }, (_, i) => {
       const minutesAgo = 29 - i;
@@ -622,12 +668,17 @@ export async function fetchRealtimeData(): Promise<{ success: boolean; data?: Re
       visitors: parseInt(row.metricValues?.[0]?.value || "0", 10),
     }));
     const total = allCountries.reduce((sum, c) => sum + c.visitors, 0);
-    const countries = allCountries.sort((a, b) => b.visitors - a.visitors).slice(0, 4);
+    const countries = allCountries
+      .sort((a, b) => b.visitors - a.visitors)
+      .slice(0, 4);
 
     return { success: true, data: { total, perMinute, countries } };
   } catch (error: unknown) {
     console.error("Failed to fetch realtime data from GA4:", error);
-    return { success: false, error: getErrorMessage(error, "Failed to load GA4 realtime data.") };
+    return {
+      success: false,
+      error: getErrorMessage(error, "Failed to load GA4 realtime data."),
+    };
   }
 }
 
@@ -666,36 +717,37 @@ export async function fetchConversionsData(
   try {
     const client = getGA4Client();
 
-    const [[trendResponse], [channelResponse], [eventsResponse]] = await Promise.all([
-      client.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges,
-        dimensions: [{ name: trendDimension }],
-        metrics: [{ name: "keyEvents" }],
-        orderBys: [{ dimension: { dimensionName: trendDimension } }],
-        limit: 200,
-      }),
-      client.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges,
-        dimensions: [{ name: "sessionDefaultChannelGroup" }],
-        metrics: [{ name: "sessions" }, { name: "keyEvents" }],
-        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-        limit: 8,
-      }),
-      client.runReport({
-        property: `properties/${propertyId}`,
-        dateRanges,
-        dimensions: [{ name: "eventName" }],
-        metrics: [{ name: "eventCount" }],
-        dimensionFilter: {
-          filter: {
-            fieldName: "eventName",
-            inListFilter: { values: [...TRACKED_EVENTS] },
+    const [[trendResponse], [channelResponse], [eventsResponse]] =
+      await Promise.all([
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: trendDimension }],
+          metrics: [{ name: "keyEvents" }],
+          orderBys: [{ dimension: { dimensionName: trendDimension } }],
+          limit: 200,
+        }),
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: "sessionDefaultChannelGroup" }],
+          metrics: [{ name: "sessions" }, { name: "keyEvents" }],
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+          limit: 8,
+        }),
+        client.runReport({
+          property: `properties/${propertyId}`,
+          dateRanges,
+          dimensions: [{ name: "eventName" }],
+          metrics: [{ name: "eventCount" }],
+          dimensionFilter: {
+            filter: {
+              fieldName: "eventName",
+              inListFilter: { values: [...TRACKED_EVENTS] },
+            },
           },
-        },
-      }),
-    ]);
+        }),
+      ]);
 
     const trend = (trendResponse.rows || []).map((row) => ({
       label: formatTrendLabel(row.dimensionValues?.[0]?.value || "", hourly),
@@ -718,7 +770,10 @@ export async function fetchConversionsData(
     return { success: true, data: { trend, channels, eventCounts } };
   } catch (error: unknown) {
     console.error("Failed to fetch conversions data from GA4:", error);
-    return { success: false, error: getErrorMessage(error, "Failed to load GA4 conversions data.") };
+    return {
+      success: false,
+      error: getErrorMessage(error, "Failed to load GA4 conversions data."),
+    };
   }
 }
 
@@ -737,7 +792,8 @@ export async function fetchLandingPages(
   range?: string,
 ): Promise<{ success: boolean; data: LandingPageItem[]; error?: string }> {
   const propertyId = await getConfiguredPropertyId();
-  if (!propertyId) return { success: false, data: [], error: CONFIG_MISSING_ERROR };
+  if (!propertyId)
+    return { success: false, data: [], error: CONFIG_MISSING_ERROR };
 
   try {
     const client = getGA4Client();
@@ -764,14 +820,21 @@ export async function fetchLandingPages(
           path: row.dimensionValues?.[0]?.value as string,
           sessions: formatCount(sessions),
           keyEvents,
-          conversionRate: sessions > 0 ? `${((keyEvents / sessions) * 100).toFixed(1)}%` : "0.0%",
+          conversionRate:
+            sessions > 0
+              ? `${((keyEvents / sessions) * 100).toFixed(1)}%`
+              : "0.0%",
         };
       });
 
     return { success: true, data };
   } catch (error: unknown) {
     console.error("Failed to fetch landing pages from GA4:", error);
-    return { success: false, data: [], error: getErrorMessage(error, "Failed to load GA4 landing pages.") };
+    return {
+      success: false,
+      data: [],
+      error: getErrorMessage(error, "Failed to load GA4 landing pages."),
+    };
   }
 }
 
@@ -797,48 +860,53 @@ export async function fetchAudienceData(
   try {
     const client = getGA4Client();
 
-    const [[cityResponse], [cityFlagResponse], [countryResponse], [deviceResponse], [newReturningResponse]] =
-      await Promise.all([
-        // Counts come from the single-dimension city report so they match GA4 exactly.
-        client.runReport({
-          property: `properties/${propertyId}`,
-          dateRanges,
-          dimensions: [{ name: "city" }],
-          metrics: [{ name: "activeUsers" }],
-          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-          limit: 250,
-        }),
-        // Secondary lookup only: maps each city to its dominant country for the flag.
-        client.runReport({
-          property: `properties/${propertyId}`,
-          dateRanges,
-          dimensions: [{ name: "city" }, { name: "countryId" }],
-          metrics: [{ name: "activeUsers" }],
-          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-          limit: 250,
-        }),
-        client.runReport({
-          property: `properties/${propertyId}`,
-          dateRanges,
-          dimensions: [{ name: "countryId" }],
-          metrics: [{ name: "activeUsers" }],
-          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-          limit: 250,
-        }),
-        client.runReport({
-          property: `properties/${propertyId}`,
-          dateRanges,
-          dimensions: [{ name: "deviceCategory" }],
-          metrics: [{ name: "activeUsers" }],
-          orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-        }),
-        client.runReport({
-          property: `properties/${propertyId}`,
-          dateRanges,
-          dimensions: [{ name: "newVsReturning" }],
-          metrics: [{ name: "activeUsers" }],
-        }),
-      ]);
+    const [
+      [cityResponse],
+      [cityFlagResponse],
+      [countryResponse],
+      [deviceResponse],
+      [newReturningResponse],
+    ] = await Promise.all([
+      // Counts come from the single-dimension city report so they match GA4 exactly.
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "city" }],
+        metrics: [{ name: "activeUsers" }],
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+        limit: 250,
+      }),
+      // Secondary lookup only: maps each city to its dominant country for the flag.
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "city" }, { name: "countryId" }],
+        metrics: [{ name: "activeUsers" }],
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+        limit: 250,
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "countryId" }],
+        metrics: [{ name: "activeUsers" }],
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+        limit: 250,
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "deviceCategory" }],
+        metrics: [{ name: "activeUsers" }],
+        orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+      }),
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges,
+        dimensions: [{ name: "newVsReturning" }],
+        metrics: [{ name: "activeUsers" }],
+      }),
+    ]);
 
     // City -> dominant country code (rows are sorted desc, so the first hit per city
     // is its highest-traffic country). Used only to attach the flag.
@@ -864,10 +932,15 @@ export async function fetchAudienceData(
     // Single-dimension blanks are GA4's one "(not set)" bucket — sum into a flag-less Unknown.
     const unknownCityUsers = cityRows
       .filter((row) => isUnknownGeo(row.dimensionValues?.[0]?.value))
-      .reduce((sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0", 10), 0);
+      .reduce(
+        (sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0", 10),
+        0,
+      );
     const cities = [
       ...knownCities,
-      ...(unknownCityUsers > 0 ? [{ city: "Unknown", countryId: "", users: unknownCityUsers }] : []),
+      ...(unknownCityUsers > 0
+        ? [{ city: "Unknown", countryId: "", users: unknownCityUsers }]
+        : []),
     ].sort((a, b) => b.users - a.users);
 
     const countryRows = countryResponse.rows || [];
@@ -883,10 +956,15 @@ export async function fetchAudienceData(
       });
     const unknownCountryUsers = countryRows
       .filter((row) => isUnknownGeo(row.dimensionValues?.[0]?.value))
-      .reduce((sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0", 10), 0);
+      .reduce(
+        (sum, row) => sum + parseInt(row.metricValues?.[0]?.value || "0", 10),
+        0,
+      );
     const countries = [
       ...knownCountries,
-      ...(unknownCountryUsers > 0 ? [{ country: "Unknown", countryId: "", users: unknownCountryUsers }] : []),
+      ...(unknownCountryUsers > 0
+        ? [{ country: "Unknown", countryId: "", users: unknownCountryUsers }]
+        : []),
     ].sort((a, b) => b.users - a.users);
 
     const devices = (deviceResponse.rows || []).map((row) => ({
@@ -901,10 +979,16 @@ export async function fetchAudienceData(
         users: parseInt(row.metricValues?.[0]?.value || "0", 10),
       }));
 
-    return { success: true, data: { cities, countries, devices, newVsReturning } };
+    return {
+      success: true,
+      data: { cities, countries, devices, newVsReturning },
+    };
   } catch (error: unknown) {
     console.error("Failed to fetch audience data from GA4:", error);
-    return { success: false, error: getErrorMessage(error, "Failed to load GA4 audience data.") };
+    return {
+      success: false,
+      error: getErrorMessage(error, "Failed to load GA4 audience data."),
+    };
   }
 }
 
@@ -948,7 +1032,12 @@ export async function fetchAcquisitionData(
         property: `properties/${propertyId}`,
         dateRanges,
         dimensions: [{ name: "sessionDefaultChannelGroup" }],
-        metrics: [{ name: "sessions" }, { name: "activeUsers" }, { name: "engagementRate" }, { name: "keyEvents" }],
+        metrics: [
+          { name: "sessions" },
+          { name: "activeUsers" },
+          { name: "engagementRate" },
+          { name: "keyEvents" },
+        ],
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
         limit: 10,
       }),
@@ -980,6 +1069,9 @@ export async function fetchAcquisitionData(
     return { success: true, data: { channels, sourceMedium } };
   } catch (error: unknown) {
     console.error("Failed to fetch acquisition data from GA4:", error);
-    return { success: false, error: getErrorMessage(error, "Failed to load GA4 acquisition data.") };
+    return {
+      success: false,
+      error: getErrorMessage(error, "Failed to load GA4 acquisition data."),
+    };
   }
 }

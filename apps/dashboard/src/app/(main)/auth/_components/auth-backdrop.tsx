@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
  * Rendered identically on both so the View Transition morph stays clean; only the
  * overlay darkness differs (lighter on home, darker behind the login text).
  */
-export function AuthBackdrop({ overlayClassName }: { overlayClassName?: string }) {
+export function AuthBackdrop({
+  overlayClassName,
+}: {
+  overlayClassName?: string;
+}) {
   return (
     <>
       <Image
@@ -18,7 +22,9 @@ export function AuthBackdrop({ overlayClassName }: { overlayClassName?: string }
         sizes="(max-width: 1024px) 100vw, 50vw"
         className="pointer-events-none scale-105 select-none object-cover blur-[2px]"
       />
-      <div className={cn("absolute inset-0 z-0 bg-black/60", overlayClassName)} />
+      <div
+        className={cn("absolute inset-0 z-0 bg-black/60", overlayClassName)}
+      />
     </>
   );
 }

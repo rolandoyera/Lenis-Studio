@@ -33,7 +33,8 @@ export function ClientNotesCard({ client, onEdit }: ClientNotesCardProps) {
             <Button
               onClick={onEdit}
               variant="outline"
-              className="mt-3 flex h-8 cursor-pointer items-center gap-1 px-3 py-1.5 text-xs">
+              className="mt-3 flex h-8 cursor-pointer items-center gap-1 px-3 py-1.5 text-xs"
+            >
               <Edit2 className="size-3" />
               Add Studio Notes
             </Button>

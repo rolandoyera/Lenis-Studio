@@ -18,7 +18,9 @@ export const metadata: Metadata = {
   description: APP_CONFIG.meta.description,
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const { theme_mode, theme_preset, font } = PREFERENCE_DEFAULTS;
   return (
     <html
@@ -32,9 +34,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         {/* Applies theme and layout preferences on load to avoid flicker and unnecessary server rerenders. */}
         <ThemeBootScript />
       </head>
-      <body className={`${fontVars} ${serifFontVariable} min-h-screen antialiased`}>
+      <body
+        className={`${fontVars} ${serifFontVariable} min-h-screen antialiased`}
+      >
         <TooltipProvider>
-          <PreferencesStoreProvider themeMode={theme_mode} themePreset={theme_preset} font={font}>
+          <PreferencesStoreProvider
+            themeMode={theme_mode}
+            themePreset={theme_preset}
+            font={font}
+          >
             <PageTitleProvider>
               {children}
               <Toaster />

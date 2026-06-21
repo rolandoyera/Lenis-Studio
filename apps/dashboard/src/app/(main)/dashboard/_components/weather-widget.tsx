@@ -112,8 +112,12 @@ export function WeatherWidget() {
       </div>
       <div className="flex min-w-0 flex-col text-left leading-normal">
         <div className="flex flex-col items-baseline mb-1">
-          <span className="text-2xl text-foreground leading-none">{temp}°F</span>
-          <span className="font-light text-muted-foreground text-xs leading-none">{conditionText}</span>
+          <span className="text-2xl text-foreground leading-none">
+            {temp}°F
+          </span>
+          <span className="font-light text-muted-foreground text-xs leading-none">
+            {conditionText}
+          </span>
         </div>
         <Label className="mt-0.5 text-xs">{cityName}</Label>
       </div>

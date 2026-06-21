@@ -16,11 +16,9 @@ No analytics charts yet — that's the next phase.
       `state` against the cookie, exchanges the code → short-lived token → **long-lived
       token**, then fetches the Page, the connected Instagram Business account, and the
       profile snapshot, and writes both Firestore docs via `firebase-admin`.
-- [x] **Split storage by sensitivity:**
-      - `organizations/{orgId}` → `config.metaIntegration` — display data (username, name,
-        picture URL, follower/post counts, page id/name). Readable by org members.
-      - `organizations/{orgId}/secrets/meta` → the long-lived **Page access token** +
-        `expiresAt`. Server-only; never reachable from a client.
+- [x] **Split storage by sensitivity:** - `organizations/{orgId}` → `config.metaIntegration` — display data (username, name,
+      picture URL, follower/post counts, page id/name). Readable by org members. - `organizations/{orgId}/secrets/meta` → the long-lived **Page access token** +
+      `expiresAt`. Server-only; never reachable from a client.
 - [x] **Types** (`src/types/meta.ts`) — `MetaIntegrationConfig` + `MetaSecrets`;
       `OrganizationConfig` in `src/lib/types.ts` now carries `metaIntegration?`.
 - [x] **Server actions** (`src/server/meta-actions.ts`) — `getMetaConnection()` reads the
@@ -46,10 +44,10 @@ No analytics charts yet — that's the next phase.
 
 ## Token lifecycle (reference — so the docs you keep reading make sense)
 
-| Token | Lifespan | What we do with it |
-| --- | --- | --- |
-| User token from OAuth `code` | ~1 hour | Exchanged immediately, never stored |
-| Long-lived user token | ~60 days | Used once to fetch the Page token |
+| Token                          | Lifespan                 | What we do with it                   |
+| ------------------------------ | ------------------------ | ------------------------------------ |
+| User token from OAuth `code`   | ~1 hour                  | Exchanged immediately, never stored  |
+| Long-lived user token          | ~60 days                 | Used once to fetch the Page token    |
 | **Page access token** (stored) | Effectively non-expiring | All future Instagram Graph API calls |
 
 The stored Page token is the durable one. "Non-expiring" still breaks if the user changes
@@ -117,27 +115,31 @@ lifetime; "reached" / "engaged" data needs a timeframe and only returns when the
 activity. All breakdowns come back as `{ dimension_values, value }` lists via the insights API.
 
 **Already built — follower demographics** (`follower_demographics`, lifetime):
+
 - [x] City, Country, Age, Gender (the complete set of follower breakdowns — nothing more exists
       for followers). Currently capped to **top 6 per card**.
 
 **Available to add — same four cuts, different people:**
+
 - [ ] **Reached audience demographics** (`reached_audience_demographics`): city / country / age /
-      gender of accounts you *reached* (followers + non-followers who saw content). Needs a
+      gender of accounts you _reached_ (followers + non-followers who saw content). Needs a
       `timeframe` (last_14_days | last_30_days | last_90_days | prev_month | this_month |
       this_week). Answers "who am I reaching?"
 - [ ] **Engaged audience demographics** (`engaged_audience_demographics`): same four cuts for
-      accounts that *engaged* (liked / commented / saved). Same `timeframe` requirement. Answers
+      accounts that _engaged_ (liked / commented / saved). Same `timeframe` requirement. Answers
       "who actually interacts?"
 - [ ] **PROBE FIRST:** both of the above depend on recent activity and may return empty for a
       low-activity account. Hit the probe (as org-sarvian) to confirm real data before building
       cards that could be blank.
 
 **Granularity / display tweaks (cheap):**
+
 - [ ] **Combined breakdowns:** request `breakdown=age,gender` in one call to get cross-cuts like
       "women 25-34" instead of separate Age and Gender cards.
 - [ ] **Show full lists:** drop the top-6 cap to display every city / country / bucket.
 
 **Not available (so we don't chase it):**
+
 - Language / locale breakdown — the old `audience_locale` metric is deprecated; no replacement.
 - Gender is only M / F / U (no finer split); age uses fixed buckets (13-17 … 65+).
 

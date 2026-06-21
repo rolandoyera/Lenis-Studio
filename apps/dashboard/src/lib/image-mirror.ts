@@ -38,7 +38,10 @@ export async function mirrorExternalImageUrl({
   url,
   upload,
   logPrefix,
-}: MirrorExternalImageOptions): Promise<{ image: MirroredImage; mirrored: boolean }> {
+}: MirrorExternalImageOptions): Promise<{
+  image: MirroredImage;
+  mirrored: boolean;
+}> {
   const trimmedUrl = url.trim();
   try {
     const res = await fetchImageBytes(trimmedUrl);

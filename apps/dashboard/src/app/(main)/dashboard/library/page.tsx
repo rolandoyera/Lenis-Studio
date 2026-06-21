@@ -10,7 +10,13 @@ import { PageTitle } from "@/components/page-title-updater";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { addLibraryItem, getLibraryItems, getVendors } from "@/lib/db";
 import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
@@ -47,7 +53,10 @@ export default function LibraryPage() {
 
     async function loadData() {
       try {
-        const [itemsData, vendorsData] = await Promise.all([getLibraryItems(id), getVendors(id)]);
+        const [itemsData, vendorsData] = await Promise.all([
+          getLibraryItems(id),
+          getVendors(id),
+        ]);
         setItems(itemsData);
         setVendors(vendorsData);
 
@@ -83,15 +92,16 @@ export default function LibraryPage() {
     setSubmitting(true);
     try {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
-      const { imageUrls, coverImageUrl, coverImagePath, images } = await mirrorExternalImagesToFirebase(
-        {
-          imageUrls: form.formData.imageUrls,
-          coverImageUrl: form.formData.coverImageUrl,
-          coverImagePath: form.formData.coverImagePath,
-          images: form.formData.images,
-        },
-        form.tempItemId,
-      );
+      const { imageUrls, coverImageUrl, coverImagePath, images } =
+        await mirrorExternalImagesToFirebase(
+          {
+            imageUrls: form.formData.imageUrls,
+            coverImageUrl: form.formData.coverImageUrl,
+            coverImagePath: form.formData.coverImagePath,
+            images: form.formData.images,
+          },
+          form.tempItemId,
+        );
       const created = await addLibraryItem(
         {
           ...form.formData,
@@ -125,21 +135,28 @@ export default function LibraryPage() {
       item.sku?.toLowerCase().includes(query) ||
       item.finishColor?.toLowerCase().includes(query);
 
-    const matchesCategory = activeCategory === "All" || item.category === activeCategory;
+    const matchesCategory =
+      activeCategory === "All" || item.category === activeCategory;
 
     const matchesSubcategory =
-      activeCategory === "All" || activeSubcategory === "All" || item.subcategory === activeSubcategory;
+      activeCategory === "All" ||
+      activeSubcategory === "All" ||
+      item.subcategory === activeSubcategory;
 
     return matchesSearch && matchesCategory && matchesSubcategory;
   });
 
-  const isSubcategoryVisible = activeCategory !== "All" && SUBCATEGORIES[activeCategory] !== undefined;
+  const isSubcategoryVisible =
+    activeCategory !== "All" && SUBCATEGORIES[activeCategory] !== undefined;
 
   return (
     <div className="flex w-full flex-col gap-6">
       <PageTitle title="Product Library" />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageHeader title="Product Library" description="Catalog all your items in one place." />
+        <PageHeader
+          title="Product Library"
+          description="Catalog all your items in one place."
+        />
         <Button
           onClick={handleOpenAdd}
           className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
@@ -179,7 +196,11 @@ export default function LibraryPage() {
             }}
           >
             <div className="overflow-hidden">
-              <Tabs value={activeSubcategory} onValueChange={setActiveSubcategory} className="w-full">
+              <Tabs
+                value={activeSubcategory}
+                onValueChange={setActiveSubcategory}
+                className="w-full"
+              >
                 <TabsList className="flex max-w-full flex-wrap gap-0.5">
                   <TabsTrigger value="All">All {activeCategory}</TabsTrigger>
                   {isSubcategoryVisible &&
@@ -216,7 +237,10 @@ export default function LibraryPage() {
           </Select>
 
           {activeCategory !== "All" && SUBCATEGORIES[activeCategory] && (
-            <Select value={activeSubcategory} onValueChange={setActiveSubcategory}>
+            <Select
+              value={activeSubcategory}
+              onValueChange={setActiveSubcategory}
+            >
               <SelectTrigger className="fade-in w-full animate-in duration-200 md:w-[220px]">
                 <SelectValue placeholder="Subcategory" />
               </SelectTrigger>
@@ -248,7 +272,9 @@ export default function LibraryPage() {
       {loading ? (
         <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Catalog</p>
+          <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            Loading Catalog
+          </p>
         </div>
       ) : filteredItems.length === 0 ? (
         <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
@@ -260,7 +286,10 @@ export default function LibraryPage() {
               : "Get started by adding an item to your catalog."}
           </p>
           {!searchQuery && (
-            <Button onClick={handleOpenAdd} className="mt-4 flex items-center gap-2">
+            <Button
+              onClick={handleOpenAdd}
+              className="mt-4 flex items-center gap-2"
+            >
               <Plus className="size-4" />
               Add First Library Item
             </Button>

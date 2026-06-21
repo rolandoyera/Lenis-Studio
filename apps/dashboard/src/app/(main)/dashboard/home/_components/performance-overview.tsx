@@ -4,7 +4,14 @@ import { addHours, endOfToday, format, parseISO, subHours } from "date-fns";
 import { Area, CartesianGrid, ComposedChart, Line, XAxis } from "recharts";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   type ChartConfig,
   ChartContainer,
@@ -235,7 +242,9 @@ export function PerformanceOverview() {
       <CardHeader>
         <CardTitle className="leading-none">Customer Activity</CardTitle>
         <CardDescription>
-          <span className="@[540px]/card:block hidden">Customer activity for the last 3 months</span>
+          <span className="@[540px]/card:block hidden">
+            Customer activity for the last 3 months
+          </span>
           <span className="@[540px]/card:hidden">Last 3 months</span>
         </CardDescription>
         <CardAction className="flex items-center gap-2">
@@ -272,12 +281,23 @@ export function PerformanceOverview() {
       </CardHeader>
 
       <CardContent>
-        <ChartContainer config={chartConfig} className="aspect-auto h-80 w-full">
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-80 w-full"
+        >
           <ComposedChart data={chartData} margin={{ top: 0 }}>
             <defs>
               <linearGradient id="fillNewCustomers" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-newCustomers)" stopOpacity={0.36} />
-                <stop offset="95%" stopColor="var(--color-newCustomers)" stopOpacity={0.04} />
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-newCustomers)"
+                  stopOpacity={0.36}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-newCustomers)"
+                  stopOpacity={0.04}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeOpacity={0.5} />
@@ -302,11 +322,16 @@ export function PerformanceOverview() {
                 <ChartTooltipContent
                   className="w-50"
                   indicator="line"
-                  labelFormatter={(value) => format(parseISO(value), "d MMMM yyyy")}
+                  labelFormatter={(value) =>
+                    format(parseISO(value), "d MMMM yyyy")
+                  }
                 />
               }
             />
-            <ChartLegend verticalAlign="top" content={<ChartLegendContent className="mb-5 justify-end" />} />
+            <ChartLegend
+              verticalAlign="top"
+              content={<ChartLegendContent className="mb-5 justify-end" />}
+            />
 
             <Area
               dataKey="newCustomers"

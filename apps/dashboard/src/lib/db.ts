@@ -12,7 +12,12 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import {
+  deleteObject,
+  getDownloadURL,
+  ref,
+  uploadBytes,
+} from "firebase/storage";
 
 import { trace } from "@/lib/db-trace";
 import { db, storage } from "@/lib/firebase";
@@ -88,7 +93,9 @@ export async function getClients(organizationId: string): Promise<Client[]> {
   }
 }
 
-export async function addClient(client: Omit<Client, "uid" | "createdAt">): Promise<Client> {
+export async function addClient(
+  client: Omit<Client, "uid" | "createdAt">,
+): Promise<Client> {
   return trace(
     "clients",
     "WRITE",
@@ -107,7 +114,10 @@ export async function addClient(client: Omit<Client, "uid" | "createdAt">): Prom
   );
 }
 
-export async function updateClient(uid: string, client: Partial<Client>): Promise<void> {
+export async function updateClient(
+  uid: string,
+  client: Partial<Client>,
+): Promise<void> {
   return trace(
     "clients",
     "WRITE",
@@ -182,7 +192,9 @@ export async function getLeads(organizationId: string): Promise<Lead[]> {
   }
 }
 
-export async function addLead(lead: Omit<Lead, "uid" | "createdAt" | "updatedAt" | "lastActivityAt">): Promise<Lead> {
+export async function addLead(
+  lead: Omit<Lead, "uid" | "createdAt" | "updatedAt" | "lastActivityAt">,
+): Promise<Lead> {
   return trace(
     "leads",
     "WRITE",
@@ -209,7 +221,10 @@ export async function addLead(lead: Omit<Lead, "uid" | "createdAt" | "updatedAt"
  * `updatedBy` (and `assignedAt` when changing `assignedTo`); the returned partial mirrors what
  * was written so the UI can apply an optimistic update.
  */
-export async function updateLead(uid: string, lead: Partial<Lead>): Promise<Partial<Lead>> {
+export async function updateLead(
+  uid: string,
+  lead: Partial<Lead>,
+): Promise<Partial<Lead>> {
   return trace(
     "leads",
     "WRITE",
@@ -233,7 +248,10 @@ export async function updateLead(uid: string, lead: Partial<Lead>): Promise<Part
  * (carrying `sourceLeadId`) and the lead is marked `won` with conversion audit fields. The lead
  * is never deleted. Returns the created client.
  */
-export async function convertLeadToClient(lead: Lead, convertedBy: string): Promise<Client> {
+export async function convertLeadToClient(
+  lead: Lead,
+  convertedBy: string,
+): Promise<Client> {
   return trace(
     "leads",
     "WRITE",
@@ -341,7 +359,8 @@ export async function addVendor(
     "WRITE",
     "addVendor",
     async () => {
-      const vendorId = customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
+      const vendorId =
+        customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
       const newVendor: Vendor = {
         ...vendor,
         vendorId,
@@ -354,7 +373,10 @@ export async function addVendor(
   );
 }
 
-export async function updateVendor(vendorId: string, vendor: Partial<Vendor>): Promise<void> {
+export async function updateVendor(
+  vendorId: string,
+  vendor: Partial<Vendor>,
+): Promise<void> {
   return trace(
     "vendors",
     "WRITE",
@@ -373,7 +395,12 @@ export async function deleteStorageFileByPath(path: string): Promise<void> {
     const fileRef = ref(storage, path);
     await deleteObject(fileRef);
   } catch (error: unknown) {
-    if (typeof error === "object" && error !== null && "code" in error && error.code === "storage/object-not-found") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "storage/object-not-found"
+    ) {
       console.warn(`File not found in storage (ignored): ${path}`);
       return;
     }
@@ -382,15 +409,28 @@ export async function deleteStorageFileByPath(path: string): Promise<void> {
   }
 }
 
-function compactStoragePaths(paths: Array<string | null | undefined>): string[] {
-  return [...new Set(paths.filter((path): path is string => typeof path === "string" && path.trim().length > 0))];
+function compactStoragePaths(
+  paths: Array<string | null | undefined>,
+): string[] {
+  return [
+    ...new Set(
+      paths.filter(
+        (path): path is string =>
+          typeof path === "string" && path.trim().length > 0,
+      ),
+    ),
+  ];
 }
 
-export async function deleteStorageFilesByPath(paths: Array<string | null | undefined>): Promise<void> {
+export async function deleteStorageFilesByPath(
+  paths: Array<string | null | undefined>,
+): Promise<void> {
   const storagePaths = compactStoragePaths(paths);
   if (storagePaths.length === 0) return;
 
-  const results = await Promise.allSettled(storagePaths.map(deleteStorageFileByPath));
+  const results = await Promise.allSettled(
+    storagePaths.map(deleteStorageFileByPath),
+  );
   const failures = results.filter((r) => r.status === "rejected");
   if (failures.length > 0) {
     const error = (failures[0] as PromiseRejectedResult).reason;
@@ -403,7 +443,9 @@ export async function deleteReplacedStorageFiles(
   nextPaths: Array<string | null | undefined>,
 ): Promise<void> {
   const nextPathSet = new Set(compactStoragePaths(nextPaths));
-  const pathsToDelete = compactStoragePaths(previousPaths).filter((path) => !nextPathSet.has(path));
+  const pathsToDelete = compactStoragePaths(previousPaths).filter(
+    (path) => !nextPathSet.has(path),
+  );
   await deleteStorageFilesByPath(pathsToDelete);
 }
 
@@ -425,12 +467,16 @@ export async function deleteVendor(vendorOrId: Vendor | string): Promise<void> {
         (p): p is string => typeof p === "string" && p.trim().length > 0,
       );
 
-      const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
+      const results = await Promise.allSettled(
+        paths.map((p) => deleteStorageFileByPath(p)),
+      );
 
       const failures = results.filter((r) => r.status === "rejected");
       if (failures.length > 0) {
         const error = (failures[0] as PromiseRejectedResult).reason;
-        throw new Error(`Failed to clean up storage files: ${error.message || error}`);
+        throw new Error(
+          `Failed to clean up storage files: ${error.message || error}`,
+        );
       }
 
       await deleteDoc(doc(db, "vendors", vendor.vendorId));
@@ -490,12 +536,23 @@ export async function getProjects(organizationId: string): Promise<Project[]> {
 }
 
 /** Build the denormalized single-line `address` from the discrete street/city/state/zip parts. */
-export function formatProjectAddress(parts: Pick<Project, "street" | "city" | "state" | "zip">): string {
-  return [parts.street, [parts.city, parts.state].filter(Boolean).join(", "), parts.zip].filter(Boolean).join(" ");
+export function formatProjectAddress(
+  parts: Pick<Project, "street" | "city" | "state" | "zip">,
+): string {
+  return [
+    parts.street,
+    [parts.city, parts.state].filter(Boolean).join(", "),
+    parts.zip,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 export async function addProject(
-  project: Omit<Project, "projectId" | "createdAt" | "updatedAt" | "lastActivityAt">,
+  project: Omit<
+    Project,
+    "projectId" | "createdAt" | "updatedAt" | "lastActivityAt"
+  >,
 ): Promise<Project> {
   return trace(
     "projects",
@@ -523,7 +580,10 @@ export async function addProject(
  * Persists a partial project update and stamps `updatedAt`/`lastActivityAt`. Callers must pass
  * `updatedBy`; the returned partial mirrors what was written so the UI can apply an optimistic update.
  */
-export async function updateProject(projectId: string, project: Partial<Project>): Promise<Partial<Project>> {
+export async function updateProject(
+  projectId: string,
+  project: Partial<Project>,
+): Promise<Partial<Project>> {
   return trace(
     "projects",
     "WRITE",
@@ -536,7 +596,10 @@ export async function updateProject(projectId: string, project: Partial<Project>
         lastActivityAt: now,
       };
 
-      await updateDoc(doc(db, "projects", projectId), cleanUndefined(updatedProject));
+      await updateDoc(
+        doc(db, "projects", projectId),
+        cleanUndefined(updatedProject),
+      );
       return updatedProject;
     },
     () => projectId,
@@ -557,7 +620,9 @@ export async function deleteProject(projectId: string): Promise<void> {
 
 // --- LIBRARY HELPER HOOKS & FUNCTIONS ---
 
-export async function getLibraryItem(itemId: string): Promise<LibraryItem | null> {
+export async function getLibraryItem(
+  itemId: string,
+): Promise<LibraryItem | null> {
   try {
     return await trace(
       "library",
@@ -579,7 +644,9 @@ export async function getLibraryItem(itemId: string): Promise<LibraryItem | null
   }
 }
 
-export async function getLibraryItems(organizationId: string): Promise<LibraryItem[]> {
+export async function getLibraryItems(
+  organizationId: string,
+): Promise<LibraryItem[]> {
   try {
     return await trace(
       "library",
@@ -605,7 +672,10 @@ export async function getLibraryItems(organizationId: string): Promise<LibraryIt
   }
 }
 
-export async function getVendorLibraryItems(organizationId: string, vendorId: string): Promise<LibraryItem[]> {
+export async function getVendorLibraryItems(
+  organizationId: string,
+  vendorId: string,
+): Promise<LibraryItem[]> {
   try {
     return await trace(
       "library",
@@ -613,7 +683,11 @@ export async function getVendorLibraryItems(organizationId: string, vendorId: st
       "getVendorLibraryItems",
       async () => {
         const collRef = collection(db, "library");
-        const q = query(collRef, where("organizationId", "==", organizationId), where("vendorId", "==", vendorId));
+        const q = query(
+          collRef,
+          where("organizationId", "==", organizationId),
+          where("vendorId", "==", vendorId),
+        );
         const snapshot = await getDocs(q);
         const items: LibraryItem[] = [];
         snapshot.forEach((docSnap) => {
@@ -638,7 +712,8 @@ export async function addLibraryItem(
     "WRITE",
     "addLibraryItem",
     async () => {
-      const itemId = customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`;
+      const itemId =
+        customItemId ?? `item-${Math.random().toString(36).substr(2, 9)}`;
       const newItem: LibraryItem = {
         ...item,
         itemId,
@@ -651,20 +726,28 @@ export async function addLibraryItem(
   );
 }
 
-export async function updateLibraryItem(itemId: string, item: Partial<LibraryItem>): Promise<void> {
+export async function updateLibraryItem(
+  itemId: string,
+  item: Partial<LibraryItem>,
+): Promise<void> {
   return trace(
     "library",
     "WRITE",
     "updateLibraryItem",
     async () => {
       const docRef = doc(db, "library", itemId);
-      await updateDoc(docRef, cleanUndefined({ ...item, updatedAt: Date.now() }));
+      await updateDoc(
+        docRef,
+        cleanUndefined({ ...item, updatedAt: Date.now() }),
+      );
     },
     () => itemId,
   );
 }
 
-export async function deleteLibraryItem(itemOrId: LibraryItem | string): Promise<void> {
+export async function deleteLibraryItem(
+  itemOrId: LibraryItem | string,
+): Promise<void> {
   return trace(
     "library",
     "DELETE",
@@ -678,16 +761,23 @@ export async function deleteLibraryItem(itemOrId: LibraryItem | string): Promise
       }
       if (!item) return;
 
-      const paths = [item.coverImagePath, ...(item.images || []).map((img) => img.path)].filter(
+      const paths = [
+        item.coverImagePath,
+        ...(item.images || []).map((img) => img.path),
+      ].filter(
         (p): p is string => typeof p === "string" && p.trim().length > 0,
       );
 
-      const results = await Promise.allSettled(paths.map((p) => deleteStorageFileByPath(p)));
+      const results = await Promise.allSettled(
+        paths.map((p) => deleteStorageFileByPath(p)),
+      );
 
       const failures = results.filter((r) => r.status === "rejected");
       if (failures.length > 0) {
         const error = (failures[0] as PromiseRejectedResult).reason;
-        throw new Error(`Failed to clean up storage files: ${error.message || error}`);
+        throw new Error(
+          `Failed to clean up storage files: ${error.message || error}`,
+        );
       }
 
       await deleteDoc(doc(db, "library", item.itemId));
@@ -698,7 +788,9 @@ export async function deleteLibraryItem(itemOrId: LibraryItem | string): Promise
 
 // --- PROPOSAL HELPER HOOKS & FUNCTIONS ---
 
-export async function getProposals(organizationId: string): Promise<Proposal[]> {
+export async function getProposals(
+  organizationId: string,
+): Promise<Proposal[]> {
   try {
     return await trace(
       "proposals",
@@ -724,7 +816,9 @@ export async function getProposals(organizationId: string): Promise<Proposal[]> 
   }
 }
 
-export async function addProposal(proposal: Omit<Proposal, "proposalId" | "createdAt">): Promise<Proposal> {
+export async function addProposal(
+  proposal: Omit<Proposal, "proposalId" | "createdAt">,
+): Promise<Proposal> {
   return trace(
     "proposals",
     "WRITE",
@@ -736,14 +830,20 @@ export async function addProposal(proposal: Omit<Proposal, "proposalId" | "creat
         proposalId,
         createdAt: Date.now(),
       };
-      await setDoc(doc(db, "proposals", proposalId), cleanUndefined(newProposal));
+      await setDoc(
+        doc(db, "proposals", proposalId),
+        cleanUndefined(newProposal),
+      );
       return newProposal;
     },
     (p) => p.proposalId,
   );
 }
 
-export async function updateProposal(proposalId: string, proposal: Partial<Proposal>): Promise<void> {
+export async function updateProposal(
+  proposalId: string,
+  proposal: Partial<Proposal>,
+): Promise<void> {
   return trace(
     "proposals",
     "WRITE",
@@ -777,7 +877,8 @@ export async function uploadLibraryImage(
 ): Promise<{ url: string; path: string }> {
   const ext = file.name.split(".").pop() ?? "jpg";
   const id = imageId ?? `img-${Math.random().toString(36).substr(2, 9)}`;
-  const resolvedItemId = itemId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
+  const resolvedItemId =
+    itemId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
   const storagePath = `library/${resolvedItemId}/images/${id}.${ext}`;
   const storageRef = ref(storage, storagePath);
 
@@ -795,7 +896,8 @@ export async function uploadVendorImage(
   vendorId?: string,
 ): Promise<{ url: string; path: string }> {
   const ext = file.name.split(".").pop() ?? "jpg";
-  const resolvedVendorId = vendorId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
+  const resolvedVendorId =
+    vendorId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
   const storagePath = `vendors/${resolvedVendorId}/${type}.${ext}`;
   const storageRef = ref(storage, storagePath);
   const snapshot = await uploadBytes(storageRef, file);
@@ -817,7 +919,9 @@ export async function uploadLibraryImageBlob(
 ): Promise<{ url: string; path: string }> {
   const id = imageId ?? `img-${Math.random().toString(36).substr(2, 9)}`;
   const storagePath =
-    type === "cover" ? `library/${itemId}/cover.${extension}` : `library/${itemId}/images/${id}.${extension}`;
+    type === "cover"
+      ? `library/${itemId}/cover.${extension}`
+      : `library/${itemId}/images/${id}.${extension}`;
   const storageRef = ref(storage, storagePath);
 
   const snapshot = await uploadBytes(storageRef, blob, {
@@ -862,7 +966,9 @@ export async function uploadVendorImageBlob(
 
 // --- DIAGNOSTICS HELPER FUNCTIONS ---
 
-export async function saveDiagnosticRun(run: Omit<DiagnosticRun, "runId" | "createdAt">): Promise<DiagnosticRun> {
+export async function saveDiagnosticRun(
+  run: Omit<DiagnosticRun, "runId" | "createdAt">,
+): Promise<DiagnosticRun> {
   return trace(
     "diagnostics",
     "WRITE",
@@ -943,7 +1049,10 @@ export async function getOrganizations(): Promise<Organization[]> {
   }
 }
 
-export async function addOrganization(org: Omit<Organization, "createdAt">, adminName: string): Promise<Organization> {
+export async function addOrganization(
+  org: Omit<Organization, "createdAt">,
+  adminName: string,
+): Promise<Organization> {
   return trace(
     "organizations",
     "WRITE",
@@ -955,7 +1064,10 @@ export async function addOrganization(org: Omit<Organization, "createdAt">, admi
       };
 
       // 1. Create the organization document
-      await setDoc(doc(db, "organizations", org.organizationId), cleanUndefined(newOrg));
+      await setDoc(
+        doc(db, "organizations", org.organizationId),
+        cleanUndefined(newOrg),
+      );
 
       // 2. Create the pending Administrator profile in the users collection
       const adminEmailKey = org.adminEmail.trim().toLowerCase();
@@ -999,7 +1111,10 @@ export async function addOrganization(org: Omit<Organization, "createdAt">, admi
           },
         });
       } catch (emailError) {
-        console.error("Failed to write to mail collection for trigger email:", emailError);
+        console.error(
+          "Failed to write to mail collection for trigger email:",
+          emailError,
+        );
       }
 
       return newOrg;
@@ -1008,7 +1123,10 @@ export async function addOrganization(org: Omit<Organization, "createdAt">, admi
   );
 }
 
-export async function updateOrganization(orgId: string, org: Partial<Organization>): Promise<void> {
+export async function updateOrganization(
+  orgId: string,
+  org: Partial<Organization>,
+): Promise<void> {
   return trace(
     "organizations",
     "WRITE",
@@ -1021,7 +1139,9 @@ export async function updateOrganization(orgId: string, org: Partial<Organizatio
   );
 }
 
-export async function getOrganization(orgId: string): Promise<Organization | null> {
+export async function getOrganization(
+  orgId: string,
+): Promise<Organization | null> {
   try {
     return await trace(
       "organizations",
@@ -1043,7 +1163,9 @@ export async function getOrganization(orgId: string): Promise<Organization | nul
   }
 }
 
-export async function getOrganizationUsers(orgId: string): Promise<UserProfile[]> {
+export async function getOrganizationUsers(
+  orgId: string,
+): Promise<UserProfile[]> {
   try {
     return await trace(
       "users",
@@ -1091,7 +1213,8 @@ export async function addProjectRoom(
     "WRITE",
     "addProjectRoom",
     async () => {
-      const roomId = customRoomId ?? `room-${Math.random().toString(36).substr(2, 9)}`;
+      const roomId =
+        customRoomId ?? `room-${Math.random().toString(36).substr(2, 9)}`;
       const newRoom: ProjectRoom = {
         ...room,
         roomId,
@@ -1105,7 +1228,9 @@ export async function addProjectRoom(
   );
 }
 
-export async function getProjectRooms(projectId: string): Promise<ProjectRoom[]> {
+export async function getProjectRooms(
+  projectId: string,
+): Promise<ProjectRoom[]> {
   try {
     return await trace(
       "projectRooms",
@@ -1130,7 +1255,9 @@ export async function getProjectRooms(projectId: string): Promise<ProjectRoom[]>
   }
 }
 
-export async function getProjectRoomItems(projectId: string): Promise<ProjectRoomItem[]> {
+export async function getProjectRoomItems(
+  projectId: string,
+): Promise<ProjectRoomItem[]> {
   try {
     return await trace(
       "projectRoomItems",
@@ -1163,14 +1290,19 @@ export async function addProjectRoomItem(
     "WRITE",
     "addProjectRoomItem",
     async () => {
-      const roomItemId = customRoomItemId ?? `roomitem-${Math.random().toString(36).substr(2, 9)}`;
+      const roomItemId =
+        customRoomItemId ??
+        `roomitem-${Math.random().toString(36).substr(2, 9)}`;
       const newRoomItem: ProjectRoomItem = {
         ...item,
         roomItemId,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
-      await setDoc(doc(db, "projectRoomItems", roomItemId), cleanUndefined(newRoomItem));
+      await setDoc(
+        doc(db, "projectRoomItems", roomItemId),
+        cleanUndefined(newRoomItem),
+      );
       return newRoomItem;
     },
     (i) => i.roomItemId,
@@ -1222,13 +1354,17 @@ export async function getTrades(organizationId: string): Promise<Trade[]> {
   }
 }
 
-export async function addTrade(trade: Omit<Trade, "tradeId" | "createdAt">, customTradeId?: string): Promise<Trade> {
+export async function addTrade(
+  trade: Omit<Trade, "tradeId" | "createdAt">,
+  customTradeId?: string,
+): Promise<Trade> {
   return trace(
     "trades",
     "WRITE",
     "addTrade",
     async () => {
-      const tradeId = customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
+      const tradeId =
+        customTradeId ?? `trade-${Math.random().toString(36).substr(2, 9)}`;
       const newTrade: Trade = {
         ...trade,
         tradeId,
@@ -1241,7 +1377,10 @@ export async function addTrade(trade: Omit<Trade, "tradeId" | "createdAt">, cust
   );
 }
 
-export async function updateTrade(tradeId: string, trade: Partial<Trade>): Promise<void> {
+export async function updateTrade(
+  tradeId: string,
+  trade: Partial<Trade>,
+): Promise<void> {
   return trace(
     "trades",
     "WRITE",

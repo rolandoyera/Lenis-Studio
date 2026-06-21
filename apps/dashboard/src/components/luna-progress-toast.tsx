@@ -37,17 +37,27 @@ type LunaProgressToastProps = {
   statusDetail?: string;
 };
 
-function LunaProgressToast({ stages, activeStage, statusLabel, statusDetail }: LunaProgressToastProps) {
-  const safeStage = stages[Math.min(activeStage, stages.length - 1)] ?? stages[0];
+function LunaProgressToast({
+  stages,
+  activeStage,
+  statusLabel,
+  statusDetail,
+}: LunaProgressToastProps) {
+  const safeStage =
+    stages[Math.min(activeStage, stages.length - 1)] ?? stages[0];
   const label = statusLabel ?? safeStage.label;
   const detail = statusDetail ?? safeStage.detail;
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <div className="flex min-w-0 flex-col gap-1">
-        <p className="truncate font-medium text-sm">{AI_ASSISTANT_NAME} is working</p>
+        <p className="truncate font-medium text-sm">
+          {AI_ASSISTANT_NAME} is working
+        </p>
         <p className="text-foreground text-sm">{label}</p>
-        <p className="max-w-[18rem] text-muted-foreground text-xs leading-snug">{detail}</p>
+        <p className="max-w-[18rem] text-muted-foreground text-xs leading-snug">
+          {detail}
+        </p>
       </div>
 
       <div className="flex items-center gap-1.5" aria-hidden="true">
@@ -66,7 +76,9 @@ function LunaProgressToast({ stages, activeStage, statusLabel, statusDetail }: L
 }
 
 function lunaToastIcon() {
-  return <LunaMoon thinking variant="orbit" size={18} className="text-foreground" />;
+  return (
+    <LunaMoon thinking variant="orbit" size={18} className="text-foreground" />
+  );
 }
 
 function updateLunaProgressToast(
@@ -91,10 +103,16 @@ function updateLunaProgressToast(
 
 export function startLunaProductAutofillToast() {
   let activeStage = 0;
-  const toastId = toast(<LunaProgressToast stages={PRODUCT_AUTOFILL_STAGES} activeStage={activeStage} />, {
-    duration: Infinity,
-    icon: lunaToastIcon(),
-  });
+  const toastId = toast(
+    <LunaProgressToast
+      stages={PRODUCT_AUTOFILL_STAGES}
+      activeStage={activeStage}
+    />,
+    {
+      duration: Infinity,
+      icon: lunaToastIcon(),
+    },
+  );
 
   const intervalId = window.setInterval(() => {
     activeStage = Math.min(activeStage + 1, PRODUCT_AUTOFILL_STAGES.length - 1);
@@ -107,7 +125,8 @@ export function startLunaProductAutofillToast() {
       window.clearInterval(intervalId);
       updateLunaProgressToast(toastId, PRODUCT_AUTOFILL_STAGES.length - 1, {
         label: `Luna found a busy AI server - retrying ${attempt}/${maxAttempts}`,
-        detail: "She is keeping the scraped page context and asking again after a short pause.",
+        detail:
+          "She is keeping the scraped page context and asking again after a short pause.",
       });
     },
     stop() {

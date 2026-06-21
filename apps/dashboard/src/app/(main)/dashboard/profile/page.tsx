@@ -8,7 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { updateProfile } from "firebase/auth";
 import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
-import { Edit, Mail, MapPin, MoreVertical, Phone, Sparkles } from "lucide-react";
+import {
+  Edit,
+  Mail,
+  MapPin,
+  MoreVertical,
+  Phone,
+  Sparkles,
+} from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -17,7 +24,14 @@ import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -34,9 +48,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { formatPhone, getInitials, isValidUsPhone, isValidUsZip } from "@/lib/utils";
+import {
+  formatPhone,
+  getInitials,
+  isValidUsPhone,
+  isValidUsZip,
+} from "@/lib/utils";
 
 interface FirestoreProfile {
   fullName: string;
@@ -52,8 +77,16 @@ const profileSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   fullName: z.string().min(1, "Full name is required."),
   role: z.string().min(1, "Role is required."),
-  phone: z.union([z.string().refine(isValidUsPhone, "Enter a valid 10-digit US phone number."), z.literal("")]),
-  location: z.union([z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."), z.literal("")]),
+  phone: z.union([
+    z
+      .string()
+      .refine(isValidUsPhone, "Enter a valid 10-digit US phone number."),
+    z.literal(""),
+  ]),
+  location: z.union([
+    z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
+    z.literal(""),
+  ]),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -62,7 +95,11 @@ function ProfileContent() {
   const searchParams = useSearchParams();
   const profileUid = searchParams.get("uid");
   const router = useRouter();
-  const { user: currentUser, profile: loggedInProfile, loading: authLoading } = useAuth();
+  const {
+    user: currentUser,
+    profile: loggedInProfile,
+    loading: authLoading,
+  } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [savingGeneral, setSavingGeneral] = useState(false);
@@ -104,7 +141,15 @@ function ProfileContent() {
         location,
       });
     }
-  }, [isEditModalOpen, displayName, fullName, role, phone, location, profileForm]);
+  }, [
+    isEditModalOpen,
+    displayName,
+    fullName,
+    role,
+    phone,
+    location,
+    profileForm,
+  ]);
 
   const handleResendInvite = async () => {
     if (!email) return;
@@ -165,7 +210,8 @@ function ProfileContent() {
     const loggedInRole = loggedInProfile.role;
 
     // Determine which UID to fetch
-    const activeUid = profileUid && profileUid !== currentUid ? profileUid : currentUid;
+    const activeUid =
+      profileUid && profileUid !== currentUid ? profileUid : currentUid;
     const isSelf = activeUid === currentUid;
     setIsSelf(isSelf);
 
@@ -192,7 +238,9 @@ function ProfileContent() {
           // Tenant isolation check
           const targetOrgId = data.organizationId || "org-demo";
           if (targetOrgId !== loggedInOrgId) {
-            toast.error("Access denied. User profile not found in your organization.");
+            toast.error(
+              "Access denied. User profile not found in your organization.",
+            );
             router.push("/dashboard/home");
             return;
           }
@@ -201,7 +249,9 @@ function ProfileContent() {
           setRole(data.role || "Contributor");
           setPhone(data.phone ? formatPhone(data.phone) : "");
           setLocation(data.location ? String(data.location) : "");
-          setDisplayName(data.displayName || (isSelf ? currentDisplayName : "") || "");
+          setDisplayName(
+            data.displayName || (isSelf ? currentDisplayName : "") || "",
+          );
           setEmail(data.email || "");
           setStatus(data.status || "Active");
         } else {
@@ -232,7 +282,10 @@ function ProfileContent() {
 
     setSavingGeneral(true);
     try {
-      const activeUid = profileUid && profileUid !== currentUser.uid ? profileUid : currentUser.uid;
+      const activeUid =
+        profileUid && profileUid !== currentUser.uid
+          ? profileUid
+          : currentUser.uid;
       const isSelf = activeUid === currentUser.uid;
 
       // 1. Update Firebase Auth Profile (DisplayName) ONLY if editing self
@@ -286,7 +339,9 @@ function ProfileContent() {
     );
   }
 
-  const userInitials = getInitials(fullName || displayName || email || currentUser?.email || "U");
+  const userInitials = getInitials(
+    fullName || displayName || email || currentUser?.email || "U",
+  );
 
   return (
     <>
@@ -305,7 +360,9 @@ function ProfileContent() {
 
           <div className="min-w-0 flex-1 space-y-2 text-center md:text-left">
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
-              <h1 className="truncate font-bold text-3xl tracking-tight">{fullName || "User Profile"}</h1>
+              <h1 className="truncate font-bold text-3xl tracking-tight">
+                {fullName || "User Profile"}
+              </h1>
               {role && (
                 <span className="inline-flex w-fit items-center gap-1 self-center rounded-full bg-primary/10 px-3 py-1 font-semibold text-primary text-xs md:self-auto">
                   <Sparkles className="size-3" />
@@ -313,7 +370,9 @@ function ProfileContent() {
                 </span>
               )}
             </div>
-            <p className="max-w-lg truncate text-muted-foreground text-sm">{email}</p>
+            <p className="max-w-lg truncate text-muted-foreground text-sm">
+              {email}
+            </p>
           </div>
         </Card>
 
@@ -321,12 +380,18 @@ function ProfileContent() {
           <Card className="py-0">
             <CardHeader className="border-b bg-muted/50 py-4">
               <CardTitle>Profile Details</CardTitle>
-              <CardDescription>View or edit your profile information.</CardDescription>
+              <CardDescription>
+                View or edit your profile information.
+              </CardDescription>
               {(isSelf || (!isSelf && loggedInUserRole === "Admin")) && (
                 <CardAction>
                   <TooltipDropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="size-9 cursor-pointer rounded-full">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-9 cursor-pointer rounded-full"
+                      >
                         <MoreVertical className="size-5" />
                         <span className="sr-only">Actions</span>
                       </Button>
@@ -345,7 +410,9 @@ function ProfileContent() {
                           onClick={handleResendInvite}
                           disabled={status !== "Pending" || isResending}
                           className={`flex items-center gap-2 ${
-                            status === "Pending" && !isResending ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+                            status === "Pending" && !isResending
+                              ? "cursor-pointer"
+                              : "cursor-not-allowed opacity-50"
                           }`}
                         >
                           <Mail className="size-4" />
@@ -361,9 +428,15 @@ function ProfileContent() {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Display Name */}
                 <Field className="gap-1.5">
-                  <FieldLabel htmlFor="profile-displayName">Username / Display Name</FieldLabel>
+                  <FieldLabel htmlFor="profile-displayName">
+                    Username / Display Name
+                  </FieldLabel>
                   <div className="relative">
-                    <Input id="profile-displayName" value={displayName} disabled />
+                    <Input
+                      id="profile-displayName"
+                      value={displayName}
+                      disabled
+                    />
                   </div>
                 </Field>
 
@@ -392,7 +465,12 @@ function ProfileContent() {
                   <FieldLabel htmlFor="profile-phone">Contact Phone</FieldLabel>
                   <div className="relative flex items-center">
                     <Phone className="absolute left-3 size-4 text-muted-foreground" />
-                    <Input id="profile-phone" className="pl-10" value={phone} disabled />
+                    <Input
+                      id="profile-phone"
+                      className="pl-10"
+                      value={phone}
+                      disabled
+                    />
                   </div>
                 </Field>
 
@@ -401,7 +479,12 @@ function ProfileContent() {
                   <FieldLabel htmlFor="profile-location">Location</FieldLabel>
                   <div className="relative flex items-center">
                     <MapPin className="absolute left-3 size-4 text-muted-foreground" />
-                    <Input id="profile-location" className="pl-10" value={location} disabled />
+                    <Input
+                      id="profile-location"
+                      className="pl-10"
+                      value={location}
+                      disabled
+                    />
                   </div>
                 </Field>
               </div>
@@ -415,7 +498,9 @@ function ProfileContent() {
             <form onSubmit={profileForm.handleSubmit(handleSaveProfile)}>
               <DialogHeader className="mb-4">
                 <DialogTitle>Edit Profile Details</DialogTitle>
-                <DialogDescription>Update your profile and contact information.</DialogDescription>
+                <DialogDescription>
+                  Update your profile and contact information.
+                </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4 py-2">
@@ -424,10 +509,21 @@ function ProfileContent() {
                   control={profileForm.control}
                   name="displayName"
                   render={({ field, fieldState }) => (
-                    <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="modal-displayName">Username / Display Name</FieldLabel>
-                      <Input {...field} id="modal-displayName" aria-invalid={fieldState.invalid} />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}
+                    >
+                      <FieldLabel htmlFor="modal-displayName">
+                        Username / Display Name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="modal-displayName"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -437,10 +533,21 @@ function ProfileContent() {
                   control={profileForm.control}
                   name="fullName"
                   render={({ field, fieldState }) => (
-                    <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="modal-fullName">Full Name</FieldLabel>
-                      <Input {...field} id="modal-fullName" aria-invalid={fieldState.invalid} />
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}
+                    >
+                      <FieldLabel htmlFor="modal-fullName">
+                        Full Name
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="modal-fullName"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -450,18 +557,33 @@ function ProfileContent() {
                   control={profileForm.control}
                   name="role"
                   render={({ field, fieldState }) => (
-                    <Field className="gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor="modal-role">User Role</FieldLabel>
-                      <Select value={field.value} onValueChange={field.onChange} disabled={isRoleDisabled}>
-                        <SelectTrigger id="modal-role" className="w-full" aria-invalid={fieldState.invalid}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={isRoleDisabled}
+                      >
+                        <SelectTrigger
+                          id="modal-role"
+                          className="w-full"
+                          aria-invalid={fieldState.invalid}
+                        >
                           <SelectValue placeholder="Select role..." />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Admin">Admin</SelectItem>
-                          <SelectItem value="Contributor">Contributor</SelectItem>
+                          <SelectItem value="Contributor">
+                            Contributor
+                          </SelectItem>
                         </SelectContent>
                       </Select>
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -471,8 +593,13 @@ function ProfileContent() {
                   control={profileForm.control}
                   name="phone"
                   render={({ field, fieldState }) => (
-                    <Field className="gap-1.5" data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="modal-phone">Contact Phone</FieldLabel>
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}
+                    >
+                      <FieldLabel htmlFor="modal-phone">
+                        Contact Phone
+                      </FieldLabel>
                       <div className="relative flex items-center">
                         <Phone className="absolute left-3 size-4 text-muted-foreground" />
                         <Input
@@ -480,10 +607,14 @@ function ProfileContent() {
                           id="modal-phone"
                           className="pl-10"
                           aria-invalid={fieldState.invalid}
-                          onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(formatPhone(e.target.value))
+                          }
                         />
                       </div>
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
@@ -493,7 +624,10 @@ function ProfileContent() {
                   control={profileForm.control}
                   name="location"
                   render={({ field, fieldState }) => (
-                    <Field className="gap-1.5" data-invalid={fieldState.invalid}>
+                    <Field
+                      className="gap-1.5"
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor="modal-location">Location</FieldLabel>
                       <div className="relative flex items-center">
                         <MapPin className="absolute left-3 size-4 text-muted-foreground" />
@@ -505,22 +639,34 @@ function ProfileContent() {
                           aria-invalid={fieldState.invalid}
                           maxLength={5}
                           onChange={(e) => {
-                            const clean = e.target.value.replace(/\D/g, "").slice(0, 5);
+                            const clean = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 5);
                             field.onChange(clean);
                           }}
                         />
                       </div>
-                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
                     </Field>
                   )}
                 />
               </div>
 
               <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={savingGeneral} className="min-w-[120px]">
+                <Button
+                  type="submit"
+                  disabled={savingGeneral}
+                  className="min-w-[120px]"
+                >
                   {savingGeneral ? "Saving..." : "Save Changes"}
                 </Button>
               </DialogFooter>

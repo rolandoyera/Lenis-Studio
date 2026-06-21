@@ -6,14 +6,23 @@ import { useMemo, useState } from "react";
 
 import { FadeIn } from "@/components/fade-in";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { IgMediaItem } from "@/server/meta-graph";
 
 type SortKey = "recent" | "likes" | "comments";
 
 function formatDate(ts: string): string {
   const d = new Date(ts);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return Number.isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 /** Instagram-style compact relative age, e.g. "5h", "3d", "12w", "2y". */
@@ -99,7 +108,10 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
   return (
     <FadeIn className="flex w-full flex-col gap-6">
       <div className="flex justify-end">
-        <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
+        <Select
+          value={sort}
+          onValueChange={(value) => setSort(value as SortKey)}
+        >
           <SelectTrigger className="w-40" size="sm">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
@@ -134,7 +146,9 @@ export function InstagramPostsGridClient({ posts }: { posts: IgMediaItem[] }) {
               <CardFooter className="p-0">
                 <div className="flex flex-col gap-2 p-3 w-full">
                   <p className="min-h-8 text-muted-foreground text-[12px]">
-                    {post.caption ? truncate(post.caption) : `${post.mediaType} post`}
+                    {post.caption
+                      ? truncate(post.caption)
+                      : `${post.mediaType} post`}
                   </p>
                   <div className="flex items-center justify-between text-muted-foreground text-xs">
                     <div className="flex items-center gap-3">

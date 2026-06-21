@@ -61,11 +61,13 @@ function EventBar({
           <span className="text-muted-foreground text-sm">{label}</span>
           <div
             className="h-8 w-full overflow-hidden rounded-lg bg-muted/50"
-            style={HATCH_BG}>
+            style={HATCH_BG}
+          >
             {count > 0 && (
               <div
                 className="flex h-full items-center rounded-lg bg-primary/70 px-2 text-foreground text-sm tabular-nums"
-                style={{ width: `${width}%` }}>
+                style={{ width: `${width}%` }}
+              >
                 {count}
               </div>
             )}
@@ -74,7 +76,8 @@ function EventBar({
       </TooltipTrigger>
       <TooltipContent
         showArrow={false}
-        className="min-w-32 flex-col items-stretch gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-foreground shadow-xl">
+        className="min-w-32 flex-col items-stretch gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-foreground shadow-xl"
+      >
         <div className="font-medium">
           {label}
           {percentLabel ? (
@@ -311,7 +314,8 @@ export async function ConversionsSection({ range }: { range?: string }) {
                     <TableRow className="hover:bg-transparent">
                       <TableCell
                         colSpan={4}
-                        className="h-32 py-4 text-center text-muted-foreground text-sm">
+                        className="h-32 py-4 text-center text-muted-foreground text-sm"
+                      >
                         No channel data available for this range.
                       </TableCell>
                     </TableRow>
@@ -319,7 +323,8 @@ export async function ConversionsSection({ range }: { range?: string }) {
                     channels.map((row) => (
                       <TableRow
                         className="hover:bg-transparent"
-                        key={row.channel}>
+                        key={row.channel}
+                      >
                         <TableCell className="py-4 font-medium">
                           {row.channel}
                         </TableCell>

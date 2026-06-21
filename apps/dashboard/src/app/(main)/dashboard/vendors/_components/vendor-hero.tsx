@@ -13,7 +13,11 @@ import {
 } from "@/components/icons/icons";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { H1 } from "@/components/ui/typography";
 import type { Vendor } from "@/lib/types";
 
@@ -26,8 +30,14 @@ interface VendorHeroProps {
 
 export function VendorHero({ vendor }: VendorHeroProps) {
   const gradient = vendorGradient(vendor.name);
-  const { websiteHref, instagramHref, pinterestHref, facebookHref, youtubeHref, xTwitterHref } =
-    getVendorSocialHrefs(vendor);
+  const {
+    websiteHref,
+    instagramHref,
+    pinterestHref,
+    facebookHref,
+    youtubeHref,
+    xTwitterHref,
+  } = getVendorSocialHrefs(vendor);
 
   return (
     <Card className="overflow-hidden pt-0">
@@ -46,8 +56,12 @@ export function VendorHero({ vendor }: VendorHeroProps) {
         <div className="absolute inset-0 bg-black/20" />
         {vendor.description && (
           <div className="absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-white/10 bg-black/50 p-4 text-white shadow-lg backdrop-blur-md">
-            <p className="mb-1 font-bold text-[10px] text-white/50 uppercase tracking-wider">About</p>
-            <p className="line-clamp-4 text-white/90 text-xs leading-relaxed">{vendor.description}</p>
+            <p className="mb-1 font-bold text-[10px] text-white/50 uppercase tracking-wider">
+              About
+            </p>
+            <p className="line-clamp-4 text-white/90 text-xs leading-relaxed">
+              {vendor.description}
+            </p>
           </div>
         )}
       </div>
@@ -59,7 +73,12 @@ export function VendorHero({ vendor }: VendorHeroProps) {
             <H1>{vendor.name}</H1>
             {vendor.logoUrl && (
               <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-background shadow-xs">
-                <DashboardImage src={vendor.logoUrl} alt={vendor.name} sizes="32px" className="object-contain" />
+                <DashboardImage
+                  src={vendor.logoUrl}
+                  alt={vendor.name}
+                  sizes="32px"
+                  className="object-contain"
+                />
               </div>
             )}
           </div>

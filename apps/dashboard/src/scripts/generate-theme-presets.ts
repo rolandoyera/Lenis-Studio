@@ -31,7 +31,9 @@ const outputPath = path.resolve(__dirname, "../lib/preferences/theme.ts");
 const files = fs.readdirSync(presetDir).filter((file) => file.endsWith(".css"));
 
 if (files.length === 0) {
-  console.warn("⚠️ No preset CSS files found. Only default preset will be included.");
+  console.warn(
+    "⚠️ No preset CSS files found. Only default preset will be included.",
+  );
 }
 
 const presets = files.map((file) => {
@@ -42,17 +44,25 @@ const presets = files.map((file) => {
   const valueMatch = content.match(/value:\s*(.+)/);
 
   if (!labelMatch) {
-    console.warn(`⚠️ No 'label:' found in ${file}, using filename as fallback.`);
+    console.warn(
+      `⚠️ No 'label:' found in ${file}, using filename as fallback.`,
+    );
   }
   if (!valueMatch) {
-    console.warn(`⚠️ No 'value:' found in ${file}, using filename as fallback.`);
+    console.warn(
+      `⚠️ No 'value:' found in ${file}, using filename as fallback.`,
+    );
   }
 
   const label = labelMatch?.[1]?.trim() ?? file.replace(".css", "");
   const value = valueMatch?.[1]?.trim() ?? file.replace(".css", "");
 
-  const lightPrimaryMatch = content.match(/:root\[data-theme-preset="[^"]*"\][\s\S]*?--primary:\s*([^;]+);/);
-  const darkPrimaryMatch = content.match(/\.dark:root\[data-theme-preset="[^"]*"\][\s\S]*?--primary:\s*([^;]+);/);
+  const lightPrimaryMatch = content.match(
+    /:root\[data-theme-preset="[^"]*"\][\s\S]*?--primary:\s*([^;]+);/,
+  );
+  const darkPrimaryMatch = content.match(
+    /\.dark:root\[data-theme-preset="[^"]*"\][\s\S]*?--primary:\s*([^;]+);/,
+  );
 
   const primary = {
     light: lightPrimaryMatch?.[1]?.trim() ?? "",
@@ -60,7 +70,9 @@ const presets = files.map((file) => {
   };
 
   if (!lightPrimaryMatch || !darkPrimaryMatch) {
-    console.warn(`⚠️ Missing --primary for ${file} (light or dark). Check CSS syntax.`);
+    console.warn(
+      `⚠️ Missing --primary for ${file} (light or dark). Check CSS syntax.`,
+    );
   }
 
   return { label, value, primary };
@@ -88,7 +100,11 @@ const defaultPrimary = {
   dark: defaultDarkPrimaryMatch?.[1]?.trim() ?? "",
 };
 
-presets.unshift({ label: "Default", value: "default", primary: defaultPrimary });
+presets.unshift({
+  label: "Default",
+  value: "default",
+  primary: defaultPrimary,
+});
 
 const generatedBlock = `// --- generated:themePresets:start ---
 
@@ -109,10 +125,14 @@ const updated = fileContent.replace(
 
 function main() {
   const biomeBin = require.resolve("@biomejs/biome/bin/biome");
-  const formatted = execFileSync(process.execPath, [biomeBin, "format", "--stdin-file-path", outputPath], {
-    input: updated,
-    encoding: "utf8",
-  });
+  const formatted = execFileSync(
+    process.execPath,
+    [biomeBin, "format", "--stdin-file-path", outputPath],
+    {
+      input: updated,
+      encoding: "utf8",
+    },
+  );
 
   if (formatted === fileContent) {
     console.log("ℹ️  No changes in theme.ts");

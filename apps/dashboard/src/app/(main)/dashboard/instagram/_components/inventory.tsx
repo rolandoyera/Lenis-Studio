@@ -1,21 +1,48 @@
 "use client";
 
-import { ArrowUpRight, PackageCheck, PackageX, TriangleAlert } from "lucide-react";
+import {
+  ArrowUpRight,
+  PackageCheck,
+  PackageX,
+  TriangleAlert,
+} from "lucide-react";
 import { Label, Pie, PieChart } from "recharts";
 
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 import { Separator } from "@/components/ui/separator";
 
-const chartData = [{ month: "current", "in-stock": 760, "low-stock": 320, "out-of-stock": 160 }];
-const totalUnits = chartData[0]["in-stock"] + chartData[0]["low-stock"] + chartData[0]["out-of-stock"];
-const availablePercent = Math.round((chartData[0]["in-stock"] / totalUnits) * 100);
+const chartData = [
+  { month: "current", "in-stock": 760, "low-stock": 320, "out-of-stock": 160 },
+];
+const totalUnits =
+  chartData[0]["in-stock"] +
+  chartData[0]["low-stock"] +
+  chartData[0]["out-of-stock"];
+const availablePercent = Math.round(
+  (chartData[0]["in-stock"] / totalUnits) * 100,
+);
 const gaugeSegmentCount = 32;
-const inStockSegments = Math.round((chartData[0]["in-stock"] / totalUnits) * gaugeSegmentCount);
-const lowStockSegments = Math.round((chartData[0]["low-stock"] / totalUnits) * gaugeSegmentCount);
+const inStockSegments = Math.round(
+  (chartData[0]["in-stock"] / totalUnits) * gaugeSegmentCount,
+);
+const lowStockSegments = Math.round(
+  (chartData[0]["low-stock"] / totalUnits) * gaugeSegmentCount,
+);
 const gaugeSegments = Array.from({ length: gaugeSegmentCount }, (_, index) => {
   const status =
-    index < inStockSegments ? "in-stock" : index < inStockSegments + lowStockSegments ? "low-stock" : "out-of-stock";
+    index < inStockSegments
+      ? "in-stock"
+      : index < inStockSegments + lowStockSegments
+        ? "low-stock"
+        : "out-of-stock";
 
   return {
     fill: `var(--color-${status})`,
@@ -61,7 +88,9 @@ export function Inventory() {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="font-normal text-muted-foreground text-sm">Inventory</CardTitle>
+        <CardTitle className="font-normal text-muted-foreground text-sm">
+          Inventory
+        </CardTitle>
         <CardDescription className="text-foreground text-xl tabular-nums leading-none tracking-tight">
           {availablePercent}% available
         </CardDescription>
@@ -98,7 +127,11 @@ export function Inventory() {
                         >
                           {availablePercent}%
                         </tspan>
-                        <tspan className="fill-muted-foreground text-xs" x={viewBox.cx} y={(viewBox.cy || 0) + 38}>
+                        <tspan
+                          className="fill-muted-foreground text-xs"
+                          x={viewBox.cx}
+                          y={(viewBox.cy || 0) + 38}
+                        >
                           Available
                         </tspan>
                       </text>
@@ -113,13 +146,20 @@ export function Inventory() {
 
         <div className="grid grid-cols-3 divide-x">
           {inventorySummary.map((item, _index) => (
-            <div key={item.label} className="flex flex-col items-center gap-3 text-center">
+            <div
+              key={item.label}
+              className="flex flex-col items-center gap-3 text-center"
+            >
               <div className="grid size-9 place-items-center rounded-full bg-muted">
                 <item.icon className="size-4 text-muted-foreground" />
               </div>
               <div>
-                <div className="text-muted-foreground text-xs leading-none">{item.label}</div>
-                <div className="font-medium text-sm tabular-nums">{item.value.toLocaleString()}</div>
+                <div className="text-muted-foreground text-xs leading-none">
+                  {item.label}
+                </div>
+                <div className="font-medium text-sm tabular-nums">
+                  {item.value.toLocaleString()}
+                </div>
               </div>
             </div>
           ))}

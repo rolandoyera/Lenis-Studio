@@ -18,16 +18,27 @@ const MAX_AI_ATTEMPTS = 3;
  */
 export async function runAiActionWithRetry<T extends RetryableResult>(
   action: () => Promise<T>,
-  opts: { toastId: string | number; busyMessage?: string; onRetry?: (attempt: number, maxAttempts: number) => void },
+  opts: {
+    toastId: string | number;
+    busyMessage?: string;
+    onRetry?: (attempt: number, maxAttempts: number) => void;
+  },
 ): Promise<T> {
-  const busy = opts.busyMessage ?? `${AI_ASSISTANT_NAME} is busy due to high demand`;
+  const busy =
+    opts.busyMessage ?? `${AI_ASSISTANT_NAME} is busy due to high demand`;
   let result = await action();
 
-  for (let attempt = 2; attempt <= MAX_AI_ATTEMPTS && !result.success && result.retryable; attempt++) {
+  for (
+    let attempt = 2;
+    attempt <= MAX_AI_ATTEMPTS && !result.success && result.retryable;
+    attempt++
+  ) {
     if (opts.onRetry) {
       opts.onRetry(attempt, MAX_AI_ATTEMPTS);
     } else {
-      toast.loading(`${busy} - retrying (${attempt}/${MAX_AI_ATTEMPTS})...`, { id: opts.toastId });
+      toast.loading(`${busy} - retrying (${attempt}/${MAX_AI_ATTEMPTS})...`, {
+        id: opts.toastId,
+      });
     }
     await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt - 1)));
     result = await action();

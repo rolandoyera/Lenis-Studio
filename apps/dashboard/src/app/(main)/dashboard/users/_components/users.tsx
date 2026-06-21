@@ -339,7 +339,8 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
           <DialogContent className="sm:max-w-md">
             <form
               onSubmit={form.handleSubmit(handleAddUser)}
-              className="contents">
+              className="contents"
+            >
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
                 <DialogDescription>
@@ -355,7 +356,8 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   render={({ field, fieldState }) => (
                     <Field
                       className="gap-1.5"
-                      data-invalid={fieldState.invalid}>
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor="add-fullName">Full Name</FieldLabel>
                       <Input
                         {...field}
@@ -376,7 +378,8 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   render={({ field, fieldState }) => (
                     <Field
                       className="gap-1.5"
-                      data-invalid={fieldState.invalid}>
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor="add-email">Email Address</FieldLabel>
                       <Input
                         {...field}
@@ -398,12 +401,14 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   render={({ field, fieldState }) => (
                     <Field
                       className="gap-1.5"
-                      data-invalid={fieldState.invalid}>
+                      data-invalid={fieldState.invalid}
+                    >
                       <FieldLabel htmlFor="add-role">Role</FieldLabel>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={isSubmitting}>
+                        disabled={isSubmitting}
+                      >
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
@@ -429,7 +434,8 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={isSubmitting}>
+                    disabled={isSubmitting}
+                  >
                     Cancel
                   </Button>
                 </DialogClose>
@@ -470,7 +476,8 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   value={roleFilter}
                   onValueChange={(value) =>
                     setColumnSelectFilter("role", value)
-                  }>
+                  }
+                >
                   <SelectTrigger>
                     <span className="text-muted-foreground">Role:</span>
                     <SelectValue />
@@ -490,7 +497,8 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   value={statusFilter}
                   onValueChange={(value) =>
                     setColumnSelectFilter("status", value)
-                  }>
+                  }
+                >
                   <SelectTrigger>
                     <span className="text-muted-foreground">Status:</span>
                     <SelectValue />

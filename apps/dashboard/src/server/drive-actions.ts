@@ -66,7 +66,9 @@ export async function uploadToGoogleDrive(formData: FormData): Promise<string> {
 
     const fileId = response.data.id;
     if (!fileId) {
-      throw new Error("Failed to upload file to Google Drive (no fileId returned).");
+      throw new Error(
+        "Failed to upload file to Google Drive (no fileId returned).",
+      );
     }
 
     // Set permission to make it shareable to anyone with the link

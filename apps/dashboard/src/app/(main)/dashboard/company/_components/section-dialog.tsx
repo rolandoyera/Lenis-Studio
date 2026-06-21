@@ -4,10 +4,20 @@ import { type ReactNode, useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Edit, Loader2, MoreVertical } from "lucide-react";
-import { type Control, type UseFormSetValue, type UseFormWatch, useForm } from "react-hook-form";
+import {
+  type Control,
+  type UseFormSetValue,
+  type UseFormWatch,
+  useForm,
+} from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
-import { CardAction, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  CardAction,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -143,7 +153,12 @@ export function SectionEditDialog({
     >
       <DialogContent className="sm:max-w-2xl">
         <div ref={setContainer} />
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate autoComplete="off">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-4"
+          noValidate
+          autoComplete="off"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl">{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -154,10 +169,19 @@ export function SectionEditDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center gap-2"
+            >
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
               Save Changes
             </Button>

@@ -12,7 +12,14 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export interface GeoTableRow {
   /** Display name (e.g. a city or country). */
@@ -52,14 +59,19 @@ export function GeoTable({
 }) {
   const [pageIndex, setPageIndex] = React.useState(0);
   // "percent" sorts identically to "value"; tracked separately so only the clicked column highlights.
-  const [sort, setSort] = React.useState<{ key: SortColumn; dir: SortDir }>({ key: "value", dir: "desc" });
+  const [sort, setSort] = React.useState<{ key: SortColumn; dir: SortDir }>({
+    key: "value",
+    dir: "desc",
+  });
 
   const total = rows.reduce((sum, r) => sum + r.value, 0);
 
   const sortedRows = React.useMemo(() => {
     const factor = sort.dir === "asc" ? 1 : -1;
     return [...rows].sort((a, b) =>
-      sort.key === "label" ? factor * a.label.localeCompare(b.label) : factor * (a.value - b.value),
+      sort.key === "label"
+        ? factor * a.label.localeCompare(b.label)
+        : factor * (a.value - b.value),
     );
   }, [rows, sort]);
 
@@ -81,7 +93,11 @@ export function GeoTable({
     if (sort.key !== key) {
       return <ChevronsUpDown className="size-3.5 opacity-40" />;
     }
-    return sort.dir === "asc" ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />;
+    return sort.dir === "asc" ? (
+      <ChevronUp className="size-3.5" />
+    ) : (
+      <ChevronDown className="size-3.5" />
+    );
   }
 
   const pageNumbers = React.useMemo(() => {
@@ -90,12 +106,17 @@ export function GeoTable({
     }
     const current = page + 1;
     if (current <= 2) return [1, 2, 3];
-    if (current >= pageCount - 1) return [pageCount - 2, pageCount - 1, pageCount];
+    if (current >= pageCount - 1)
+      return [pageCount - 2, pageCount - 1, pageCount];
     return [current - 1, current, current + 1];
   }, [page, pageCount]);
 
   if (rows.length === 0) {
-    return <div className="flex h-64 items-center justify-center text-muted-foreground text-sm">{emptyMessage}</div>;
+    return (
+      <div className="flex h-64 items-center justify-center text-muted-foreground text-sm">
+        {emptyMessage}
+      </div>
+    );
   }
 
   return (
@@ -142,14 +163,18 @@ export function GeoTable({
                   <span
                     aria-hidden="true"
                     className={
-                      row.flagCode ? `flag:${row.flagCode} shrink-0 rounded-xs ring-1 ring-foreground/10` : "shrink-0"
+                      row.flagCode
+                        ? `flag:${row.flagCode} shrink-0 rounded-xs ring-1 ring-foreground/10`
+                        : "shrink-0"
                     }
                     style={{ height: FLAG_HEIGHT, width: FLAG_WIDTH }}
                   />
                   {row.label}
                 </span>
               </TableCell>
-              <TableCell className="py-2.5 text-right tabular-nums text-foreground">{row.value}</TableCell>
+              <TableCell className="py-2.5 text-right tabular-nums text-foreground">
+                {row.value}
+              </TableCell>
               <TableCell className="py-2.5 text-right tabular-nums">
                 {total > 0 ? `${Math.round((row.value / total) * 100)}%` : "0%"}
               </TableCell>
@@ -168,7 +193,9 @@ export function GeoTable({
               <PaginationItem>
                 <PaginationPrevious
                   href="#"
-                  className={page === 0 ? "pointer-events-none opacity-50" : undefined}
+                  className={
+                    page === 0 ? "pointer-events-none opacity-50" : undefined
+                  }
                   onClick={(event) => {
                     preventNavigation(event);
                     setPageIndex(page - 1);
@@ -202,7 +229,11 @@ export function GeoTable({
               <PaginationItem>
                 <PaginationNext
                   href="#"
-                  className={page >= pageCount - 1 ? "pointer-events-none opacity-50" : undefined}
+                  className={
+                    page >= pageCount - 1
+                      ? "pointer-events-none opacity-50"
+                      : undefined
+                  }
                   onClick={(event) => {
                     preventNavigation(event);
                     setPageIndex(page + 1);

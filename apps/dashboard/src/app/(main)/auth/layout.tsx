@@ -8,7 +8,9 @@ import { APP_CONFIG } from "@/config/app-config";
 
 import { AuthBackdrop } from "./_components/auth-backdrop";
 
-export default function Layout({ children }: Readonly<{ children: ReactNode }>) {
+export default function Layout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   return (
     <main className="bg-sidebar">
       <div className="relative grid h-dvh justify-center overflow-hidden p-2 lg:grid-cols-2">
@@ -35,8 +37,12 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
                 priority
               />
             </div>
-            <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">{APP_CONFIG.name}</h1>
-            <p className="font-light text-base text-white tracking-widest drop-shadow-sm">Design. Build. Repeat.</p>
+            <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">
+              {APP_CONFIG.name}
+            </h1>
+            <p className="font-light text-base text-white tracking-widest drop-shadow-sm">
+              Design. Build. Repeat.
+            </p>
           </div>
         </ViewTransition>
 

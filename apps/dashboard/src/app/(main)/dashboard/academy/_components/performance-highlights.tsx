@@ -4,7 +4,13 @@ import { ArrowRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 
 const performanceHighlights = [
@@ -87,15 +93,30 @@ function PerformanceHighlightBar({
         x={x}
         y={barY}
       />
-      <rect fill="var(--color-duration)" height={barHeight} rx={radius} width={fillWidth} x={x} y={barY} />
+      <rect
+        fill="var(--color-duration)"
+        height={barHeight}
+        rx={radius}
+        width={fillWidth}
+        x={x}
+        y={barY}
+      />
 
       {payload.avatars.map((initials, index) => {
         const avatarX = avatarStart + index * 14;
 
         return (
-          <foreignObject height={avatarSize + 4} key={initials} width={avatarSize + 4} x={avatarX - 2} y={avatarY}>
+          <foreignObject
+            height={avatarSize + 4}
+            key={initials}
+            width={avatarSize + 4}
+            x={avatarX - 2}
+            y={avatarY}
+          >
             <Avatar className="size-5 bg-muted" size="sm">
-              <AvatarFallback className="text-foreground">{initials}</AvatarFallback>
+              <AvatarFallback className="text-foreground">
+                {initials}
+              </AvatarFallback>
             </Avatar>
           </foreignObject>
         );
@@ -146,15 +167,28 @@ export function PerformanceHighlights() {
             <XAxis
               axisLine={false}
               domain={[0, 4]}
-              tickFormatter={(value) => ["Mon", "Tue", "Wed", "Thu", "Fri"][Number(value)] ?? ""}
+              tickFormatter={(value) =>
+                ["Mon", "Tue", "Wed", "Thu", "Fri"][Number(value)] ?? ""
+              }
               tickLine={false}
               tickMargin={10}
               ticks={[0, 1, 2, 3, 4]}
               type="number"
             />
-            <YAxis axisLine={false} dataKey="className" tickLine={false} tickMargin={10} type="category" width={45} />
+            <YAxis
+              axisLine={false}
+              dataKey="className"
+              tickLine={false}
+              tickMargin={10}
+              type="category"
+              width={45}
+            />
             <Bar dataKey="start" fill="transparent" stackId="timeline" />
-            <Bar dataKey="duration" shape={<PerformanceHighlightBar />} stackId="timeline" />
+            <Bar
+              dataKey="duration"
+              shape={<PerformanceHighlightBar />}
+              stackId="timeline"
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

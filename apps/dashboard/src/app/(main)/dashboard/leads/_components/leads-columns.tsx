@@ -66,7 +66,8 @@ export function getLeadsColumns(
       cell: ({ row }) => (
         <Link
           href={`/dashboard/leads/${row.original.uid}`}
-          className="font-medium text-sm hover:text-primary hover:underline">
+          className="font-medium text-sm hover:text-primary hover:underline"
+        >
           {getLeadName(row.original)}
         </Link>
       ),
@@ -158,7 +159,8 @@ export function getLeadsColumns(
             asChild
             variant="outline"
             size="icon"
-            className="rounded-full">
+            className="rounded-full"
+          >
             <Link href={`/dashboard/leads/${row.original.uid}`}>
               <Eye />
               <span className="sr-only">View lead</span>

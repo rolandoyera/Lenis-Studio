@@ -32,12 +32,16 @@ export function DeleteProjectDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle className="text-xl">
+            Are you absolutely sure?
+          </AlertDialogTitle>
           <AlertDialogDescription className="mt-4 text-sm">
-            This action cannot be undone. This will permanently delete the project{" "}
+            This action cannot be undone. This will permanently delete the
+            project{" "}
             <span className="font-medium text-foreground">{projectName}</span>.
             <span className="mt-2 block font-medium text-amber-600">
-              (Proposals linked to this project will remain in the system, but will be detached from this project).
+              (Proposals linked to this project will remain in the system, but
+              will be detached from this project).
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>

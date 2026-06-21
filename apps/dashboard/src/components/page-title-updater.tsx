@@ -11,7 +11,9 @@ interface PageTitleContextType {
   setTitle: (title: string | null) => void;
 }
 
-const PageTitleContext = createContext<PageTitleContextType | undefined>(undefined);
+const PageTitleContext = createContext<PageTitleContextType | undefined>(
+  undefined,
+);
 
 export function PageTitleProvider({ children }: { children: React.ReactNode }) {
   const [customTitle, setCustomTitle] = useState<string | null>(null);
@@ -28,7 +30,11 @@ export function PageTitleProvider({ children }: { children: React.ReactNode }) {
     document.title = customTitle ? `${customTitle} | ${baseTitle}` : baseTitle;
   }, [customTitle]);
 
-  return <PageTitleContext.Provider value={{ setTitle: setCustomTitle }}>{children}</PageTitleContext.Provider>;
+  return (
+    <PageTitleContext.Provider value={{ setTitle: setCustomTitle }}>
+      {children}
+    </PageTitleContext.Provider>
+  );
 }
 
 export function usePageTitle(title: string) {

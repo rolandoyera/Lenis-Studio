@@ -41,9 +41,21 @@ const KPI_ORDER: { key: keyof AnalyticsKpis; label: string }[] = [
 function Stat({ label, kpi }: { label: string; kpi: KpiCardData }) {
   return (
     <div className="flex flex-col gap-1 border-border border-l pl-4">
-      <span className="text-muted-foreground text-xs uppercase tracking-wide">{label}</span>
-      <span className="font-semibold text-2xl tabular-nums leading-none">{kpi.value}</span>
-      <span className={kpi.isPositive ? "text-emerald-600 text-xs" : "text-destructive text-xs"}>{kpi.change}</span>
+      <span className="text-muted-foreground text-xs uppercase tracking-wide">
+        {label}
+      </span>
+      <span className="font-semibold text-2xl tabular-nums leading-none">
+        {kpi.value}
+      </span>
+      <span
+        className={
+          kpi.isPositive
+            ? "text-emerald-600 text-xs"
+            : "text-destructive text-xs"
+        }
+      >
+        {kpi.change}
+      </span>
     </div>
   );
 }
@@ -60,7 +72,15 @@ function EmptyNote({ children }: { children: string }) {
  * receive their data. Rendered inside the shared ReportShell.
  */
 export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
-  const { rangeLabel, comparisonLabel, kpis, trend, topPages, trafficSources, audience } = data;
+  const {
+    rangeLabel,
+    comparisonLabel,
+    kpis,
+    trend,
+    topPages,
+    trafficSources,
+    audience,
+  } = data;
   const channels = trafficSources?.channels ?? [];
   const countries = audience?.countries ?? [];
   const devices = audience?.devices ?? [];
@@ -69,7 +89,11 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
     <ReportShell title="Analytics Report" subtitle={rangeLabel}>
       <ReportSection
         title="Performance summary"
-        description={comparisonLabel ? `Key metrics ${comparisonLabel}.` : "Key metrics for the selected period."}
+        description={
+          comparisonLabel
+            ? `Key metrics ${comparisonLabel}.`
+            : "Key metrics for the selected period."
+        }
       >
         {kpis ? (
           <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
@@ -82,8 +106,15 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
         )}
       </ReportSection>
 
-      <ReportSection title="Traffic over time" description="Active users and sessions across the period.">
-        {trend.length > 0 ? <TrafficTrendChart data={trend} /> : <EmptyNote>No traffic recorded.</EmptyNote>}
+      <ReportSection
+        title="Traffic over time"
+        description="Active users and sessions across the period."
+      >
+        {trend.length > 0 ? (
+          <TrafficTrendChart data={trend} />
+        ) : (
+          <EmptyNote>No traffic recorded.</EmptyNote>
+        )}
       </ReportSection>
 
       <ReportSection
@@ -104,11 +135,18 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
             </thead>
             <tbody>
               {topPages.map((page) => (
-                <tr key={page.path} className="border-border/60 border-b last:border-0">
-                  <td className="max-w-[40ch] truncate py-2 font-medium">{page.path}</td>
+                <tr
+                  key={page.path}
+                  className="border-border/60 border-b last:border-0"
+                >
+                  <td className="max-w-[40ch] truncate py-2 font-medium">
+                    {page.path}
+                  </td>
                   <td className="py-2 text-right tabular-nums">{page.views}</td>
                   <td className="py-2 text-right tabular-nums">{page.time}</td>
-                  <td className="py-2 text-right tabular-nums">{page.bounce}</td>
+                  <td className="py-2 text-right tabular-nums">
+                    {page.bounce}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -119,7 +157,11 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
       </ReportSection>
 
       <div className="grid gap-12 lg:grid-cols-2">
-        <ReportSection title="Top channels" description="Where visitors came from." keepTogether={false}>
+        <ReportSection
+          title="Top channels"
+          description="Where visitors came from."
+          keepTogether={false}
+        >
           {channels.length > 0 ? (
             <table className="w-full text-sm">
               <thead>
@@ -130,9 +172,14 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
               </thead>
               <tbody>
                 {channels.map((channel) => (
-                  <tr key={channel.source} className="border-border/60 border-b last:border-0">
+                  <tr
+                    key={channel.source}
+                    className="border-border/60 border-b last:border-0"
+                  >
                     <td className="py-2 font-medium">{channel.source}</td>
-                    <td className="py-2 text-right tabular-nums">{channel.visitors.toLocaleString()}</td>
+                    <td className="py-2 text-right tabular-nums">
+                      {channel.visitors.toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -142,7 +189,11 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
           )}
         </ReportSection>
 
-        <ReportSection title="Top countries" description="Visitors by country." keepTogether={false}>
+        <ReportSection
+          title="Top countries"
+          description="Visitors by country."
+          keepTogether={false}
+        >
           {countries.length > 0 ? (
             <table className="w-full text-sm">
               <thead>
@@ -153,9 +204,14 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
               </thead>
               <tbody>
                 {countries.slice(0, 10).map((country) => (
-                  <tr key={country.countryId || country.country} className="border-border/60 border-b last:border-0">
+                  <tr
+                    key={country.countryId || country.country}
+                    className="border-border/60 border-b last:border-0"
+                  >
                     <td className="py-2 font-medium">{country.country}</td>
-                    <td className="py-2 text-right tabular-nums">{country.users.toLocaleString()}</td>
+                    <td className="py-2 text-right tabular-nums">
+                      {country.users.toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -166,7 +222,11 @@ export function AnalyticsReport({ data }: { data: AnalyticsReportData }) {
         </ReportSection>
       </div>
 
-      <ReportSection title="Devices" description="Visitors by device category." keepTogether={false}>
+      <ReportSection
+        title="Devices"
+        description="Visitors by device category."
+        keepTogether={false}
+      >
         {devices.length > 0 ? (
           <HatchBarChart
             seriesLabel="Users"

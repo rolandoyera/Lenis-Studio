@@ -3,7 +3,14 @@
 import { Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 import customersData from "./data.json";
 import type { RecentCustomerRow } from "./recent-customers-table/schema";
@@ -16,7 +23,10 @@ export function SubscriberOverview() {
     <Card>
       <CardHeader>
         <CardTitle className="leading-none">18,426 Customers</CardTitle>
-        <CardDescription>Recent customer records with plan, billing, status, and signup activity.</CardDescription>
+        <CardDescription>
+          Recent customer records with plan, billing, status, and signup
+          activity.
+        </CardDescription>
         <CardAction>
           <Button variant="outline" size="sm">
             <Download />

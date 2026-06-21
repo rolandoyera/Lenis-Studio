@@ -44,7 +44,9 @@ function createLimiter(max: number) {
  */
 function parseServiceAccountKey(raw: string): Record<string, unknown> {
   const trimmed = raw.trim();
-  const json = trimmed.startsWith("{") ? trimmed : Buffer.from(trimmed, "base64").toString("utf8");
+  const json = trimmed.startsWith("{")
+    ? trimmed
+    : Buffer.from(trimmed, "base64").toString("utf8");
   return JSON.parse(json) as Record<string, unknown>;
 }
 
@@ -54,7 +56,12 @@ export function hasGA4Credentials(): boolean {
   const clientId = process.env.GA_CLIENT_ID;
   const clientSecret = process.env.GA_CLIENT_SECRET;
   const refreshToken = process.env.GA_REFRESH_TOKEN;
-  return Boolean(clientId && clientSecret && refreshToken && refreshToken !== "PASTE_YOUR_REFRESH_TOKEN_HERE");
+  return Boolean(
+    clientId &&
+    clientSecret &&
+    refreshToken &&
+    refreshToken !== "PASTE_YOUR_REFRESH_TOKEN_HERE",
+  );
 }
 
 function buildAuth(): GoogleAuth {
@@ -74,7 +81,9 @@ function buildAuth(): GoogleAuth {
   const refreshToken = process.env.GA_REFRESH_TOKEN;
 
   if (!clientId || !clientSecret || !refreshToken) {
-    throw new Error("Missing GA_SERVICE_ACCOUNT_KEY (or legacy GA_CLIENT_ID/GA_CLIENT_SECRET/GA_REFRESH_TOKEN).");
+    throw new Error(
+      "Missing GA_SERVICE_ACCOUNT_KEY (or legacy GA_CLIENT_ID/GA_CLIENT_SECRET/GA_REFRESH_TOKEN).",
+    );
   }
 
   return new GoogleAuth({
@@ -97,9 +106,14 @@ export function getGA4Client() {
   // Route both report methods through a shared limiter so every GA4 Data API
   // call — regardless of which action issues it — respects the concurrency cap.
   const limit = createLimiter(MAX_CONCURRENT_GA4_REQUESTS);
-  const runReport = client.runReport.bind(client) as (...args: unknown[]) => Promise<unknown>;
-  const runRealtimeReport = client.runRealtimeReport.bind(client) as (...args: unknown[]) => Promise<unknown>;
-  client.runReport = ((...args: unknown[]) => limit(() => runReport(...args))) as typeof client.runReport;
+  const runReport = client.runReport.bind(client) as (
+    ...args: unknown[]
+  ) => Promise<unknown>;
+  const runRealtimeReport = client.runRealtimeReport.bind(client) as (
+    ...args: unknown[]
+  ) => Promise<unknown>;
+  client.runReport = ((...args: unknown[]) =>
+    limit(() => runReport(...args))) as typeof client.runReport;
   client.runRealtimeReport = ((...args: unknown[]) =>
     limit(() => runRealtimeReport(...args))) as typeof client.runRealtimeReport;
 

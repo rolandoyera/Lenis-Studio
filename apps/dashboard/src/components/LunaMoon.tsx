@@ -54,7 +54,9 @@ export default function LunaMoon({
         width={size}
         height={size}
         role="img"
-        aria-label={thinking ? `${AI_ASSISTANT_NAME} is thinking` : AI_ASSISTANT_NAME}
+        aria-label={
+          thinking ? `${AI_ASSISTANT_NAME} is thinking` : AI_ASSISTANT_NAME
+        }
         className={`luna luna-${variant}${on}${className ? ` ${className}` : ""}`}
         style={{ overflow: "visible", color: "currentColor" }}
         {...rest}
@@ -81,23 +83,47 @@ export default function LunaMoon({
 
         {/* Breathe glow sits behind the moon */}
         {variant === "breathe" && (
-          <circle className="luna-glow" cx="50" cy="50" r="33" fill="currentColor" opacity="0" />
+          <circle
+            className="luna-glow"
+            cx="50"
+            cy="50"
+            r="33"
+            fill="currentColor"
+            opacity="0"
+          />
         )}
 
         {variant === "shimmer" ? (
           <g mask={`url(#${m})`}>
             <circle cx="50" cy="50" r="33" fill="currentColor" />
-            <rect className="luna-band" x="34" y="8" width="20" height="84" fill={`url(#${g})`} />
+            <rect
+              className="luna-band"
+              x="34"
+              y="8"
+              width="20"
+              height="84"
+              fill={`url(#${g})`}
+            />
           </g>
         ) : (
-          <circle className="luna-body" cx="50" cy="50" r="33" fill="currentColor" mask={`url(#${m})`} />
+          <circle
+            className="luna-body"
+            cx="50"
+            cy="50"
+            r="33"
+            fill="currentColor"
+            mask={`url(#${m})`}
+          />
         )}
 
         {/* Orbit spark */}
         {variant === "orbit" && (
           <g className="luna-orbit-grp">
             <g className="luna-spark" transform="translate(50,10)">
-              <path fill="currentColor" d="M0,-6 L1.4,-1.4 L6,0 L1.4,1.4 L0,6 L-1.4,1.4 L-6,0 L-1.4,-1.4 Z" />
+              <path
+                fill="currentColor"
+                d="M0,-6 L1.4,-1.4 L6,0 L1.4,1.4 L0,6 L-1.4,1.4 L-6,0 L-1.4,-1.4 Z"
+              />
             </g>
           </g>
         )}

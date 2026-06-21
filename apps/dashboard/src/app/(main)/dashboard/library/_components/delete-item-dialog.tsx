@@ -22,18 +22,28 @@ interface DeleteItemDialogProps {
 }
 
 /** Confirmation alert for permanently deleting a library item. */
-export function DeleteItemDialog({ open, onOpenChange, itemName, deleting, onConfirm }: DeleteItemDialogProps) {
+export function DeleteItemDialog({
+  open,
+  onOpenChange,
+  itemName,
+  deleting,
+  onConfirm,
+}: DeleteItemDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-xl">Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogTitle className="text-xl">
+            Are you absolutely sure?
+          </AlertDialogTitle>
           <AlertDialogDescription className="text-sm">
-            This action cannot be undone. This will permanently delete the product catalog item{" "}
-            <span className="font-medium text-foreground">{itemName}</span> from the global studio library.
+            This action cannot be undone. This will permanently delete the
+            product catalog item{" "}
+            <span className="font-medium text-foreground">{itemName}</span> from
+            the global studio library.
             <span className="mt-2 block font-medium text-amber-600">
-              (All proposal listings referencing this global library item will remain intact, but will detach from this
-              parent catalog source).
+              (All proposal listings referencing this global library item will
+              remain intact, but will detach from this parent catalog source).
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>

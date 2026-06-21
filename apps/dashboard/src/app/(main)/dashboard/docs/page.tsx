@@ -22,7 +22,8 @@ export default function Page() {
           <li key={item.slug}>
             <Link
               href={docsHref(item.slug)}
-              className="text-primary text-sm hover:underline">
+              className="text-primary text-sm hover:underline"
+            >
               {item.title}
             </Link>
           </li>

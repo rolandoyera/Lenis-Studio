@@ -6,7 +6,14 @@ import { format, subMinutes } from "date-fns";
 import { ArrowUpRight } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
 
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   type ChartConfig,
   ChartContainer,
@@ -122,7 +129,10 @@ function getTrafficData() {
 
   return trafficPoints.map((point, index) => ({
     ...point,
-    timestamp: subMinutes(now, (trafficPoints.length - 1 - index) * trafficIntervalMinutes).toISOString(),
+    timestamp: subMinutes(
+      now,
+      (trafficPoints.length - 1 - index) * trafficIntervalMinutes,
+    ).toISOString(),
   }));
 }
 
@@ -157,7 +167,9 @@ export function StoreTraffic() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-normal text-muted-foreground text-sm">Store Traffic</CardTitle>
+        <CardTitle className="font-normal text-muted-foreground text-sm">
+          Store Traffic
+        </CardTitle>
         <CardDescription className="text-foreground text-xl tabular-nums leading-none tracking-tight">
           12.9K visits
         </CardDescription>
@@ -168,11 +180,23 @@ export function StoreTraffic() {
 
       <CardContent>
         <ChartContainer config={trafficConfig} className="h-54 w-full">
-          <AreaChart accessibilityLayer data={trafficData} margin={{ bottom: 0, left: 0, right: 0, top: 8 }}>
+          <AreaChart
+            accessibilityLayer
+            data={trafficData}
+            margin={{ bottom: 0, left: 0, right: 0, top: 8 }}
+          >
             <defs>
               <linearGradient id="fillVisitors" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="5%" stopColor="var(--color-visitors)" stopOpacity={0.28} />
-                <stop offset="95%" stopColor="var(--color-visitors)" stopOpacity={0.02} />
+                <stop
+                  offset="5%"
+                  stopColor="var(--color-visitors)"
+                  stopOpacity={0.28}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="var(--color-visitors)"
+                  stopOpacity={0.02}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
@@ -183,14 +207,35 @@ export function StoreTraffic() {
               tickFormatter={formatTrafficTick}
               tickLine={false}
               tickMargin={10}
-              ticks={[trafficData[0].timestamp, trafficData.at(-1)?.timestamp ?? ""]}
+              ticks={[
+                trafficData[0].timestamp,
+                trafficData.at(-1)?.timestamp ?? "",
+              ]}
             />
-            <YAxis axisLine={false} domain={[0, 650]} tickLine={false} tickMargin={6} width={36} yAxisId="traffic" />
+            <YAxis
+              axisLine={false}
+              domain={[0, 650]}
+              tickLine={false}
+              tickMargin={6}
+              width={36}
+              yAxisId="traffic"
+            />
             <ChartTooltip
-              content={<ChartTooltipContent labelFormatter={(value) => formatTrafficTooltipLabel(String(value))} />}
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(value) =>
+                    formatTrafficTooltipLabel(String(value))
+                  }
+                />
+              }
               cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }}
             />
-            <ChartLegend align="right" verticalAlign="top" className="justify-end" content={<ChartLegendContent />} />
+            <ChartLegend
+              align="right"
+              verticalAlign="top"
+              className="justify-end"
+              content={<ChartLegendContent />}
+            />
             <Area
               dataKey="visitors"
               dot={false}

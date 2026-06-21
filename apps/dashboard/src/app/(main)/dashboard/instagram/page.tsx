@@ -13,12 +13,17 @@ import { InstagramPostsGrid } from "./_components/instagram-posts-grid";
 import { InstagramTabs } from "./_components/instagram-tabs";
 import { InstagramToolbar } from "./_components/instagram-toolbar";
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ range?: string; meta?: string }> }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string; meta?: string }>;
+}) {
   const { range = "last-30-days", meta: metaParam } = await searchParams;
   const meta = await getMetaConnection();
   // Only hit the Graph API for the picker when we arrived from a multi-page
   // grant (?meta=select) — keeps normal page loads cheap.
-  const pendingPages = metaParam === "select" ? await getMetaPendingPages() : [];
+  const pendingPages =
+    metaParam === "select" ? await getMetaPendingPages() : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,17 +44,26 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
                   meta ? "bg-green-500" : "bg-red-500"
                 }`}
               />
-              <span className={`relative inline-flex size-2.5 rounded-full ${meta ? "bg-green-500" : "bg-red-500"}`} />
+              <span
+                className={`relative inline-flex size-2.5 rounded-full ${meta ? "bg-green-500" : "bg-red-500"}`}
+              />
             </span>
           }
         />
         {meta && (
           <div className="flex flex-col items-center gap-2">
             <Avatar className="size-9">
-              <AvatarImage src={meta.instagramProfilePictureUrl} alt={meta.instagramUsername} />
-              <AvatarFallback>{meta.instagramUsername.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage
+                src={meta.instagramProfilePictureUrl}
+                alt={meta.instagramUsername}
+              />
+              <AvatarFallback>
+                {meta.instagramUsername.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
-            <span className="font-medium text-card-foreground text-sm">@{meta.instagramUsername}</span>
+            <span className="font-medium text-card-foreground text-sm">
+              @{meta.instagramUsername}
+            </span>
           </div>
         )}
       </div>
@@ -77,7 +91,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ r
         />
       )}
 
-      <InstagramConnect connection={meta} pendingPages={pendingPages} justConnected={metaParam === "connected"} />
+      <InstagramConnect
+        connection={meta}
+        pendingPages={pendingPages}
+        justConnected={metaParam === "connected"}
+      />
     </div>
   );
 }

@@ -11,7 +11,12 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { auth } from "@/lib/firebase";
 
@@ -20,7 +25,12 @@ const formSchema = z.object({
 });
 
 function hasFirebaseCode(error: unknown, code: string) {
-  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === code
+  );
 }
 
 export function ForgotPasswordForm() {
@@ -42,7 +52,8 @@ export function ForgotPasswordForm() {
       setIsSent(true);
     } catch (error: unknown) {
       console.error("Password recovery error:", error);
-      let errorMessage = "Failed to send password reset email. Please try again.";
+      let errorMessage =
+        "Failed to send password reset email. Please try again.";
       if (hasFirebaseCode(error, "auth/user-not-found")) {
         errorMessage = "No account found with this email address.";
       } else if (hasFirebaseCode(error, "auth/invalid-email")) {
@@ -58,7 +69,8 @@ export function ForgotPasswordForm() {
     return (
       <div className="space-y-4 text-center">
         <p className="text-muted-foreground text-sm">
-          We have sent a secure link to your email to reset your password. Please check your inbox and spam folder.
+          We have sent a secure link to your email to reset your password.
+          Please check your inbox and spam folder.
         </p>
         <Button asChild className="mt-4 w-full">
           <Link href="/auth/login">Back to Login</Link>
@@ -68,7 +80,11 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form
+      noValidate
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="flex flex-col gap-4"
+    >
       <FieldGroup className="gap-4">
         <Controller
           control={form.control}

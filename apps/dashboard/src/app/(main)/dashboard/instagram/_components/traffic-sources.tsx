@@ -1,11 +1,25 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
-import { Bar, BarChart, LabelList, type LabelProps, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  LabelList,
+  type LabelProps,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { siEbay, siGoogle, siMeta, siShopify, siTiktok } from "simple-icons";
 
 import { SimpleIcon } from "@/components/simple-icon";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
 
 const trafficSources = [
@@ -70,7 +84,13 @@ function getNumber(value: number | string | undefined) {
   return typeof value === "number" ? value : Number(value);
 }
 
-function TrafficSourceIconLabel({ height, index, width, x, y }: IconLabelProps) {
+function TrafficSourceIconLabel({
+  height,
+  index,
+  width,
+  x,
+  y,
+}: IconLabelProps) {
   if (typeof index !== "number") {
     return null;
   }
@@ -112,16 +132,36 @@ function TrafficSourceNameLabel({ height, index, x, y }: SourceLabelProps) {
   const yValue = getNumber(y);
   const heightValue = getNumber(height);
 
-  if (!source || Number.isNaN(xValue) || Number.isNaN(yValue) || Number.isNaN(heightValue)) {
+  if (
+    !source ||
+    Number.isNaN(xValue) ||
+    Number.isNaN(yValue) ||
+    Number.isNaN(heightValue)
+  ) {
     return null;
   }
 
   return (
-    <text dominantBaseline="middle" textAnchor="start" x={2} y={yValue + heightValue / 2}>
-      <tspan className="fill-foreground font-medium" fontSize={13} x={2} y={yValue + heightValue / 2 - 7}>
+    <text
+      dominantBaseline="middle"
+      textAnchor="start"
+      x={2}
+      y={yValue + heightValue / 2}
+    >
+      <tspan
+        className="fill-foreground font-medium"
+        fontSize={13}
+        x={2}
+        y={yValue + heightValue / 2 - 7}
+      >
         {source.name}
       </tspan>
-      <tspan className="fill-muted-foreground" fontSize={12} x={2} y={yValue + heightValue / 2 + 11}>
+      <tspan
+        className="fill-muted-foreground"
+        fontSize={12}
+        x={2}
+        y={yValue + heightValue / 2 + 11}
+      >
         {source.visits}
       </tspan>
     </text>
@@ -132,7 +172,11 @@ function TrafficSourceChangeLabel({ height, value, y }: SourceLabelProps) {
   const yValue = getNumber(y);
   const heightValue = getNumber(height);
 
-  if (typeof value !== "string" || Number.isNaN(yValue) || Number.isNaN(heightValue)) {
+  if (
+    typeof value !== "string" ||
+    Number.isNaN(yValue) ||
+    Number.isNaN(heightValue)
+  ) {
     return null;
   }
 
@@ -140,7 +184,9 @@ function TrafficSourceChangeLabel({ height, value, y }: SourceLabelProps) {
 
   return (
     <text
-      className={isNegative ? "fill-destructive" : "fill-green-700 dark:fill-green-300"}
+      className={
+        isNegative ? "fill-destructive" : "fill-green-700 dark:fill-green-300"
+      }
       dominantBaseline="middle"
       dx={-6}
       fontSize={13}
@@ -157,7 +203,9 @@ export function TrafficSources() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-normal text-muted-foreground text-sm">Traffic Sources</CardTitle>
+        <CardTitle className="font-normal text-muted-foreground text-sm">
+          Traffic Sources
+        </CardTitle>
         <CardDescription className="text-foreground text-xl tabular-nums leading-none tracking-tight">
           14.8K visits
         </CardDescription>
@@ -183,7 +231,12 @@ export function TrafficSources() {
                 patternUnits="userSpaceOnUse"
                 width="4"
               >
-                <rect height="6" width="6" fill="var(--muted)" fillOpacity="0.5" />
+                <rect
+                  height="6"
+                  width="6"
+                  fill="var(--muted)"
+                  fillOpacity="0.5"
+                />
                 <line
                   stroke="var(--muted-foreground)"
                   strokeOpacity="0.10"
@@ -198,7 +251,10 @@ export function TrafficSources() {
             <XAxis dataKey="share" domain={[0, 100]} hide type="number" />
             <YAxis dataKey="name" hide type="category" />
             <Bar
-              background={{ fill: "url(#ecommerce-traffic-source-background-pattern)", radius: 8 }}
+              background={{
+                fill: "url(#ecommerce-traffic-source-background-pattern)",
+                radius: 8,
+              }}
               barSize={36}
               dataKey="share"
               fill="var(--color-share)"
@@ -211,7 +267,10 @@ export function TrafficSources() {
             >
               <LabelList content={<TrafficSourceNameLabel />} dataKey="name" />
               <LabelList content={<TrafficSourceIconLabel />} dataKey="share" />
-              <LabelList content={<TrafficSourceChangeLabel />} dataKey="change" />
+              <LabelList
+                content={<TrafficSourceChangeLabel />}
+                dataKey="change"
+              />
             </Bar>
           </BarChart>
         </ChartContainer>

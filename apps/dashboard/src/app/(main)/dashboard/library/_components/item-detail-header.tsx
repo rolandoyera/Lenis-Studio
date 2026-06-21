@@ -55,10 +55,12 @@ export function ItemDetailHeader({
               {item.vendorId ? (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}
-                  className="cursor-pointer transition-colors hover:text-primary hover:underline">
+                  className="cursor-pointer transition-colors hover:text-primary hover:underline"
+                >
                   <Label
                     size="large"
-                    className="cursor-pointer text-foreground hover:text-primary">
+                    className="cursor-pointer text-foreground hover:text-primary"
+                  >
                     {vendorName}
                   </Label>
                 </Link>
@@ -87,7 +89,8 @@ export function ItemDetailHeader({
 
                 <DropdownMenuItem
                   onClick={onRequestDelete}
-                  variant="destructive">
+                  variant="destructive"
+                >
                   <Trash2 size={4} />
                   Delete Product
                 </DropdownMenuItem>

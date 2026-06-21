@@ -53,7 +53,15 @@ export const CATEGORIES = [
 ];
 
 export const SUBCATEGORIES: Record<string, string[]> = {
-  Furniture: ["Tables", "Seating", "Beds", "Casegoods", "Children's", "Custom Furniture", "Other"],
+  Furniture: [
+    "Tables",
+    "Seating",
+    "Beds",
+    "Casegoods",
+    "Children's",
+    "Custom Furniture",
+    "Other",
+  ],
   Lighting: [
     "Ceiling Lights",
     "Wall Lights",
@@ -64,7 +72,16 @@ export const SUBCATEGORIES: Record<string, string[]> = {
     "Accent Lighting",
     "Other",
   ],
-  Kitchen: ["Cabinets", "Sinks", "Faucets", "Countertops", "Hardware", "Appliances", "Accessories", "Other"],
+  Kitchen: [
+    "Cabinets",
+    "Sinks",
+    "Faucets",
+    "Countertops",
+    "Hardware",
+    "Appliances",
+    "Accessories",
+    "Other",
+  ],
   Bath: [
     "Cabinets",
     "Vanities",
@@ -78,7 +95,15 @@ export const SUBCATEGORIES: Record<string, string[]> = {
     "Accessories",
     "Other",
   ],
-  Surfaces: ["Stone", "Tile", "Wood Flooring", "Concrete", "Wall Coverings", "Glass", "Other"],
+  Surfaces: [
+    "Stone",
+    "Tile",
+    "Wood Flooring",
+    "Concrete",
+    "Wall Coverings",
+    "Glass",
+    "Other",
+  ],
   "Fabrics & Textiles": [
     "Upholstery Fabrics",
     "Leather",
@@ -88,10 +113,29 @@ export const SUBCATEGORIES: Record<string, string[]> = {
     "Towels & Bath Linens",
     "Other",
   ],
-  Finishes: ["Paint & Stain", "Metal Finish", "Wood Finish", "Specialty Finish", "Other"],
-  "Doors & Windows": ["Doors", "Windows", "Hardware", "Window Treatments", "Other"],
+  Finishes: [
+    "Paint & Stain",
+    "Metal Finish",
+    "Wood Finish",
+    "Specialty Finish",
+    "Other",
+  ],
+  "Doors & Windows": [
+    "Doors",
+    "Windows",
+    "Hardware",
+    "Window Treatments",
+    "Other",
+  ],
   Decor: ["Art", "Mirrors", "Planters", "Vases", "Rugs", "Other"],
-  Outdoor: ["Furniture", "Lighting", "Kitchen", "Structures", "Planters", "Other"],
+  Outdoor: [
+    "Furniture",
+    "Lighting",
+    "Kitchen",
+    "Structures",
+    "Planters",
+    "Other",
+  ],
   "Construction Materials": [
     "Lumber",
     "Drywall",

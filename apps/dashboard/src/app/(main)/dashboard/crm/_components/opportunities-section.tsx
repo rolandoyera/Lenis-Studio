@@ -156,7 +156,8 @@ export function OpportunitiesSection() {
                         .getColumn("stage")
                         ?.setFilterValue(value === "all" ? undefined : value);
                       table.setPageIndex(0);
-                    }}>
+                    }}
+                  >
                     {stageOptions.map((option) => (
                       <DropdownMenuRadioItem key={option} value={option}>
                         {option === "all" ? "All stages" : option}
@@ -196,7 +197,8 @@ export function OpportunitiesSection() {
                   table.getRowModel().rows.map((row) => (
                     <TableRow
                       key={row.id}
-                      data-state={row.getIsSelected() && "selected"}>
+                      data-state={row.getIsSelected() && "selected"}
+                    >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
                           {flexRender(
@@ -211,7 +213,8 @@ export function OpportunitiesSection() {
                   <TableRow>
                     <TableCell
                       colSpan={table.getVisibleLeafColumns().length}
-                      className="h-24 text-center">
+                      className="h-24 text-center"
+                    >
                       No results.
                     </TableCell>
                   </TableRow>
@@ -256,7 +259,8 @@ export function OpportunitiesSection() {
                       onClick={(event) => {
                         preventPaginationNavigation(event);
                         table.setPageIndex(pageNumber - 1);
-                      }}>
+                      }}
+                    >
                       {pageNumber}
                     </PaginationLink>
                   </PaginationItem>

@@ -5,21 +5,57 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 
-import { closestCenter, DndContext, type DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { GripVertical, PanelRight, Plus, Trash2, X } from "lucide-react";
 
-import { ArmchairIcon, CoffeeTableIcon, ConsoleTableIcon, RugIcon, SofaIcon } from "@/components/icons/furniture-icons";
+import {
+  ArmchairIcon,
+  CoffeeTableIcon,
+  ConsoleTableIcon,
+  RugIcon,
+  SofaIcon,
+} from "@/components/icons/furniture-icons";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useSidebar } from "@/components/ui/sidebar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { cn, formatCurrency } from "@/lib/utils";
 
-const UNIT_TYPES = ["Each", "Per Ft", "Per Sq Ft", "Per Yd", "Lump Sum"] as const;
+const UNIT_TYPES = [
+  "Each",
+  "Per Ft",
+  "Per Sq Ft",
+  "Per Yd",
+  "Lump Sum",
+] as const;
 type UnitType = (typeof UNIT_TYPES)[number];
 
 interface LineItem {
@@ -54,7 +90,8 @@ const INITIAL_ITEMS: LineItem[] = [
     materials: "Leather & Brass",
     finishColor: "Cream",
     room: "Living Room",
-    description: "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
+    description:
+      "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
     dimensions: "168″ W × 77″ D × 35″ H",
     unitType: "Each",
     qty: 1,
@@ -68,7 +105,8 @@ const INITIAL_ITEMS: LineItem[] = [
     materials: "Leather & Brass",
     finishColor: "Cream",
     room: "Living Room",
-    description: "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
+    description:
+      "Cream leather / taupe accents. Tone-on-tone stitching 143. Brass details.",
     dimensions: "168″ W × 77″ D × 35″ H",
     unitType: "Each",
     qty: 1,
@@ -89,14 +127,23 @@ interface SortableRowProps {
 }
 
 function SortableRow({ item, onDelete, renderIcon }: SortableRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id: item.id,
   });
 
   // Apply the sort transform/transition to the row itself (the measured node) so the
   // dragged row stays perfectly column-aligned. When active, lift it above its neighbors.
   const style: React.CSSProperties = {
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      : undefined,
     transition,
   };
 
@@ -104,7 +151,10 @@ function SortableRow({ item, onDelete, renderIcon }: SortableRowProps) {
     <TableRow
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && "relative z-10 bg-white! shadow-[0_12px_30px_rgba(60,50,40,0.15)] dark:bg-white/20!")}
+      className={cn(
+        isDragging &&
+          "relative z-10 bg-white! shadow-[0_12px_30px_rgba(60,50,40,0.15)] dark:bg-white/20!",
+      )}
     >
       {/* Grip Handle Cell */}
       <TableCell className="px-4 py-5">
@@ -118,33 +168,55 @@ function SortableRow({ item, onDelete, renderIcon }: SortableRowProps) {
       </TableCell>
       <TableCell className="px-4 py-5">
         <div className="thumb flex size-14 shrink-0 items-center justify-center rounded-lg border bg-muted/50">
-          <span className="text-muted-foreground">{renderIcon(item.iconType)}</span>
+          <span className="text-muted-foreground">
+            {renderIcon(item.iconType)}
+          </span>
         </div>
       </TableCell>
       <TableCell className="px-4 py-5">
         <div className="flex items-center gap-3.5">
           <div>
-            <div className="font-serif text-foreground text-sm">{item.subcategory}</div>
-            {item.name && <div className="text-[12px] text-muted-foreground">{item.name}</div>}
+            <div className="font-serif text-foreground text-sm">
+              {item.subcategory}
+            </div>
+            {item.name && (
+              <div className="text-[12px] text-muted-foreground">
+                {item.name}
+              </div>
+            )}
           </div>
         </div>
       </TableCell>
       <TableCell className="px-4 py-5">
-        <span className="text-[12px] text-muted-foreground">{item.materials ?? "—"}</span>
+        <span className="text-[12px] text-muted-foreground">
+          {item.materials ?? "—"}
+        </span>
       </TableCell>
       <TableCell className="px-4 py-5">
-        <span className="text-[12px] text-muted-foreground">{item.finishColor ?? "—"}</span>
+        <span className="text-[12px] text-muted-foreground">
+          {item.finishColor ?? "—"}
+        </span>
       </TableCell>
       <TableCell className="px-4 py-5">
-        <p className="max-w-80 text-ellipsis text-[12px] text-muted-foreground">{item.description ?? "—"}</p>
+        <p className="max-w-80 text-ellipsis text-[12px] text-muted-foreground">
+          {item.description ?? "—"}
+        </p>
       </TableCell>
-      <TableCell className="text-[12px] text-muted-foreground" style={{ textAlign: "left" }}>
+      <TableCell
+        className="text-[12px] text-muted-foreground"
+        style={{ textAlign: "left" }}
+      >
         {item.dimensions ?? "—"}
       </TableCell>
-      <TableCell className="text-[12px] text-muted-foreground" style={{ textAlign: "left" }}>
+      <TableCell
+        className="text-[12px] text-muted-foreground"
+        style={{ textAlign: "left" }}
+      >
         {item.unitType}
       </TableCell>
-      <TableCell className="text-right text-[12px] text-muted-foreground">{item.qty}</TableCell>
+      <TableCell className="text-right text-[12px] text-muted-foreground">
+        {item.qty}
+      </TableCell>
       <TableCell className="text-right text-[12px] text-muted-foreground">
         {formatCurrency(item.sellingPrice, { noDecimals: true })}
       </TableCell>
@@ -171,7 +243,12 @@ function SortableRow({ item, onDelete, renderIcon }: SortableRowProps) {
  * Reorder a single room's items within the flat list, keeping every room's slots
  * in place. Safe even when rooms are interleaved in the global array.
  */
-function reorderWithinRoom(items: LineItem[], room: string, activeId: string, overId: string): LineItem[] {
+function reorderWithinRoom(
+  items: LineItem[],
+  room: string,
+  activeId: string,
+  overId: string,
+): LineItem[] {
   const positions: number[] = [];
   items.forEach((it, idx) => {
     if (it.room === room) positions.push(idx);
@@ -199,8 +276,18 @@ interface RoomSectionProps {
 }
 
 /** A single room: its own sortable table and subtotal footer. */
-function RoomSection({ room, items, sensors, onDragEnd, onDelete, renderIcon }: RoomSectionProps) {
-  const subtotal = items.reduce((sum, item) => sum + item.sellingPrice * item.qty, 0);
+function RoomSection({
+  room,
+  items,
+  sensors,
+  onDragEnd,
+  onDelete,
+  renderIcon,
+}: RoomSectionProps) {
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.sellingPrice * item.qty,
+    0,
+  );
 
   return (
     <Card>
@@ -213,9 +300,12 @@ function RoomSection({ room, items, sensors, onDragEnd, onDelete, renderIcon }: 
         {/* Section Header */}
         <div className="flex items-center justify-between border-border border-b px-9 py-6">
           <div className="flex items-baseline gap-4">
-            <span className="font-light font-serif text-2xl italic tracking-tight">{room}</span>
+            <span className="font-light font-serif text-2xl italic tracking-tight">
+              {room}
+            </span>
             <span className="font-light text-[11px] tracking-[0.14em]">
-              {ROOM_DIMENSIONS[room] ?? `${items.length} ${items.length === 1 ? "item" : "items"}`}
+              {ROOM_DIMENSIONS[room] ??
+                `${items.length} ${items.length === 1 ? "item" : "items"}`}
             </span>
           </div>
         </div>
@@ -243,10 +333,18 @@ function RoomSection({ room, items, sensors, onDragEnd, onDelete, renderIcon }: 
                 <TableHead style={{ width: "50px" }} />
               </TableRow>
             </TableHeader>
-            <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext
+              items={items.map((item) => item.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <TableBody className="border-b-0">
                 {items.map((item) => (
-                  <SortableRow key={item.id} item={item} onDelete={onDelete} renderIcon={renderIcon} />
+                  <SortableRow
+                    key={item.id}
+                    item={item}
+                    onDelete={onDelete}
+                    renderIcon={renderIcon}
+                  />
                 ))}
               </TableBody>
             </SortableContext>
@@ -256,12 +354,18 @@ function RoomSection({ room, items, sensors, onDragEnd, onDelete, renderIcon }: 
 
       <CardFooter className="flex items-center justify-end gap-18">
         <div className="text-right">
-          <Label className="mb-1 font-light uppercase tracking-widest">Items</Label>
-          <div className="font-light font-serif text-2xl tabular-nums">{items.length}</div>
+          <Label className="mb-1 font-light uppercase tracking-widest">
+            Items
+          </Label>
+          <div className="font-light font-serif text-2xl tabular-nums">
+            {items.length}
+          </div>
         </div>
         <div className="h-9 w-px bg-border" />
         <div className="text-right">
-          <Label className="mb-1 font-light uppercase tracking-widest">Section Total</Label>
+          <Label className="mb-1 font-light uppercase tracking-widest">
+            Section Total
+          </Label>
           <div className="font-light font-serif text-2xl tabular-nums">
             {formatCurrency(subtotal, { noDecimals: true })}
           </div>
@@ -345,7 +449,10 @@ export default function ProposalDetailPage() {
     }));
   }, [items]);
 
-  const grandTotal = items.reduce((sum, item) => sum + item.sellingPrice * item.qty, 0);
+  const grandTotal = items.reduce(
+    (sum, item) => sum + item.sellingPrice * item.qty,
+    0,
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -359,7 +466,9 @@ export default function ProposalDetailPage() {
   const handleDragEnd = (room: string, event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    setItems((prev) => reorderWithinRoom(prev, room, active.id as string, over.id as string));
+    setItems((prev) =>
+      reorderWithinRoom(prev, room, active.id as string, over.id as string),
+    );
   };
 
   // CRUD actions
@@ -377,7 +486,10 @@ export default function ProposalDetailPage() {
       data-right-sidebar-open={rightSidebarOpen && !isMobile ? "true" : "false"}
       className="proposal-page-container relative h-full w-full bg-card transition-[padding-right] duration-200 ease-linear"
       style={{
-        paddingRight: rightSidebarOpen && !isMobile ? "calc(var(--spacing) * 90)" : undefined,
+        paddingRight:
+          rightSidebarOpen && !isMobile
+            ? "calc(var(--spacing) * 90)"
+            : undefined,
       }}
     >
       {/* Right Sidebar Toggle Button */}
@@ -387,7 +499,11 @@ export default function ProposalDetailPage() {
         onClick={toggleRightSidebar}
         className="fixed top-[72px] right-6 z-50 h-9 w-9 border border-border bg-sidebar text-sidebar-foreground shadow-sm transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       >
-        {rightSidebarOpen ? <X className="size-4" /> : <PanelRight className="size-4" />}
+        {rightSidebarOpen ? (
+          <X className="size-4" />
+        ) : (
+          <PanelRight className="size-4" />
+        )}
       </Button>
 
       {/* Mobile Backdrop */}
@@ -407,9 +523,13 @@ export default function ProposalDetailPage() {
         )}
       >
         <div className="flex h-12 shrink-0 items-center px-6">
-          <span className="font-light font-serif text-foreground text-lg italic">Actions</span>
+          <span className="font-light font-serif text-foreground text-lg italic">
+            Actions
+          </span>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{/* Empty for the moment */}</div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Empty for the moment */}
+        </div>
       </aside>
 
       {/* Header */}
@@ -417,7 +537,13 @@ export default function ProposalDetailPage() {
         <div>
           <div className="mb-2 flex size-11 items-center justify-center">
             {/* Company Logo Here */}
-            <Image src="/logo_sdg-S-only.svg" alt="Logo" width={54} height={54} className="dark:invert" />
+            <Image
+              src="/logo_sdg-S-only.svg"
+              alt="Logo"
+              width={54}
+              height={54}
+              className="dark:invert"
+            />
           </div>
           <div className="text-foreground">Fallback Co. Name</div>
         </div>
@@ -454,7 +580,9 @@ export default function ProposalDetailPage() {
       {/* Rooms — one sortable table per room */}
       {rooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-4 py-16 text-center">
-          <p className="font-medium text-(--text-secondary) text-sm">No line items yet</p>
+          <p className="font-medium text-(--text-secondary) text-sm">
+            No line items yet
+          </p>
           <p className="max-w-[280px] text-(--text-tertiary) text-xs">
             Use “Add Line Item” to start building out rooms for this proposal.
           </p>

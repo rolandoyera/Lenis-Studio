@@ -37,8 +37,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 import { recentCustomersColumns } from "./columns";
 import type { RecentCustomerRow } from "./schema";
@@ -70,8 +84,12 @@ const sortOptions = [
 
 export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([{ id: "joined", desc: true }]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "joined", desc: true },
+  ]);
   const [columnVisibility] = React.useState<VisibilityState>({
     search: false,
     joinedWindow: false,
@@ -103,10 +121,14 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  const searchQuery = (table.getColumn("search")?.getFilterValue() as string) ?? "";
-  const statusFilter = (table.getColumn("status")?.getFilterValue() as string) ?? "all";
-  const billingFilter = (table.getColumn("billing")?.getFilterValue() as string) ?? "all";
-  const joinedDateFilter = (table.getColumn("joinedWindow")?.getFilterValue() as string) ?? "all";
+  const searchQuery =
+    (table.getColumn("search")?.getFilterValue() as string) ?? "";
+  const statusFilter =
+    (table.getColumn("status")?.getFilterValue() as string) ?? "all";
+  const billingFilter =
+    (table.getColumn("billing")?.getFilterValue() as string) ?? "all";
+  const joinedDateFilter =
+    (table.getColumn("joinedWindow")?.getFilterValue() as string) ?? "all";
   const sortValue = React.useMemo(() => {
     const currentSort = sorting[0];
 
@@ -130,7 +152,9 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
               placeholder="Search customers..."
               value={searchQuery}
               onChange={(event) => {
-                table.getColumn("search")?.setFilterValue(event.target.value || undefined);
+                table
+                  .getColumn("search")
+                  ?.setFilterValue(event.target.value || undefined);
                 table.setPageIndex(0);
               }}
             />
@@ -146,12 +170,17 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
               <DropdownMenuRadioGroup
                 value={statusFilter}
                 onValueChange={(value) => {
-                  table.getColumn("status")?.setFilterValue(value === "all" ? undefined : value);
+                  table
+                    .getColumn("status")
+                    ?.setFilterValue(value === "all" ? undefined : value);
                   table.setPageIndex(0);
                 }}
               >
                 {statusOptions.map((status) => (
-                  <DropdownMenuRadioItem key={status.value} value={status.value}>
+                  <DropdownMenuRadioItem
+                    key={status.value}
+                    value={status.value}
+                  >
                     {status.label}
                   </DropdownMenuRadioItem>
                 ))}
@@ -169,12 +198,17 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
               <DropdownMenuRadioGroup
                 value={joinedDateFilter}
                 onValueChange={(value) => {
-                  table.getColumn("joinedWindow")?.setFilterValue(value === "all" ? undefined : value);
+                  table
+                    .getColumn("joinedWindow")
+                    ?.setFilterValue(value === "all" ? undefined : value);
                   table.setPageIndex(0);
                 }}
               >
                 {joinedDateOptions.map((option) => (
-                  <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  <DropdownMenuRadioItem
+                    key={option.value}
+                    value={option.value}
+                  >
                     {option.label}
                   </DropdownMenuRadioItem>
                 ))}
@@ -194,12 +228,17 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
               <DropdownMenuRadioGroup
                 value={billingFilter}
                 onValueChange={(value) => {
-                  table.getColumn("billing")?.setFilterValue(value === "all" ? undefined : value);
+                  table
+                    .getColumn("billing")
+                    ?.setFilterValue(value === "all" ? undefined : value);
                   table.setPageIndex(0);
                 }}
               >
                 {billingOptions.map((billing) => (
-                  <DropdownMenuRadioItem key={billing.value} value={billing.value}>
+                  <DropdownMenuRadioItem
+                    key={billing.value}
+                    value={billing.value}
+                  >
                     {billing.label}
                   </DropdownMenuRadioItem>
                 ))}
@@ -231,7 +270,10 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
                 }}
               >
                 {sortOptions.map((option) => (
-                  <DropdownMenuRadioItem key={option.value} value={option.value}>
+                  <DropdownMenuRadioItem
+                    key={option.value}
+                    value={option.value}
+                  >
                     {option.label}
                   </DropdownMenuRadioItem>
                 ))}
@@ -247,8 +289,17 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan} className="h-11 p-3 font-medium">
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  <TableHead
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    className="h-11 p-3 font-medium"
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -257,17 +308,26 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="p-3 align-middle">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-24 text-center">
+                <TableCell
+                  colSpan={table.getVisibleLeafColumns().length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -278,12 +338,15 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
 
       <div className="flex items-center justify-between px-1">
         <div className="hidden flex-1 text-muted-foreground text-sm lg:flex">
-          {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s)
-          selected.
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="flex w-full items-center gap-8 lg:w-fit">
           <div className="hidden items-center gap-2 lg:flex">
-            <Label htmlFor="recent-customers-rows-per-page" className="font-medium text-sm">
+            <Label
+              htmlFor="recent-customers-rows-per-page"
+              className="font-medium text-sm"
+            >
               Rows per page
             </Label>
             <Select
@@ -292,8 +355,14 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger size="sm" className="w-20" id="recent-customers-rows-per-page">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectTrigger
+                size="sm"
+                className="w-20"
+                id="recent-customers-rows-per-page"
+              >
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
               </SelectTrigger>
               <SelectContent side="top">
                 <SelectGroup>
@@ -307,7 +376,8 @@ export function RecentCustomersTable({ data }: { data: RecentCustomerRow[] }) {
             </Select>
           </div>
           <div className="flex w-fit items-center justify-center font-medium text-sm">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </div>
           <div className="ml-auto flex items-center gap-2 lg:ml-0">
             <Button

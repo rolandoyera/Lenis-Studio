@@ -49,10 +49,19 @@ const makeIcon = (paths: React.ReactNode, displayName: string) => {
         style={{
           opacity,
           transform: transforms.join(" ") || undefined,
-          filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+          filter:
+            shadow > 0
+              ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))`
+              : undefined,
         }}
       >
-        <g fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth={strokeWidth}>
+        <g
+          fill="none"
+          stroke={color}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={strokeWidth}
+        >
           {paths}
         </g>
       </svg>

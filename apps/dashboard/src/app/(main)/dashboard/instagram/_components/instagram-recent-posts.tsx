@@ -1,10 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { fetchInstagramMedia } from "@/server/meta-actions";
 
 function formatDate(ts: string): string {
   const d = new Date(ts);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return Number.isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function truncate(s: string, n = 60): string {
@@ -24,21 +33,33 @@ export async function InstagramRecentPosts() {
           <TableHeader className="[&_tr]:border-border/50">
             <TableRow className="hover:bg-transparent">
               <TableHead className="h-8 font-normal">Post</TableHead>
-              <TableHead className="h-8 w-20 text-right font-normal">Likes</TableHead>
-              <TableHead className="h-8 w-24 text-right font-normal">Comments</TableHead>
-              <TableHead className="h-8 w-20 text-right font-normal">Date</TableHead>
+              <TableHead className="h-8 w-20 text-right font-normal">
+                Likes
+              </TableHead>
+              <TableHead className="h-8 w-24 text-right font-normal">
+                Comments
+              </TableHead>
+              <TableHead className="h-8 w-20 text-right font-normal">
+                Date
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="[&_tr]:border-border/50">
             {!result.success ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="h-32 py-4 text-center text-muted-foreground text-sm">
+                <TableCell
+                  colSpan={4}
+                  className="h-32 py-4 text-center text-muted-foreground text-sm"
+                >
                   {result.error ?? "Couldn't load posts."}
                 </TableCell>
               </TableRow>
             ) : result.data.length === 0 ? (
               <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={4} className="h-32 py-4 text-center text-muted-foreground text-sm">
+                <TableCell
+                  colSpan={4}
+                  className="h-32 py-4 text-center text-muted-foreground text-sm"
+                >
                   No posts yet.
                 </TableCell>
               </TableRow>
@@ -46,12 +67,23 @@ export async function InstagramRecentPosts() {
               result.data.map((post) => (
                 <TableRow className="hover:bg-transparent" key={post.id}>
                   <TableCell className="max-w-0 truncate py-3">
-                    <a href={post.permalink} target="_blank" rel="noreferrer" className="hover:underline">
-                      {post.caption ? truncate(post.caption) : `${post.mediaType} post`}
+                    <a
+                      href={post.permalink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline"
+                    >
+                      {post.caption
+                        ? truncate(post.caption)
+                        : `${post.mediaType} post`}
                     </a>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{post.likeCount}</TableCell>
-                  <TableCell className="text-right tabular-nums">{post.commentsCount}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {post.likeCount}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {post.commentsCount}
+                  </TableCell>
                   <TableCell className="text-right text-muted-foreground tabular-nums">
                     {formatDate(post.timestamp)}
                   </TableCell>

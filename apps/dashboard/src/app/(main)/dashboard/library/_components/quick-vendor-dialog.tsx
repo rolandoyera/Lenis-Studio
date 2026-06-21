@@ -41,7 +41,11 @@ interface QuickVendorDialogProps {
 }
 
 /** Lightweight inline vendor creation, used from the item form's vendor selector. */
-export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendorDialogProps) {
+export function QuickVendorDialog({
+  open,
+  onOpenChange,
+  onCreated,
+}: QuickVendorDialogProps) {
   const { profile } = useAuth();
   const {
     control,
@@ -86,7 +90,8 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
           <DialogHeader>
             <DialogTitle className="text-base">Quick Create Vendor</DialogTitle>
             <DialogDescription className="text-xs">
-              Register a trade supplier vendor instantly to connect with this catalog item.
+              Register a trade supplier vendor instantly to connect with this
+              catalog item.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 py-2 text-xs">
@@ -94,7 +99,10 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
               control={control}
               name="name"
               render={({ field, fieldState }) => (
-                <Field className="flex flex-col gap-1" data-invalid={fieldState.invalid}>
+                <Field
+                  className="flex flex-col gap-1"
+                  data-invalid={fieldState.invalid}
+                >
                   <Label className="text-muted-foreground">
                     Name <span className="text-destructive">*</span>
                   </Label>
@@ -104,7 +112,9 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
                     className="h-8 text-xs"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -112,7 +122,10 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
               control={control}
               name="website"
               render={({ field, fieldState }) => (
-                <Field className="flex flex-col gap-1" data-invalid={fieldState.invalid}>
+                <Field
+                  className="flex flex-col gap-1"
+                  data-invalid={fieldState.invalid}
+                >
                   <Label className="text-muted-foreground">Website</Label>
                   <Input
                     {...field}
@@ -120,7 +133,9 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
                     className="h-8 text-xs"
                     aria-invalid={fieldState.invalid}
                   />
-                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
                 </Field>
               )}
             />
@@ -135,7 +150,12 @@ export function QuickVendorDialog({ open, onOpenChange, onCreated }: QuickVendor
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm" disabled={isSubmitting} className="flex items-center gap-1.5">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5"
+            >
               {isSubmitting && <Loader2 className="size-3 animate-spin" />}
               Create Vendor
             </Button>

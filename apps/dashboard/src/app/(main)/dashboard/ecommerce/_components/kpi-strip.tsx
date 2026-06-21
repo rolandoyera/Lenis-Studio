@@ -1,13 +1,47 @@
 "use client";
 
 import { format, parse } from "date-fns";
-import { ArrowUpRight, DollarSign, PackageCheck, ReceiptText, RotateCcw, ShoppingBag, Users } from "lucide-react";
-import { Area, Bar, CartesianGrid, ComposedChart, XAxis, YAxis } from "recharts";
+import {
+  ArrowUpRight,
+  DollarSign,
+  PackageCheck,
+  ReceiptText,
+  RotateCcw,
+  ShoppingBag,
+  Users,
+} from "lucide-react";
+import {
+  Area,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
-const revenueBucketRanges = ["01-05", "06-10", "11-15", "16-20", "21-25", "26-31"] as const;
+const revenueBucketRanges = [
+  "01-05",
+  "06-10",
+  "11-15",
+  "16-20",
+  "21-25",
+  "26-31",
+] as const;
 
 const revenueBucketValues = [
   [4820, 5150, 5060, 5520, 5990, 6880],
@@ -32,7 +66,9 @@ function getRollingRevenueBuckets() {
 
   return revenueBucketValues.map((values, index) => {
     const monthDate = new Date(currentMonth);
-    monthDate.setMonth(currentMonth.getMonth() - (revenueBucketValues.length - 1 - index));
+    monthDate.setMonth(
+      currentMonth.getMonth() - (revenueBucketValues.length - 1 - index),
+    );
 
     return {
       month: `${monthFormatter.format(monthDate)} ${String(monthDate.getFullYear()).slice(-2)}`,
@@ -41,12 +77,15 @@ function getRollingRevenueBuckets() {
   });
 }
 
-const revenueOverviewData = getRollingRevenueBuckets().flatMap(({ month, values }) =>
-  values.map((revenue, index) => ({
-    period: `${month} ${revenueBucketRanges[index]}`,
-    profit: Math.round(revenue * (index % 3 === 0 ? 0.24 : index % 3 === 1 ? 0.28 : 0.26)),
-    revenue,
-  })),
+const revenueOverviewData = getRollingRevenueBuckets().flatMap(
+  ({ month, values }) =>
+    values.map((revenue, index) => ({
+      period: `${month} ${revenueBucketRanges[index]}`,
+      profit: Math.round(
+        revenue * (index % 3 === 0 ? 0.24 : index % 3 === 1 ? 0.28 : 0.26),
+      ),
+      revenue,
+    })),
 );
 
 const revenueOverviewConfig = {
@@ -73,15 +112,29 @@ function formatTooltipLabel(value: string) {
   const range = parts.at(-1);
   const month = parse(parts.slice(0, -1).join(" "), "MMM yy", new Date());
   const [start, end] = String(range).split("-");
-  const lastDayOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-  const startDate = new Date(month.getFullYear(), month.getMonth(), Number(start));
-  const endDate = new Date(month.getFullYear(), month.getMonth(), Math.min(Number(end), lastDayOfMonth));
+  const lastDayOfMonth = new Date(
+    month.getFullYear(),
+    month.getMonth() + 1,
+    0,
+  ).getDate();
+  const startDate = new Date(
+    month.getFullYear(),
+    month.getMonth(),
+    Number(start),
+  );
+  const endDate = new Date(
+    month.getFullYear(),
+    month.getMonth(),
+    Math.min(Number(end), lastDayOfMonth),
+  );
 
   return `${format(month, "MMM")} ${format(startDate, "do")} - ${format(endDate, "do")}, ${format(month, "yyyy")}`;
 }
 
 function formatCurrencyTooltipValue(value: unknown) {
-  return typeof value === "number" ? `$${value.toLocaleString()}` : String(value ?? "");
+  return typeof value === "number"
+    ? `$${value.toLocaleString()}`
+    : String(value ?? "");
 }
 
 export function KpiStrip() {
@@ -92,7 +145,9 @@ export function KpiStrip() {
           <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-3 xl:col-span-5 xl:border-r">
             <Card className="h-full rounded-none border-0 border-border border-b ring-0 md:border-r">
               <CardHeader>
-                <CardTitle className="font-normal text-sm">Total Sales</CardTitle>
+                <CardTitle className="font-normal text-sm">
+                  Total Sales
+                </CardTitle>
                 <CardDescription className="text-3xl text-foreground tabular-nums leading-none tracking-tight">
                   $48,560.00
                 </CardDescription>
@@ -102,7 +157,9 @@ export function KpiStrip() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm">
-                  <span className="text-green-700 dark:text-green-300">+15.8%</span>
+                  <span className="text-green-700 dark:text-green-300">
+                    +15.8%
+                  </span>
                   <span className="text-muted-foreground"> vs last week</span>
                 </div>
               </CardContent>
@@ -110,7 +167,9 @@ export function KpiStrip() {
 
             <Card className="h-full rounded-none border-0 border-border border-b ring-0">
               <CardHeader>
-                <CardTitle className="font-normal text-sm">Total Orders</CardTitle>
+                <CardTitle className="font-normal text-sm">
+                  Total Orders
+                </CardTitle>
                 <CardDescription className="text-3xl text-foreground tabular-nums leading-none tracking-tight">
                   379
                 </CardDescription>
@@ -120,7 +179,9 @@ export function KpiStrip() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm">
-                  <span className="text-green-700 dark:text-green-300">+8.3%</span>
+                  <span className="text-green-700 dark:text-green-300">
+                    +8.3%
+                  </span>
                   <span className="text-muted-foreground"> vs last week</span>
                 </div>
               </CardContent>
@@ -128,7 +189,9 @@ export function KpiStrip() {
 
             <Card className="h-full rounded-none border-0 border-border border-b ring-0 md:border-r">
               <CardHeader>
-                <CardTitle className="font-normal text-sm">Customer Growth</CardTitle>
+                <CardTitle className="font-normal text-sm">
+                  Customer Growth
+                </CardTitle>
                 <CardDescription className="text-3xl text-foreground tabular-nums leading-none tracking-tight">
                   820
                 </CardDescription>
@@ -138,7 +201,9 @@ export function KpiStrip() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm">
-                  <span className="text-green-700 dark:text-green-300">+12.5%</span>
+                  <span className="text-green-700 dark:text-green-300">
+                    +12.5%
+                  </span>
                   <span className="text-muted-foreground"> vs last month</span>
                 </div>
               </CardContent>
@@ -146,7 +211,9 @@ export function KpiStrip() {
 
             <Card className="h-full rounded-none border-0 border-border border-b ring-0">
               <CardHeader>
-                <CardTitle className="font-normal text-sm">Average Order</CardTitle>
+                <CardTitle className="font-normal text-sm">
+                  Average Order
+                </CardTitle>
                 <CardDescription className="text-3xl text-foreground tabular-nums leading-none tracking-tight">
                   $128
                 </CardDescription>
@@ -164,7 +231,9 @@ export function KpiStrip() {
 
             <Card className="h-full rounded-none border-0 border-border border-b ring-0 md:border-r md:border-b-0">
               <CardHeader>
-                <CardTitle className="font-normal text-sm">Return Requests</CardTitle>
+                <CardTitle className="font-normal text-sm">
+                  Return Requests
+                </CardTitle>
                 <CardDescription className="text-3xl text-foreground tabular-nums leading-none tracking-tight">
                   18
                 </CardDescription>
@@ -182,7 +251,9 @@ export function KpiStrip() {
 
             <Card className="h-full rounded-none border-0 ring-0">
               <CardHeader>
-                <CardTitle className="font-normal text-sm">Stock Accuracy</CardTitle>
+                <CardTitle className="font-normal text-sm">
+                  Stock Accuracy
+                </CardTitle>
                 <CardDescription className="text-3xl text-foreground tabular-nums leading-none tracking-tight">
                   97%
                 </CardDescription>
@@ -192,7 +263,9 @@ export function KpiStrip() {
               </CardHeader>
               <CardContent>
                 <div className="text-sm">
-                  <span className="text-green-700 dark:text-green-300">+2.4 pts</span>
+                  <span className="text-green-700 dark:text-green-300">
+                    +2.4 pts
+                  </span>
                   <span className="text-muted-foreground"> vs last audit</span>
                 </div>
               </CardContent>
@@ -208,16 +281,28 @@ export function KpiStrip() {
             </CardHeader>
 
             <CardContent>
-              <ChartContainer config={revenueOverviewConfig} className="h-74 w-full">
+              <ChartContainer
+                config={revenueOverviewConfig}
+                className="h-74 w-full"
+              >
                 <ComposedChart
                   accessibilityLayer
                   data={revenueOverviewData}
                   margin={{ bottom: 0, left: 0, right: 0, top: 0 }}
                 >
                   <defs>
-                    <filter id="sales-line-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <filter
+                      id="sales-line-glow"
+                      x="-20%"
+                      y="-20%"
+                      width="140%"
+                      height="140%"
+                    >
                       <feGaussianBlur stdDeviation="4" result="blur" />
-                      <feFlood floodColor="var(--color-revenue)" floodOpacity="0.35" />
+                      <feFlood
+                        floodColor="var(--color-revenue)"
+                        floodOpacity="0.35"
+                      />
                       <feComposite in2="blur" operator="in" />
                       <feMerge>
                         <feMergeNode />
@@ -243,7 +328,9 @@ export function KpiStrip() {
                     content={
                       <ChartTooltipContent
                         className="w-40"
-                        labelFormatter={(value) => formatTooltipLabel(String(value))}
+                        labelFormatter={(value) =>
+                          formatTooltipLabel(String(value))
+                        }
                         formatter={(value, name, item) => (
                           <>
                             <div
@@ -253,7 +340,9 @@ export function KpiStrip() {
                               }}
                             />
                             <div className="flex flex-1 items-center justify-between leading-none">
-                              <span className="text-muted-foreground">{String(name ?? "")}</span>
+                              <span className="text-muted-foreground">
+                                {String(name ?? "")}
+                              </span>
                               <span className="font-medium font-mono text-foreground tabular-nums">
                                 {formatCurrencyTooltipValue(value)}
                               </span>

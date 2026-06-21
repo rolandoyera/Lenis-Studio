@@ -7,14 +7,22 @@ import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-export default function HeaderBackLink({ href = "/dashboard/home" }: { href?: string } = {}) {
+export default function HeaderBackLink({
+  href = "/dashboard/home",
+}: { href?: string } = {}) {
   const router = useRouter();
 
   const handleBack = (e: React.MouseEvent<HTMLAnchorElement>) => {
     // Only intercept if there's history to go back to (i.e. they didn't land here directly)
     if (typeof window !== "undefined" && window.history.length > 1) {
       // Standard left click with no modifier keys
-      if (e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+      if (
+        e.button === 0 &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.shiftKey &&
+        !e.altKey
+      ) {
         e.preventDefault();
         router.back();
       }
