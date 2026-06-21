@@ -15,7 +15,10 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all opportunities"
       />
@@ -43,17 +46,23 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
   {
     accessorKey: "email",
     header: "Email",
-    cell: ({ row }) => <div className="text-muted-foreground text-sm">{row.original.email}</div>,
+    cell: ({ row }) => (
+      <div className="text-muted-foreground text-sm">{row.original.email}</div>
+    ),
   },
   {
     accessorKey: "phone",
     header: "Phone",
-    cell: ({ row }) => <div className="text-sm tabular-nums">{formatPhone(row.original.phone)}</div>,
+    cell: ({ row }) => (
+      <div className="text-sm tabular-nums">
+        {formatPhone(row.original.phone)}
+      </div>
+    ),
   },
   {
     accessorKey: "referrer",
     header: "Referrer",
-    cell: ({ row }) => <div className="font-medium text-sm">{row.original.referrer}</div>,
+    cell: ({ row }) => <div>{row.original.referrer}</div>,
   },
   {
     accessorKey: "stage",
@@ -66,15 +75,21 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
     filterFn: "equalsString",
   },
   {
-    accessorKey: "priority",
-    header: "Priority",
-    cell: ({ row }) => <div className="text-sm">{row.original.priority}</div>,
+    accessorKey: "projectType",
+    header: "Type",
+    cell: ({ row }) => (
+      <div className="text-sm">{row.original.propertyType}</div>
+    ),
   },
 
   {
-    accessorKey: "value",
-    header: "Value",
-    cell: ({ row }) => <div className="font-medium text-sm tabular-nums">{row.original.value}</div>,
+    accessorKey: "budget",
+    header: "Budget",
+    cell: ({ row }) => (
+      <div className="font-medium text-sm tabular-nums">
+        {row.original.budget}
+      </div>
+    ),
   },
   {
     id: "actions",
@@ -84,8 +99,7 @@ export const opportunitiesColumns: ColumnDef<OpportunityRow>[] = [
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 rounded-full text-muted-foreground hover:bg-transparent focus-visible:bg-transparent"
-        >
+          className="size-8 rounded-full text-muted-foreground hover:bg-transparent focus-visible:bg-transparent">
           <Pencil />
           <span className="sr-only">Edit opportunity</span>
         </Button>

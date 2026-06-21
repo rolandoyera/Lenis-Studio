@@ -10,11 +10,23 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Card } from "@/components/ui/card";
-import { addProposal, deleteProject, getClients, getProject, getProposals, updateProject } from "@/lib/db";
+import {
+  addProposal,
+  deleteProject,
+  getClients,
+  getProject,
+  getProposals,
+  updateProject,
+} from "@/lib/db";
 import type { Client, Project, Proposal } from "@/lib/types";
 
 import { DeleteProjectDialog } from "../_components/delete-project-dialog";
-import { isProjectTab, type ProjectFormData, type ProjectTab, projectToForm } from "../_components/project-constants";
+import {
+  isProjectTab,
+  type ProjectFormData,
+  type ProjectTab,
+  projectToForm,
+} from "../_components/project-constants";
 import { ProjectFormDialog } from "../_components/project-form-dialog";
 import { ProjectHeader } from "../_components/project-header";
 import { ProjectInformationCard } from "../_components/project-information-card";
@@ -38,7 +50,9 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<ProjectTab>(isProjectTab(tabParam) ? tabParam : "overview");
+  const [activeTab, setActiveTab] = useState<ProjectTab>(
+    isProjectTab(tabParam) ? tabParam : "overview",
+  );
 
   // Dialog States
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -68,7 +82,8 @@ export default function ProjectDetailPage({ params }: PageProps) {
         setProject(projectData);
         setClients(clientsData);
 
-        const parentClient = clientsData.find((c) => c.uid === projectData.clientId) || null;
+        const parentClient =
+          clientsData.find((c) => c.uid === projectData.clientId) || null;
         setClient(parentClient);
 
         // Filter proposals for this project
@@ -86,17 +101,23 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const handleTabChange = (tab: ProjectTab) => {
     setActiveTab(tab);
     // Keep the URL in sync so refresh and copied links land on the same tab.
-    const url = tab === "overview" ? `/dashboard/projects/${projectId}` : `/dashboard/projects/${projectId}?tab=${tab}`;
+    const url =
+      tab === "overview"
+        ? `/dashboard/projects/${projectId}`
+        : `/dashboard/projects/${projectId}?tab=${tab}`;
     window.history.replaceState(null, "", url);
   };
 
   const handleEditSubmit = async (data: ProjectFormData) => {
-    if (!project) return;
+    if (!project || !profile) return;
     setUpdatingProject(true);
     try {
-      const updatedFields = await updateProject(project.projectId, data);
+      const updatedFields = await updateProject(project.projectId, {
+        ...data,
+        updatedBy: profile.uid,
+      });
 
-      // Apply the exact normalized fields the server wrote (budget prefix, rebuilt address).
+      // Apply the exact normalized fields the server wrote (audit stamps included).
       setProject({ ...project, ...updatedFields });
 
       const parentClient = clients.find((c) => c.uid === data.clientId) || null;
@@ -143,11 +164,11 @@ export default function ProjectDetailPage({ params }: PageProps) {
     setDeletingProject(true);
     try {
       await deleteProject(project.projectId);
-      toast.success("Project space permanently deleted!");
+      toast.success("Project permanently deleted!");
       router.push("/dashboard/projects");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to delete project space.");
+      toast.error("Failed to delete project.");
     } finally {
       setDeletingProject(false);
       setIsDeleteOpen(false);
@@ -189,7 +210,10 @@ export default function ProjectDetailPage({ params }: PageProps) {
                 onAddProposal={handleAddProposal}
                 addingProposal={addingProposal}
               />
-              <ProjectNotesCard project={project} onEdit={() => setIsEditOpen(true)} />
+              <ProjectNotesCard
+                project={project}
+                onEdit={() => setIsEditOpen(true)}
+              />
             </div>
             <div className="flex flex-col gap-6 lg:col-span-5">
               <ProjectInformationCard project={project} client={client} />
@@ -235,7 +259,9 @@ function TabPlaceholder({ label }: { label: string }) {
   return (
     <Card className="flex min-h-[300px] flex-col items-center justify-center border-dashed bg-background/30 p-8 text-center">
       <h3 className="font-semibold text-lg">{label} coming soon</h3>
-      <p className="mt-1 max-w-sm text-muted-foreground text-sm">This section is not available yet.</p>
+      <p className="mt-1 max-w-sm text-muted-foreground text-sm">
+        This section is not available yet.
+      </p>
     </Card>
   );
 }

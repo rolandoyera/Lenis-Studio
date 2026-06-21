@@ -7,9 +7,8 @@
     "phone": "2125550182",
     "referrer": "Website",
     "stage": "Discovery",
-    "priority": 1,
-    "projectType": "Residential",
-    "value": "$420,000"
+    "propertyType": "Residential",
+    "budget": "$420,000"
   },
   {
     "id": "OP-1841",
@@ -19,9 +18,8 @@
     "phone": "3475550941",
     "referrer": "Referral",
     "stage": "Qualified",
-    "priority": 1,
-    "projectType": "Commercial",
-    "value": "$750,000"
+    "propertyType": "Other",
+    "budget": "$750,000"
   },
   {
     "id": "OP-1840",
@@ -31,9 +29,8 @@
     "phone": "6465550317",
     "referrer": "Other",
     "stage": "Converted",
-    "priority": 1,
-    "projectType": "Residential",
-    "value": "$630,000"
+    "propertyType": "Residential",
+    "budget": "$630,000"
   },
   {
     "id": "OP-1839",
@@ -43,9 +40,8 @@
     "phone": "7185550628",
     "referrer": "Google Ads",
     "stage": "Qualified",
-    "priority": 1,
-    "projectType": "Commercial",
-    "value": "$200,000"
+    "propertyType": "Commercial",
+    "budget": "$200,000"
   },
   {
     "id": "OP-1838",
@@ -55,9 +51,8 @@
     "phone": "9175550473",
     "referrer": "Facebook",
     "stage": "Proposal Sent",
-    "priority": 1,
-    "projectType": "Commercial",
-    "value": "$900,000"
+    "propertyType": "Commercial",
+    "budget": "$900,000"
   },
   {
     "id": "OP-1837",
@@ -65,11 +60,10 @@
     "lastName": "Foster",
     "email": "liam.foster@outlook.com",
     "phone": "2125550759",
-    "referrer": "Website",
+    "referrer": "Houzz",
     "stage": "Lost",
-    "priority": 1,
-    "projectType": "Residential",
-    "value": "$4,000,000"
+    "propertyType": "Residential",
+    "budget": "$4,000,000"
   },
   {
     "id": "OP-1836",
@@ -79,9 +73,8 @@
     "phone": "3475550264",
     "referrer": "Instagram",
     "stage": "Negotiation",
-    "priority": 1,
-    "projectType": "Residential",
-    "value": "$1,000,000"
+    "propertyType": "Residential",
+    "budget": "$1,000,000"
   },
   {
     "id": "OP-1835",
@@ -89,11 +82,10 @@
     "lastName": "Patel",
     "email": "noah.patel@gmail.com",
     "phone": "6465550890",
-    "referrer": "Houzz",
+    "referrer": "Family",
     "stage": "Qualified",
-    "priority": 1,
-    "projectType": "Commercial",
-    "value": "$500,000"
+    "propertyType": "Commercial",
+    "budget": "$500,000"
   },
   {
     "id": "OP-1834",
@@ -101,11 +93,10 @@
     "lastName": "Sullivan",
     "email": "emma.sullivan@gmail.com",
     "phone": "7185550135",
-    "referrer": "Family",
+    "referrer": "Friend",
     "stage": "Proposal Sent",
-    "priority": 1,
-    "projectType": "Commercial",
-    "value": "$2,000,000"
+    "propertyType": "Commercial",
+    "budget": "$2,000,000"
   },
   {
     "id": "OP-1833",
@@ -113,10 +104,9 @@
     "lastName": "Carter",
     "email": "james.carter@outlook.com",
     "phone": "9175550627",
-    "referrer": "Friend",
+    "referrer": "Client",
     "stage": "Discovery",
-    "priority": 1,
-    "projectType": "Residential",
-    "value": "$220,800"
+    "propertyType": "Residential",
+    "budget": "$220,800"
   }
 ]

@@ -16,7 +16,7 @@ import { H1 } from "@/components/ui/typography";
 import type { Client, Project } from "@/lib/types";
 
 import HeaderBackLink from "../../_components/HeaderBackLink";
-import { PROJECT_TABS } from "./project-constants";
+import { PROJECT_STATUS_LABELS, PROJECT_STATUS_META, PROJECT_TABS } from "./project-constants";
 
 interface ProjectHeaderProps {
   project: Project;
@@ -56,15 +56,9 @@ export function ProjectHeader({
               <div className="flex items-center gap-3">
                 <H1>{project.name}</H1>
                 <span
-                  className={`rounded-full px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
-                    project.status === "Active"
-                      ? "border border-emerald-500/20 bg-emerald-500/15 text-emerald-500"
-                      : project.status === "Completed"
-                        ? "border border-blue-500/20 bg-blue-500/15 text-blue-500"
-                        : "border border-amber-500/20 bg-amber-500/15 text-amber-500"
-                  }`}
+                  className={`rounded-full px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${PROJECT_STATUS_META[project.status].badgeClass}`}
                 >
-                  {project.status}
+                  {PROJECT_STATUS_LABELS[project.status]}
                 </span>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-medium text-muted-foreground text-sm">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
@@ -26,7 +26,7 @@ import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { addProjectRoom, getLibraryItems, getVendors, seedMockRooms } from "@/lib/db";
+import { addProjectRoom, getLibraryItems, getVendors } from "@/lib/db";
 import { db } from "@/lib/firebase";
 import type { LibraryItem, Project, ProjectRoom, ProjectRoomItem, Vendor } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -70,8 +70,6 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
     defaultValues: { name: "", description: "" },
   });
 
-  const isSeeding = useRef(false);
-
   useEffect(() => {
     if (authLoading || !organizationId) return;
     const id = organizationId; // stable string dependency; profile object identity churns on each heartbeat
@@ -101,16 +99,6 @@ export function ProjectSelections({ project }: ProjectSelectionsProps) {
         snapshot.forEach((docSnap) => {
           roomsData.push(docSnap.data() as ProjectRoom);
         });
-
-        if (roomsData.length === 0 && !isSeeding.current) {
-          isSeeding.current = true;
-          seedMockRooms(project.projectId, id)
-            .catch((err) => console.error("Error seeding:", err))
-            .finally(() => {
-              isSeeding.current = false;
-            });
-          return;
-        }
 
         setRooms(roomsData.sort((a, b) => a.createdAt - b.createdAt));
         setLoading(false);

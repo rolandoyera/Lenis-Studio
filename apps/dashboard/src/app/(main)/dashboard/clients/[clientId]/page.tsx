@@ -8,13 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import {
-  addProject,
-  deleteClient,
-  getClient,
-  getProjects,
-  updateClient,
-} from "@/lib/db";
+import { addProject, deleteClient, getClient, getProjects, updateClient } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 
 import type { ProjectFormData } from "../../projects/_components/project-constants";
@@ -54,10 +48,7 @@ export default function ClientProfilePage({ params }: PageProps) {
 
     async function loadClientData() {
       try {
-        const [clientData, projectsData] = await Promise.all([
-          getClient(clientId),
-          getProjects(orgId),
-        ]);
+        const [clientData, projectsData] = await Promise.all([getClient(clientId), getProjects(orgId)]);
 
         if (!clientData || clientData.organizationId !== orgId) {
           toast.error("Client profile not found.");
@@ -86,9 +77,8 @@ export default function ClientProfilePage({ params }: PageProps) {
 
     setUpdatingProfile(true);
     try {
-      const { isCompany, ...clientData } = data;
-      await updateClient(client.uid, clientData);
-      setClient({ ...client, ...clientData });
+      await updateClient(client.uid, data);
+      setClient({ ...client, ...data });
       setIsEditOpen(false);
       toast.success("Client profile updated successfully!");
     } catch (error) {
@@ -106,6 +96,8 @@ export default function ClientProfilePage({ params }: PageProps) {
       const created = await addProject({
         ...data,
         organizationId: profile.organizationId,
+        createdBy: profile.uid,
+        updatedBy: profile.uid,
       });
       setProjects((prev) => [created, ...prev]);
       setIsAddProjectOpen(false);
@@ -160,10 +152,7 @@ export default function ClientProfilePage({ params }: PageProps) {
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <div className="flex flex-col gap-6 lg:col-span-7">
-          <ClientProjectsCard
-            projects={projects}
-            onAddProject={() => setIsAddProjectOpen(true)}
-          />
+          <ClientProjectsCard projects={projects} onAddProject={() => setIsAddProjectOpen(true)} />
           <ClientNotesCard client={client} onEdit={() => setIsEditOpen(true)} />
         </div>
         <div className="flex flex-col gap-6 lg:col-span-5">
@@ -179,6 +168,7 @@ export default function ClientProfilePage({ params }: PageProps) {
         submitLabel="Save Changes"
         submitting={updatingProfile}
         defaultValues={{
+          isCompany: client.isCompany,
           firstName,
           lastName,
           email: client.email || "",
@@ -190,6 +180,7 @@ export default function ClientProfilePage({ params }: PageProps) {
           city: client.city ?? "",
           state: client.state ?? "",
           zip: client.zip ?? "",
+          country: client.country ?? "US",
           notes: client.notes ?? "",
         }}
         onSubmit={handleEditSubmit}

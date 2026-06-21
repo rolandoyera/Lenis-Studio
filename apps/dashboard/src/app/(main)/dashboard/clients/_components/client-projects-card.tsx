@@ -9,11 +9,7 @@ import { H3 } from "@/components/ui/typography";
 import type { Project } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
-const STATUS_STYLES: Record<Project["status"], string> = {
-  Active: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20",
-  Completed: "bg-blue-500/10 text-blue-500 border border-blue-500/20",
-  Paused: "bg-amber-500/10 text-amber-500 border border-amber-500/20",
-};
+import { PROJECT_STATUS_LABELS, PROJECT_STATUS_META } from "../../projects/_components/project-constants";
 
 interface ClientProjectsCardProps {
   projects: Project[];
@@ -56,7 +52,9 @@ export function ClientProjectsCard({ projects, onAddProject }: ClientProjectsCar
               >
                 <div className="mt-1 flex items-center justify-between">
                   <H3 className="text-muted-foreground">{project.name}</H3>
-                  <Badge className={` ${STATUS_STYLES[project.status]}`}>{project.status}</Badge>
+                  <Badge className={` ${PROJECT_STATUS_META[project.status].badgeClass}`}>
+                    {PROJECT_STATUS_LABELS[project.status]}
+                  </Badge>
                 </div>
 
                 <div className="flex flex-col gap-1.5 rounded-md border border-muted/30 bg-muted/20 p-2.5 text-muted-foreground text-xs">

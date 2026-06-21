@@ -58,7 +58,7 @@ export function ClientFormDialog({
     defaultValues: {
       ...EMPTY_CLIENT_FORM,
       ...defaultValues,
-      isCompany: !!defaultValues?.company || !!defaultValues?.taxId,
+      isCompany: defaultValues?.isCompany ?? (!!defaultValues?.company || !!defaultValues?.taxId),
       phone: formatPhone(defaultValues?.phone ?? ""),
       taxId: formatTaxId(defaultValues?.taxId ?? ""),
     },
@@ -72,7 +72,7 @@ export function ClientFormDialog({
       reset({
         ...EMPTY_CLIENT_FORM,
         ...defaultValues,
-        isCompany: !!defaultValues?.company || !!defaultValues?.taxId,
+        isCompany: defaultValues?.isCompany ?? (!!defaultValues?.company || !!defaultValues?.taxId),
         phone: formatPhone(defaultValues?.phone ?? ""),
         taxId: formatTaxId(defaultValues?.taxId ?? ""),
       });
@@ -95,6 +95,10 @@ export function ClientFormDialog({
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
+
+          {/* Country is fixed to "US" for now; persisted via a hidden field so the
+              schema/data stay forward-compatible if multi-country support lands later. */}
+          <Controller control={control} name="country" render={({ field }) => <input type="hidden" {...field} />} />
 
           <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
             <Controller

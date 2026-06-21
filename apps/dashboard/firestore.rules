@@ -58,6 +58,12 @@ service cloud.firestore {
       allow update: if updatesInOwnOrg();
     }
 
+    match /leads/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg();
+      allow update: if updatesInOwnOrg();
+    }
+
     match /vendors/{id} {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg();

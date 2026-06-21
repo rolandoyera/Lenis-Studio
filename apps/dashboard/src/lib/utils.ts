@@ -49,6 +49,20 @@ export function formatCurrency(
   return new Intl.NumberFormat(locale, formatOptions).format(amount);
 }
 
+/**
+ * Formats a numeric value for display inside a currency text input: blank for 0/empty,
+ * otherwise a thousands-separated amount (no symbol). Defaults to two decimals; pass
+ * `noDecimals` for whole-dollar fields. Pair with a focus bridge so the raw digits are
+ * shown while editing.
+ */
+export function formatCurrencyInput(value: number | undefined, opts?: { noDecimals?: boolean }): string {
+  if (value === undefined || value === null || Number.isNaN(value) || value === 0) return "";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: opts?.noDecimals ? 0 : 2,
+    maximumFractionDigits: opts?.noDecimals ? 0 : 2,
+  }).format(value);
+}
+
 /** Strip a phone string to its USA 10-digit core: drops a leading "1" country code and caps at 10 digits. */
 export function normalizePhone(value: string): string {
   let digits = (value ?? "").replace(/\D/g, "");

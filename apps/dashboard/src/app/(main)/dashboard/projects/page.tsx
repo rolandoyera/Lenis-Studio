@@ -29,12 +29,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { addProject, getClients, getProjects, updateProject } from "@/lib/db";
+import {
+  addProject,
+  formatProjectAddress,
+  getClients,
+  getProjects,
+  updateProject,
+} from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 import {
   EMPTY_PROJECT_FORM,
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_META,
   type ProjectFormData,
   projectToForm,
 } from "./_components/project-constants";
@@ -91,10 +99,10 @@ export default function ProjectsPage() {
     setSubmitting(true);
     try {
       if (editingProject) {
-        const updatedFields = await updateProject(
-          editingProject.projectId,
-          data,
-        );
+        const updatedFields = await updateProject(editingProject.projectId, {
+          ...data,
+          updatedBy: profile.uid,
+        });
         setProjects((prev) =>
           prev.map((p) =>
             p.projectId === editingProject.projectId
@@ -107,6 +115,8 @@ export default function ProjectsPage() {
         const created = await addProject({
           ...data,
           organizationId: profile.organizationId,
+          createdBy: profile.uid,
+          updatedBy: profile.uid,
         });
         setProjects((prev) => [created, ...prev]);
         toast.success("New design project space initialized successfully!");
@@ -128,11 +138,12 @@ export default function ProjectsPage() {
       ? `${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim()
       : "";
     const term = searchQuery.toLowerCase();
+    const address = formatProjectAddress(project) || project.address || "";
 
     return (
       (project.name || "").toLowerCase().includes(term) ||
       clientName.toLowerCase().includes(term) ||
-      project.address?.toLowerCase().includes(term) ||
+      address.toLowerCase().includes(term) ||
       project.notes?.toLowerCase().includes(term)
     );
   });
@@ -188,14 +199,14 @@ export default function ProjectsPage() {
             <p className="mt-1 max-w-sm text-muted-foreground text-sm">
               {searchQuery
                 ? "Try broadening your search query or clear the filter."
-                : "Get started by initializing your first client project space (e.g. Master Living Room Renovation)."}
+                : "Get started by adding your first project."}
             </p>
             {!searchQuery && clients.length > 0 && (
               <Button
                 onClick={handleOpenAdd}
                 className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
-                Initialize Project Space
+                Start Project
               </Button>
             )}
           </Card>
@@ -213,14 +224,8 @@ export default function ProjectsPage() {
                   <CardHeader className="flex flex-col gap-1.5 pb-3">
                     <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`rounded-full px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${
-                          project.status === "Active"
-                            ? "border border-emerald-500/20 bg-emerald-500/15 text-emerald-500"
-                            : project.status === "Completed"
-                              ? "border border-blue-500/20 bg-blue-500/15 text-blue-500"
-                              : "border border-amber-500/20 bg-amber-500/15 text-amber-500"
-                        }`}>
-                        {project.status}
+                        className={`rounded-full px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider ${PROJECT_STATUS_META[project.status].badgeClass}`}>
+                        {PROJECT_STATUS_LABELS[project.status]}
                       </span>
                     </div>
 
@@ -262,12 +267,18 @@ export default function ProjectsPage() {
                           </span>
                         </div>
                       )}
-                      {project.address && (
-                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                          <MapPin className="size-3.5 shrink-0 text-primary/70" />
-                          <span className="truncate">{project.address}</span>
-                        </div>
-                      )}
+                      {(() => {
+                        const address =
+                          formatProjectAddress(project) || project.address;
+                        return (
+                          address && (
+                            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                              <MapPin className="size-3.5 shrink-0 text-primary/70" />
+                              <span className="truncate">{address}</span>
+                            </div>
+                          )
+                        );
+                      })()}
                     </div>
 
                     {/* Project briefs / description */}
@@ -306,9 +317,7 @@ export default function ProjectsPage() {
           submitting={submitting}
           clients={clients}
           initialData={
-            editingProject
-              ? projectToForm(editingProject)
-              : { ...EMPTY_PROJECT_FORM, clientId: clients[0]?.uid ?? "" }
+            editingProject ? projectToForm(editingProject) : EMPTY_PROJECT_FORM
           }
           onSubmit={handleSubmitProject}
         />

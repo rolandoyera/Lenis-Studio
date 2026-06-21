@@ -8,9 +8,8 @@ export const opportunitySchema = z.object({
   phone: z.string(),
   referrer: z.string(),
   stage: z.string(),
-  priority: z.number(),
-  projectType: z.string(),
-  value: z.string(),
+  propertyType: z.string(),
+  budget: z.string(),
 });
 
 export const opportunitiesSchema = z.array(opportunitySchema);

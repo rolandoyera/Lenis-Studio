@@ -96,7 +96,7 @@ export function MetricCards() {
     };
   }, [organizationId, authLoading]);
 
-  const activeProjectCount = projects.filter((project) => project.status === "Active").length;
+  const activeProjectCount = projects.filter((project) => project.status === "in_progress").length;
 
   return (
     <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">

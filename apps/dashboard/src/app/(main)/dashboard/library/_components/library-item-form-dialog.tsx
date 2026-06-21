@@ -62,10 +62,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import type { Vendor } from "@/lib/types";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatCurrencyInput } from "@/lib/utils";
 import { fetchImageBytes } from "@/server/ai-actions";
 
-import { CATEGORIES, formatPriceInput, MAX_IMAGES, SUBCATEGORIES, UNIT_TYPES } from "./library-constants";
+import { CATEGORIES, MAX_IMAGES, SUBCATEGORIES, UNIT_TYPES } from "./library-constants";
 import type { LibraryItemFormApi } from "./use-library-item-form";
 
 const LABEL_CLASS = "h-5 flex items-center";
@@ -372,7 +372,7 @@ export function LibraryItemFormDialog({
     <Input
       type="text"
       placeholder="0.00"
-      value={form.focusedField === field ? form.tempTextValue : formatPriceInput(value)}
+      value={form.focusedField === field ? form.tempTextValue : formatCurrencyInput(value)}
       onFocus={() => {
         form.setFocusedField(field);
         form.setTempTextValue(value ? String(value) : "");

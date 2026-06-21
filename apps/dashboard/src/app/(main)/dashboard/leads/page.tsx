@@ -1,0 +1,128 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { useAuth } from "@/components/auth-context";
+import PageHeader from "@/components/page-header";
+import { PageTitle } from "@/components/page-title-updater";
+import { addLead, getLeads, getOrganizationUsers } from "@/lib/db";
+import type { Lead, UserProfile } from "@/lib/types";
+
+import {
+  type LeadFormData,
+  leadFormToFields,
+} from "./_components/lead-constants";
+import { LeadFormDialog } from "./_components/lead-form-dialog";
+import { LeadsTable } from "./_components/leads-table";
+
+export default function LeadsPage() {
+  const { uid, organizationId, loading: authLoading } = useAuth();
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dependency; profile object identity churns on each heartbeat
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("add") === "true") {
+        setIsAddOpen(true);
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+
+    async function loadData() {
+      try {
+        const [leadsData, usersData] = await Promise.all([
+          getLeads(orgId),
+          getOrganizationUsers(orgId),
+        ]);
+        setLeads(leadsData);
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Failed to load leads:", error);
+        toast.error("Failed to fetch leads from database.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void loadData();
+  }, [organizationId, authLoading]);
+
+  const userMap = useMemo(
+    () => Object.fromEntries(users.map((u) => [u.uid, u.fullName])),
+    [users],
+  );
+
+  const handleAddSubmit = async (data: LeadFormData) => {
+    if (!uid || !organizationId) return;
+    setSubmitting(true);
+    try {
+      const fields = leadFormToFields(data);
+      const created = await addLead({
+        ...fields,
+        ...(fields.assignedTo ? { assignedAt: Date.now() } : {}),
+        organizationId,
+        createdBy: uid,
+        updatedBy: uid,
+      });
+      setLeads((prev) => [created, ...prev]);
+      toast.success("New lead created successfully!");
+      setIsAddOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save lead.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <PageTitle title="Leads" />
+      <div className="flex w-full flex-col gap-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <PageHeader
+            title="Leads"
+            description="Capture, qualify, and convert your pipeline."
+          />
+        </div>
+
+        {loading ? (
+          <div className="flex min-h-[300px] flex-col items-center justify-center gap-3">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              Loading Leads
+            </p>
+          </div>
+        ) : (
+          <LeadsTable
+            leads={leads}
+            userMap={userMap}
+            currentUserId={uid ?? undefined}
+            onAddLead={() => setIsAddOpen(true)}
+          />
+        )}
+
+        <LeadFormDialog
+          open={isAddOpen}
+          onOpenChange={setIsAddOpen}
+          title="Add a Lead"
+          description="Capture a new lead and its project fit details."
+          submitLabel="Create Lead"
+          submitting={submitting}
+          users={users}
+          onSubmit={handleAddSubmit}
+        />
+      </div>
+    </>
+  );
+}

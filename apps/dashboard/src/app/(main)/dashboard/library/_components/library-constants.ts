@@ -172,15 +172,6 @@ export function libraryItemToForm(item: LibraryItem): LibraryItemFormData {
   };
 }
 
-/** Format a numeric price for display in a text input (blank for empty/zero). */
-export function formatPriceInput(value: number | undefined): string {
-  if (value === undefined || value === null || Number.isNaN(value) || value === 0) return "";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 /** Normalize a user-entered URL so it always carries a protocol. */
 export function withProtocol(url: string): string {
   return url.startsWith("http") ? url : `https://${url}`;

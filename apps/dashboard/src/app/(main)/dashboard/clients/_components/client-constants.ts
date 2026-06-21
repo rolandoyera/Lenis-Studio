@@ -16,6 +16,7 @@ export const clientSchema = z
     city: z.string(),
     state: z.string(),
     zip: z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
+    country: z.string(),
     notes: z.string(),
   })
   .refine(
@@ -46,5 +47,6 @@ export const EMPTY_CLIENT_FORM: ClientFormData = {
   city: "",
   state: "",
   zip: "",
+  country: "US",
   notes: "",
 };

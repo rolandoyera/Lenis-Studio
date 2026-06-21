@@ -17,11 +17,12 @@ import {
   Phone,
   Shield,
   User,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import { EditIcon, TrashIcon } from "@/components/icons/icons";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
   TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
@@ -48,7 +50,10 @@ import type { Trade } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
 
 import HeaderBackLink from "../../_components/HeaderBackLink";
-import { type TradeFormData, tradeToForm } from "../_components/trade-constants";
+import {
+  type TradeFormData,
+  tradeToForm,
+} from "../_components/trade-constants";
 import { TradeFormDialog } from "../_components/trade-form-dialog";
 
 interface PageProps {
@@ -117,7 +122,9 @@ export default function TradeDetailPage({ params }: PageProps) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">Loading Trade Profile</p>
+        <p className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          Loading Trade Profile
+        </p>
       </div>
     );
   }
@@ -138,8 +145,12 @@ export default function TradeDetailPage({ params }: PageProps) {
             <div className="flex items-center gap-3">
               <H1>{trade.companyName}</H1>
               <span className="rounded-full border border-primary/20 bg-primary/15 px-2.5 py-0.5 font-semibold text-[10px] text-primary uppercase tracking-wider">
-                {["Contractors", "Installers", "Fabricators", "Engineer"].includes(trade.tradeType) &&
-                trade.tradeSubcategory
+                {[
+                  "Contractors",
+                  "Installers",
+                  "Fabricators",
+                  "Engineer",
+                ].includes(trade.tradeType) && trade.tradeSubcategory
                   ? `${trade.tradeType} - ${trade.tradeSubcategory}`
                   : trade.tradeType}
               </span>
@@ -149,7 +160,9 @@ export default function TradeDetailPage({ params }: PageProps) {
               {(trade.contactFirstName &&
                 trade.contactLastName &&
                 `${trade.contactFirstName} ${trade.contactLastName} `) || (
-                <span className="text-muted-foreground/50 text-xs italic">No Primary Contact</span>
+                <span className="text-muted-foreground/50 text-xs italic">
+                  No Primary Contact
+                </span>
               )}
             </p>
           </div>
@@ -164,12 +177,15 @@ export default function TradeDetailPage({ params }: PageProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
-                <EditIcon size={4} />
+                <Edit size={4} />
                 Edit Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsDeleteOpen(true)} variant="destructive">
-                <TrashIcon size={4} />
+              <DropdownMenuItem
+                onClick={() => setIsDeleteOpen(true)}
+                variant="destructive">
+                <Trash2 size={4} />
                 Delete Profile
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -200,8 +216,7 @@ export default function TradeDetailPage({ params }: PageProps) {
                 <Label>Email Address</Label>
                 <a
                   href={`mailto:${trade.email}`}
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline">
                   <Mail className="size-4 shrink-0 text-muted-foreground" />
                   {trade.email}
                 </a>
@@ -213,8 +228,7 @@ export default function TradeDetailPage({ params }: PageProps) {
                 <Label>Phone Number</Label>
                 <a
                   href={`tel:${normalizePhone(trade.phone)}`}
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline">
                   <Phone className="size-4 shrink-0 text-muted-foreground" />
                   {formatPhone(trade.phone)}
                 </a>
@@ -225,11 +239,14 @@ export default function TradeDetailPage({ params }: PageProps) {
               <div className="flex flex-col gap-1">
                 <Label>Website URL</Label>
                 <a
-                  href={trade.website.startsWith("http") ? trade.website : `https://${trade.website}`}
+                  href={
+                    trade.website.startsWith("http")
+                      ? trade.website
+                      : `https://${trade.website}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-2 text-foreground/80 hover:text-primary hover:underline">
                   <Globe className="size-4 shrink-0 text-muted-foreground" />
                   {trade.website}
                   <ExternalLink className="size-3 text-muted-foreground" />
@@ -238,7 +255,9 @@ export default function TradeDetailPage({ params }: PageProps) {
             )}
 
             {!trade.email && !trade.phone && !trade.website && (
-              <p className="text-muted-foreground/60 text-xs italic">No contact information specified.</p>
+              <p className="text-muted-foreground/60 text-xs italic">
+                No contact information specified.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -258,23 +277,32 @@ export default function TradeDetailPage({ params }: PageProps) {
                 <div className="flex items-start gap-2 text-foreground/80">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   <div>
-                    {trade.street && <span className="block">{trade.street}</span>}
+                    {trade.street && (
+                      <span className="block">{trade.street}</span>
+                    )}
                     {(trade.city || trade.state || trade.zip) && (
                       <span className="mt-0.5 block">
-                        {[trade.city, trade.state].filter(Boolean).join(", ") + (trade.zip ? ` ${trade.zip}` : "")}
+                        {[trade.city, trade.state].filter(Boolean).join(", ") +
+                          (trade.zip ? ` ${trade.zip}` : "")}
                       </span>
                     )}
 
                     {(() => {
-                      const fullAddress = [trade.street, trade.city, trade.state, trade.zip].filter(Boolean).join(", ");
+                      const fullAddress = [
+                        trade.street,
+                        trade.city,
+                        trade.state,
+                        trade.zip,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
                       return (
                         fullAddress && (
                           <a
                             href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-3 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
-                          >
+                            className="mt-3 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
                             Open Google Maps
                             <ExternalLink className="size-3" />
                           </a>
@@ -287,7 +315,9 @@ export default function TradeDetailPage({ params }: PageProps) {
             ) : (
               <div className="flex flex-col gap-1">
                 <Label>Location Address</Label>
-                <p className="text-muted-foreground/60 text-xs italic">No office address specified.</p>
+                <p className="text-muted-foreground/60 text-xs italic">
+                  No office address specified.
+                </p>
               </div>
             )}
           </CardContent>
@@ -305,19 +335,25 @@ export default function TradeDetailPage({ params }: PageProps) {
             {/* License details */}
             <div className="flex flex-col gap-4 rounded-lg border bg-muted/20 p-4">
               <div className="flex items-center justify-between border-b pb-2">
-                <span className="font-semibold text-foreground text-sm">Professional License</span>
+                <span className="font-semibold text-foreground text-sm">
+                  Professional License
+                </span>
                 <ComplianceBadge dateStr={trade.licenseExpirationDate} />
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <Label>License #</Label>
-                  <p className="mt-1 font-medium font-mono text-foreground/80">{trade.licenseNumber || "—"}</p>
+                  <p className="mt-1 font-medium font-mono text-foreground/80">
+                    {trade.licenseNumber || "—"}
+                  </p>
                 </div>
                 <div>
                   <Label>Expiration Date</Label>
                   <p className="mt-1 font-medium text-foreground/80">
                     {trade.licenseExpirationDate
-                      ? new Date(trade.licenseExpirationDate).toLocaleDateString("en-US", {
+                      ? new Date(
+                          trade.licenseExpirationDate,
+                        ).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
@@ -332,23 +368,31 @@ export default function TradeDetailPage({ params }: PageProps) {
             {/* Insurance details */}
             <div className="flex flex-col gap-4 rounded-lg border bg-muted/20 p-4">
               <div className="flex items-center justify-between border-b pb-2">
-                <span className="font-semibold text-foreground text-sm">Liability Insurance</span>
+                <span className="font-semibold text-foreground text-sm">
+                  Liability Insurance
+                </span>
                 <ComplianceBadge dateStr={trade.insuranceExpirationDate} />
               </div>
               <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
                 <div>
                   <Label>Insurance Policy #</Label>
-                  <p className="mt-1 font-medium font-mono text-foreground/80">{trade.insurancePolicyNumber || "—"}</p>
+                  <p className="mt-1 font-medium font-mono text-foreground/80">
+                    {trade.insurancePolicyNumber || "—"}
+                  </p>
                 </div>
                 <div>
                   <Label>Insurance Provider</Label>
-                  <p className="mt-1 font-medium text-foreground/80">{trade.insuranceProvider || "—"}</p>
+                  <p className="mt-1 font-medium text-foreground/80">
+                    {trade.insuranceProvider || "—"}
+                  </p>
                 </div>
                 <div>
                   <Label>Expiration Date</Label>
                   <p className="mt-1 font-medium text-foreground/80">
                     {trade.insuranceExpirationDate
-                      ? new Date(trade.insuranceExpirationDate).toLocaleDateString("en-US", {
+                      ? new Date(
+                          trade.insuranceExpirationDate,
+                        ).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "long",
                           day: "numeric",
@@ -380,13 +424,17 @@ export default function TradeDetailPage({ params }: PageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Trade Profile?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete the trade profile for "{trade.companyName}"? This action
-              cannot be undone.
+              Are you sure you want to permanently delete the trade profile for
+              "{trade.companyName}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction variant="destructive" onClick={handleDelete} disabled={deleting} className="gap-2">
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="gap-2">
               {deleting && <Loader2 className="size-4 animate-spin" />}
               Delete Profile
             </AlertDialogAction>
@@ -404,7 +452,8 @@ function checkExpiration(dateStr?: string): {
 } {
   if (!dateStr) return { expired: false, expiringSoon: false, none: true };
   const expDate = new Date(dateStr);
-  if (Number.isNaN(expDate.getTime())) return { expired: false, expiringSoon: false, none: true };
+  if (Number.isNaN(expDate.getTime()))
+    return { expired: false, expiringSoon: false, none: true };
 
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -430,7 +479,9 @@ function ComplianceBadge({ dateStr }: { dateStr?: string }) {
 
   if (none) {
     return (
-      <Badge variant="outline" className="font-bold text-[10px] uppercase tracking-wider opacity-60">
+      <Badge
+        variant="outline"
+        className="font-bold text-[10px] uppercase tracking-wider opacity-60">
         N/A
       </Badge>
     );
@@ -438,7 +489,9 @@ function ComplianceBadge({ dateStr }: { dateStr?: string }) {
 
   if (expired) {
     return (
-      <Badge variant="destructive" className="flex items-center gap-1 font-bold text-[10px] uppercase tracking-wider">
+      <Badge
+        variant="destructive"
+        className="flex items-center gap-1 font-bold text-[10px] uppercase tracking-wider">
         <AlertTriangle className="size-3" /> Expired
       </Badge>
     );
@@ -448,8 +501,7 @@ function ComplianceBadge({ dateStr }: { dateStr?: string }) {
     return (
       <Badge
         variant="secondary"
-        className="flex items-center gap-1 border-amber-500/20 bg-amber-500/15 font-bold text-[10px] text-amber-500 uppercase tracking-wider"
-      >
+        className="flex items-center gap-1 border-amber-500/20 bg-amber-500/15 font-bold text-[10px] text-amber-500 uppercase tracking-wider">
         <AlertTriangle className="size-3" /> Expiring Soon
       </Badge>
     );
@@ -458,8 +510,7 @@ function ComplianceBadge({ dateStr }: { dateStr?: string }) {
   return (
     <Badge
       variant="secondary"
-      className="flex items-center gap-1 border-emerald-500/20 bg-emerald-500/15 font-bold text-[10px] text-emerald-500 uppercase tracking-wider"
-    >
+      className="flex items-center gap-1 border-emerald-500/20 bg-emerald-500/15 font-bold text-[10px] text-emerald-500 uppercase tracking-wider">
       <CheckCircle2 className="size-3" /> Active
     </Badge>
   );

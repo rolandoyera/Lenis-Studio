@@ -1,10 +1,8 @@
 "use client";
 
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Edit, Trash2, Tag } from "lucide-react";
 
-import { EditIcon, TrashIcon } from "@/components/icons/icons";
 import { Label } from "@/components/ui/label";
-import { Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenuContent,
@@ -25,7 +23,11 @@ interface VendorHeaderProps {
 }
 
 /** Back link, vendor title banner, website, and the edit/delete actions menu. */
-export function VendorHeader({ vendor, onEdit, onRequestDelete }: VendorHeaderProps) {
+export function VendorHeader({
+  vendor,
+  onEdit,
+  onRequestDelete,
+}: VendorHeaderProps) {
   return (
     <>
       <HeaderBackLink href="/dashboard/vendors" />
@@ -50,13 +52,13 @@ export function VendorHeader({ vendor, onEdit, onRequestDelete }: VendorHeaderPr
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
-              <DropdownMenuLabel>Manage Vendor</DropdownMenuLabel>
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem onClick={onEdit}>
-                <EditIcon size={4} />
+                <Edit size={4} />
                 Edit Vendor
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onRequestDelete} variant="destructive">
-                <TrashIcon size={4} />
+                <Trash2 size={4} />
                 Delete Vendor
               </DropdownMenuItem>
             </DropdownMenuContent>

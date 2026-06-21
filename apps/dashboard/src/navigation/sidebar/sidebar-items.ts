@@ -15,6 +15,7 @@ import {
   type LucideIcon,
   ReceiptText,
   ShoppingBag,
+  UserPlus,
   Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
@@ -104,6 +105,11 @@ export const sidebarItems: NavGroup[] = [
         title: "Library",
         url: "/dashboard/library",
         icon: ShoppingBag,
+      },
+      {
+        title: "Leads",
+        url: "/dashboard/leads",
+        icon: UserPlus,
       },
       {
         title: "Clients",

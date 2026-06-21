@@ -3,10 +3,14 @@ import type { MetaIntegrationConfig } from "@/types/meta";
 export interface Client {
   uid: string;
   organizationId: string;
+  /** First-class contact type flag. Defaults to false for legacy clients that predate the field. */
+  isCompany: boolean;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  /** ISO 3166-1 alpha-2 code that drives phone formatting/validation. */
+  phoneCountry?: string;
   company?: string;
   taxId?: string;
   taxable?: boolean;
@@ -14,25 +18,125 @@ export interface Client {
   city?: string;
   state?: string;
   zip?: string;
+  country?: string;
   notes?: string;
+  /** Set when this client was created by converting a Lead. */
+  sourceLeadId?: string;
   createdAt: number;
 }
+
+// --- LEADS ---
+
+export type LeadStage = "new" | "contacted" | "qualified" | "proposal_sent" | "won" | "lost" | "on_hold";
+
+export type LeadSource =
+  | "website"
+  | "instagram"
+  | "referral"
+  | "manual"
+  | "google"
+  | "houzz"
+  | "facebook"
+  | "client"
+  | "repeat_client"
+  | "friend"
+  | "family"
+  | "other";
+
+export type PropertyType = "residential" | "commercial" | "hospitality" | "multifamily" | "retail" | "office" | "other";
+
+export type BudgetRange = "under_50k" | "50k_100k" | "100k_250k" | "250k_500k" | "500k_1m" | "over_1m";
+
+export type DesiredTimeline = "asap" | "1_3_months" | "3_6_months" | "6_12_months" | "12_plus_months" | "not_sure";
+
+export interface Lead {
+  uid: string;
+  organizationId: string;
+
+  // Contact type
+  isCompany: boolean;
+  company?: string;
+
+  // Pipeline
+  stage: LeadStage;
+
+  // Contact info
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  phoneCountry?: string;
+
+  // Address
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+
+  // Source
+  source?: LeadSource;
+  sourceDetail?: string;
+
+  // Project fit
+  propertyType?: PropertyType;
+  budgetRange?: BudgetRange;
+  desiredTimeline?: DesiredTimeline;
+  notes?: string;
+
+  // Assignment
+  assignedTo?: string; // user uid
+  assignedAt?: number;
+
+  // Conversion
+  convertedClientId?: string;
+  convertedAt?: number;
+  convertedBy?: string; // user uid
+
+  // Audit — all user references store UIDs only.
+  createdBy: string; // user uid
+  updatedBy: string; // user uid
+
+  createdAt: number;
+  updatedAt: number;
+  lastActivityAt?: number;
+}
+
+export type ProjectStatus = "in_progress" | "on_hold" | "completed" | "cancelled";
 
 export interface Project {
   projectId: string;
   organizationId: string;
   clientId: string;
   name: string;
+  /** @deprecated denormalized single-line address — kept for back-compat reads of older docs; new saves write the discrete fields below instead. */
   address?: string;
   street?: string;
   city?: string;
   state?: string;
   zip?: string;
+  country?: string;
   sameAsMain?: boolean;
-  status: "Active" | "Completed" | "Paused";
+  status: ProjectStatus;
+  /** The actual project budget in whole dollars. */
   budget?: number;
+
+  // Lead-qualification data carried over when a project originates from a Lead → Client → Project
+  // conversion. All optional: manually-created projects leave these unset.
+  propertyType?: PropertyType;
+  desiredTimeline?: DesiredTimeline;
+  sourceLeadId?: string;
+  /** Snapshot of the lead's budget range at conversion time (the qualifier, not the budget). */
+  originalLeadBudgetRange?: BudgetRange;
+
   notes?: string;
+
+  // Audit — all user references store UIDs only.
+  createdBy: string; // user uid
+  updatedBy: string; // user uid
   createdAt: number;
+  updatedAt: number;
+  lastActivityAt?: number;
 }
 
 export interface Vendor {

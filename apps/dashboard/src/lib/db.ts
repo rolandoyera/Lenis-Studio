@@ -10,6 +10,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
@@ -19,6 +20,7 @@ import { db, storage } from "@/lib/firebase";
 import type {
   Client,
   DiagnosticRun,
+  Lead,
   LibraryItem,
   Organization,
   Project,
@@ -127,6 +129,158 @@ export async function deleteClient(uid: string): Promise<void> {
       await deleteDoc(doc(db, "clients", uid));
     },
     () => uid,
+  );
+}
+
+// --- LEAD HELPER HOOKS & FUNCTIONS ---
+
+export async function getLead(uid: string): Promise<Lead | null> {
+  try {
+    return await trace(
+      "leads",
+      "READ",
+      "getLead",
+      async () => {
+        const docRef = doc(db, "leads", uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data() as Lead;
+        }
+        return null;
+      },
+      (l) => (l ? uid : "not found"),
+    );
+  } catch (error) {
+    console.error("Error fetching lead:", error);
+    return null;
+  }
+}
+
+export async function getLeads(organizationId: string): Promise<Lead[]> {
+  try {
+    return await trace(
+      "leads",
+      "READ",
+      "getLeads",
+      async () => {
+        const collRef = collection(db, "leads");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const filteredSnapshot = await getDocs(q);
+
+        const leads: Lead[] = [];
+        filteredSnapshot.forEach((doc) => {
+          leads.push(doc.data() as Lead);
+        });
+
+        return leads.sort((a, b) => b.updatedAt - a.updatedAt);
+      },
+      (l) => `${l.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+    return [];
+  }
+}
+
+export async function addLead(lead: Omit<Lead, "uid" | "createdAt" | "updatedAt" | "lastActivityAt">): Promise<Lead> {
+  return trace(
+    "leads",
+    "WRITE",
+    "addLead",
+    async () => {
+      const uid = `lead-${Math.random().toString(36).substr(2, 9)}`;
+      const now = Date.now();
+      const newLead: Lead = {
+        ...lead,
+        uid,
+        createdAt: now,
+        updatedAt: now,
+        lastActivityAt: now,
+      };
+      await setDoc(doc(db, "leads", uid), cleanUndefined(newLead));
+      return newLead;
+    },
+    (l) => l.uid,
+  );
+}
+
+/**
+ * Persists a partial lead update and stamps `updatedAt`/`lastActivityAt`. Callers must pass
+ * `updatedBy` (and `assignedAt` when changing `assignedTo`); the returned partial mirrors what
+ * was written so the UI can apply an optimistic update.
+ */
+export async function updateLead(uid: string, lead: Partial<Lead>): Promise<Partial<Lead>> {
+  return trace(
+    "leads",
+    "WRITE",
+    "updateLead",
+    async () => {
+      const now = Date.now();
+      const updatedLead: Partial<Lead> = {
+        ...lead,
+        updatedAt: now,
+        lastActivityAt: now,
+      };
+      await updateDoc(doc(db, "leads", uid), cleanUndefined(updatedLead));
+      return updatedLead;
+    },
+    () => uid,
+  );
+}
+
+/**
+ * Converts a lead into a new client document in a single atomic batch: the client is created
+ * (carrying `sourceLeadId`) and the lead is marked `won` with conversion audit fields. The lead
+ * is never deleted. Returns the created client.
+ */
+export async function convertLeadToClient(lead: Lead, convertedBy: string): Promise<Client> {
+  return trace(
+    "leads",
+    "WRITE",
+    "convertLeadToClient",
+    async () => {
+      const batch = writeBatch(db);
+      const now = Date.now();
+
+      const clientUid = `client-${Math.random().toString(36).substr(2, 9)}`;
+      const newClient: Client = {
+        uid: clientUid,
+        organizationId: lead.organizationId,
+        isCompany: lead.isCompany,
+        company: lead.company,
+        firstName: lead.firstName ?? "",
+        lastName: lead.lastName ?? "",
+        email: lead.email ?? "",
+        phone: lead.phone ?? "",
+        phoneCountry: lead.phoneCountry,
+        street: lead.street,
+        city: lead.city,
+        state: lead.state,
+        zip: lead.zip,
+        country: lead.country,
+        notes: lead.notes,
+        sourceLeadId: lead.uid,
+        createdAt: now,
+      };
+      batch.set(doc(db, "clients", clientUid), cleanUndefined(newClient));
+
+      batch.update(
+        doc(db, "leads", lead.uid),
+        cleanUndefined({
+          stage: "won",
+          convertedClientId: clientUid,
+          convertedAt: now,
+          convertedBy,
+          updatedBy: convertedBy,
+          updatedAt: now,
+          lastActivityAt: now,
+        }),
+      );
+
+      await batch.commit();
+      return newClient;
+    },
+    (c) => c.uid,
   );
 }
 
@@ -340,20 +494,23 @@ export function formatProjectAddress(parts: Pick<Project, "street" | "city" | "s
   return [parts.street, [parts.city, parts.state].filter(Boolean).join(", "), parts.zip].filter(Boolean).join(" ");
 }
 
-export async function addProject(project: Omit<Project, "projectId" | "createdAt">): Promise<Project> {
+export async function addProject(
+  project: Omit<Project, "projectId" | "createdAt" | "updatedAt" | "lastActivityAt">,
+): Promise<Project> {
   return trace(
     "projects",
     "WRITE",
     "addProject",
     async () => {
       const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
-      const address = formatProjectAddress(project);
+      const now = Date.now();
 
       const newProject: Project = {
         ...project,
-        address: address || project.address,
         projectId,
-        createdAt: Date.now(),
+        createdAt: now,
+        updatedAt: now,
+        lastActivityAt: now,
       };
       await setDoc(doc(db, "projects", projectId), cleanUndefined(newProject));
       return newProject;
@@ -363,9 +520,8 @@ export async function addProject(project: Omit<Project, "projectId" | "createdAt
 }
 
 /**
- * Persists the partial update and returns the normalized fields that were written
- * (with `budget` prefixed and the denormalized `address` rebuilt), so callers can
- * apply an optimistic update that matches the stored document exactly.
+ * Persists a partial project update and stamps `updatedAt`/`lastActivityAt`. Callers must pass
+ * `updatedBy`; the returned partial mirrors what was written so the UI can apply an optimistic update.
  */
 export async function updateProject(projectId: string, project: Partial<Project>): Promise<Partial<Project>> {
   return trace(
@@ -373,22 +529,14 @@ export async function updateProject(projectId: string, project: Partial<Project>
     "WRITE",
     "updateProject",
     async () => {
-      const docRef = doc(db, "projects", projectId);
+      const now = Date.now();
       const updatedProject: Partial<Project> = {
         ...project,
+        updatedAt: now,
+        lastActivityAt: now,
       };
 
-      const hasAddressFields =
-        project.street !== undefined ||
-        project.city !== undefined ||
-        project.state !== undefined ||
-        project.zip !== undefined;
-
-      if (hasAddressFields) {
-        updatedProject.address = formatProjectAddress(project);
-      }
-
-      await updateDoc(docRef, cleanUndefined(updatedProject));
+      await updateDoc(doc(db, "projects", projectId), cleanUndefined(updatedProject));
       return updatedProject;
     },
     () => projectId,
@@ -957,46 +1105,7 @@ export async function addProjectRoom(
   );
 }
 
-export async function seedMockRooms(projectId: string, organizationId: string): Promise<ProjectRoom[]> {
-  const { templateMockRooms, templateMockRoomItems } = await import("@/data/mock-studio");
-
-  const createdRooms: ProjectRoom[] = [];
-  const roomNameToIdMap = new Map<string, string>();
-
-  // Seed rooms
-  for (const tRoom of templateMockRooms) {
-    const roomId = `room-${Math.random().toString(36).substr(2, 9)}`;
-    const newRoom = await addProjectRoom(
-      {
-        projectId,
-        name: tRoom.name,
-        description: tRoom.description,
-      },
-      roomId,
-    );
-    createdRooms.push(newRoom);
-    roomNameToIdMap.set(tRoom.name, roomId);
-  }
-
-  // Seed items
-  for (const tItem of templateMockRoomItems) {
-    const targetRoomId = roomNameToIdMap.get(tItem.roomName);
-    if (!targetRoomId) continue;
-
-    // Remove temp roomName field, map to Firestore fields
-    const { roomName, ...itemFields } = tItem;
-    await addProjectRoomItem({
-      ...itemFields,
-      roomId: targetRoomId,
-      projectId,
-      organizationId,
-    });
-  }
-
-  return createdRooms.sort((a, b) => a.createdAt - b.createdAt);
-}
-
-export async function getProjectRooms(projectId: string, organizationId: string): Promise<ProjectRoom[]> {
+export async function getProjectRooms(projectId: string): Promise<ProjectRoom[]> {
   try {
     return await trace(
       "projectRooms",
@@ -1010,12 +1119,6 @@ export async function getProjectRooms(projectId: string, organizationId: string)
         snapshot.forEach((docSnap) => {
           rooms.push(docSnap.data() as ProjectRoom);
         });
-
-        if (rooms.length === 0) {
-          // Automatic seeding of template mock rooms for the project on first check
-          const seeded = await seedMockRooms(projectId, organizationId);
-          return seeded;
-        }
 
         return rooms.sort((a, b) => a.createdAt - b.createdAt);
       },
