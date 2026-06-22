@@ -42,7 +42,7 @@ export function ClientDetailHeader({
     <>
       <HeaderBackLink href="/dashboard/clients" />
 
-      <div className="flex flex-col gap-16 pb-4 md:flex-row md:items-center">
+      <div className="flex flex-col gap-16 pb-4 md:flex-row md:items-start">
         <div className="flex items-center gap-4">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-xs">
             {client.company ? (
@@ -97,8 +97,7 @@ export function ClientDetailHeader({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={onRequestDelete}
-                >
+                  onClick={onRequestDelete}>
                   <Trash2 className="size-4" />
                   Delete Profile
                 </DropdownMenuItem>

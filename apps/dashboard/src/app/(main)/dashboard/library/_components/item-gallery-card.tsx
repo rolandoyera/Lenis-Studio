@@ -9,6 +9,7 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import type { LibraryItem } from "@/lib/types";
 
@@ -25,13 +26,14 @@ export function ItemGalleryCard({
   onSelectImage,
 }: ItemGalleryCardProps) {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="h-6.5">
+    <Card variant="panel" className="overflow-hidden">
+      <CardHeader>
+        <CardTitle>
+          <Image className="icons" />
+          Product Gallery
+        </CardTitle>
         {activeImage === item.coverImageUrl && activeImage && (
-          <Badge variant="overlay">
-            <Image className="size-2.5 text-yellow-500" />
-            Primary Cover
-          </Badge>
+          <Badge variant="overlay">Primary Cover</Badge>
         )}
       </CardHeader>
       <CardContent className="relative flex aspect-16/14.5 w-full items-center justify-center">
@@ -65,8 +67,7 @@ export function ItemGalleryCard({
                     ? "scale-105 border-primary ring-2 ring-primary/20"
                     : "border-border/60 hover:border-border"
                 }`}
-                onClick={() => onSelectImage(url)}
-              >
+                onClick={() => onSelectImage(url)}>
                 <DashboardImage
                   src={url}
                   alt="thumbnail"

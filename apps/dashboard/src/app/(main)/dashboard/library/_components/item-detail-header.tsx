@@ -42,7 +42,10 @@ export function ItemDetailHeader({
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{item.category}</Badge>
             {item.subcategory && (
-              <Badge variant="outline">{item.subcategory}</Badge>
+              <span>
+                <span className="mr-0.5">→</span>{" "}
+                <Badge variant="outline">{item.subcategory}</Badge>
+              </span>
             )}
           </div>
           <h1 className="mt-1 font-heading font-medium text-3xl tracking-tight">
@@ -50,17 +53,15 @@ export function ItemDetailHeader({
           </h1>
           {vendorName && (
             <p className="flex items-center gap-1 font-medium text-[12px] text-muted-foreground">
-              <Forklift className="size-4 shrink-0 text-primary" />
+              <Forklift className="size-3.5 shrink-0 text-primary" />
 
               {item.vendorId ? (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}
-                  className="cursor-pointer transition-colors hover:text-primary hover:underline"
-                >
+                  className="cursor-pointer transition-colors hover:text-primary hover:underline">
                   <Label
                     size="large"
-                    className="cursor-pointer text-foreground hover:text-primary"
-                  >
+                    className="cursor-pointer text-foreground hover:text-primary">
                     {vendorName}
                   </Label>
                 </Link>
@@ -89,8 +90,7 @@ export function ItemDetailHeader({
 
                 <DropdownMenuItem
                   onClick={onRequestDelete}
-                  variant="destructive"
-                >
+                  variant="destructive">
                   <Trash2 size={4} />
                   Delete Product
                 </DropdownMenuItem>

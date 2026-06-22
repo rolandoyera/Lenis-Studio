@@ -72,16 +72,13 @@ export default function LeadsPage() {
         id: profile.uid,
         name: profile.fullName,
       };
-      const created = await addLead(
-        {
-          ...fields,
-          ...(fields.assignedTo ? { assignedAt: Date.now() } : {}),
-          organizationId,
-          createdBy: actor,
-          updatedBy: actor,
-        },
-        actor,
-      );
+      const created = await addLead({
+        ...fields,
+        ...(fields.assignedTo ? { assignedAt: Date.now() } : {}),
+        organizationId,
+        createdBy: actor,
+        updatedBy: actor,
+      });
       setLeads((prev) => [created, ...prev]);
       toast.success("New lead created successfully!");
       setIsAddOpen(false);

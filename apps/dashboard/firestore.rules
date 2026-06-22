@@ -42,11 +42,6 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/clients/$(clientId)).data.organizationId;
     }
 
-    // Org of a lead document, for subcollections that inherit the parent's access.
-    function leadOrg(leadId) {
-      return get(/databases/$(database)/documents/leads/$(leadId)).data.organizationId;
-    }
-
     // Shared shape for org-partitioned data collections.
     function readsOwnOrg() {
       return isSignedIn() && resource.data.organizationId == userOrg();
@@ -107,25 +102,6 @@ service cloud.firestore {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg();
       allow update: if updatesInOwnOrg();
-    }
-
-    // Append-only lead notes — same shape and rules as client notes: immutable
-    // body, creator-only soft-delete (deletedAt/deletedBy only), never physically
-    // deleted. Access inherits from the parent lead's org.
-    match /leads/{leadId}/notes/{noteId} {
-      allow read: if isSignedIn() && leadOrg(leadId) == userOrg();
-      allow create: if isSignedIn()
-        && leadOrg(leadId) == userOrg()
-        && request.resource.data.organizationId == userOrg()
-        && request.resource.data.createdBy.id == request.auth.uid
-        && !('deletedAt' in request.resource.data);
-      allow update: if isSignedIn()
-        && leadOrg(leadId) == userOrg()
-        && resource.data.createdBy.id == request.auth.uid
-        && !('deletedAt' in resource.data)
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['deletedAt', 'deletedBy']);
-      allow delete: if false;
     }
 
     match /vendors/{id} {

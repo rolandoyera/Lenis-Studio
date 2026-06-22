@@ -52,8 +52,8 @@ function ContactCard({ client }: { client: Client }) {
   );
 
   return (
-    <Card className="pt-0">
-      <CardHeader className="bg-muted/50 flex items-center h-15">
+    <Card variant="panel">
+      <CardHeader>
         <CardTitle>
           <Users className="icons" />
           Client Information

@@ -21,14 +21,14 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
   const profitable = profit > 0;
 
   return (
-    <Card>
+    <Card variant="panel">
       <CardHeader>
         <CardTitle>
           <Calculator className="icons" />
           Cost & Pricing
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 pb-4">
+      <CardContent className="flex flex-col gap-4 py-3">
         {/* Four-cell pricing row — gap-px/bg-border produces hairline dividers */}
         <div className="grid grid-cols-4 gap-px overflow-hidden rounded-xl border border-border/50 bg-border text-center">
           {/* Sourcing Cost */}
@@ -61,15 +61,13 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
               profitable
                 ? "flex flex-col gap-1 bg-card bg-linear-to-t from-emerald-600/10 to-card p-3.5 shadow-xs"
                 : "flex flex-col gap-1 bg-card bg-linear-to-t from-red-500/10 to-card p-3.5 shadow-xs"
-            }
-          >
+            }>
             <span
               className={`flex items-center justify-center gap-1 font-medium text-[10px] uppercase tracking-wider ${
                 profitable
                   ? "text-emerald-700 dark:text-emerald-400"
                   : "text-red-700 dark:text-red-400"
-              }`}
-            >
+              }`}>
               {profitable ? (
                 <TrendingUp className="size-3" />
               ) : (
@@ -82,14 +80,13 @@ export function ItemPricingCard({ item }: ItemPricingCardProps) {
                 profitable
                   ? "text-emerald-700 dark:text-emerald-400"
                   : "text-red-700 dark:text-red-400"
-              }`}
-            >
+              }`}>
               {formatCurrency(profit)}
             </span>
           </div>
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="h-14">
         {/* Optional MSRP */}
         {item.msrp && item.msrp > 0 ? (
           <div className="flex w-full items-center justify-end gap-4 text-sm">

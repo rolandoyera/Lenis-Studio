@@ -50,14 +50,14 @@ interface ItemSpecMatrixProps {
 /** Spec grid plus assigned vendor and direct product link. */
 export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
   return (
-    <Card>
+    <Card variant="panel">
       <CardHeader>
         <CardTitle>
           <Tag className="icons" />
           Specifications
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5 pb-4">
+      <CardContent className="flex flex-col gap-5 py-3">
         <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border text-sm md:grid-cols-4">
           <SpecField label="Finish / Color" value={na(item.finishColor)} />
           <SpecField label="Materials" value={na(item.materials)} />
@@ -69,16 +69,15 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
           <SpecField label="Subcategory" value={item.subcategory} />
         </div>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="h-14">
         <div className="flex w-full items-center justify-end gap-4">
           {vendor?.website && (
             <div>
               <a
                 href={withProtocol(vendor.website)}
                 target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="secondary">
+                rel="noopener noreferrer">
+                <Button variant="secondary" size="sm">
                   <ExternalLink className="size-4" />
                   Vendor Website
                 </Button>
@@ -90,9 +89,8 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
               <a
                 href={withProtocol(item.sourcingLink)}
                 target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="secondary">
+                rel="noopener noreferrer">
+                <Button variant="secondary" size="sm">
                   <ExternalLink className="size-4" />
                   Product Website
                 </Button>

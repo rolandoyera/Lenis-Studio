@@ -36,8 +36,8 @@ export function ProjectInformationCard({
   }
 
   return (
-    <Card className="pt-0">
-      <CardHeader className="py-4 bg-muted/50">
+    <Card variant="panel">
+      <CardHeader>
         <CardTitle>
           <Building2 className="icons" />
           Project Information
@@ -79,8 +79,7 @@ export function ProjectInformationCard({
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
-                        >
+                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
                           Google Maps
                           <ExternalLink className="size-3" />
                         </a>
@@ -123,8 +122,7 @@ export function ProjectInformationCard({
                 <Link
                   href={`/dashboard/clients/${client.uid}`}
                   prefetch={false}
-                  className="flex items-center gap-1.5 text-foreground hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-1.5 text-foreground hover:text-primary hover:underline">
                   <User className="size-4 shrink-0 text-primary" />
                   <span>{clientName}</span>
                 </Link>
@@ -135,8 +133,7 @@ export function ProjectInformationCard({
                   <Label className="mb-1">Email Address</Label>
                   <a
                     href={`mailto:${client.email}`}
-                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
-                  >
+                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary">
                     <Mail className="size-4 shrink-0 text-primary" />
                     <span className="truncate group-hover:underline">
                       {client.email}
@@ -150,8 +147,7 @@ export function ProjectInformationCard({
                   <Label className="mb-1">Phone Number</Label>
                   <a
                     href={`tel:${normalizePhone(client.phone)}`}
-                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary"
-                  >
+                    className="group flex items-center gap-1.5 text-foreground transition-colors hover:text-primary">
                     <Phone className="size-4 shrink-0 text-primary" />
                     <span className="group-hover:underline">
                       {formatPhone(client.phone)}

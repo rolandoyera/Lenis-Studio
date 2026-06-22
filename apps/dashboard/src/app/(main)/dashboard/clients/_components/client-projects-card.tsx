@@ -31,8 +31,8 @@ export function ClientProjectsCard({
   onAddProject,
 }: ClientProjectsCardProps) {
   return (
-    <Card className="pt-0">
-      <CardHeader className="bg-muted/50 h-14 flex items-center justify-between">
+    <Card variant="panel">
+      <CardHeader>
         <CardTitle>
           <FolderKanban className="icons" />
           Projects

@@ -27,10 +27,10 @@ export interface Client {
 // --- ACTIVITY ---
 // Activities are append-only audit records in a single top-level `activities`
 // collection (NOT per-entity subcollections). Each doc is self-contained — it
-// carries its org, the actor, and a `source` pointer to the record whose
-// timeline it belongs to — so one collection powers both per-entity timelines
-// (filter by source) and an org-wide feed (filter by org). Notes, by contrast,
-// stay as parent subcollections (see ClientNote).
+// carries its org, the actor, and a `source` pointer to the record it concerns.
+// Today they're written only alongside note add/delete, giving notes an
+// immutable audit trail. Notes themselves stay as parent subcollections (see
+// ClientNote).
 
 /** Who triggered an activity or authored a note. */
 export interface ActivityActor {
@@ -42,15 +42,7 @@ export interface ActivityActor {
 }
 
 /** Record types an activity can belong to or point at. */
-export type ActivityEntityType =
-  | "lead"
-  | "client"
-  | "project"
-  | "proposal"
-  | "invoice"
-  | "portal"
-  | "note"
-  | "file";
+export type ActivityEntityType = "client" | "note";
 
 /**
  * The record whose timeline this activity belongs to — the per-entity query
@@ -74,68 +66,13 @@ export interface ActivityEntity {
   label?: string;
 }
 
-/** Client timeline events. */
-export type ClientActivityType =
-  | "client_created"
-  | "lead_converted_to_client"
-  | "note_added"
-  | "note_deleted";
-
-/** Lead pipeline / relationship events. */
-export type LeadLifecycleEvent =
-  | "lead_created"
-  | "lead_updated"
-  | "lead_stage_changed"
-  | "lead_assigned"
-  | "lead_unassigned"
-  | "lead_archived"
-  | "lead_restored"
-  | "lead_lost"
-  | "lead_converted_to_client";
-
-/** Communication events, shared across client and lead timelines. */
-export type CommunicationEvent =
-  | "note_added"
-  | "note_deleted"
-  | "comment_added"
-  | "email_sent"
-  | "meeting_logged"
-  | "call_logged";
-
-/** Document events, shared across timelines. */
-export type DocumentEvent =
-  | "file_uploaded"
-  | "file_deleted"
-  | "document_signed";
-
-/** Lead timeline events — lifecycle composed with shared comms/document events. */
-export type LeadActivityType =
-  | LeadLifecycleEvent
-  | CommunicationEvent
-  | DocumentEvent;
-
-/** Every activity type across domains. */
-export type ActivityType = ClientActivityType | LeadActivityType;
-
-/**
- * Emitting surface — the system that produced the event. A business fact, set
- * by the writer and stable: "website" = public site intake, "portal" = client
- * portal, "studio" = a user acting inside the CRM. (Distinct from a lead's
- * acquisition source, which lives in `metadata.channel`.)
- */
-export type ActivityChannel = "website" | "portal" | "studio";
-
-/**
- * Notification weight — a product knob, re-tunable over time without changing
- * what `channel` means. "high" pings right away (external/client-driven events:
- * website leads, proposal views, portal activity); "low" can wait (internal
- * studio activity). Drives the realtime "needs attention" listener.
- */
-export type ActivityImportance = "high" | "low";
+/** Activity events. Scoped to note add/delete — the only events we record. */
+export type ActivityType = "note_added" | "note_deleted";
 
 /**
  * Append-only audit record in the top-level `activities` collection. Written
- * once, never updated or deleted (redaction is deferred).
+ * once, never updated or deleted. Currently emitted only alongside note
+ * add/delete, giving notes an immutable audit trail.
  */
 export interface Activity {
   id: string;
@@ -148,20 +85,14 @@ export interface Activity {
   entity: ActivityEntity;
   /** Who can see it. Defaults to internal; opt specific events into the portal later. */
   visibility: "internal" | "client_visible";
-  /** Emitting surface. Absent on legacy rows ⇒ treat as "studio". */
-  channel?: ActivityChannel;
-  /** Notification weight. Absent ⇒ treat as "low". */
-  importance?: ActivityImportance;
-  /** Type-specific extras — kept loose until the payloads stabilize. */
-  metadata?: Record<string, unknown>;
   createdAt: number;
 }
 
 /**
  * Append-only note. Immutable after creation: never edited, never physically
  * deleted. Removal is a creator-only soft-delete that stamps
- * `deletedAt`/`deletedBy`. Notes stay as parent subcollections, e.g.
- * `clients/{clientId}/notes/{id}` and `leads/{leadId}/notes/{id}`.
+ * `deletedAt`/`deletedBy`. Notes stay as a parent subcollection at
+ * `clients/{clientId}/notes/{id}`.
  */
 export interface ClientNote {
   id: string;

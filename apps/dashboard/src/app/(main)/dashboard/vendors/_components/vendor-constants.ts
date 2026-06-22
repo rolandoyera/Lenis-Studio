@@ -73,27 +73,42 @@ export function regionLabelFor(country: string | undefined | null): string {
   return "Region";
 }
 
-/**
- * Build the denormalized single-line address from the discrete parts. The
- * country name is omitted for US addresses to keep them clean.
- */
-export function formatVendorAddress(parts: {
+interface AddressParts {
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
   region?: string;
   postalCode?: string;
   country?: string;
-}): string {
+}
+
+/**
+ * Break an address into ordered display lines (street, unit, city/region/postal,
+ * country). Handles US or rest-of-world: the city/region/postal line adapts to
+ * whatever parts exist, and the country name is omitted for US addresses to keep
+ * them clean.
+ */
+export function formatVendorAddressLines(parts: AddressParts): string[] {
   const cityLine = [parts.city, parts.region].filter(Boolean).join(", ");
   const cityRegionPostal = [cityLine, parts.postalCode]
     .filter(Boolean)
     .join(" ");
   const country =
     parts.country && parts.country !== "US" ? countryName(parts.country) : "";
-  return [parts.addressLine1, parts.addressLine2, cityRegionPostal, country]
-    .filter(Boolean)
-    .join(", ");
+  return [
+    parts.addressLine1,
+    parts.addressLine2,
+    cityRegionPostal,
+    country,
+  ].filter((line): line is string => Boolean(line));
+}
+
+/**
+ * Build the denormalized single-line address from the discrete parts. The
+ * country name is omitted for US addresses to keep them clean.
+ */
+export function formatVendorAddress(parts: AddressParts): string {
+  return formatVendorAddressLines(parts).join(", ");
 }
 
 // ─── Schema ─────────────────────────────────────────────────────────────────

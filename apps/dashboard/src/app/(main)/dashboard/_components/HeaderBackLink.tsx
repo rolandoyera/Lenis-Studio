@@ -30,7 +30,7 @@ export default function HeaderBackLink({
   };
 
   return (
-    <div>
+    <div className="-mt-4">
       <Link href={href ?? "#"} onClick={handleBack} prefetch={false}>
         <Button className="flex cursor-pointer items-center gap-1.5 bg-transparent text-muted-foreground text-sm hover:bg-transparent hover:text-primary">
           <ArrowLeft className="size-3.5" />

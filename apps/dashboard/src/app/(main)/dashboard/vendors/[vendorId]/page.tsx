@@ -5,15 +5,7 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import {
-  Building2,
-  FileText,
-  Hash,
-  Loader2,
-  Mail,
-  MapPin,
-  Phone,
-} from "lucide-react";
+import { Building2, ExternalLink, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
@@ -28,7 +20,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import {
   addLibraryItem,
   deleteReplacedStorageFiles,
@@ -39,12 +30,12 @@ import {
 } from "@/lib/db";
 import { mirrorExternalImagesToFirebase } from "@/lib/library-image-mirror";
 import type { LibraryItem, Vendor } from "@/lib/types";
-import { formatVendorPhone, vendorPhoneTel } from "@/lib/utils";
+import { formatVendorPhone } from "@/lib/utils";
 import { mirrorVendorImagesToFirebase } from "@/lib/vendor-image-mirror";
 
 import { LibraryItemFormDialog } from "../../library/_components/library-item-form-dialog";
 import { useLibraryItemForm } from "../../library/_components/use-library-item-form";
-import { formatVendorAddress } from "../_components/vendor-constants";
+import { formatVendorAddressLines } from "../_components/vendor-constants";
 import {
   type VendorFormData,
   VendorFormDialog,
@@ -53,6 +44,7 @@ import {
 import { VendorHeader } from "../_components/vendor-header";
 import { VendorHero } from "../_components/vendor-hero";
 import { VendorItems } from "../_components/vendor-items";
+import { DataField } from "@/components/ui/data-field";
 
 interface PageProps {
   params: Promise<{ vendorId: string }>;
@@ -214,129 +206,88 @@ export default function VendorDetailPage({ params }: PageProps) {
 
   if (!vendor) return null;
 
-  // Prefer the stored formattedAddress; otherwise compose it from the discrete
-  // fields, falling back to the deprecated US-only fields on older docs.
+  // Compose the address from the discrete fields, falling back to the deprecated
+  // US-only fields on older docs. Display is multi-line; the stored
+  // formattedAddress drives the Google Maps query.
+  const addressLines = formatVendorAddressLines({
+    addressLine1: vendor.addressLine1 ?? vendor.street,
+    addressLine2: vendor.addressLine2,
+    city: vendor.city,
+    region: vendor.region ?? vendor.state,
+    postalCode: vendor.postalCode ?? vendor.zip,
+    country: vendor.country,
+  });
   const addressText =
-    vendor.formattedAddress?.trim() ||
-    formatVendorAddress({
-      addressLine1: vendor.addressLine1 ?? vendor.street,
-      addressLine2: vendor.addressLine2,
-      city: vendor.city,
-      region: vendor.region ?? vendor.state,
-      postalCode: vendor.postalCode ?? vendor.zip,
-      country: vendor.country,
-    });
+    vendor.formattedAddress?.trim() || addressLines.join(", ");
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex flex-col gap-6">
       <VendorHeader
         vendor={vendor}
         onEdit={() => setIsEditOpen(true)}
         onRequestDelete={() => setIsDeleteOpen(true)}
       />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Hero header card — defines the row height */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <VendorHero vendor={vendor} />
-
-        {/* Linked Library Items Card — fills the row height and scrolls internally */}
         <div className="relative">
           <div className="md:absolute md:inset-0">
             <VendorItems items={items} onAddItem={handleOpenAddItem} />
           </div>
         </div>
-      </div>
-
-      {/* Account Info Card */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Account & Address */}
-        <Card className="pt-0">
-          <CardHeader className="bg-muted/50">
-            <CardTitle className="h-14">
+        <Card variant="panel">
+          <CardHeader>
+            <CardTitle>
               <Building2 className="icons" />
-              Account Information
+              Company Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4 text-sm">
-            {vendor.accountNumber ? (
-              <div className="flex flex-col gap-1">
-                <Label>Account Number</Label>
-                <span className="flex items-center gap-2 font-mono text-foreground/80">
-                  <Hash className="icons" />
-                  {vendor.accountNumber}
-                </span>
-              </div>
-            ) : null}
-
-            {addressText ? (
-              <div className="flex flex-col gap-1">
-                <Label>Address</Label>
-                <span className="flex items-start gap-2 text-foreground/80">
-                  <MapPin className="icons" />
-                  <span>{addressText}</span>
-                </span>
-              </div>
-            ) : null}
-            {!vendor.accountNumber && !addressText && (
-              <p className="text-muted-foreground/50 text-sm italic">
-                No account information on file.
-              </p>
-            )}
+          <CardContent className="grid grid-cols-2 gap-4">
+            <DataField label="Account Number" empty="Not provided">
+              {vendor.accountNumber}
+            </DataField>
+            <DataField
+              label="Address"
+              empty="Not provided"
+              className="min-h-21">
+              {addressLines.length > 0 ? (
+                <div className="flex flex-col">
+                  {addressLines.map((line, i) => (
+                    <span key={line} className={i > 0 ? "mt-0.5" : undefined}>
+                      {line}
+                    </span>
+                  ))}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                    google maps
+                    <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              ) : undefined}
+            </DataField>
+            <DataField label="Main Contact" empty="Not provided">
+              {vendor.repName}
+            </DataField>
+            <DataField label="Email" empty="Not provided">
+              {vendor.repEmail}
+            </DataField>
+            <DataField label="Phone" empty="Not provided">
+              {vendor.repPhone
+                ? formatVendorPhone(vendor.repPhone, vendor.repPhoneCountry)
+                : undefined}
+            </DataField>
           </CardContent>
         </Card>
-
-        {/* Rep Contact */}
-        <Card className="pt-0">
-          <CardHeader className="bg-muted/50">
-            <CardTitle className="h-14">
-              <Mail className="icons" />
-              Contact Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4 text-sm">
-            {vendor.repName ? (
-              <div className="flex flex-col gap-1">
-                <Label>Name</Label>
-                <span className="font-medium">{vendor.repName}</span>
-              </div>
-            ) : null}
-            {vendor.repEmail ? (
-              <div className="flex flex-col gap-1">
-                <Label>Email</Label>
-                <a
-                  href={`mailto:${vendor.repEmail}`}
-                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary"
-                >
-                  <Mail className="icons" />
-                  {vendor.repEmail}
-                </a>
-              </div>
-            ) : null}
-            {vendor.repPhone ? (
-              <div className="flex flex-col gap-1">
-                <Label>Phone</Label>
-                <a
-                  href={`tel:${vendorPhoneTel(vendor.repPhone, vendor.repPhoneCountry)}`}
-                  className="flex items-center gap-2 text-foreground/80 transition-colors hover:text-primary"
-                >
-                  <Phone className="icons" />
-                  {formatVendorPhone(vendor.repPhone, vendor.repPhoneCountry)}
-                </a>
-              </div>
-            ) : null}
-            {!vendor.repName && !vendor.repEmail && !vendor.repPhone && (
-              <p className="text-muted-foreground/50 text-sm italic">
-                No contact on file.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
+      </div>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Sourcing Notes — full width */}
 
-        <Card className="min-h-40 pt-0 md:col-span-2">
-          <CardHeader className="bg-muted/50">
-            <CardTitle className="h-14">
+        <Card variant="panel" className="min-h-40 md:col-span-2">
+          <CardHeader>
+            <CardTitle>
               <FileText className="icons" />
               Sourcing Notes
             </CardTitle>
@@ -402,16 +353,14 @@ export default function VendorDetailPage({ params }: PageProps) {
                       {items.map((item) => (
                         <div
                           key={item.itemId}
-                          className="flex items-center justify-between p-2.5 text-xs"
-                        >
+                          className="flex items-center justify-between p-2.5 text-xs">
                           <span className="max-w-[240px] truncate font-medium">
                             {item.name}
                           </span>
                           <Link
                             href={`/dashboard/library/${item.itemId}`}
                             onClick={() => setIsDeleteOpen(false)}
-                            className="font-semibold text-primary hover:underline"
-                          >
+                            className="font-semibold text-primary hover:underline">
                             View Item
                           </Link>
                         </div>
@@ -439,8 +388,7 @@ export default function VendorDetailPage({ params }: PageProps) {
                   variant="destructive"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="gap-2"
-                >
+                  className="gap-2">
                   {deleting && <Loader2 className="size-4 animate-spin" />}
                   Delete Vendor
                 </AlertDialogAction>

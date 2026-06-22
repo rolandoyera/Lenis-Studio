@@ -29,8 +29,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
   const hasCityStateZip = Boolean(client.city ?? client.state ?? client.zip);
 
   return (
-    <Card className="pt-0">
-      <CardHeader className="bg-muted/50 flex items-center h-14">
+    <Card variant="panel">
+      <CardHeader>
         <CardTitle>
           <User className="icons" />
           Client Information

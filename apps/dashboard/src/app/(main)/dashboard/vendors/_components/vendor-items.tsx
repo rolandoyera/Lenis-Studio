@@ -24,32 +24,33 @@ interface VendorItemsProps {
 
 export function VendorItems({ items, onAddItem }: VendorItemsProps) {
   return (
-    <Card className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none pt-0">
-      <CardHeader className="bg-muted/50">
-        <CardTitle className="flex items-center justify-between h-14">
+    <Card
+      variant="panel"
+      className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none pt-0">
+      <CardHeader>
+        <CardTitle>
           <span className="flex items-center gap-2">
             <ShoppingBag className="icons" />
             Linked Library Items
             <Badge variant="secondary">{items.length}</Badge>
           </span>
-          {onAddItem && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={onAddItem}
-                  className="size-8 shrink-0 rounded-full"
-                >
-                  <Plus className="size-4" />
-                  <span className="sr-only">Add Items</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Add Items</TooltipContent>
-            </Tooltip>
-          )}
         </CardTitle>
+        {onAddItem && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={onAddItem}
+                className="size-8 shrink-0 rounded-full">
+                <Plus className="size-4" />
+                <span className="sr-only">Add Items</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Add Items</TooltipContent>
+          </Tooltip>
+        )}
       </CardHeader>
       <CardContent className="min-h-0 flex-1 overflow-y-auto p-0">
         {items.length === 0 ? (
@@ -85,8 +86,7 @@ export function VendorItems({ items, onAddItem }: VendorItemsProps) {
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/dashboard/library/${item.itemId}`}
-                    className="line-clamp-1 font-heading font-semibold text-sm transition-colors hover:text-primary hover:underline"
-                  >
+                    className="line-clamp-1 font-heading font-semibold text-sm transition-colors hover:text-primary hover:underline">
                     {item.name}
                   </Link>
                   <div className="mt-0.5 flex items-center gap-2">

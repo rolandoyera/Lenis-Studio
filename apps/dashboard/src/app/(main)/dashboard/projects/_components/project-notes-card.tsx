@@ -13,8 +13,8 @@ interface ProjectNotesCardProps {
 
 export function ProjectNotesCard({ project, onEdit }: ProjectNotesCardProps) {
   return (
-    <Card className="pt-0">
-      <CardHeader className="py-4 bg-muted/50">
+    <Card variant="panel">
+      <CardHeader>
         <CardTitle>
           <FileText className="icons" />
           Project Brief & Goals
@@ -34,8 +34,7 @@ export function ProjectNotesCard({ project, onEdit }: ProjectNotesCardProps) {
               variant="link"
               size="sm"
               onClick={onEdit}
-              className="mt-1 h-auto p-0 font-medium"
-            >
+              className="mt-1 h-auto p-0 font-medium">
               Add Project Brief
             </Button>
           </div>

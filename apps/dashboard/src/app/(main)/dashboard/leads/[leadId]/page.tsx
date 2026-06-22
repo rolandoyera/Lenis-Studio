@@ -36,11 +36,10 @@ import { H1 } from "@/components/ui/typography";
 import {
   convertLeadToClient,
   getLead,
-  getLeadActivities,
   getOrganizationUsers,
   updateLead,
 } from "@/lib/db";
-import type { Activity, ActivityActor, Lead, UserProfile } from "@/lib/types";
+import type { ActivityActor, Lead, UserProfile } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
 
 import {
@@ -55,7 +54,6 @@ import {
   leadToForm,
   PROPERTY_TYPE_LABELS,
 } from "../_components/lead-constants";
-import { LeadActivityCard } from "../_components/lead-activity-card";
 import { LeadFormDialog } from "../_components/lead-form-dialog";
 
 interface PageProps {
@@ -69,7 +67,6 @@ export default function LeadDetailPage({ params }: PageProps) {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -83,10 +80,9 @@ export default function LeadDetailPage({ params }: PageProps) {
 
     async function loadData() {
       try {
-        const [leadData, usersData, activitiesData] = await Promise.all([
+        const [leadData, usersData] = await Promise.all([
           getLead(leadId),
           getOrganizationUsers(orgId),
-          getLeadActivities(orgId, leadId),
         ]);
         if (!leadData || leadData.organizationId !== orgId) {
           toast.error("Lead not found.");
@@ -95,7 +91,6 @@ export default function LeadDetailPage({ params }: PageProps) {
         }
         setLead(leadData);
         setUsers(usersData);
-        setActivities(activitiesData);
       } catch (error) {
         console.error("Failed to load lead details:", error);
         toast.error("Failed to retrieve lead from database.");
@@ -182,25 +177,6 @@ export default function LeadDetailPage({ params }: PageProps) {
         updatedAt: now,
         lastActivityAt: now,
       });
-      // Mirror the activity written server-side so the timeline updates without a reload.
-      setActivities((prev) => [
-        {
-          id: `act-local-${now}`,
-          organizationId: lead.organizationId,
-          type: "lead_converted_to_client",
-          actor: currentActor,
-          source: { type: "lead", id: lead.uid, label: getLeadName(lead) },
-          entity: {
-            type: "client",
-            id: client.uid,
-            label: getLeadName(lead),
-          },
-          visibility: "internal",
-          metadata: { clientId: client.uid },
-          createdAt: now,
-        },
-        ...prev,
-      ]);
       setIsConvertOpen(false);
       toast.success("Lead converted to client successfully!");
     } catch (error) {
@@ -396,11 +372,6 @@ export default function LeadDetailPage({ params }: PageProps) {
               </p>
             </CardContent>
           </Card>
-
-          <LeadActivityCard
-            activities={activities}
-            currentUserId={uid ?? undefined}
-          />
 
           <Card className="pt-0">
             <CardHeader className="py-3 bg-muted/50">

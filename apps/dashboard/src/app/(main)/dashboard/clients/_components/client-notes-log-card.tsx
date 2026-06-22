@@ -86,8 +86,8 @@ export function ClientNotesLogCard({
   };
 
   return (
-    <Card className="pt-0">
-      <CardHeader className="bg-muted/50 flex items-center h-14">
+    <Card variant="panel">
+      <CardHeader>
         <CardTitle>
           <MessageSquarePlus className="icons" />
           Notes

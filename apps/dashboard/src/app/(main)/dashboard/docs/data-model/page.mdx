@@ -10,19 +10,20 @@ shapes that compose across entities — start with the most important (the
 **Client**), then layer on Projects, Invoicing, and the rest without redefining
 the same ideas.
 
-This page is part scratchpad, part reference. The **entity shapes** below
-(Client, Lead), the activity **envelope**, client notes, and the client + lead
-**timelines** are promoted into `lib/types.ts` and wired up; the broader event
-taxonomy (proposals, invoices, the portal) is still settling here before
-promotion.
+This page is part scratchpad, part reference. What's actually wired up in
+`lib/types.ts` today is deliberately small: the **entity shapes** below (Client,
+Lead), **client notes**, and the activity **envelope** — emitted only as a note
+audit trail (`note_added` / `note_deleted`). The broader event taxonomy and
+per-entity timelines (proposals, invoices, the portal, lead/client feeds) are
+aspirational design — captured here but **not built**.
 
 ## Entities
 
 The core records everything else hangs off. Both are **org-scoped** (every doc
 carries `organizationId`) and use epoch-millisecond timestamps. A Lead is the
 top of the funnel; converting one **creates** a Client and links the two via
-`sourceLeadId` / `convertedClientId` — neither doc is destroyed, so both keep
-their own activity timeline.
+`sourceLeadId` / `convertedClientId` — neither doc is destroyed, so the lead is
+preserved for the record.
 
 ### Client
 
@@ -167,20 +168,24 @@ interface Lead {
 }
 ```
 
-## Client Activity
+## Activity
 
-Everything a client "does" or has done to their record — across projects,
-proposals, invoices, the portal, files, and notes — rolls up into a single
-**activity timeline** on the client. Two pieces: the **event taxonomy** (what
-kinds of things happen) and the **event envelope** (the record we store for
-each one). The same envelope and storage pattern power a parallel **lead**
-timeline, which reuses these pieces under a narrower, sales-focused taxonomy.
+Today activities do exactly one thing: give **notes** an append-only audit
+trail. Creating or soft-deleting a note writes a single `note_added` /
+`note_deleted` record. That's the whole of what's wired up — there are no
+per-entity timelines or org-wide feed yet.
 
-### Event taxonomy
+The **envelope** (further down) is the live shape. The wide event taxonomy that
+follows is **aspirational** — kept as a design target for when Projects,
+Proposals, Invoicing, and the portal grow their own timelines, but **none of it
+is built**.
 
-Rather than one flat union, each domain owns its event names. The client
-timeline is the **composition** of those domain unions — so when Projects or
-Invoicing grow their own timelines later, they reuse these exact pieces.
+### Event taxonomy (aspirational — not built)
+
+The design intent: rather than one flat union, each domain owns its event names,
+and a timeline is the **composition** of the relevant domain unions. Captured
+here so the shape is ready when those features land. The live `ActivityType` is
+just the note pair shown under the envelope — not this union.
 
 ```ts
 // Each domain owns its events…
@@ -261,18 +266,15 @@ type ClientActivityType =
 
 // The lead timeline reuses the shared comms/document pieces, kept deliberately
 // narrow — pipeline movement, assignment, conversion, not every field edit.
-type LeadActivityType =
-  | LeadLifecycleEvent
-  | CommunicationEvent
-  | DocumentEvent;
+type LeadActivityType = LeadLifecycleEvent | CommunicationEvent | DocumentEvent;
 ```
 
 ### Event envelope
 
-The `type` is only a label. The shape that matters is the record we persist for
-every activity — **who** did it, **whose timeline** it belongs to (`source`),
-**what** it refers to (`entity`), and a type-specific payload. Every record is
-self-contained so it can render anywhere, including an org-wide feed.
+The shape we actually persist for every activity — **who** did it, **whose
+record** it belongs to (`source`), and **what** it refers to (`entity`). Every
+record is self-contained so it carries its own context. This is the live shape;
+the only `type` values written today are `note_added` and `note_deleted`.
 
 ```ts
 /** Who triggered the activity. */
@@ -284,17 +286,12 @@ interface ActivityActor {
   name: string;
 }
 
-type ActivityEntityType =
-  | "lead"
-  | "client"
-  | "project"
-  | "proposal"
-  | "invoice"
-  | "portal"
-  | "note"
-  | "file";
+/** The only events written today — a note's audit trail. */
+type ActivityType = "note_added" | "note_deleted";
 
-/** The record whose timeline this belongs to — the per-entity query key. */
+type ActivityEntityType = "client" | "note";
+
+/** The record this activity belongs to — the per-entity query key. */
 interface ActivitySource {
   type: ActivityEntityType;
   id: string;
@@ -316,14 +313,12 @@ interface Activity {
   organizationId: string;
   type: ActivityType;
   actor: ActivityActor;
-  /** Whose timeline this belongs to — filter on source.type + source.id. */
+  /** The record this belongs to — filter on source.type + source.id. */
   source: ActivitySource;
-  /** What the event is about (for top-level events, usually the source itself). */
+  /** What the event is about; for note events, the note. */
   entity: ActivityEntity;
   /** Who can see it. Defaults to internal; opt specific events into the portal. */
   visibility: "internal" | "client_visible";
-  /** Type-specific extras — kept loose for now (see "Typed payloads" below). */
-  metadata?: Record<string, unknown>;
   createdAt: number;
 }
 ```
@@ -334,12 +329,11 @@ interface Activity {
 const example: Activity = {
   id: "act_8f2",
   organizationId: "org_lenis",
-  type: "invoice_paid",
-  actor: { type: "client", id: "cli_avery", name: "Jordan Avery" },
+  type: "note_added",
+  actor: { type: "user", id: "usr_sarah", name: "Sarah Jones" },
   source: { type: "client", id: "cli_avery", label: "Jordan Avery" },
-  entity: { type: "invoice", id: "inv_1042", label: "Invoice #1042" },
-  visibility: "client_visible",
-  metadata: { amount: 4200, currency: "USD", method: "card" },
+  entity: { type: "note", id: "note_19c" },
+  visibility: "internal",
   createdAt: 1718900000000,
 };
 ```
@@ -353,34 +347,27 @@ subcollections:
 activities/{activityId}
 ```
 
-Every doc carries `organizationId` and a `source` pointer, so the same
-collection answers both kinds of read:
+Every doc carries `organizationId` and a `source` pointer back at the record it
+concerns. Today the only writers are note add/delete, so the collection is
+effectively a note audit log — nothing reads it back yet.
 
-- **Per-entity timeline** — `where organizationId == orgId && source.type == "lead" && source.id == leadId orderBy createdAt desc`.
-- **Org-wide feed** — `where organizationId == orgId orderBy createdAt desc limit 20`.
-
-These need a couple of composite indexes (Firestore prompts a one-click create
-link the first time each query runs).
-
-When an event belongs on more than one timeline, **write one doc per timeline**,
-each with the appropriate `source`. **Lead → client conversion** is the
-canonical case: it writes two `lead_converted_to_client` activities — one with
-`source` = the lead (entity points forward at the new client) and one with
-`source` = the new client (entity points back at the lead). The lead is
-preserved, so its timeline survives the conversion. (A global feed can de-dupe
-these at render if needed.)
+The flat layout is kept on purpose: when timelines do land, the same doc can be
+queried per-entity (`where organizationId == orgId && source.type == … && source.id == …`)
+or org-wide (`where organizationId == orgId orderBy createdAt desc`) without
+restructuring — each query would need a one-click composite index. If an event
+ever needs to land on more than one timeline, the pattern is **one doc per
+timeline**, each with its own `source`.
 
 > **Notes are different.** Notes stay as parent subcollections
-> (`clients/{clientId}/notes`, `leads/{leadId}/notes`) — they're content owned
-> by a parent and only ever read in that parent's context. Only *activities*
-> were flattened.
+> (`clients/{clientId}/notes`) — they're content owned by a parent and only ever
+> read in that parent's context. Only _activities_ were flattened.
 
 ## Conventions
 
 Settled rules the model relies on:
 
 - **Append-only.** Activities are immutable: create only, never update or
-  delete. An edit produces a *new* event (e.g. `proposal_updated`) — it never
+  delete. An edit produces a _new_ event (e.g. `proposal_updated`) — it never
   mutates the prior record. The interface reflects this with a single
   `createdAt` and no `updatedAt`. This is what turns the timeline into a true
   audit log.
@@ -459,10 +446,11 @@ Stored at `clients/{clientId}/notes/{noteId}`.
 
 ### Typed payloads
 
-Keep `metadata?: Record<string, unknown>` for V1 — we don't know all the
-activities yet. Once proposals, invoices, projects, and the portal are actually
-built in production, the real payloads reveal themselves; _then_ move to a
-discriminated map so each event's extras are type-checked:
+The live envelope has **no** `metadata` field — note add/delete don't need one.
+When richer events land, add `metadata?: Record<string, unknown>` as the loose
+escape hatch first; once proposals, invoices, projects, and the portal are
+actually built in production, the real payloads reveal themselves, and _then_
+move to a discriminated map so each event's extras are type-checked:
 
 ```ts
 interface ActivityPayloads {
@@ -491,4 +479,7 @@ That keeps the rule clean:
 Organizations may optionally allow Admins or SuperAdmins to soft-delete notes
 created by other users. This capability is deferred and not part of v1 — in v1,
 only a note's creator may soft-delete it.
+
+```
+
 ```

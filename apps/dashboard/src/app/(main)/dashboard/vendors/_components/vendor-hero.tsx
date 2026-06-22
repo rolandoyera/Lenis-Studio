@@ -92,7 +92,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex items-center justify-center text-muted-foreground">
+      <CardFooter className="flex items-center justify-center text-muted-foreground h-14">
         <div className="flex h-6 items-center gap-3">
           {websiteHref ? (
             <Tooltip>
@@ -102,8 +102,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-                >
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                   <GlobeIcon />
                 </a>
               </TooltipTrigger>
@@ -122,8 +121,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-                >
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                   <InstagramIcon />
                 </a>
               </TooltipTrigger>
@@ -142,8 +140,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-                >
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                   <PinterestIcon />
                 </a>
               </TooltipTrigger>
@@ -162,8 +159,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-                >
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                   <FacebookIcon />
                 </a>
               </TooltipTrigger>
@@ -182,8 +178,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-                >
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                   <YoutubeIcon />
                 </a>
               </TooltipTrigger>
@@ -202,8 +197,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
-                >
+                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
                   <XTwitterIcon />
                 </a>
               </TooltipTrigger>

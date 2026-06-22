@@ -6,8 +6,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  limit,
-  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -100,8 +98,6 @@ export async function getClients(organizationId: string): Promise<Client[]> {
 
 export async function addClient(
   client: Omit<Client, "uid" | "createdAt">,
-  /** When provided, a `client_created` activity is logged atomically with the new client. */
-  actor?: ActivityActor,
 ): Promise<Client> {
   return trace(
     "clients",
@@ -114,36 +110,7 @@ export async function addClient(
         uid,
         createdAt: Date.now(),
       };
-
-      if (!actor) {
-        await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
-        return newClient;
-      }
-
-      const label =
-        [newClient.firstName, newClient.lastName]
-          .filter(Boolean)
-          .join(" ")
-          .trim() ||
-        newClient.company ||
-        "Client";
-      const activity: Activity = {
-        id: `act-${Math.random().toString(36).substr(2, 9)}`,
-        organizationId: newClient.organizationId,
-        type: "client_created",
-        channel: "studio",
-        importance: "low",
-        actor,
-        source: { type: "client", id: uid, label },
-        entity: { type: "client", id: uid, label },
-        visibility: "internal",
-        createdAt: newClient.createdAt,
-      };
-
-      const batch = writeBatch(db);
-      batch.set(doc(db, "clients", uid), cleanUndefined(newClient));
-      batch.set(doc(db, "activities", activity.id), cleanUndefined(activity));
-      await batch.commit();
+      await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
       return newClient;
     },
     (c) => c.uid,
@@ -179,81 +146,9 @@ export async function deleteClient(uid: string): Promise<void> {
 }
 
 // --- ACTIVITY & NOTES ---
-// Activities live in a single top-level `activities` collection; notes stay as
-// parent subcollections (`clients/{clientId}/notes`). Activity writes happen
-// inline (batched with the parent op that triggered them) and point back at
-// their record via `source`.
-
-/**
- * Reads the org-wide recent activity feed from the flat `activities` collection,
- * newest first. Powers the home dashboard "Recent Activity" cards.
- */
-export async function getRecentActivities(
-  organizationId: string,
-  max = 50,
-): Promise<Activity[]> {
-  try {
-    return await trace(
-      "activities",
-      "READ",
-      "getRecentActivities",
-      async () => {
-        const q = query(
-          collection(db, "activities"),
-          where("organizationId", "==", organizationId),
-          orderBy("createdAt", "desc"),
-          limit(max),
-        );
-        const snapshot = await getDocs(q);
-        const activities: Activity[] = [];
-        snapshot.forEach((docSnap) => {
-          activities.push(docSnap.data() as Activity);
-        });
-        return activities;
-      },
-      (a) => `${a.length} docs`,
-    );
-  } catch (error) {
-    console.error("Error fetching recent activities:", error);
-    return [];
-  }
-}
-
-/**
- * Reads a client's timeline from the flat `activities` collection — every
- * activity whose `source` is this client — newest first.
- */
-export async function getClientActivities(
-  organizationId: string,
-  clientId: string,
-): Promise<Activity[]> {
-  try {
-    return await trace(
-      "activities",
-      "READ",
-      "getClientActivities",
-      async () => {
-        const q = query(
-          collection(db, "activities"),
-          where("organizationId", "==", organizationId),
-          where("source.type", "==", "client"),
-          where("source.id", "==", clientId),
-          orderBy("createdAt", "desc"),
-        );
-        const snapshot = await getDocs(q);
-        const activities: Activity[] = [];
-        snapshot.forEach((docSnap) => {
-          activities.push(docSnap.data() as Activity);
-        });
-        return activities;
-      },
-      (a) => `${a.length} docs`,
-    );
-  } catch (error) {
-    console.error("Error fetching client activities:", error);
-    return [];
-  }
-}
+// Notes live as parent subcollections (`clients/{clientId}/notes`). Each note
+// write is batched with a matching activity in the top-level `activities`
+// collection, giving notes an append-only audit trail.
 
 /**
  * Reads a client's notes (`clients/{clientId}/notes`), newest first.
@@ -320,8 +215,6 @@ export async function addClientNote(input: {
         id: `act-${Math.random().toString(36).substr(2, 9)}`,
         organizationId,
         type: "note_added",
-        channel: "studio",
-        importance: "low",
         actor: author,
         source: { type: "client", id: clientId, label: sourceLabel },
         entity: { type: "note", id: note.id },
@@ -368,8 +261,6 @@ export async function softDeleteClientNote(input: {
         id: `act-${Math.random().toString(36).substr(2, 9)}`,
         organizationId,
         type: "note_deleted",
-        channel: "studio",
-        importance: "low",
         actor,
         source: { type: "client", id: clientId, label: sourceLabel },
         entity: { type: "note", id: noteId },
@@ -444,8 +335,6 @@ export async function getLeads(organizationId: string): Promise<Lead[]> {
 
 export async function addLead(
   lead: Omit<Lead, "uid" | "createdAt" | "updatedAt" | "lastActivityAt">,
-  /** When provided, a `lead_created` activity is logged atomically with the new lead. */
-  actor?: ActivityActor,
 ): Promise<Lead> {
   return trace(
     "leads",
@@ -461,39 +350,7 @@ export async function addLead(
         updatedAt: now,
         lastActivityAt: now,
       };
-
-      if (!actor) {
-        await setDoc(doc(db, "leads", uid), cleanUndefined(newLead));
-        return newLead;
-      }
-
-      const label =
-        [newLead.firstName, newLead.lastName]
-          .filter(Boolean)
-          .join(" ")
-          .trim() ||
-        newLead.company ||
-        "Lead";
-      const activity: Activity = {
-        id: `act-${Math.random().toString(36).substr(2, 9)}`,
-        organizationId: newLead.organizationId,
-        type: "lead_created",
-        channel: "studio",
-        importance: "low",
-        actor,
-        source: { type: "lead", id: uid, label },
-        entity: { type: "lead", id: uid, label },
-        visibility: "internal",
-        // Denormalize the acquisition channel so the dashboard can group lead
-        // activity by Website / Instagram / etc. without a lead lookup.
-        metadata: newLead.source ? { channel: newLead.source } : undefined,
-        createdAt: now,
-      };
-
-      const batch = writeBatch(db);
-      batch.set(doc(db, "leads", uid), cleanUndefined(newLead));
-      batch.set(doc(db, "activities", activity.id), cleanUndefined(activity));
-      await batch.commit();
+      await setDoc(doc(db, "leads", uid), cleanUndefined(newLead));
       return newLead;
     },
     (l) => l.uid,
@@ -535,11 +392,7 @@ export async function updateLead(
 export async function convertLeadToClient(
   lead: Lead,
   convertedBy: string,
-  /**
-   * Who performed the conversion. Stamped as the lead's `updatedBy` and logged
-   * as a `lead_converted_to_client` activity on both timelines: the new client's
-   * (pointing back at the lead) and the lead's (pointing forward at the client).
-   */
+  /** Who performed the conversion — stamped as the lead's `updatedBy`. */
   actor: ActivityActor,
 ): Promise<Client> {
   return trace(
@@ -584,99 +437,11 @@ export async function convertLeadToClient(
         }),
       );
 
-      {
-        const leadLabel =
-          [lead.firstName, lead.lastName].filter(Boolean).join(" ").trim() ||
-          lead.company ||
-          "Lead";
-        const clientLabel =
-          [newClient.firstName, newClient.lastName]
-            .filter(Boolean)
-            .join(" ")
-            .trim() ||
-          newClient.company ||
-          "Client";
-
-        // One conversion event, written as two flat activities so it lands on
-        // both timelines: the client's (source = client, pointing back at the
-        // lead) and the lead's (source = lead, pointing forward at the client).
-        const clientActivity: Activity = {
-          id: `act-${Math.random().toString(36).substr(2, 9)}`,
-          organizationId: newClient.organizationId,
-          type: "lead_converted_to_client",
-          channel: "studio",
-          importance: "low",
-          actor,
-          source: { type: "client", id: clientUid, label: clientLabel },
-          entity: { type: "lead", id: lead.uid, label: leadLabel },
-          visibility: "internal",
-          metadata: { sourceLeadId: lead.uid },
-          createdAt: now,
-        };
-        const leadActivity: Activity = {
-          id: `act-${Math.random().toString(36).substr(2, 9)}`,
-          organizationId: lead.organizationId,
-          type: "lead_converted_to_client",
-          channel: "studio",
-          importance: "low",
-          actor,
-          source: { type: "lead", id: lead.uid, label: leadLabel },
-          entity: { type: "client", id: clientUid, label: clientLabel },
-          visibility: "internal",
-          metadata: { clientId: clientUid, channel: lead.source },
-          createdAt: now,
-        };
-        batch.set(
-          doc(db, "activities", clientActivity.id),
-          cleanUndefined(clientActivity),
-        );
-        batch.set(
-          doc(db, "activities", leadActivity.id),
-          cleanUndefined(leadActivity),
-        );
-      }
-
       await batch.commit();
       return newClient;
     },
     (c) => c.uid,
   );
-}
-
-/**
- * Reads a lead's timeline from the flat `activities` collection — every
- * activity whose `source` is this lead — newest first.
- */
-export async function getLeadActivities(
-  organizationId: string,
-  leadId: string,
-): Promise<Activity[]> {
-  try {
-    return await trace(
-      "activities",
-      "READ",
-      "getLeadActivities",
-      async () => {
-        const q = query(
-          collection(db, "activities"),
-          where("organizationId", "==", organizationId),
-          where("source.type", "==", "lead"),
-          where("source.id", "==", leadId),
-          orderBy("createdAt", "desc"),
-        );
-        const snapshot = await getDocs(q);
-        const activities: Activity[] = [];
-        snapshot.forEach((docSnap) => {
-          activities.push(docSnap.data() as Activity);
-        });
-        return activities;
-      },
-      (a) => `${a.length} docs`,
-    );
-  } catch (error) {
-    console.error("Error fetching lead activities:", error);
-    return [];
-  }
 }
 
 // --- VENDOR HELPER HOOKS & FUNCTIONS ---

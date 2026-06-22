@@ -32,7 +32,7 @@ export function VendorHeader({
     <>
       <HeaderBackLink href="/dashboard/vendors" />
 
-      <div className="flex flex-col gap-16 border-b pb-4 md:flex-row md:items-start">
+      <div className="flex flex-col gap-16 pb-4 md:flex-row md:items-start">
         <div className="flex flex-col gap-1.5">
           <H1>{vendor.name}</H1>
           {vendor.category && (

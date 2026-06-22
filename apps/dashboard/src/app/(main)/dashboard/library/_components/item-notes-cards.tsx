@@ -11,7 +11,7 @@ interface ItemNotesCardsProps {
 export function ItemNotesCards({ item }: ItemNotesCardsProps) {
   return (
     <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
-      <Card className="min-h-57.5">
+      <Card variant="panel" className="min-h-60">
         <CardHeader>
           <CardTitle>
             <ShoppingBag className="icons" />
@@ -31,7 +31,7 @@ export function ItemNotesCards({ item }: ItemNotesCardsProps) {
         </CardContent>
       </Card>
 
-      <Card className="min-h-57.5">
+      <Card variant="panel" className="min-h-60">
         <CardHeader>
           <CardTitle>
             <FileText className="icons" />
