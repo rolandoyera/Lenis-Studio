@@ -5,6 +5,7 @@ import {
   Activity as ActivityIcon,
   ArrowRightLeft,
   GitCommitHorizontal,
+  Globe,
   MessageSquarePlus,
   Sparkles,
   Trash2,
@@ -12,8 +13,23 @@ import {
   UserPlus,
   XCircle,
 } from "lucide-react";
+import Link from "next/link";
 
-import type { Activity, ActivityType } from "@/lib/types";
+import type {
+  Activity,
+  ActivityEntity,
+  ActivitySource,
+  ActivityType,
+} from "@/lib/types";
+
+/** Detail-page route for a feed subject, or undefined when none exists. */
+function subjectHref(
+  subject: ActivitySource | ActivityEntity,
+): string | undefined {
+  if (subject.type === "lead") return `/dashboard/leads/${subject.id}`;
+  if (subject.type === "client") return `/dashboard/clients/${subject.id}`;
+  return undefined;
+}
 
 type ActivityIconType = React.ComponentType<{ className?: string }>;
 
@@ -98,13 +114,29 @@ function ActivityRow({
   showSource: boolean;
 }) {
   const meta = ACTIVITY_META[activity.type] ?? FALLBACK;
-  const Icon = meta.icon;
-  // In the org feed, lead the detail with the subject (source label); on a
-  // per-entity timeline, conversions still surface the record they point at.
-  const detail = showSource
-    ? activity.source.label
+  const fromWebsite = activity.channel === "website";
+  // Anything originating on the public site gets a globe, regardless of type, so
+  // a website lead reads differently at a glance than a user-entered one.
+  const Icon = fromWebsite ? Globe : meta.icon;
+  // A website-sourced new lead gets its own headline; everything else keeps the
+  // per-type label.
+  const label =
+    fromWebsite && activity.type === "lead_created"
+      ? "New Website Lead"
+      : meta.label;
+  // In the org feed, lead the detail with the subject (source); on a per-entity
+  // timeline, conversions still surface the record they point at.
+  const subject = showSource
+    ? activity.source
     : activity.type === "lead_converted_to_client"
-      ? activity.entity.label
+      ? activity.entity
+      : undefined;
+  const detailHref = subject ? subjectHref(subject) : undefined;
+  // Denormalized context the writer chose to surface (e.g. which website form a
+  // lead came through). Optional and loosely typed, so guard for a string.
+  const sourceDetail =
+    typeof activity.metadata?.sourceDetail === "string"
+      ? activity.metadata.sourceDetail
       : undefined;
   // Self-attribution reads as "You"; the stored name is left untouched.
   const actorName =
@@ -119,11 +151,26 @@ function ActivityRow({
       </span>
       <div className="flex flex-col gap-0.5">
         <p className="font-medium text-card-foreground text-sm">
-          {meta.label}
-          {detail && (
-            <span className="font-normal text-muted-foreground"> · {detail}</span>
+          {label}
+          {subject?.label && (
+            <span className="font-normal text-muted-foreground">
+              {" · "}
+              {detailHref ? (
+                <Link
+                  href={detailHref}
+                  className="hover:text-foreground hover:underline"
+                >
+                  {subject.label}
+                </Link>
+              ) : (
+                subject.label
+              )}
+            </span>
           )}
         </p>
+        {sourceDetail && (
+          <p className="text-muted-foreground text-xs">{sourceDetail}</p>
+        )}
         <p className="text-muted-foreground text-xs">
           {actorName} ·{" "}
           {formatDistanceToNow(activity.createdAt, { addSuffix: true })}
