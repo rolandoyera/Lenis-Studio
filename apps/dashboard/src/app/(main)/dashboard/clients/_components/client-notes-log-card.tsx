@@ -19,23 +19,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import type { ActivityActor, ClientNote, NoteDeleteReason } from "@/lib/types";
-
-const DELETE_REASONS: { value: NoteDeleteReason; label: string }[] = [
-  { value: "created_in_error", label: "Created in error" },
-  { value: "duplicate", label: "Duplicate" },
-  { value: "no_longer_relevant", label: "No longer relevant" },
-  { value: "other", label: "Other" },
-];
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { ActivityActor, ClientNote } from "@/lib/types";
 
 const noteSchema = z.object({
   body: z.string().trim().min(1, "Write something first."),
@@ -48,14 +53,13 @@ interface ClientNotesLogCardProps {
   /** The signed-in user — only the creator of a note may delete it. */
   currentActor: ActivityActor;
   onAddNote: (body: string) => Promise<void>;
-  onDeleteNote: (noteId: string, reason: NoteDeleteReason) => Promise<void>;
+  onDeleteNote: (noteId: string) => Promise<void>;
 }
 
 /**
- * Append-only notes log for a client. Distinct from the single-string "Design
- * Brief & Studio Notes" card: each entry here is an individual, timestamped,
+ * Append-only notes log for a client. Each entry is an individual, timestamped,
  * immutable record. Notes can't be edited; the author can soft-delete their own
- * with a reason. Backed by the `clients/{clientId}/notes` subcollection.
+ * after a confirmation. Backed by the `clients/{clientId}/notes` subcollection.
  */
 export function ClientNotesLogCard({
   notes,
@@ -63,6 +67,7 @@ export function ClientNotesLogCard({
   onAddNote,
   onDeleteNote,
 }: ClientNotesLogCardProps) {
+  const [composerOpen, setComposerOpen] = useState(false);
   const { control, handleSubmit, reset, formState } = useForm<NoteFormData>({
     resolver: zodResolver(noteSchema),
     defaultValues: { body: "" },
@@ -71,56 +76,30 @@ export function ClientNotesLogCard({
   const submit = async (data: NoteFormData) => {
     await onAddNote(data.body.trim());
     reset({ body: "" });
+    setComposerOpen(false);
+  };
+
+  const handleComposerOpenChange = (open: boolean) => {
+    if (formState.isSubmitting) return;
+    if (!open) reset({ body: "" });
+    setComposerOpen(open);
   };
 
   return (
     <Card className="pt-0">
-      <CardHeader className="bg-muted/50 flex items-center h-15">
+      <CardHeader className="bg-muted/50 flex items-center h-14">
         <CardTitle>
           <MessageSquarePlus className="icons" />
           Notes
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
-        <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-2">
-          <Controller
-            control={control}
-            name="body"
-            render={({ field, fieldState }) => (
-              <>
-                <Textarea
-                  {...field}
-                  placeholder="Add a note. Notes can't be edited once saved."
-                  aria-invalid={fieldState.invalid}
-                  className="min-h-[72px]"
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-destructive text-xs">
-                    {fieldState.error?.message}
-                  </span>
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={formState.isSubmitting}
-                    className="flex items-center gap-1.5"
-                  >
-                    {formState.isSubmitting && (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    )}
-                    Add Note
-                  </Button>
-                </div>
-              </>
-            )}
-          />
-        </form>
-
+      <CardContent className="flex flex-col gap-5 h-62 overflow-y-auto">
         {notes.length === 0 ? (
           <p className="py-4 text-center text-muted-foreground text-xs italic">
             No notes logged yet for this client.
           </p>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="flex flex-col gap-5">
             {notes.map((note) => (
               <NoteItem
                 key={note.id}
@@ -132,6 +111,69 @@ export function ClientNotesLogCard({
           </ul>
         )}
       </CardContent>
+      <CardFooter className="justify-end h-14">
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setComposerOpen(true)}
+          className="flex items-center gap-1.5">
+          <MessageSquarePlus className="size-3.5" />
+          Note
+        </Button>
+      </CardFooter>
+
+      <Dialog open={composerOpen} onOpenChange={handleComposerOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a Note</DialogTitle>
+            <DialogDescription className="sr-only">
+              Notes can't be edited once saved.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            id="add-note-form"
+            onSubmit={handleSubmit(submit)}
+            className="flex flex-col gap-2">
+            <Controller
+              control={control}
+              name="body"
+              render={({ field, fieldState }) => (
+                <>
+                  <Textarea
+                    {...field}
+                    autoFocus
+                    placeholder="Write a note about this client…"
+                    aria-invalid={fieldState.invalid}
+                    className="min-h-[120px]"
+                  />
+                  <span className="text-destructive text-xs">
+                    {fieldState.error?.message}
+                  </span>
+                </>
+              )}
+            />
+          </form>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={formState.isSubmitting}
+              onClick={() => handleComposerOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="add-note-form"
+              disabled={formState.isSubmitting}
+              className="flex items-center gap-1.5">
+              {formState.isSubmitting && (
+                <Loader2 className="size-3.5 animate-spin" />
+              )}
+              Add Note
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
@@ -140,19 +182,17 @@ interface NoteItemProps {
   note: ClientNote;
   /** Whether the signed-in user authored this note (drives "You" + delete rights). */
   isOwn: boolean;
-  onDelete: (noteId: string, reason: NoteDeleteReason) => Promise<void>;
+  onDelete: (noteId: string) => Promise<void>;
 }
 
 function NoteItem({ note, isOwn, onDelete }: NoteItemProps) {
   const [open, setOpen] = useState(false);
-  const [reason, setReason] = useState<NoteDeleteReason | "">("");
   const [deleting, setDeleting] = useState(false);
 
   const handleConfirm = async () => {
-    if (!reason) return;
     setDeleting(true);
     try {
-      await onDelete(note.id, reason);
+      await onDelete(note.id);
       setOpen(false);
     } finally {
       setDeleting(false);
@@ -160,71 +200,58 @@ function NoteItem({ note, isOwn, onDelete }: NoteItemProps) {
   };
 
   return (
-    <li className="rounded-lg border border-border/40 bg-background/25 p-3 shadow-inner">
-      <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">
+    <li className="group/note relative rounded-lg border border-border/40 bg-muted p-3 shadow-inner">
+      <div className="mb-1.5 text-muted-foreground text-xs">
+        Added by:{" "}
+        <span className="font-medium text-foreground">
+          {isOwn ? "You" : note.createdBy.name}
+        </span>
+      </div>
+      <p className="whitespace-pre-wrap text-card-foreground text-sm leading-relaxed font-light px-4">
         {note.body}
       </p>
-      <div className="mt-2 flex items-center justify-between text-muted-foreground text-xs">
-        <span>
-          {isOwn ? "You" : note.createdBy.name} ·{" "}
-          {formatDistanceToNow(note.createdAt, { addSuffix: true })}
-        </span>
-        {isOwn && (
-          <AlertDialog open={open} onOpenChange={setOpen}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setOpen(true)}
-              className="h-6 gap-1 px-2 text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="size-3.5" />
-              Delete
-            </Button>
-            <AlertDialogContent className="sm:max-w-md">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this note?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Notes are kept for the record, so this is a soft delete — it
-                  hides the note but preserves the audit trail. Choose a reason
-                  to continue.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <Select
-                value={reason}
-                onValueChange={(v) => setReason(v as NoteDeleteReason)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a reason" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DELETE_REASONS.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      {r.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <AlertDialogFooter className="mt-2">
-                <AlertDialogCancel disabled={deleting}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void handleConfirm();
-                  }}
-                  disabled={!reason || deleting}
-                  className="flex items-center gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {deleting && <Loader2 className="size-4 animate-spin" />}
-                  Delete Note
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+      <div className="mt-2 text-right text-muted-foreground text-xs">
+        {formatDistanceToNow(note.createdAt, { addSuffix: true })}
       </div>
+      {isOwn && (
+        <AlertDialog open={open} onOpenChange={setOpen}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpen(true)}
+                aria-label="Delete Note"
+                className="absolute top-2 right-2 size-7 rounded-full text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover/note:opacity-100">
+                <Trash2 className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Delete Note</TooltipContent>
+          </Tooltip>
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This can't be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-2">
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleConfirm();
+                }}
+                disabled={deleting}
+                className="flex items-center gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {deleting && <Loader2 className="size-4 animate-spin" />}
+                Delete Note
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </li>
   );
 }

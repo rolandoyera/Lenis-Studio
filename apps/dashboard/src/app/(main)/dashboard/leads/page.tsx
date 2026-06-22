@@ -19,7 +19,7 @@ import { LeadFormDialog } from "./_components/lead-form-dialog";
 import { LeadsTable } from "./_components/leads-table";
 
 export default function LeadsPage() {
-  const { uid, organizationId, loading: authLoading } = useAuth();
+  const { uid, profile, organizationId, loading: authLoading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,13 +67,22 @@ export default function LeadsPage() {
     setSubmitting(true);
     try {
       const fields = leadFormToFields(data);
-      const created = await addLead({
-        ...fields,
-        ...(fields.assignedTo ? { assignedAt: Date.now() } : {}),
-        organizationId,
-        createdBy: uid,
-        updatedBy: uid,
-      });
+      const created = await addLead(
+        {
+          ...fields,
+          ...(fields.assignedTo ? { assignedAt: Date.now() } : {}),
+          organizationId,
+          createdBy: uid,
+          updatedBy: uid,
+        },
+        profile
+          ? {
+              type: "user",
+              id: profile.uid,
+              name: profile.fullName,
+            }
+          : undefined,
+      );
       setLeads((prev) => [created, ...prev]);
       toast.success("New lead created successfully!");
       setIsAddOpen(false);

@@ -95,7 +95,7 @@ export default function ClientsPage() {
         {
           type: "user",
           id: profile.uid,
-          name: profile.displayName || profile.fullName,
+          name: profile.fullName,
         },
       );
       setClients((prev) => [created, ...prev]);
@@ -117,14 +117,12 @@ export default function ClientsPage() {
 
     const email = typeof client.email === "string" ? client.email : "";
     const company = typeof client.company === "string" ? client.company : "";
-    const notes = typeof client.notes === "string" ? client.notes : "";
 
     return (
       firstName.toLowerCase().includes(term) ||
       lastName.toLowerCase().includes(term) ||
       email.toLowerCase().includes(term) ||
-      company.toLowerCase().includes(term) ||
-      notes.toLowerCase().includes(term)
+      company.toLowerCase().includes(term)
     );
   });
 

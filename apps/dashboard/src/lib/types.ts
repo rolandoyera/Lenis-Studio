@@ -19,16 +19,18 @@ export interface Client {
   state?: string;
   zip?: string;
   country?: string;
-  notes?: string;
   /** Set when this client was created by converting a Lead. */
   sourceLeadId?: string;
   createdAt: number;
 }
 
-// --- CLIENT NOTES & ACTIVITY ---
-// Append-only records stored in subcollections under the client document
-// (`clients/{clientId}/notes`, `clients/{clientId}/activities`). These are
-// separate from the legacy single-string `Client.notes` design brief.
+// --- ACTIVITY ---
+// Activities are append-only audit records in a single top-level `activities`
+// collection (NOT per-entity subcollections). Each doc is self-contained — it
+// carries its org, the actor, and a `source` pointer to the record whose
+// timeline it belongs to — so one collection powers both per-entity timelines
+// (filter by source) and an org-wide feed (filter by org). Notes, by contrast,
+// stay as parent subcollections (see ClientNote).
 
 /** Who triggered an activity or authored a note. */
 export interface ActivityActor {
@@ -39,29 +41,94 @@ export interface ActivityActor {
   name: string;
 }
 
-/** What an activity points at — a polymorphic reference to the related record. */
+/** Record types an activity can belong to or point at. */
+export type ActivityEntityType =
+  | "lead"
+  | "client"
+  | "project"
+  | "proposal"
+  | "invoice"
+  | "portal"
+  | "note"
+  | "file";
+
+/**
+ * The record whose timeline this activity belongs to — the per-entity query
+ * key (filter activities by `source.type` + `source.id`).
+ */
+export interface ActivitySource {
+  type: ActivityEntityType;
+  id: string;
+  /** Denormalized display name so feed rows render without a lookup. */
+  label?: string;
+}
+
+/**
+ * What the activity points at. Often the same record as `source`; sometimes a
+ * related one (e.g. a conversion's source is the lead, entity is the client).
+ */
 export interface ActivityEntity {
-  type: "client" | "note";
+  type: ActivityEntityType;
   id: string;
   /** Denormalized label for display. */
   label?: string;
 }
 
-/** Client timeline events implemented today. */
+/** Client timeline events. */
 export type ClientActivityType =
   | "client_created"
+  | "lead_converted_to_client"
   | "note_added"
   | "note_deleted";
 
-/** Append-only audit record — written once, never updated or deleted. */
-export interface ClientActivity {
+/** Lead pipeline / relationship events. */
+export type LeadLifecycleEvent =
+  | "lead_created"
+  | "lead_updated"
+  | "lead_stage_changed"
+  | "lead_assigned"
+  | "lead_unassigned"
+  | "lead_archived"
+  | "lead_restored"
+  | "lead_lost"
+  | "lead_converted_to_client";
+
+/** Communication events, shared across client and lead timelines. */
+export type CommunicationEvent =
+  | "note_added"
+  | "note_deleted"
+  | "comment_added"
+  | "email_sent"
+  | "meeting_logged"
+  | "call_logged";
+
+/** Document events, shared across timelines. */
+export type DocumentEvent =
+  | "file_uploaded"
+  | "file_deleted"
+  | "document_signed";
+
+/** Lead timeline events — lifecycle composed with shared comms/document events. */
+export type LeadActivityType =
+  | LeadLifecycleEvent
+  | CommunicationEvent
+  | DocumentEvent;
+
+/** Every activity type across domains. */
+export type ActivityType = ClientActivityType | LeadActivityType;
+
+/**
+ * Append-only audit record in the top-level `activities` collection. Written
+ * once, never updated or deleted (redaction is deferred).
+ */
+export interface Activity {
   id: string;
   organizationId: string;
-  /** The client whose timeline this belongs to. */
-  clientId: string;
-  type: ClientActivityType;
+  type: ActivityType;
   actor: ActivityActor;
-  /** What the event is about. Top-level client events point at the client itself. */
+  /** The record whose timeline this belongs to — the per-entity query key. */
+  source: ActivitySource;
+  /** What the event is about; often equals `source`, sometimes a related record. */
   entity: ActivityEntity;
   /** Who can see it. Defaults to internal; opt specific events into the portal later. */
   visibility: "internal" | "client_visible";
@@ -70,17 +137,11 @@ export interface ClientActivity {
   createdAt: number;
 }
 
-/** Constrained soft-delete reasons — not freeform text. */
-export type NoteDeleteReason =
-  | "created_in_error"
-  | "duplicate"
-  | "no_longer_relevant"
-  | "other";
-
 /**
- * Append-only client note. Immutable after creation: never edited, never
- * physically deleted. Removal is a creator-only soft-delete that stamps
- * `deletedAt`/`deletedBy`/`deleteReason`. Stored at `clients/{clientId}/notes/{id}`.
+ * Append-only note. Immutable after creation: never edited, never physically
+ * deleted. Removal is a creator-only soft-delete that stamps
+ * `deletedAt`/`deletedBy`. Notes stay as parent subcollections, e.g.
+ * `clients/{clientId}/notes/{id}` and `leads/{leadId}/notes/{id}`.
  */
 export interface ClientNote {
   id: string;
@@ -92,8 +153,6 @@ export interface ClientNote {
   createdAt: number;
   deletedAt?: number;
   deletedBy?: ActivityActor;
-  /** Set once at soft-delete time; not editable afterward. */
-  deleteReason?: NoteDeleteReason;
 }
 
 // --- LEADS ---

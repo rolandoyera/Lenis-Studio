@@ -4,7 +4,13 @@ import { DollarSign, FolderKanban, MapPin, Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { H3 } from "@/components/ui/typography";
 import type { Project } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -26,38 +32,24 @@ export function ClientProjectsCard({
 }: ClientProjectsCardProps) {
   return (
     <Card className="pt-0">
-      <CardHeader className="bg-muted/50 h-15 flex items-center justify-between">
+      <CardHeader className="bg-muted/50 h-14 flex items-center justify-between">
         <CardTitle>
           <FolderKanban className="icons" />
           Projects
         </CardTitle>
-
-        <Button size="sm" variant="secondary" onClick={onAddProject}>
-          <Plus className="size-3.5" />
-          Start New Project
-        </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="md:h-62">
         {projects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed bg-background/20 p-6 py-10 text-center">
-            <FolderKanban className="mb-2 size-10 text-muted-foreground/30" />
-            <h3 className="font-semibold text-sm">No projects created</h3>
-            <p className="mt-1 max-w-xs text-muted-foreground text-xs">
-              Begin drafting budget pools, address details, and design briefs by
-              setting up this client's first project.
-            </p>
-            <Button onClick={onAddProject} className="mt-4">
-              <Plus className="size-3.5" />
-              Initialize First Project
-            </Button>
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <FolderKanban className="mb-2 size-10 text-muted-foreground/50 stroke-[1.5]" />
+            <p className="font-medium text-sm">No projects yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {projects.map((project) => (
               <div
                 key={project.projectId}
-                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4"
-              >
+                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4">
                 <div className="mt-1 flex items-center justify-between">
                   <H3 className="text-muted-foreground">{project.name}</H3>
                   <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
@@ -93,8 +85,7 @@ export function ClientProjectsCard({
                   <Link
                     href={`/dashboard/projects/${project.projectId}`}
                     prefetch={false}
-                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline"
-                  >
+                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline">
                     View Project
                   </Link>
                 </div>
@@ -103,6 +94,12 @@ export function ClientProjectsCard({
           </div>
         )}
       </CardContent>
+      <CardFooter className="justify-end h-14">
+        <Button size="sm" variant="secondary" onClick={onAddProject}>
+          <Plus className="size-3.5" />
+          Project
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

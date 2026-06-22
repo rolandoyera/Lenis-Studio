@@ -1,4 +1,4 @@
-import { CircleAlert, ExternalLink, Mail, Phone, Users } from "lucide-react";
+import { CircleAlert, ExternalLink, Mail, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,13 +30,13 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
 
   return (
     <Card className="pt-0">
-      <CardHeader className="bg-muted/50 flex items-center h-15">
+      <CardHeader className="bg-muted/50 flex items-center h-14">
         <CardTitle>
-          <Users className="icons" />
+          <User className="icons" />
           Client Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5">
+      <CardContent className="flex flex-col gap-5 md:h-62">
         <div className="grid grid-cols-1 gap-x-6 gap-y-6.5 text-sm sm:grid-cols-2">
           {/* Left column: company, tax, and address details */}
           <div className="flex flex-col gap-6.5">
@@ -150,29 +150,21 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="justify-end gap-4">
+      <CardFooter className="justify-end gap-4 h-14">
         <a href={`mailto:${client.email}`} className="w-fit">
-          <Button size="lg" variant="secondary" className="w-full text-xs">
-            <Mail className="size-3.5" />
-            Send Email
+          <Button size="sm" variant="secondary" className="w-full">
+            <Mail className="icons" />
+            Email
           </Button>
         </a>
         {client.phone ? (
           <a href={`tel:${normalizePhone(client.phone)}`} className="w-fit">
-            <Button size="lg" variant="secondary" className="w-20 text-xs">
-              <Phone className="size-3.5" />
+            <Button size="sm" variant="secondary" className="w-20">
+              <Phone className="icons" />
               Call
             </Button>
           </a>
-        ) : (
-          <Button
-            variant="outline"
-            disabled
-            className="flex w-full items-center justify-center gap-1.5 text-xs">
-            <Phone className="size-3.5" />
-            Call
-          </Button>
-        )}
+        ) : null}
       </CardFooter>
     </Card>
   );

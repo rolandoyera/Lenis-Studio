@@ -10,8 +10,160 @@ shapes that compose across entities — start with the most important (the
 **Client**), then layer on Projects, Invoicing, and the rest without redefining
 the same ideas.
 
-This page is a scratchpad: nothing here is wired into `lib/types.ts` yet. We
-settle the shape here first, then promote it.
+This page is part scratchpad, part reference. The **entity shapes** below
+(Client, Lead), the activity **envelope**, client notes, and the client + lead
+**timelines** are promoted into `lib/types.ts` and wired up; the broader event
+taxonomy (proposals, invoices, the portal) is still settling here before
+promotion.
+
+## Entities
+
+The core records everything else hangs off. Both are **org-scoped** (every doc
+carries `organizationId`) and use epoch-millisecond timestamps. A Lead is the
+top of the funnel; converting one **creates** a Client and links the two via
+`sourceLeadId` / `convertedClientId` — neither doc is destroyed, so both keep
+their own activity timeline.
+
+### Client
+
+A won, billable contact — either a person or a company (`isCompany`). Created
+either directly or by converting a Lead. Contact and address fields are the same
+set a Lead carries, so conversion is a clean copy.
+
+```ts
+interface Client {
+  uid: string;
+  organizationId: string;
+  /** Person vs. company. Defaults false for legacy clients predating the field. */
+  isCompany: boolean;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  /** ISO 3166-1 alpha-2 code that drives phone formatting/validation. */
+  phoneCountry?: string;
+  company?: string;
+  taxId?: string;
+  taxable?: boolean;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  /** Set when this client was created by converting a Lead. */
+  sourceLeadId?: string;
+  createdAt: number;
+}
+```
+
+### Lead
+
+A prospect moving through the sales pipeline. Most fields are optional — leads
+come in partially-filled from many sources and get enriched over time. The
+qualification fields (`propertyType`, `budgetRange`, `desiredTimeline`) capture
+project fit; the assignment and conversion blocks track ownership and outcome.
+
+```ts
+type LeadStage =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "proposal_sent"
+  | "won"
+  | "lost"
+  | "on_hold";
+
+type LeadSource =
+  | "website"
+  | "instagram"
+  | "referral"
+  | "manual"
+  | "google"
+  | "houzz"
+  | "facebook"
+  | "client"
+  | "repeat_client"
+  | "friend"
+  | "family"
+  | "other";
+
+type PropertyType =
+  | "residential"
+  | "commercial"
+  | "hospitality"
+  | "multifamily"
+  | "retail"
+  | "office"
+  | "other";
+
+type BudgetRange =
+  | "under_50k"
+  | "50k_100k"
+  | "100k_250k"
+  | "250k_500k"
+  | "500k_1m"
+  | "over_1m";
+
+type DesiredTimeline =
+  | "asap"
+  | "1_3_months"
+  | "3_6_months"
+  | "6_12_months"
+  | "12_plus_months"
+  | "not_sure";
+
+interface Lead {
+  uid: string;
+  organizationId: string;
+
+  // Contact type
+  isCompany: boolean;
+  company?: string;
+
+  // Pipeline
+  stage: LeadStage;
+
+  // Contact info — all optional; leads arrive partially filled.
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  phoneCountry?: string;
+
+  // Address
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+
+  // Source
+  source?: LeadSource;
+  sourceDetail?: string;
+
+  // Project fit (qualification)
+  propertyType?: PropertyType;
+  budgetRange?: BudgetRange;
+  desiredTimeline?: DesiredTimeline;
+  notes?: string;
+
+  // Assignment — user uid + when it was assigned.
+  assignedTo?: string;
+  assignedAt?: number;
+
+  // Conversion — set when the lead becomes a client.
+  convertedClientId?: string;
+  convertedAt?: number;
+  convertedBy?: string; // user uid
+
+  // Audit — all user references store UIDs only.
+  createdBy: string; // user uid
+  updatedBy: string; // user uid
+  createdAt: number;
+  updatedAt: number;
+  lastActivityAt?: number;
+}
+```
 
 ## Client Activity
 
@@ -19,7 +171,8 @@ Everything a client "does" or has done to their record — across projects,
 proposals, invoices, the portal, files, and notes — rolls up into a single
 **activity timeline** on the client. Two pieces: the **event taxonomy** (what
 kinds of things happen) and the **event envelope** (the record we store for
-each one).
+each one). The same envelope and storage pattern power a parallel **lead**
+timeline, which reuses these pieces under a narrower, sales-focused taxonomy.
 
 ### Event taxonomy
 
@@ -82,6 +235,18 @@ type CommunicationEvent =
   | "meeting_logged"
   | "call_logged";
 
+// Leads own their own sales/relationship events…
+type LeadLifecycleEvent =
+  | "lead_created"
+  | "lead_updated"
+  | "lead_stage_changed"
+  | "lead_assigned"
+  | "lead_unassigned"
+  | "lead_archived"
+  | "lead_restored"
+  | "lead_lost"
+  | "lead_converted_to_client";
+
 // …and the client timeline is just the union of them.
 type ClientActivityType =
   | ClientLifecycleEvent
@@ -91,13 +256,21 @@ type ClientActivityType =
   | PortalEvent
   | DocumentEvent
   | CommunicationEvent;
+
+// The lead timeline reuses the shared comms/document pieces, kept deliberately
+// narrow — pipeline movement, assignment, conversion, not every field edit.
+type LeadActivityType =
+  | LeadLifecycleEvent
+  | CommunicationEvent
+  | DocumentEvent;
 ```
 
 ### Event envelope
 
 The `type` is only a label. The shape that matters is the record we persist for
-every activity — **who** did it, **what** it refers to, and a type-specific
-payload. This envelope is reusable for any entity's timeline, not just clients.
+every activity — **who** did it, **whose timeline** it belongs to (`source`),
+**what** it refers to (`entity`), and a type-specific payload. Every record is
+self-contained so it can render anywhere, including an org-wide feed.
 
 ```ts
 /** Who triggered the activity. */
@@ -109,36 +282,41 @@ interface ActivityActor {
   name: string;
 }
 
-/** What the activity points at — polymorphic reference to the related record. */
+type ActivityEntityType =
+  | "lead"
+  | "client"
+  | "project"
+  | "proposal"
+  | "invoice"
+  | "portal"
+  | "note"
+  | "file";
+
+/** The record whose timeline this belongs to — the per-entity query key. */
+interface ActivitySource {
+  type: ActivityEntityType;
+  id: string;
+  /** Denormalized display name so feed rows render without a lookup. */
+  label?: string;
+}
+
+/** What the activity points at; often equals source, sometimes a related record. */
 interface ActivityEntity {
-  type:
-    | "client"
-    | "lead"
-    | "project"
-    | "proposal"
-    | "invoice"
-    | "portal"
-    | "file"
-    | "note"
-    | "message";
+  type: ActivityEntityType;
   id: string;
   /** Denormalized label for display, e.g. "Invoice #1042". */
   label?: string;
 }
 
 /** Append-only audit record — written once, never updated or deleted. */
-interface ClientActivity {
+interface Activity {
   id: string;
   organizationId: string;
-  /** The client whose timeline this belongs to. */
-  clientId: string;
-  type: ClientActivityType;
+  type: ActivityType;
   actor: ActivityActor;
-  /**
-   * What the event is about. Always present — top-level client events point at
-   * the client itself ({ type: "client", id: clientId }) to keep the shape
-   * consistent across every activity.
-   */
+  /** Whose timeline this belongs to — filter on source.type + source.id. */
+  source: ActivitySource;
+  /** What the event is about (for top-level events, usually the source itself). */
   entity: ActivityEntity;
   /** Who can see it. Defaults to internal; opt specific events into the portal. */
   visibility: "internal" | "client_visible";
@@ -151,12 +329,12 @@ interface ClientActivity {
 ### Example record
 
 ```ts
-const example: ClientActivity = {
+const example: Activity = {
   id: "act_8f2",
   organizationId: "org_lenis",
-  clientId: "cli_avery",
   type: "invoice_paid",
   actor: { type: "client", id: "cli_avery", name: "Jordan Avery" },
+  source: { type: "client", id: "cli_avery", label: "Jordan Avery" },
   entity: { type: "invoice", id: "inv_1042", label: "Invoice #1042" },
   visibility: "client_visible",
   metadata: { amount: 4200, currency: "USD", method: "card" },
@@ -166,20 +344,34 @@ const example: ClientActivity = {
 
 ## Storage
 
-Per-entity copies, not a global shared stream. Each timeline is its own
-subcollection:
+Activities live in **one flat top-level collection** — not per-entity
+subcollections:
 
 ```
-clients/{clientId}/activities/{activityId}
-projects/{projectId}/activities/{activityId}
+activities/{activityId}
 ```
 
-When an event affects more than one timeline (e.g. `invoice_paid` touches both
-the client and the project), **write a record to each**. The duplication is
-deliberate: it keeps reads simple, timelines fast, and security rules
-straightforward — each subcollection inherits its parent's access. An org-wide
-feed can be layered on later if it's ever needed; we don't pay for that
-complexity now.
+Every doc carries `organizationId` and a `source` pointer, so the same
+collection answers both kinds of read:
+
+- **Per-entity timeline** — `where organizationId == orgId && source.type == "lead" && source.id == leadId orderBy createdAt desc`.
+- **Org-wide feed** — `where organizationId == orgId orderBy createdAt desc limit 20`.
+
+These need a couple of composite indexes (Firestore prompts a one-click create
+link the first time each query runs).
+
+When an event belongs on more than one timeline, **write one doc per timeline**,
+each with the appropriate `source`. **Lead → client conversion** is the
+canonical case: it writes two `lead_converted_to_client` activities — one with
+`source` = the lead (entity points forward at the new client) and one with
+`source` = the new client (entity points back at the lead). The lead is
+preserved, so its timeline survives the conversion. (A global feed can de-dupe
+these at render if needed.)
+
+> **Notes are different.** Notes stay as parent subcollections
+> (`clients/{clientId}/notes`, `leads/{leadId}/notes`) — they're content owned
+> by a parent and only ever read in that parent's context. Only *activities*
+> were flattened.
 
 ## Conventions
 
@@ -215,10 +407,8 @@ creator **soft-delete** — never edited, never physically deleted.
   `note_updated` event and no `updatedAt`/`updatedBy` on the document. If a note
   is incorrect, add a _new_ note rather than modifying the original.
 - **Soft-delete only.** Note documents are never physically deleted. A delete
-  sets `deletedAt` / `deletedBy` / `deleteReason`. Only the note's creator may
-  soft-delete it. `deleteReason` is optional, written once at delete time, and
-  not editable afterward — a constrained `NoteDeleteReason` enum, not freeform
-  text.
+  sets `deletedAt` / `deletedBy` after a simple confirmation prompt. Only the
+  note's creator may soft-delete it.
 - **Visibility.** The normal notes view hides notes where `deletedAt` exists;
   audit/history views may still show them. Deleting clears clutter without
   losing the paper trail.
@@ -226,13 +416,6 @@ creator **soft-delete** — never edited, never physically deleted.
 ### Document shape
 
 ```ts
-/** v1 soft-delete reasons — constrained, not freeform. */
-type NoteDeleteReason =
-  | "created_in_error"
-  | "duplicate"
-  | "no_longer_relevant"
-  | "other";
-
 interface ClientNote {
   id: string;
   organizationId: string;
@@ -243,8 +426,6 @@ interface ClientNote {
   createdAt: number;
   deletedAt?: number;
   deletedBy?: ActivityActor;
-  /** Set once at soft-delete time; not editable afterward. */
-  deleteReason?: NoteDeleteReason;
 }
 ```
 

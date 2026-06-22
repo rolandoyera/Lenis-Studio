@@ -6,6 +6,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
+  orderBy,
   query,
   setDoc,
   updateDoc,
@@ -23,14 +25,13 @@ import { trace } from "@/lib/db-trace";
 import { db, storage } from "@/lib/firebase";
 
 import type {
+  Activity,
   ActivityActor,
   Client,
-  ClientActivity,
   ClientNote,
   DiagnosticRun,
   Lead,
   LibraryItem,
-  NoteDeleteReason,
   Organization,
   Project,
   ProjectRoom,
@@ -119,23 +120,27 @@ export async function addClient(
         return newClient;
       }
 
-      const activity: ClientActivity = {
+      const label =
+        [newClient.firstName, newClient.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() ||
+        newClient.company ||
+        "Client";
+      const activity: Activity = {
         id: `act-${Math.random().toString(36).substr(2, 9)}`,
         organizationId: newClient.organizationId,
-        clientId: uid,
         type: "client_created",
         actor,
-        entity: { type: "client", id: uid },
+        source: { type: "client", id: uid, label },
+        entity: { type: "client", id: uid, label },
         visibility: "internal",
         createdAt: newClient.createdAt,
       };
 
       const batch = writeBatch(db);
       batch.set(doc(db, "clients", uid), cleanUndefined(newClient));
-      batch.set(
-        doc(db, "clients", uid, "activities", activity.id),
-        cleanUndefined(activity),
-      );
+      batch.set(doc(db, "activities", activity.id), cleanUndefined(activity));
       await batch.commit();
       return newClient;
     },
@@ -171,52 +176,74 @@ export async function deleteClient(uid: string): Promise<void> {
   );
 }
 
-// --- CLIENT NOTES & ACTIVITY (append-only subcollections) ---
+// --- ACTIVITY & NOTES ---
+// Activities live in a single top-level `activities` collection; notes stay as
+// parent subcollections (`clients/{clientId}/notes`). Activity writes happen
+// inline (batched with the parent op that triggered them) and point back at
+// their record via `source`.
 
 /**
- * Appends an immutable record to a client's activity timeline
- * (`clients/{clientId}/activities`). Activities are write-once: never updated,
- * never deleted.
+ * Reads the org-wide recent activity feed from the flat `activities` collection,
+ * newest first. Powers the home dashboard "Recent Activity" cards.
  */
-export async function addClientActivity(
-  activity: Omit<ClientActivity, "id" | "createdAt">,
-): Promise<ClientActivity> {
-  return trace(
-    "clientActivities",
-    "WRITE",
-    "addClientActivity",
-    async () => {
-      const newActivity: ClientActivity = {
-        ...activity,
-        id: `act-${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: Date.now(),
-      };
-      await setDoc(
-        doc(db, "clients", activity.clientId, "activities", newActivity.id),
-        cleanUndefined(newActivity),
-      );
-      return newActivity;
-    },
-    (a) => a.id,
-  );
-}
-
-export async function getClientActivities(
-  clientId: string,
-): Promise<ClientActivity[]> {
+export async function getRecentActivities(
+  organizationId: string,
+  max = 50,
+): Promise<Activity[]> {
   try {
     return await trace(
-      "clientActivities",
+      "activities",
+      "READ",
+      "getRecentActivities",
+      async () => {
+        const q = query(
+          collection(db, "activities"),
+          where("organizationId", "==", organizationId),
+          orderBy("createdAt", "desc"),
+          limit(max),
+        );
+        const snapshot = await getDocs(q);
+        const activities: Activity[] = [];
+        snapshot.forEach((docSnap) => {
+          activities.push(docSnap.data() as Activity);
+        });
+        return activities;
+      },
+      (a) => `${a.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching recent activities:", error);
+    return [];
+  }
+}
+
+/**
+ * Reads a client's timeline from the flat `activities` collection — every
+ * activity whose `source` is this client — newest first.
+ */
+export async function getClientActivities(
+  organizationId: string,
+  clientId: string,
+): Promise<Activity[]> {
+  try {
+    return await trace(
+      "activities",
       "READ",
       "getClientActivities",
       async () => {
-        const collRef = collection(db, "clients", clientId, "activities");
-        const snapshot = await getDocs(collRef);
-        const activities: ClientActivity[] = [];
+        const q = query(
+          collection(db, "activities"),
+          where("organizationId", "==", organizationId),
+          where("source.type", "==", "client"),
+          where("source.id", "==", clientId),
+          orderBy("createdAt", "desc"),
+        );
+        const snapshot = await getDocs(q);
+        const activities: Activity[] = [];
         snapshot.forEach((docSnap) => {
-          activities.push(docSnap.data() as ClientActivity);
+          activities.push(docSnap.data() as Activity);
         });
-        return activities.sort((a, b) => b.createdAt - a.createdAt);
+        return activities;
       },
       (a) => `${a.length} docs`,
     );
@@ -268,13 +295,15 @@ export async function addClientNote(input: {
   clientId: string;
   body: string;
   author: ActivityActor;
+  /** Client display name, denormalized onto the activity's source for the feed. */
+  sourceLabel?: string;
 }): Promise<ClientNote> {
   return trace(
     "clientNotes",
     "WRITE",
     "addClientNote",
     async () => {
-      const { organizationId, clientId, body, author } = input;
+      const { organizationId, clientId, body, author, sourceLabel } = input;
       const now = Date.now();
 
       const note: ClientNote = {
@@ -285,12 +314,12 @@ export async function addClientNote(input: {
         createdBy: author,
         createdAt: now,
       };
-      const activity: ClientActivity = {
+      const activity: Activity = {
         id: `act-${Math.random().toString(36).substr(2, 9)}`,
         organizationId,
-        clientId,
         type: "note_added",
         actor: author,
+        source: { type: "client", id: clientId, label: sourceLabel },
         entity: { type: "note", id: note.id },
         visibility: "internal",
         createdAt: now,
@@ -301,10 +330,7 @@ export async function addClientNote(input: {
         doc(db, "clients", clientId, "notes", note.id),
         cleanUndefined(note),
       );
-      batch.set(
-        doc(db, "clients", clientId, "activities", activity.id),
-        cleanUndefined(activity),
-      );
+      batch.set(doc(db, "activities", activity.id), cleanUndefined(activity));
       await batch.commit();
       return note;
     },
@@ -313,35 +339,35 @@ export async function addClientNote(input: {
 }
 
 /**
- * Soft-deletes a client note: stamps `deletedAt`/`deletedBy`/`deleteReason` and
- * writes a matching `note_deleted` activity in the same atomic batch. The note
- * document is never physically removed. Creator-only enforcement is the
- * caller's responsibility (and, ultimately, Firestore security rules).
+ * Soft-deletes a client note: stamps `deletedAt`/`deletedBy` and writes a
+ * matching `note_deleted` activity in the same atomic batch. The note document
+ * is never physically removed. Creator-only enforcement is the caller's
+ * responsibility (and, ultimately, Firestore security rules).
  */
 export async function softDeleteClientNote(input: {
   clientId: string;
   noteId: string;
   organizationId: string;
   actor: ActivityActor;
-  reason: NoteDeleteReason;
+  /** Client display name, denormalized onto the activity's source for the feed. */
+  sourceLabel?: string;
 }): Promise<void> {
   return trace(
     "clientNotes",
     "WRITE",
     "softDeleteClientNote",
     async () => {
-      const { clientId, noteId, organizationId, actor, reason } = input;
+      const { clientId, noteId, organizationId, actor, sourceLabel } = input;
       const now = Date.now();
 
-      const activity: ClientActivity = {
+      const activity: Activity = {
         id: `act-${Math.random().toString(36).substr(2, 9)}`,
         organizationId,
-        clientId,
         type: "note_deleted",
         actor,
+        source: { type: "client", id: clientId, label: sourceLabel },
         entity: { type: "note", id: noteId },
         visibility: "internal",
-        metadata: { deleteReason: reason },
         createdAt: now,
       };
 
@@ -351,13 +377,9 @@ export async function softDeleteClientNote(input: {
         cleanUndefined({
           deletedAt: now,
           deletedBy: actor,
-          deleteReason: reason,
         }),
       );
-      batch.set(
-        doc(db, "clients", clientId, "activities", activity.id),
-        cleanUndefined(activity),
-      );
+      batch.set(doc(db, "activities", activity.id), cleanUndefined(activity));
       await batch.commit();
     },
     () => input.noteId,
@@ -416,6 +438,8 @@ export async function getLeads(organizationId: string): Promise<Lead[]> {
 
 export async function addLead(
   lead: Omit<Lead, "uid" | "createdAt" | "updatedAt" | "lastActivityAt">,
+  /** When provided, a `lead_created` activity is logged atomically with the new lead. */
+  actor?: ActivityActor,
 ): Promise<Lead> {
   return trace(
     "leads",
@@ -431,7 +455,37 @@ export async function addLead(
         updatedAt: now,
         lastActivityAt: now,
       };
-      await setDoc(doc(db, "leads", uid), cleanUndefined(newLead));
+
+      if (!actor) {
+        await setDoc(doc(db, "leads", uid), cleanUndefined(newLead));
+        return newLead;
+      }
+
+      const label =
+        [newLead.firstName, newLead.lastName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() ||
+        newLead.company ||
+        "Lead";
+      const activity: Activity = {
+        id: `act-${Math.random().toString(36).substr(2, 9)}`,
+        organizationId: newLead.organizationId,
+        type: "lead_created",
+        actor,
+        source: { type: "lead", id: uid, label },
+        entity: { type: "lead", id: uid, label },
+        visibility: "internal",
+        // Denormalize the acquisition channel so the dashboard can group lead
+        // activity by Website / Instagram / etc. without a lead lookup.
+        metadata: newLead.source ? { channel: newLead.source } : undefined,
+        createdAt: now,
+      };
+
+      const batch = writeBatch(db);
+      batch.set(doc(db, "leads", uid), cleanUndefined(newLead));
+      batch.set(doc(db, "activities", activity.id), cleanUndefined(activity));
+      await batch.commit();
       return newLead;
     },
     (l) => l.uid,
@@ -473,7 +527,11 @@ export async function updateLead(
 export async function convertLeadToClient(
   lead: Lead,
   convertedBy: string,
-  /** When provided, a `client_created` activity is logged on the new client. */
+  /**
+   * When provided, a `lead_converted_to_client` activity is logged on both
+   * timelines: the new client's (pointing back at the lead) and the lead's
+   * (pointing forward at the client).
+   */
   actor?: ActivityActor,
 ): Promise<Client> {
   return trace(
@@ -500,7 +558,6 @@ export async function convertLeadToClient(
         state: lead.state,
         zip: lead.zip,
         country: lead.country,
-        notes: lead.notes,
         sourceLeadId: lead.uid,
         createdAt: now,
       };
@@ -520,20 +577,50 @@ export async function convertLeadToClient(
       );
 
       if (actor) {
-        const activity: ClientActivity = {
+        const leadLabel =
+          [lead.firstName, lead.lastName].filter(Boolean).join(" ").trim() ||
+          lead.company ||
+          "Lead";
+        const clientLabel =
+          [newClient.firstName, newClient.lastName]
+            .filter(Boolean)
+            .join(" ")
+            .trim() ||
+          newClient.company ||
+          "Client";
+
+        // One conversion event, written as two flat activities so it lands on
+        // both timelines: the client's (source = client, pointing back at the
+        // lead) and the lead's (source = lead, pointing forward at the client).
+        const clientActivity: Activity = {
           id: `act-${Math.random().toString(36).substr(2, 9)}`,
           organizationId: newClient.organizationId,
-          clientId: clientUid,
-          type: "client_created",
+          type: "lead_converted_to_client",
           actor,
-          entity: { type: "client", id: clientUid },
+          source: { type: "client", id: clientUid, label: clientLabel },
+          entity: { type: "lead", id: lead.uid, label: leadLabel },
           visibility: "internal",
           metadata: { sourceLeadId: lead.uid },
           createdAt: now,
         };
+        const leadActivity: Activity = {
+          id: `act-${Math.random().toString(36).substr(2, 9)}`,
+          organizationId: lead.organizationId,
+          type: "lead_converted_to_client",
+          actor,
+          source: { type: "lead", id: lead.uid, label: leadLabel },
+          entity: { type: "client", id: clientUid, label: clientLabel },
+          visibility: "internal",
+          metadata: { clientId: clientUid, channel: lead.source },
+          createdAt: now,
+        };
         batch.set(
-          doc(db, "clients", clientUid, "activities", activity.id),
-          cleanUndefined(activity),
+          doc(db, "activities", clientActivity.id),
+          cleanUndefined(clientActivity),
+        );
+        batch.set(
+          doc(db, "activities", leadActivity.id),
+          cleanUndefined(leadActivity),
         );
       }
 
@@ -542,6 +629,42 @@ export async function convertLeadToClient(
     },
     (c) => c.uid,
   );
+}
+
+/**
+ * Reads a lead's timeline from the flat `activities` collection — every
+ * activity whose `source` is this lead — newest first.
+ */
+export async function getLeadActivities(
+  organizationId: string,
+  leadId: string,
+): Promise<Activity[]> {
+  try {
+    return await trace(
+      "activities",
+      "READ",
+      "getLeadActivities",
+      async () => {
+        const q = query(
+          collection(db, "activities"),
+          where("organizationId", "==", organizationId),
+          where("source.type", "==", "lead"),
+          where("source.id", "==", leadId),
+          orderBy("createdAt", "desc"),
+        );
+        const snapshot = await getDocs(q);
+        const activities: Activity[] = [];
+        snapshot.forEach((docSnap) => {
+          activities.push(docSnap.data() as Activity);
+        });
+        return activities;
+      },
+      (a) => `${a.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching lead activities:", error);
+    return [];
+  }
 }
 
 // --- VENDOR HELPER HOOKS & FUNCTIONS ---

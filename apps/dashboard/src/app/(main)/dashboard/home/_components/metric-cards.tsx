@@ -114,7 +114,7 @@ export function MetricCards() {
   ).length;
 
   return (
-    <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
+    <div className="grid grid-cols-1 gap-6 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card>
         <CardHeader>
           <CardTitle>
@@ -188,8 +188,7 @@ export function MetricCards() {
               <Link
                 href="/dashboard/projects"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm"
-              >
+                className="flex items-center gap-1 font-medium text-primary text-sm">
                 View projects
                 <ArrowRight className="size-3" />
               </Link>
@@ -199,8 +198,7 @@ export function MetricCards() {
               <Link
                 href="/dashboard/projects"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm h-6"
-              >
+                className="flex items-center gap-1 font-medium text-primary text-sm h-6">
                 <Button variant="link">
                   View projects <ArrowRight className="size-3" />
                 </Button>
@@ -240,8 +238,7 @@ export function MetricCards() {
                       igFollowers.comparison.isPositive
                         ? "default"
                         : "destructive"
-                    }
-                  >
+                    }>
                     {igFollowers.comparison.isPositive ? (
                       <TrendingUp className="size-3" />
                     ) : (
@@ -269,8 +266,7 @@ export function MetricCards() {
               <Link
                 href="/dashboard/instagram"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm h-6"
-              >
+                className="flex items-center gap-1 font-medium text-primary text-sm h-6">
                 <Button variant="link">
                   View More <ArrowRight className="size-3" />
                 </Button>

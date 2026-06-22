@@ -4,8 +4,9 @@ import { UserGreeting } from "../_components/user-greeting";
 import { WeatherWidget } from "../_components/weather-widget";
 import { MetricCards } from "./_components/metric-cards";
 import { PerformanceOverview } from "./_components/performance-overview";
+import { RecentActivity } from "./_components/recent-activity";
 import { SubscriberOverview } from "./_components/subscriber-overview";
-import { H1, P } from "@/components/ui/typography";
+import { H1, H3, P } from "@/components/ui/typography";
 
 export default function Page() {
   return (
@@ -22,6 +23,10 @@ export default function Page() {
           <WeatherWidget />
         </div>
         <MetricCards />
+        <div className="flex flex-col gap-4 mt-4">
+          <H3>Recent Activity</H3>
+          <RecentActivity />
+        </div>
         <PerformanceOverview />
         <SubscriberOverview />
       </div>

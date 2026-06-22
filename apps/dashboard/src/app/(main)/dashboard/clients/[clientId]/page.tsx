@@ -22,7 +22,6 @@ import type {
   ActivityActor,
   Client,
   ClientNote,
-  NoteDeleteReason,
   Project,
 } from "@/lib/types";
 
@@ -33,7 +32,6 @@ import { ClientContactCard } from "../_components/client-contact-card";
 import { ClientDetailHeader } from "../_components/client-detail-header";
 import { ClientFormDialog } from "../_components/client-form-dialog";
 import { getClientName } from "../_components/client-name";
-import { ClientNotesCard } from "../_components/client-notes-card";
 import { ClientNotesLogCard } from "../_components/client-notes-log-card";
 import { ClientProjectsCard } from "../_components/client-projects-card";
 import { DeleteClientDialog } from "../_components/delete-client-dialog";
@@ -152,7 +150,7 @@ export default function ClientProfilePage({ params }: PageProps) {
     ? {
         type: "user",
         id: profile.uid,
-        name: profile.displayName || profile.fullName,
+        name: profile.fullName,
       }
     : null;
 
@@ -164,6 +162,7 @@ export default function ClientProfilePage({ params }: PageProps) {
         clientId: client.uid,
         body,
         author: currentActor,
+        sourceLabel: clientName,
       });
       setNotes((prev) => [created, ...prev]);
       toast.success("Note added.");
@@ -174,7 +173,7 @@ export default function ClientProfilePage({ params }: PageProps) {
     }
   };
 
-  const handleDeleteNote = async (noteId: string, reason: NoteDeleteReason) => {
+  const handleDeleteNote = async (noteId: string) => {
     if (!client || !currentActor) return;
     try {
       await softDeleteClientNote({
@@ -182,7 +181,7 @@ export default function ClientProfilePage({ params }: PageProps) {
         noteId,
         organizationId: client.organizationId,
         actor: currentActor,
-        reason,
+        sourceLabel: clientName,
       });
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
       toast.success("Note deleted.");
@@ -236,9 +235,6 @@ export default function ClientProfilePage({ params }: PageProps) {
             />
           </div>
         )}
-        <div className="col-span-1 lg:col-span-4">
-          <ClientNotesCard client={client} onEdit={() => setIsEditOpen(true)} />
-        </div>
       </div>
 
       <ClientFormDialog
@@ -262,7 +258,6 @@ export default function ClientProfilePage({ params }: PageProps) {
           state: client.state ?? "",
           zip: client.zip ?? "",
           country: client.country ?? "US",
-          notes: client.notes ?? "",
         }}
         onSubmit={handleEditSubmit}
       />

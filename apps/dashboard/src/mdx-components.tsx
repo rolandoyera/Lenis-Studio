@@ -1,5 +1,6 @@
 import type { MDXComponents } from "mdx/types";
 
+import { MdxCodeBlock } from "@/components/ui/mdx-code-block";
 import { H1, H2, H3 } from "@/components/ui/typography";
 
 /**
@@ -39,16 +40,9 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
       ) : (
         <code {...props}>{children}</code>
       ),
-    pre: ({ children, ...props }) => (
-      // Background/token colors come from rehype-pretty-code's inline styles;
-      // we only own layout (padding, rounding, scroll).
-      <pre
-        className="overflow-x-auto rounded-lg p-4 text-sm [&>code]:bg-transparent [&>code]:p-0"
-        {...props}
-      >
-        {children}
-      </pre>
-    ),
+    // Background/token colors come from rehype-pretty-code's inline styles;
+    // MdxCodeBlock owns layout (padding, rounding, scroll) plus the copy button.
+    pre: (props) => <MdxCodeBlock {...props} />,
     hr: () => <hr className="my-6 border-border" />,
     ...components,
   };

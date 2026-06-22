@@ -19,7 +19,6 @@ import {
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   formatPhone,
   formatTaxId,
@@ -385,28 +384,6 @@ export function ClientFormDialog({
                 )}
               />
             </div>
-
-            <Controller
-              control={control}
-              name="notes"
-              render={({ field, fieldState }) => (
-                <Field
-                  className="flex flex-col gap-1.5"
-                  data-invalid={fieldState.invalid}
-                >
-                  <Label className={LABEL_CLASS}>General Notes</Label>
-                  <Textarea
-                    {...field}
-                    placeholder="Add notes about the client..."
-                    aria-invalid={fieldState.invalid}
-                    className="min-h-[80px]"
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
           </div>
 
           <DialogFooter className="mt-2">
