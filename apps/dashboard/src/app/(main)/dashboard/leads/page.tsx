@@ -9,7 +9,7 @@ import { useAuth } from "@/components/auth-context";
 import PageHeader from "@/components/page-header";
 import { PageTitle } from "@/components/page-title-updater";
 import { addLead, getLeads, getOrganizationUsers } from "@/lib/db";
-import type { Lead, UserProfile } from "@/lib/types";
+import type { ActivityActor, Lead, UserProfile } from "@/lib/types";
 
 import {
   type LeadFormData,
@@ -63,25 +63,24 @@ export default function LeadsPage() {
   );
 
   const handleAddSubmit = async (data: LeadFormData) => {
-    if (!uid || !organizationId) return;
+    if (!uid || !organizationId || !profile) return;
     setSubmitting(true);
     try {
       const fields = leadFormToFields(data);
+      const actor: ActivityActor = {
+        type: "user",
+        id: profile.uid,
+        name: profile.fullName,
+      };
       const created = await addLead(
         {
           ...fields,
           ...(fields.assignedTo ? { assignedAt: Date.now() } : {}),
           organizationId,
-          createdBy: uid,
-          updatedBy: uid,
+          createdBy: actor,
+          updatedBy: actor,
         },
-        profile
-          ? {
-              type: "user",
-              id: profile.uid,
-              name: profile.fullName,
-            }
-          : undefined,
+        actor,
       );
       setLeads((prev) => [created, ...prev]);
       toast.success("New lead created successfully!");

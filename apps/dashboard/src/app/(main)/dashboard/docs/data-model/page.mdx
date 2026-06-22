@@ -156,9 +156,11 @@ interface Lead {
   convertedAt?: number;
   convertedBy?: string; // user uid
 
-  // Audit — all user references store UIDs only.
-  createdBy: string; // user uid
-  updatedBy: string; // user uid
+  // Audit — createdBy/updatedBy store a frozen ActivityActor snapshot so the
+  // originating system's identity (e.g. the website) travels with the record.
+  // assignedTo/convertedBy stay live user uids.
+  createdBy: ActivityActor;
+  updatedBy: ActivityActor;
   createdAt: number;
   updatedAt: number;
   lastActivityAt?: number;

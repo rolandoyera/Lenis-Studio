@@ -111,15 +111,29 @@ export default function LeadDetailPage({ params }: PageProps) {
     [users],
   );
 
-  // Audit display: the current user reads as "You", everyone else by first + last name.
+  // Live user reference (assignedTo, convertedBy): resolve a uid to a name; the
+  // current user reads as "You".
   const resolveUser = (userId?: string) => {
     if (!userId) return "—";
     if (userId === uid) return "You";
     return userMap[userId] ?? "Unknown user";
   };
 
+  // Frozen actor snapshot (createdBy, updatedBy): the name travels with the
+  // record, so non-user origins (e.g. the website) display their own identity
+  // without any lookup. The current user still reads as "You".
+  const resolveActor = (actor?: ActivityActor) => {
+    if (!actor) return "—";
+    if (actor.type === "user" && actor.id === uid) return "You";
+    return actor.name;
+  };
+
+  // A freshly created lead has updatedAt === createdAt; only treat it as
+  // "updated" once a real edit bumps updatedAt past creation.
+  const wasUpdated = lead ? lead.updatedAt !== lead.createdAt : false;
+
   const handleEditSubmit = async (data: LeadFormData) => {
-    if (!lead || !uid) return;
+    if (!lead || !uid || !currentActor) return;
     setUpdating(true);
     try {
       const fields = leadFormToFields(data);
@@ -131,7 +145,7 @@ export default function LeadDetailPage({ params }: PageProps) {
       const written = await updateLead(lead.uid, {
         ...fields,
         ...assignmentPatch,
-        updatedBy: uid,
+        updatedBy: currentActor,
       });
       setLead({ ...lead, ...written });
       setIsEditOpen(false);
@@ -153,14 +167,10 @@ export default function LeadDetailPage({ params }: PageProps) {
     : null;
 
   const handleConvert = async () => {
-    if (!lead || !uid) return;
+    if (!lead || !uid || !currentActor) return;
     setConverting(true);
     try {
-      const client = await convertLeadToClient(
-        lead,
-        uid,
-        currentActor ?? undefined,
-      );
+      const client = await convertLeadToClient(lead, uid, currentActor);
       const now = Date.now();
       setLead({
         ...lead,
@@ -168,31 +178,29 @@ export default function LeadDetailPage({ params }: PageProps) {
         convertedClientId: client.uid,
         convertedAt: now,
         convertedBy: uid,
-        updatedBy: uid,
+        updatedBy: currentActor,
         updatedAt: now,
         lastActivityAt: now,
       });
       // Mirror the activity written server-side so the timeline updates without a reload.
-      if (currentActor) {
-        setActivities((prev) => [
-          {
-            id: `act-local-${now}`,
-            organizationId: lead.organizationId,
-            type: "lead_converted_to_client",
-            actor: currentActor,
-            source: { type: "lead", id: lead.uid, label: getLeadName(lead) },
-            entity: {
-              type: "client",
-              id: client.uid,
-              label: getLeadName(lead),
-            },
-            visibility: "internal",
-            metadata: { clientId: client.uid },
-            createdAt: now,
+      setActivities((prev) => [
+        {
+          id: `act-local-${now}`,
+          organizationId: lead.organizationId,
+          type: "lead_converted_to_client",
+          actor: currentActor,
+          source: { type: "lead", id: lead.uid, label: getLeadName(lead) },
+          entity: {
+            type: "client",
+            id: client.uid,
+            label: getLeadName(lead),
           },
-          ...prev,
-        ]);
-      }
+          visibility: "internal",
+          metadata: { clientId: client.uid },
+          createdAt: now,
+        },
+        ...prev,
+      ]);
       setIsConvertOpen(false);
       toast.success("Lead converted to client successfully!");
     } catch (error) {
@@ -389,7 +397,10 @@ export default function LeadDetailPage({ params }: PageProps) {
             </CardContent>
           </Card>
 
-          <LeadActivityCard activities={activities} currentUserId={uid ?? undefined} />
+          <LeadActivityCard
+            activities={activities}
+            currentUserId={uid ?? undefined}
+          />
 
           <Card className="pt-0">
             <CardHeader className="py-3 bg-muted/50">
@@ -402,15 +413,17 @@ export default function LeadDetailPage({ params }: PageProps) {
               />
               <DetailRow
                 label="Created By"
-                value={resolveUser(lead.createdBy)}
+                value={resolveActor(lead.createdBy)}
               />
               <DetailRow
                 label="Updated At"
-                value={format(new Date(lead.updatedAt), "PPp")}
+                value={
+                  wasUpdated ? format(new Date(lead.updatedAt), "PPp") : "—"
+                }
               />
               <DetailRow
                 label="Updated By"
-                value={resolveUser(lead.updatedBy)}
+                value={wasUpdated ? resolveActor(lead.updatedBy) : "—"}
               />
             </CardContent>
           </Card>

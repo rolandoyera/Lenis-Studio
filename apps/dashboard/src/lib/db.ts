@@ -528,11 +528,11 @@ export async function convertLeadToClient(
   lead: Lead,
   convertedBy: string,
   /**
-   * When provided, a `lead_converted_to_client` activity is logged on both
-   * timelines: the new client's (pointing back at the lead) and the lead's
-   * (pointing forward at the client).
+   * Who performed the conversion. Stamped as the lead's `updatedBy` and logged
+   * as a `lead_converted_to_client` activity on both timelines: the new client's
+   * (pointing back at the lead) and the lead's (pointing forward at the client).
    */
-  actor?: ActivityActor,
+  actor: ActivityActor,
 ): Promise<Client> {
   return trace(
     "leads",
@@ -570,13 +570,13 @@ export async function convertLeadToClient(
           convertedClientId: clientUid,
           convertedAt: now,
           convertedBy,
-          updatedBy: convertedBy,
+          updatedBy: actor,
           updatedAt: now,
           lastActivityAt: now,
         }),
       );
 
-      if (actor) {
+      {
         const leadLabel =
           [lead.firstName, lead.lastName].filter(Boolean).join(" ").trim() ||
           lead.company ||
