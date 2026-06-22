@@ -146,33 +146,32 @@ function ActivityRow({
 
   return (
     <li className="flex gap-3">
-      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">
-        <Icon className="size-3.5" />
+      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-muted-foreground">
+        <Icon className="size-4" />
       </span>
       <div className="flex flex-col gap-0.5">
-        <p className="font-medium text-card-foreground text-sm">
-          {label}
+        <p className="font-medium text-card-foreground text-sm flex flex-col">
+          {detailHref ? (
+            <Link
+              href={detailHref}
+              className="hover:text-primary hover:underline">
+              {label}
+            </Link>
+          ) : (
+            label
+          )}
           {subject?.label && (
             <span className="font-normal text-muted-foreground">
-              {" · "}
-              {detailHref ? (
-                <Link
-                  href={detailHref}
-                  className="hover:text-foreground hover:underline"
-                >
-                  {subject.label}
-                </Link>
-              ) : (
-                subject.label
-              )}
+              {subject.label}
             </span>
           )}
         </p>
         {sourceDetail && (
-          <p className="text-muted-foreground text-xs">{sourceDetail}</p>
+          <p className="text-muted-foreground text-xs mb-0.5">
+            via: {sourceDetail} · {actorName}
+          </p>
         )}
         <p className="text-muted-foreground text-xs">
-          {actorName} ·{" "}
           {formatDistanceToNow(activity.createdAt, { addSuffix: true })}
         </p>
       </div>
