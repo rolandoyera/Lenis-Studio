@@ -26,7 +26,7 @@ export function VendorItems({ items, onAddItem }: VendorItemsProps) {
   return (
     <Card
       variant="panel"
-      className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none pt-0">
+      className="flex h-full max-h-[80vh] flex-col bg-card/60 md:max-h-none">
       <CardHeader>
         <CardTitle>
           <span className="flex items-center gap-2">

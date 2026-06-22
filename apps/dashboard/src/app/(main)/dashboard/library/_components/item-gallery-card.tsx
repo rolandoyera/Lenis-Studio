@@ -56,7 +56,7 @@ export function ItemGalleryCard({
       </CardContent>
 
       {item.imageUrls && item.imageUrls.length > 0 && (
-        <CardFooter>
+        <CardFooter className="h-23">
           <div className="flex flex-wrap gap-4">
             {item.imageUrls.map((url) => (
               <button

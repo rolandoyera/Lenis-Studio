@@ -39,12 +39,22 @@ export function VendorHero({ vendor }: VendorHeroProps) {
     xTwitterHref,
   } = getVendorSocialHrefs(vendor);
 
+  const socialLinks = [
+    { key: "website", href: websiteHref, Icon: GlobeIcon },
+    { key: "instagram", href: instagramHref, Icon: InstagramIcon },
+    { key: "pinterest", href: pinterestHref, Icon: PinterestIcon },
+    { key: "facebook", href: facebookHref, Icon: FacebookIcon },
+    { key: "youtube", href: youtubeHref, Icon: YoutubeIcon },
+    { key: "xTwitter", href: xTwitterHref, Icon: XTwitterIcon },
+  ];
+
   return (
     <Card className="overflow-hidden pt-0">
       {/* Banner: hero image → gradient fallback */}
       <div className="relative flex h-90 w-full items-end overflow-hidden">
         {vendor.heroImageUrl ? (
           <DashboardImage
+            priority
             src={vendor.heroImageUrl}
             alt={`${vendor.name} banner`}
             sizes="(min-width: 1024px) 75vw, 100vw"
@@ -74,6 +84,7 @@ export function VendorHero({ vendor }: VendorHeroProps) {
             {vendor.logoUrl && (
               <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded border border-border bg-background shadow-xs">
                 <DashboardImage
+                  priority
                   src={vendor.logoUrl}
                   alt={vendor.name}
                   sizes="32px"
@@ -92,121 +103,30 @@ export function VendorHero({ vendor }: VendorHeroProps) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex items-center justify-center text-muted-foreground h-14">
+      <CardFooter className="justify-center">
         <div className="flex h-6 items-center gap-3">
-          {websiteHref ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href={websiteHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-                  <GlobeIcon />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>{getDisplayUrl(websiteHref)}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="cursor-not-allowed text-muted-foreground/20">
-              <GlobeIcon />
-            </span>
-          )}
-          {instagramHref ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href={instagramHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-                  <InstagramIcon />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>{getDisplayUrl(instagramHref)}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="cursor-not-allowed text-muted-foreground/20">
-              <InstagramIcon />
-            </span>
-          )}
-          {pinterestHref ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href={pinterestHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-                  <PinterestIcon />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>{getDisplayUrl(pinterestHref)}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="cursor-not-allowed text-muted-foreground/20">
-              <PinterestIcon />
-            </span>
-          )}
-          {facebookHref ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href={facebookHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-                  <FacebookIcon />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>{getDisplayUrl(facebookHref)}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="cursor-not-allowed text-muted-foreground/20">
-              <FacebookIcon />
-            </span>
-          )}
-          {youtubeHref ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href={youtubeHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-                  <YoutubeIcon />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>{getDisplayUrl(youtubeHref)}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="cursor-not-allowed text-muted-foreground/20">
-              <YoutubeIcon />
-            </span>
-          )}
-          {xTwitterHref ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href={xTwitterHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.currentTarget.blur()}
-                  className="cursor-pointer text-muted-foreground transition-colors hover:text-primary">
-                  <XTwitterIcon />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>{getDisplayUrl(xTwitterHref)}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <span className="cursor-not-allowed text-muted-foreground/20">
-              <XTwitterIcon />
-            </span>
+          {socialLinks.map(({ key, href, Icon }) =>
+            href ? (
+              <Tooltip key={key}>
+                <TooltipTrigger asChild>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.currentTarget.blur()}
+                    className="cursor-pointer text-muted-foreground transition-colors hover:text-primary border border-border bg-background dark:border-input dark:bg-input/30 rounded-full p-1 shadow">
+                    <Icon strokeWidth={1.25} />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>{getDisplayUrl(href)}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <span
+                key={key}
+                className="cursor-not-allowed text-muted-foreground/20">
+                <Icon strokeWidth={1.5} />
+              </span>
+            ),
           )}
         </div>
       </CardFooter>

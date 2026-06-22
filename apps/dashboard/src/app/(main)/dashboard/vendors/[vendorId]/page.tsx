@@ -5,7 +5,7 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Building2, ExternalLink, FileText, Loader2 } from "lucide-react";
+import { Building2, ExternalLink, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
@@ -246,6 +246,17 @@ export default function VendorDetailPage({ params }: PageProps) {
             <DataField label="Account Number" empty="Not provided">
               {vendor.accountNumber}
             </DataField>
+            <DataField label="Main Contact" empty="Not provided">
+              {vendor.repName}
+            </DataField>
+            <DataField label="Email" empty="Not provided">
+              {vendor.repEmail}
+            </DataField>
+            <DataField label="Phone" empty="Not provided">
+              {vendor.repPhone
+                ? formatVendorPhone(vendor.repPhone, vendor.repPhoneCountry)
+                : undefined}
+            </DataField>
             <DataField
               label="Address"
               empty="Not provided"
@@ -268,34 +279,12 @@ export default function VendorDetailPage({ params }: PageProps) {
                 </div>
               ) : undefined}
             </DataField>
-            <DataField label="Main Contact" empty="Not provided">
-              {vendor.repName}
-            </DataField>
-            <DataField label="Email" empty="Not provided">
-              {vendor.repEmail}
-            </DataField>
-            <DataField label="Phone" empty="Not provided">
-              {vendor.repPhone
-                ? formatVendorPhone(vendor.repPhone, vendor.repPhoneCountry)
-                : undefined}
-            </DataField>
-          </CardContent>
-        </Card>
-      </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Sourcing Notes — full width */}
-
-        <Card variant="panel" className="min-h-40 md:col-span-2">
-          <CardHeader>
-            <CardTitle>
-              <FileText className="icons" />
-              Sourcing Notes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="whitespace-pre-wrap text-foreground/80 text-sm leading-relaxed">
+            <DataField
+              label="Sourcing Notes"
+              empty="Not provided"
+              className="h-21">
               {vendor.notes}
-            </p>
+            </DataField>
           </CardContent>
         </Card>
       </div>
@@ -342,12 +331,11 @@ export default function VendorDetailPage({ params }: PageProps) {
                   <>
                     <span className="block font-semibold text-destructive">
                       This vendor is currently linked to {items.length} active
-                      catalog {items.length === 1 ? "item" : "items"}.
+                      library {items.length === 1 ? "item" : "items"}.
                     </span>
                     <span>
-                      You must delete these items or reassign their vendor
-                      references first before this vendor can be removed from
-                      the directory.
+                      You must delete these items first or reassign them to a
+                      different vendor before this vendor can be deleted.
                     </span>
                     <div className="mt-3 max-h-40 divide-y divide-border/40 overflow-y-auto rounded-lg border border-border/40 bg-muted/30">
                       {items.map((item) => (

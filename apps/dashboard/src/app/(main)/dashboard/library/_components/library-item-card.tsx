@@ -10,10 +10,10 @@ import {
 import { DashboardImage } from "@/components/dashboard-image";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { H3 } from "@/components/ui/typography";
 import type { LibraryItem, Vendor } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { DataField } from "@/components/ui/data-field";
 
 export function LibraryItemCard({
   item,
@@ -30,8 +30,7 @@ export function LibraryItemCard({
       {/* Visual Thumbnail Area */}
       <Link
         href={`/dashboard/library/${item.itemId}`}
-        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40"
-      >
+        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40">
         {item.coverImageUrl ? (
           <DashboardImage
             priority
@@ -55,14 +54,13 @@ export function LibraryItemCard({
         </div>
       </Link>
 
-      <CardContent className="flex flex-1 flex-col gap-3">
+      <CardContent className="flex flex-1 flex-col gap-3 pt-0">
         <div className="flex-1">
           {/* Item Name - Clicking/hovering on the title takes you to the detail page */}
           <H3 className="transition-colors group-has-[.detail-link:hover]:text-primary">
             <Link
               href={`/dashboard/library/${item.itemId}`}
-              className="detail-link block"
-            >
+              className="detail-link block">
               {item.name}
             </Link>
           </H3>
@@ -70,25 +68,23 @@ export function LibraryItemCard({
           {/* Vendor Name - Clicking on the vendor name filters the vendor profile in directory */}
           <div className="mt-1 flex min-w-0 items-center gap-1 text-[12px] text-muted-foreground">
             {item.vendorId ? (
-              parentVendor?.website ? (
+              item.sourcingLink ? (
                 <a
                   href={
-                    parentVendor.website.startsWith("http")
-                      ? parentVendor.website
-                      : `https://${parentVendor.website}`
+                    item.sourcingLink.startsWith("http")
+                      ? item.sourcingLink
+                      : `https://${item.sourcingLink}`
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                   {vendorName}
                   <ExternalLink className="ml-1 size-2.5 shrink-0" />
                 </a>
               ) : (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                   {vendorName}
                   <ExternalLink className="size-2.5 shrink-0" />
                 </Link>
@@ -99,56 +95,31 @@ export function LibraryItemCard({
               </span>
             )}
           </div>
-
-          {/* Product webpage link on vendor's site */}
-          {item.sourcingLink ? (
-            <a
-              href={
-                item.sourcingLink.startsWith("http")
-                  ? item.sourcingLink
-                  : `https://${item.sourcingLink}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-flex max-w-full items-center gap-1.5 py-0.5 font-medium text-[12px] text-primary transition-colors hover:underline"
-            >
-              <span className="truncate">Origin Link</span>
-              <ExternalLink className="size-2.5 shrink-0" />
-            </a>
-          ) : (
-            <span className="mt-2 inline-flex max-w-full select-none items-center gap-1.5 rounded-md border border-border/20 bg-muted/20 px-2 py-0.5 font-normal text-[10px] text-muted-foreground/45 italic">
-              <span>No product link</span>
-            </span>
-          )}
+          <div className="text-right mt-2 -mb-1">
+            <Badge variant={profitable ? "success" : "warning"}>
+              {profitable ? (
+                <TrendingUp className="size-3" />
+              ) : (
+                <TrendingDown className="size-3" />
+              )}
+              {Math.round(item.markup)}% markup
+            </Badge>
+          </div>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col">
+      <CardFooter className="flex flex-col h-16">
         {/* Pricing Matrix summary */}
         <div className="flex w-full items-center justify-between">
-          <div className="flex flex-col">
-            <Label className="mb-1">Cost</Label>
-            <span className="font-semibold text-foreground/75 text-sm">
+          <DataField label="Cost" empty="Not set">
+            <span className="text-foreground/75 text-sm">
               {formatCurrency(item.unitCost)}
             </span>
-          </div>
-          <div className="flex flex-col text-right">
-            <Label className="mb-1 ml-auto">Selling Price</Label>
-            <span className="font-bold text-primary text-sm">
+          </DataField>
+          <DataField label="Selling Price" empty="Not set">
+            <span className="text-primary text-sm">
               {formatCurrency(item.sellingPrice)}
             </span>
-          </div>
-        </div>
-
-        {/* Calculated Margin indicators */}
-        <div className="mx-auto mt-3 -mb-1">
-          <Badge variant={profitable ? "success" : "warning"}>
-            {profitable ? (
-              <TrendingUp className="size-3" />
-            ) : (
-              <TrendingDown className="size-3" />
-            )}
-            {Math.round(item.markup)}% markup
-          </Badge>
+          </DataField>
         </div>
       </CardFooter>
     </Card>
