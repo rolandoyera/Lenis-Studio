@@ -118,6 +118,22 @@ export type LeadActivityType =
 export type ActivityType = ClientActivityType | LeadActivityType;
 
 /**
+ * Emitting surface — the system that produced the event. A business fact, set
+ * by the writer and stable: "website" = public site intake, "portal" = client
+ * portal, "studio" = a user acting inside the CRM. (Distinct from a lead's
+ * acquisition source, which lives in `metadata.channel`.)
+ */
+export type ActivityChannel = "website" | "portal" | "studio";
+
+/**
+ * Notification weight — a product knob, re-tunable over time without changing
+ * what `channel` means. "high" pings right away (external/client-driven events:
+ * website leads, proposal views, portal activity); "low" can wait (internal
+ * studio activity). Drives the realtime "needs attention" listener.
+ */
+export type ActivityImportance = "high" | "low";
+
+/**
  * Append-only audit record in the top-level `activities` collection. Written
  * once, never updated or deleted (redaction is deferred).
  */
@@ -132,6 +148,10 @@ export interface Activity {
   entity: ActivityEntity;
   /** Who can see it. Defaults to internal; opt specific events into the portal later. */
   visibility: "internal" | "client_visible";
+  /** Emitting surface. Absent on legacy rows ⇒ treat as "studio". */
+  channel?: ActivityChannel;
+  /** Notification weight. Absent ⇒ treat as "low". */
+  importance?: ActivityImportance;
   /** Type-specific extras — kept loose until the payloads stabilize. */
   metadata?: Record<string, unknown>;
   createdAt: number;

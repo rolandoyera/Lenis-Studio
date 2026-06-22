@@ -13,12 +13,13 @@ import type { Activity } from "@/lib/types";
 const FEED_LIMIT = 8;
 
 /**
- * Home dashboard "Recent Activity" cards. One org-wide fetch powers all four
- * cards, sliced client-side:
- * - Studio   — everything (conversion's dual write is de-duped to one row).
- * - Website  — lead activity whose acquisition channel is "website".
- * - Instagram— lead activity whose acquisition channel is "instagram".
- * - Clients  — activity whose source is a client.
+ * Home dashboard "Recent Activity" cards. One org-wide fetch powers both cards,
+ * split client-side by `importance` so we can eyeball what each write site
+ * stamps:
+ * - High — external / client-driven events (website leads, portal activity).
+ * - Low  — internal studio activity (notes, manual leads, conversions).
+ * Absent importance is treated as "low" (legacy rows). The conversion dual-write
+ * is de-duped to a single row before splitting.
  */
 export function RecentActivity() {
   const { organizationId, uid, loading: authLoading } = useAuth();
@@ -68,49 +69,29 @@ export function RecentActivity() {
     };
   }, [organizationId, authLoading]);
 
-  const byChannel = (channel: string) =>
-    activities
-      .filter(
-        (a) => a.source.type === "lead" && a.metadata?.channel === channel,
-      )
-      .slice(0, FEED_LIMIT);
-
-  const studio = dedupeConversions(activities).slice(0, FEED_LIMIT);
-  const website = byChannel("website");
-  const instagram = byChannel("instagram");
-  const clients = activities
-    .filter((a) => a.source.type === "client")
+  const deduped = dedupeConversions(activities);
+  const high = deduped
+    .filter((a) => a.importance === "high")
+    .slice(0, FEED_LIMIT);
+  const low = deduped
+    .filter((a) => a.importance !== "high")
     .slice(0, FEED_LIMIT);
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FeedCard
-        title="Studio"
-        activities={studio}
+        title="High"
+        activities={high}
         currentUserId={uid ?? undefined}
         loading={loading}
-        emptyLabel="No recent activity."
+        emptyLabel="No high-importance activity yet."
       />
       <FeedCard
-        title="Website"
-        activities={website}
+        title="Low"
+        activities={low}
         currentUserId={uid ?? undefined}
         loading={loading}
-        emptyLabel="No website lead activity yet."
-      />
-      <FeedCard
-        title="Instagram"
-        activities={instagram}
-        currentUserId={uid ?? undefined}
-        loading={loading}
-        emptyLabel="No Instagram lead activity yet."
-      />
-      <FeedCard
-        title="Clients"
-        activities={clients}
-        currentUserId={uid ?? undefined}
-        loading={loading}
-        emptyLabel="No client activity yet."
+        emptyLabel="No low-importance activity yet."
       />
     </div>
   );
