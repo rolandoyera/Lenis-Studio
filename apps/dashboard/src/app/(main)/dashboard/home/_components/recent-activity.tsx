@@ -34,27 +34,45 @@ export function RecentActivity() {
 
     let isMounted = true;
     const orgId = organizationId; // stable string dependency; profile identity churns on each heartbeat
-    setLoading(true);
 
-    getRecentActivities(orgId, 50)
-      .then((data) => {
-        if (isMounted) setActivities(data);
-      })
-      .catch((error) => {
-        console.error("Failed to load recent activities:", error);
-      })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+    // One-time fetch (no live listener). `withSpinner` gates the loading state so
+    // the initial mount shows skeletons but focus-driven refetches update silently.
+    const load = (withSpinner: boolean) => {
+      if (withSpinner) setLoading(true);
+      getRecentActivities(orgId, 50)
+        .then((data) => {
+          if (isMounted) setActivities(data);
+        })
+        .catch((error) => {
+          console.error("Failed to load recent activities:", error);
+        })
+        .finally(() => {
+          if (isMounted && withSpinner) setLoading(false);
+        });
+    };
+
+    load(true);
+
+    // Refresh on focus: re-run the fetch when the tab/window regains focus so the
+    // feed feels fresh without holding an open Firestore listener.
+    const refresh = () => {
+      if (document.visibilityState === "visible") load(false);
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
 
     return () => {
       isMounted = false;
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
     };
   }, [organizationId, authLoading]);
 
   const byChannel = (channel: string) =>
     activities
-      .filter((a) => a.source.type === "lead" && a.metadata?.channel === channel)
+      .filter(
+        (a) => a.source.type === "lead" && a.metadata?.channel === channel,
+      )
       .slice(0, FEED_LIMIT);
 
   const studio = dedupeConversions(activities).slice(0, FEED_LIMIT);
