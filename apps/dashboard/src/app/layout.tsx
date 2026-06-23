@@ -6,7 +6,12 @@ import { PageTitleProvider } from "@/components/page-title-updater";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { APP_CONFIG } from "@/config/app-config";
-import { fontVars, serifFontVariable } from "@/lib/fonts/registry";
+import {
+  contractFontVariable,
+  fontVars,
+  monoFontVariable,
+  serifFontVariable,
+} from "@/lib/fonts/registry";
 import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config";
 import { ThemeBootScript } from "@/scripts/theme-boot";
 import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
@@ -35,7 +40,7 @@ export default function RootLayout({
         <ThemeBootScript />
       </head>
       <body
-        className={`${fontVars} ${serifFontVariable} min-h-screen antialiased`}
+        className={`${fontVars} ${serifFontVariable} ${monoFontVariable} ${contractFontVariable} min-h-screen antialiased`}
       >
         <TooltipProvider>
           <PreferencesStoreProvider

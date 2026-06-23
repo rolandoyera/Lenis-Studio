@@ -34,7 +34,7 @@ export type PreferenceKey = keyof PreferenceValueMap;
 export const PREFERENCE_DEFAULTS: PreferenceValueMap = {
   theme_mode: "light",
   theme_preset: "default",
-  font: "geist",
+  font: "montserrat",
 };
 
 /**

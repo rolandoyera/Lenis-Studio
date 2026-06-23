@@ -95,7 +95,7 @@ export function LibraryItemCard({
               </span>
             )}
           </div>
-          <div className="text-right mt-2 -mb-1">
+          <div className="text-right mt-2 -mb-4">
             <Badge variant={profitable ? "success" : "warning"}>
               {profitable ? (
                 <TrendingUp className="size-3" />
@@ -116,7 +116,7 @@ export function LibraryItemCard({
             </span>
           </DataField>
           <DataField label="Selling Price" empty="Not set">
-            <span className="text-primary text-sm">
+            <span className="text-primary text-sm font-semibold">
               {formatCurrency(item.sellingPrice)}
             </span>
           </DataField>

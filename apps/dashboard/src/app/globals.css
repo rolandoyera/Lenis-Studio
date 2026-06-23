@@ -59,6 +59,11 @@
   --font-sans: var(--font-sans);
   --font-serif:
     var(--font-fraunces), ui-serif, Georgia, "Times New Roman", serif;
+  --font-mono:
+    var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --font-contract:
+    var(--font-arimo), ui-sans-serif, system-ui, Arial, sans-serif;
   --font-lora: var(--font-lora);
 }
 
@@ -97,8 +102,8 @@ These serve as the fallback; there is no separate default.css file. */
   --sidebar-ring: oklch(0.7731 0 0);
 
   /* fonts */
-  --font-sans: var(--font-geist);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-montserrat);
+  --font-mono: var(--font-jetbrains-mono);
   --background: oklch(0.9818 0.0054 95.0986);
   --foreground: oklch(0 0.0269 95.7226);
 }
@@ -194,6 +199,10 @@ These serve as the fallback; there is no separate default.css file. */
     box-shadow: var(--shadow-2xl);
   }
 
+  /* One rule per font in the picker (fontRegistry / fontOptions). Keep in sync. */
+  html[data-font="geist"] body {
+    --font-sans: var(--font-geist);
+  }
   html[data-font="inter"] body {
     --font-sans: var(--font-inter);
   }
@@ -203,14 +212,8 @@ These serve as the fallback; there is no separate default.css file. */
   html[data-font="nunitoSans"] body {
     --font-sans: var(--font-nunito-sans);
   }
-  html[data-font="figtree"] body {
-    --font-sans: var(--font-figtree);
-  }
   html[data-font="roboto"] body {
     --font-sans: var(--font-roboto);
-  }
-  html[data-font="geist"] body {
-    --font-sans: var(--font-geist);
   }
   html[data-font="raleway"] body {
     --font-sans: var(--font-raleway);
@@ -227,29 +230,8 @@ These serve as the fallback; there is no separate default.css file. */
   html[data-font="lora"] body {
     --font-sans: var(--font-lora);
   }
-  html[data-font="geistMono"] body {
-    --font-sans: var(--font-geist-mono);
-  }
-  html[data-font="geistPixelSquare"] body {
-    --font-sans: var(--font-geist-pixel-square);
-  }
-  html[data-font="jetBrainsMono"] body {
-    --font-sans: var(--font-jetbrains-mono);
-  }
-  html[data-font="notoSerif"] body {
-    --font-sans: var(--font-noto-serif);
-  }
-  html[data-font="robotoSlab"] body {
-    --font-sans: var(--font-roboto-slab);
-  }
-  html[data-font="merriweather"] body {
-    --font-sans: var(--font-merriweather);
-  }
-  html[data-font="lora"] body {
-    --font-sans: var(--font-lora);
-  }
-  html[data-font="playfairDisplay"] body {
-    --font-sans: var(--font-playfair-display);
+  html[data-font="montserrat"] body {
+    --font-sans: var(--font-montserrat);
   }
 }
 
@@ -259,6 +241,80 @@ These serve as the fallback; there is no separate default.css file. */
 
 html {
   overscroll-behavior: none;
+}
+
+/* Contract document — print as A4 sheets. On screen the sheets stay compact for
+   editing; printing swaps to true A4 pages and drops all editing chrome. */
+@media print {
+  /* Isolate the document: hide every element that isn't the document itself,
+     one of its ancestors, or one of its descendants. Keeping the ancestor
+     chain in normal flow (instead of absolutely positioning the document) lets
+     the content paginate naturally across pages — no overlap, no voids. */
+  body
+    *:not(:has(.contract-print-area)):not(.contract-print-area):not(
+      .contract-print-area *
+    ) {
+    display: none !important;
+  }
+
+  /* Collapse ancestor spacing / scroll containers so the document fills the
+     page from the top and isn't clipped or constrained. */
+  body :has(.contract-print-area) {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .contract-print-area {
+    display: block !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  /* Page numbers / editing markers never print. */
+  .contract-page-meta {
+    display: none !important;
+  }
+
+  /* Unfilled field placeholders are editing chrome — never print their label. */
+  .contract-placeholder {
+    display: none !important;
+  }
+
+  /* Sections stream continuously; the page margin owns pagination, so the
+     browser breaks wherever the text lands (no forced per-section breaks). */
+  .contract-sheet {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    --tw-ring-shadow: 0 0 #0000;
+    /* Always print as black-on-white paper, regardless of light/dark theme. */
+    background: #fff !important;
+  }
+  /* Breathing room between sections in the continuous flow. */
+  .contract-sheet + .contract-sheet {
+    margin-top: 1.5rem;
+  }
+  .contract-sheet,
+  .contract-sheet * {
+    color: #000 !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm;
+  }
 }
 
 .disable-transitions * {

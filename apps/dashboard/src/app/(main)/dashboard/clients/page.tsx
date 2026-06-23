@@ -130,10 +130,9 @@ export default function ClientsPage() {
           />
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
-          >
+            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
             <Plus className="size-4" />
-            Add Client Profile
+            Client
           </Button>
         </div>
 
@@ -166,8 +165,7 @@ export default function ClientsPage() {
             {!searchQuery && (
               <Button
                 onClick={() => setIsDialogOpen(true)}
-                className="mt-4 flex items-center gap-2"
-              >
+                className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
                 Add Client profile
               </Button>
@@ -184,19 +182,18 @@ export default function ClientsPage() {
 
               return (
                 <Card
+                  variant="panel"
                   key={client.uid}
-                  className="group relative flex h-full flex-col overflow-hidden transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md"
-                >
-                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 pb-4">
+                  className="group relative flex h-full flex-col overflow-hidden transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
+                  <CardHeader className="flex flex-row items-center gap-4">
                     <Link
                       href={`/dashboard/clients/${client.uid}`}
-                      className="detail-link shrink-0 cursor-pointer"
-                    >
-                      <Avatar className="size-12">
+                      className="detail-link shrink-0 cursor-pointer">
+                      <Avatar className="size-8">
                         {client.company ? (
-                          <Building2 className="size-6" />
+                          <Building2 className="size-4" />
                         ) : (
-                          <User className="size-6" />
+                          <User className="size-4" />
                         )}
                       </Avatar>
                     </Link>
@@ -204,8 +201,7 @@ export default function ClientsPage() {
                       <H3 className="truncate transition-colors group-has-[.detail-link:hover]:text-primary">
                         <Link
                           href={`/dashboard/clients/${client.uid}`}
-                          className="detail-link cursor-pointer"
-                        >
+                          className="detail-link cursor-pointer">
                           {client.company
                             ? client.company
                             : `${firstName} ${lastName}`}
@@ -224,17 +220,17 @@ export default function ClientsPage() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="flex flex-col gap-3 text-sm">
-                    <div className="flex flex-col gap-1.5 rounded-md border border-muted/50 bg-muted/30 p-2.5 text-muted-foreground text-xs">
-                      <div className="flex items-center gap-2 truncate">
+                  <CardContent className="flex flex-col gap-3 text-sm pt-1.5">
+                    <div className="flex flex-col gap-1.5 rounded-md border border-muted/50 bg-muted p-2.5">
+                      <span className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Mail className="size-3.5 shrink-0" />
                         {client.email}
-                      </div>
+                      </span>
                       {client.phone && (
-                        <div className="flex items-center gap-2 truncate">
+                        <span className="flex items-center gap-2 text-xs truncate">
                           <Phone className="size-3.5 shrink-0" />
                           {formatPhone(client.phone)}
-                        </div>
+                        </span>
                       )}
                       {(client.city || client.state) && (
                         <div className="flex items-center gap-2 truncate">

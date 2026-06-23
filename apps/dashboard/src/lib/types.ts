@@ -222,7 +222,6 @@ export interface Project {
   organizationId: string;
   clientId: string;
   name: string;
-  /** @deprecated denormalized single-line address — kept for back-compat reads of older docs; new saves write the discrete fields below instead. */
   address?: string;
   street?: string;
   city?: string;

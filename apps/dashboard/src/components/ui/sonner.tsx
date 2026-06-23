@@ -28,7 +28,7 @@ const Toaster = ({ position = "top-center", ...props }: ToasterProps) => {
       style={
         {
           "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
+          "--normal-text": "var(--card-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
           "--success-bg": "var(--card)",
@@ -50,7 +50,7 @@ const Toaster = ({ position = "top-center", ...props }: ToasterProps) => {
           toast:
             "cn-toast group-[.toaster]:border-border group-[.toaster]:shadow-lg",
           error:
-            "group-[.toaster]:!bg-red-600 group-[.toaster]:!text-white group-[.toaster]:!border-red-600",
+            "group-[.toaster]:!bg-red-600 group-[.toaster]:!text-white group-[.toaster]:!border-red-600 group-[.toaster]:[&_[data-title]]:!font-semibold group-[.toaster]:[&_[data-description]]:!text-white",
           success:
             "group-[.toaster]:!bg-card group-[.toaster]:!text-card-foreground group-[.toaster]:!border-border",
           warning:

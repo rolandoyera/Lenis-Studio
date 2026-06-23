@@ -1,9 +1,12 @@
 import {
+  Arimo,
   DM_Sans,
   Fraunces,
   Geist,
   Inter,
+  JetBrains_Mono,
   Lora,
+  Montserrat,
   Noto_Sans,
   Nunito_Sans,
   Outfit,
@@ -64,6 +67,11 @@ const lora = Lora({
   style: ["normal", "italic"],
 });
 
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  variable: "--font-montserrat",
+});
+
 // Global serif (variable font — full 100–900 weight axis, not part of the sans font picker)
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -72,8 +80,26 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
+// Global monospace (drives the `font-mono` utility — not part of the sans font picker)
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+});
+
+// Contract document face (drives the `font-contract` utility — not in the sans picker)
+const arimo = Arimo({
+  subsets: ["latin"],
+  variable: "--font-arimo",
+});
+
 /** CSS variable className for the global serif, applied alongside `fontVars`. */
 export const serifFontVariable = fraunces.variable;
+
+/** CSS variable className for the global monospace, applied alongside `fontVars`. */
+export const monoFontVariable = jetbrainsMono.variable;
+
+/** CSS variable className for the contract document face, applied alongside `fontVars`. */
+export const contractFontVariable = arimo.variable;
 
 export const fontRegistry = {
   geist: {
@@ -115,6 +141,10 @@ export const fontRegistry = {
   lora: {
     label: "Lora",
     font: lora,
+  },
+  montserrat: {
+    label: "Montserrat",
+    font: montserrat,
   },
 } as const;
 

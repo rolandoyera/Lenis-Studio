@@ -161,11 +161,11 @@ export default function LibraryPage() {
           onClick={handleOpenAdd}
           className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
           <Plus className="size-4" />
-          Add Item to Library
+          Add Item
         </Button>
       </div>
 
-      <div className="flex flex-col items-center justify-between gap-4 border-b pb-4 md:flex-row">
+      <div className="flex flex-col items-center justify-between gap-4 pb-4 md:flex-row">
         {/* Category filter: tabs on very wide screens, dropdown below 3xl */}
         <div className="3xl:flex hidden w-full flex-col md:w-auto">
           <Tabs

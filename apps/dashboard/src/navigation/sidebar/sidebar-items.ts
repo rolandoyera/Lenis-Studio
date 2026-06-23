@@ -3,6 +3,7 @@ import {
   Building2,
   ChartBar,
   Cog,
+  FileSignature,
   FileText,
   FolderKanban,
   Forklift,
@@ -128,6 +129,12 @@ export const sidebarItems: NavGroup[] = [
         title: "Proposals",
         url: "/dashboard/proposals",
         icon: ReceiptText,
+      },
+      {
+        title: "Contracts",
+        url: "/dashboard/contracts",
+        icon: FileSignature,
+        isNew: true,
       },
       {
         title: "AI Diagnostics",

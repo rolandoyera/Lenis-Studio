@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import {
-  Activity,
   ArrowRight,
+  Building2,
   DollarSign,
   FolderKanban,
   Loader2,
@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -139,7 +139,7 @@ export default function ProjectsPage() {
       ? `${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim()
       : "";
     const term = searchQuery.toLowerCase();
-    const address = formatProjectAddress(project) || project.address || "";
+    const address = formatProjectAddress(project) || "";
 
     return (
       (project.name || "").toLowerCase().includes(term) ||
@@ -169,7 +169,7 @@ export default function ProjectsPage() {
           ) : (
             <Button onClick={handleOpenAdd}>
               <Plus className="size-4" />
-              Start Project
+              New Project
             </Button>
           )}
         </div>
@@ -205,8 +205,7 @@ export default function ProjectsPage() {
             {!searchQuery && clients.length > 0 && (
               <Button
                 onClick={handleOpenAdd}
-                className="mt-4 flex items-center gap-2"
-              >
+                className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
                 Start Project
               </Button>
@@ -220,93 +219,75 @@ export default function ProjectsPage() {
               );
 
               return (
-                <Card
-                  key={project.projectId}
-                  className="group relative overflow-hidden"
-                >
-                  <CardHeader className="flex flex-col gap-1.5 pb-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
-                        {PROJECT_STATUS_LABELS[project.status]}
-                      </Badge>
-                    </div>
-
-                    <CardTitle className="line-clamp-1 font-heading font-semibold text-lg leading-tight transition-colors hover:text-primary">
+                <Card variant="panel" key={project.projectId} className="group">
+                  <CardHeader className="justify-between">
+                    <CardTitle className="transition-colors hover:text-primary">
                       <Link
                         href={`/dashboard/projects/${project.projectId}`}
-                        prefetch={false}
-                      >
+                        prefetch={false}>
                         {project.name}
                       </Link>
                     </CardTitle>
-
-                    {parentClient ? (
-                      <CardDescription className="flex items-center gap-1.5 truncate text-muted-foreground text-xs">
-                        <User className="size-3 shrink-0 text-muted-foreground/60" />
-                        Client:{" "}
-                        <span className="font-medium text-foreground/80">
-                          {`${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim() ||
-                            "Unnamed Client"}
-                        </span>
-                      </CardDescription>
-                    ) : (
-                      <CardDescription className="text-muted-foreground/50 text-xs italic">
-                        Client contact missing
-                      </CardDescription>
-                    )}
+                    <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
+                      {PROJECT_STATUS_LABELS[project.status]}
+                    </Badge>
                   </CardHeader>
 
-                  <CardContent className="flex flex-col gap-3.5 pt-0 text-sm">
-                    {/* Space & site details */}
-                    <div className="flex flex-col gap-2 rounded-lg border border-muted/50 bg-muted/30 p-3">
+                  <CardContent className="py-2">
+                    <div className="flex flex-col gap-2 rounded-lg border border-muted/50 bg-muted p-3">
+                      {parentClient?.company && (
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <Building2 className="size-3.5 text-muted-foreground/60" />
+                          <span className="font-medium text-foreground/80">
+                            {parentClient.company}
+                          </span>
+                        </div>
+                      )}
+                      {!parentClient?.company && (
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                          <User className="size-3.5 text-muted-foreground/60" />
+                          <span className="font-medium text-foreground/80">
+                            {parentClient
+                              ? `${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim()
+                              : "Not set"}
+                          </span>
+                        </div>
+                      )}
                       {project.budget !== undefined && project.budget > 0 && (
                         <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                          <DollarSign className="size-3.5 shrink-0 text-emerald-500" />
-                          Budget Pool:{" "}
-                          <span className="font-semibold text-foreground/80">
+                          <DollarSign className="size-3.5 text-muted-foreground/60" />
+                          <span className="font-medium text-foreground/80">
                             {formatCurrency(project.budget, {
                               noDecimals: true,
                             })}
                           </span>
                         </div>
                       )}
-                      {(() => {
-                        const address =
-                          formatProjectAddress(project) || project.address;
-                        return (
-                          address && (
-                            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                              <MapPin className="size-3.5 shrink-0 text-primary/70" />
-                              <span className="truncate">{address}</span>
-                            </div>
-                          )
-                        );
-                      })()}
-                    </div>
-
-                    {/* Project briefs / description */}
-                    {project.notes && (
-                      <p className="line-clamp-3 rounded-md border border-border/50 bg-background/30 p-2.5 text-muted-foreground text-xs leading-relaxed">
-                        {project.notes}
-                      </p>
-                    )}
-
-                    {/* Navigation shortcut to Proposals */}
-                    <div className="mt-1 flex items-center justify-between border-border/40 border-t pt-3 text-xs">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Activity className="size-3.5 text-primary/70" />
-                        Assigned Proposals:
-                      </span>
-                      <Link
-                        href={`/dashboard/proposals?projectId=${project.projectId}`}
-                        prefetch={false}
-                        className="group/btn flex items-center gap-0.5 font-semibold text-primary hover:underline"
-                      >
-                        View Proposals
-                        <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-0.5" />
-                      </Link>
+                      <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                        <MapPin className="size-3.5 text-muted-foreground/60" />
+                        <span className="font-medium text-foreground/80">
+                          {[project.city, project.state, project.zip]
+                            .filter(Boolean)
+                            .join(", ") || "Not set"}
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
+                  <CardFooter>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      asChild
+                      className="ml-auto -mr-2">
+                      <Link
+                        href={`/dashboard/projects/${project.projectId}`}
+                        prefetch={false}
+                        className="group/btn flex items-center gap-0.5">
+                        View Project
+                        <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
+                      </Link>
+                    </Button>
+                  </CardFooter>
                 </Card>
               );
             })}
