@@ -10,6 +10,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { getRequestAppBrand } from "@/server/app-brand";
 
 import { DbStatsProbe } from "./_components/db-stats-probe";
 import { LayoutControls } from "./_components/sidebar/layout-controls";
@@ -22,6 +23,7 @@ export default async function Layout({
 }: Readonly<{ children: ReactNode }>) {
   const cookieStore = await cookies();
   const defaultOpen = cookieStore.get("sidebar_state")?.value !== "false";
+  const brand = await getRequestAppBrand();
 
   return (
     <SidebarProvider
@@ -33,7 +35,7 @@ export default async function Layout({
       }
     >
       <DbStatsProbe />
-      <AppSidebar variant="inset" collapsible="icon" />
+      <AppSidebar brand={brand} variant="inset" collapsible="icon" />
       <SidebarInset
         className={cn(
           "peer-data-[variant=inset]:border",

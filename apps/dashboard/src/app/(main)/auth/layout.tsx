@@ -4,13 +4,16 @@ import { ViewTransition } from "react";
 
 import Image from "next/image";
 
-import { APP_CONFIG } from "@/config/app-config";
+import { cn } from "@/lib/utils";
+import { getRequestAppBrand } from "@/server/app-brand";
 
 import { AuthBackdrop } from "./_components/auth-backdrop";
 
-export default function Layout({
+export default async function Layout({
   children,
 }: Readonly<{ children: ReactNode }>) {
+  const brand = await getRequestAppBrand();
+
   return (
     <main className="bg-sidebar">
       <div className="relative grid h-dvh justify-center overflow-hidden p-2 lg:grid-cols-2">
@@ -28,9 +31,12 @@ export default function Layout({
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-1/2 flex-col items-center justify-center px-10 text-center text-white lg:flex">
             <div className="size-44 mb-8">
               <Image
-                src={APP_CONFIG.image.src}
-                className="drop-shadow-sm invert"
-                alt="Logo"
+                src={brand.image.darkSrc}
+                className={cn(
+                  "drop-shadow-sm",
+                  brand.image.invertOnDark && "invert",
+                )}
+                alt={`${brand.name} logo`}
                 width={180}
                 height={180}
                 style={{ width: "auto", height: "auto" }}
@@ -38,10 +44,10 @@ export default function Layout({
               />
             </div>
             <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">
-              {APP_CONFIG.name}
+              {brand.name}
             </h1>
             <p className="font-light text-base text-white tracking-widest drop-shadow-sm">
-              Design. Build. Repeat.
+              {brand.tagline}
             </p>
           </div>
         </ViewTransition>

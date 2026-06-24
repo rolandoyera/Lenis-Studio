@@ -14,7 +14,7 @@ interface ReportShellProps {
   headerMeta?: ReactNode;
   /** The document body. */
   children: ReactNode;
-  /** Footer content; defaults to the app copyright. */
+
   footer?: ReactNode;
 }
 
@@ -31,8 +31,8 @@ interface ReportShellProps {
  * dashboard shell. PDF export is currently the browser print dialog; this same
  * route is what a future Playwright renderer would target.
  *
- * Company identity comes from APP_CONFIG for now — swap to a per-org company
- * record here once that section exists in the DB.
+ * Company identity uses the default app brand. Reports can accept resolved
+ * tenant branding later when report routes need host-aware document chrome.
  */
 export function ReportShell({
   title,
@@ -41,6 +41,7 @@ export function ReportShell({
   children,
   footer,
 }: ReportShellProps) {
+  const brand = APP_CONFIG.brand;
   const generatedOn = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -54,18 +55,15 @@ export function ReportShell({
           <header className="report-keep-together flex items-start justify-between gap-6 border-b pb-6">
             <div className="flex items-center gap-3">
               <Image
-                src={APP_CONFIG.image.src}
-                alt={APP_CONFIG.name}
+                src={brand.image.src}
+                alt={brand.name}
                 width={40}
                 height={40}
                 priority
               />
               <div>
                 <p className="font-semibold text-lg leading-tight">
-                  {APP_CONFIG.name}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  {APP_CONFIG.copyright}
+                  {brand.name}
                 </p>
               </div>
             </div>
@@ -85,7 +83,7 @@ export function ReportShell({
           <main className="flex flex-col gap-12">{children}</main>
 
           <footer className="report-keep-together mt-2 flex items-center justify-between gap-4 border-t pt-4 text-muted-foreground text-xs">
-            <span>{footer ?? `${APP_CONFIG.name} — confidential`}</span>
+            <span>{footer ?? `${brand.name} — confidential`}</span>
             <span>Generated {generatedOn}</span>
           </footer>
         </div>

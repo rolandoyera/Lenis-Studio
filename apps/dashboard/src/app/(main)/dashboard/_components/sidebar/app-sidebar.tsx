@@ -12,14 +12,20 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { APP_CONFIG } from "@/config/app-config";
+import type { AppBrand } from "@/config/app-config";
+import { cn } from "@/lib/utils";
 import { sidebarItems } from "@/navigation/sidebar/sidebar-items";
 
 import { NavMain } from "./nav-main";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  brand: AppBrand;
+};
+
+export function AppSidebar({ brand, ...props }: AppSidebarProps) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const imageSize = isCollapsed ? 26 : 24;
 
   return (
     <Sidebar {...props}>
@@ -32,18 +38,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link prefetch={false} href="/dashboard/home">
                 <Image
-                  src={APP_CONFIG.image.src}
-                  alt="Logo"
-                  width={isCollapsed ? 26 : 24}
-                  height={isCollapsed ? 26 : 24}
+                  src={brand.image.iconSrc}
+                  alt={`${brand.name} logo`}
+                  width={imageSize}
+                  height={imageSize}
                   style={{
-                    width: isCollapsed ? 26 : 24,
-                    height: isCollapsed ? 26 : 24,
+                    width: imageSize,
+                    height: imageSize,
                   }}
-                  className="transition-all duration-200 dark:invert"
+                  className={cn(
+                    "transition-all duration-200 dark:hidden",
+                    brand.image.invertOnDark && "dark:invert",
+                  )}
+                />
+                <Image
+                  src={brand.image.iconDarkSrc}
+                  alt={`${brand.name} logo`}
+                  width={imageSize}
+                  height={imageSize}
+                  style={{
+                    width: imageSize,
+                    height: imageSize,
+                  }}
+                  className={cn(
+                    "hidden transition-all duration-200 dark:block",
+                    brand.image.invertOnDark && "dark:invert",
+                  )}
                 />
                 <span className="font-semibold font-lora text-2xl text-black dark:text-white">
-                  {APP_CONFIG.name}
+                  {brand.name}
                 </span>
               </Link>
             </SidebarMenuButton>

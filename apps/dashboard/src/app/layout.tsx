@@ -5,7 +5,6 @@ import type { Metadata } from "next";
 import { PageTitleProvider } from "@/components/page-title-updater";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { APP_CONFIG } from "@/config/app-config";
 import {
   contractFontVariable,
   fontVars,
@@ -14,19 +13,26 @@ import {
 } from "@/lib/fonts/registry";
 import { PREFERENCE_DEFAULTS } from "@/lib/preferences/preferences-config";
 import { ThemeBootScript } from "@/scripts/theme-boot";
+import { getRequestAppBrand } from "@/server/app-brand";
 import { PreferencesStoreProvider } from "@/stores/preferences/preferences-provider";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: APP_CONFIG.meta.title,
-  description: APP_CONFIG.meta.description,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await getRequestAppBrand();
 
-export default function RootLayout({
+  return {
+    title: brand.meta.title,
+    description: brand.meta.description,
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   const { theme_mode, theme_preset, font } = PREFERENCE_DEFAULTS;
+  const brand = await getRequestAppBrand();
+
   return (
     <html
       lang="en"
@@ -48,7 +54,7 @@ export default function RootLayout({
             themePreset={theme_preset}
             font={font}
           >
-            <PageTitleProvider>
+            <PageTitleProvider baseTitle={brand.meta.title}>
               {children}
               <Toaster />
             </PageTitleProvider>

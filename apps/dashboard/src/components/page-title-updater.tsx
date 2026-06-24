@@ -5,8 +5,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { APP_CONFIG } from "@/config/app-config";
-
 interface PageTitleContextType {
   setTitle: (title: string | null) => void;
 }
@@ -15,7 +13,13 @@ const PageTitleContext = createContext<PageTitleContextType | undefined>(
   undefined,
 );
 
-export function PageTitleProvider({ children }: { children: React.ReactNode }) {
+export function PageTitleProvider({
+  baseTitle,
+  children,
+}: {
+  baseTitle: string;
+  children: React.ReactNode;
+}) {
   const [customTitle, setCustomTitle] = useState<string | null>(null);
   const pathname = usePathname();
 
@@ -26,9 +30,8 @@ export function PageTitleProvider({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    const baseTitle = APP_CONFIG.meta.title;
     document.title = customTitle ? `${customTitle} | ${baseTitle}` : baseTitle;
-  }, [customTitle]);
+  }, [baseTitle, customTitle]);
 
   return (
     <PageTitleContext.Provider value={{ setTitle: setCustomTitle }}>
