@@ -21,6 +21,16 @@ import {
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -375,6 +385,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
   const [selectedProjectId, setSelectedProjectId] = useState(
     contract?.projectId ?? "",
   );
+  const [pendingProject, setPendingProject] = useState<Project | null>(null);
   const [client, setClient] = useState<Client | null>(null);
   // Persistence state. `contractId` is set after the first save (or seeded when
   // editing) so subsequent Save Draft calls update the same document. Once
@@ -466,6 +477,21 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
   const selectedProject = projects.find(
     (p) => p.projectId === selectedProjectId,
   );
+
+  const handleProjectChange = (project: Project | null) => {
+    if (isLocked || project?.projectId === selectedProjectId) return;
+    if (contractId && project) {
+      setPendingProject(project);
+      return;
+    }
+    setSelectedProjectId(project?.projectId ?? "");
+  };
+
+  const confirmProjectChange = () => {
+    if (!pendingProject) return;
+    setSelectedProjectId(pendingProject.projectId);
+    setPendingProject(null);
+  };
 
   // Load the selected project's client (the doc needs the client name/contact).
   useEffect(() => {
@@ -761,12 +787,11 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                 <Field label="Project">
                   <Combobox
                     value={selectedProject ?? null}
-                    onValueChange={(p: Project | null) =>
-                      setSelectedProjectId(p?.projectId ?? "")
-                    }
+                    onValueChange={handleProjectChange}
                     items={[...projects].sort((a, b) =>
                       a.name.localeCompare(b.name),
                     )}
+                    disabled={isLocked}
                     filter={(item: Project, inputValue: string) =>
                       item.name.toLowerCase().includes(inputValue.toLowerCase())
                     }
@@ -779,8 +804,11 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                             "flex h-10 w-full items-center justify-between whitespace-nowrap rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors",
                             "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
                             "dark:bg-input/30",
+                            isLocked &&
+                              "cursor-not-allowed bg-muted/40 text-muted-foreground opacity-70",
                             !selectedProject && "text-muted-foreground",
                           )}
+                          disabled={isLocked}
                         >
                           {selectedProject
                             ? selectedProject.name
@@ -939,6 +967,29 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
 
       {/* Unsaved-changes leave dialog + nav interception (shared hook). */}
       {leaveDialog}
+      <AlertDialog
+        open={!!pendingProject}
+        onOpenChange={(open) => {
+          if (!open) setPendingProject(null);
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change this contract's project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Changing the project will update the client, project address, and
+              project name used in the preview. Manually entered fields,
+              pricing, and scope items will be kept.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmProjectChange}>
+              Change Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

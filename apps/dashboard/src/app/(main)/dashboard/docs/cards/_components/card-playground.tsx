@@ -62,7 +62,6 @@ function ContactCard({ client }: { client: Client }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         <div className="grid grid-cols-1 gap-x-6 gap-y-6.5 text-sm sm:grid-cols-2">
-          {/* Left column: company, tax, and address details */}
           <div className="flex flex-col gap-6.5">
             <DataField
               label="Primary Address"

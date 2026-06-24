@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 
+type DataFieldVariant = "default" | "icon";
+
 interface DataFieldProps {
   /** The field caption (e.g. "Primary Address"). */
   label: React.ReactNode;
@@ -7,6 +9,7 @@ interface DataFieldProps {
   children?: React.ReactNode;
   /** Placeholder shown when there's no value (e.g. "Not provided", "Not set"). */
   empty?: string;
+  variant?: DataFieldVariant;
   className?: string;
   labelClassName?: string;
 }
@@ -29,14 +32,22 @@ export function DataField({
   label,
   children,
   empty = "—",
+  variant = "default",
   className,
   labelClassName,
 }: DataFieldProps) {
   return (
-    <dl className={cn("flex flex-col gap-2 min-h-[40px]", className)}>
+    <dl
+      data-variant={variant}
+      className={cn(
+        "flex min-h-[40px] flex-col gap-2 data-[variant=icon]:min-h-0 data-[variant=icon]:flex-row data-[variant=icon]:items-center data-[variant=icon]:gap-3 data-[variant=icon]:text-[12px]",
+        className,
+      )}
+    >
       <dt
+        data-variant={variant}
         className={cn(
-          "flex items-center gap-2 text-muted-foreground text-xs uppercase leading-none tracking-wider",
+          "flex items-center gap-2 text-muted-foreground text-xs uppercase leading-none tracking-wider data-[variant=icon]:gap-0 data-[variant=icon]:leading-normal data-[variant=icon]:text-muted-foreground/80 data-[variant=icon]:normal-case data-[variant=icon]:tracking-normal [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
           labelClassName,
         )}
       >
@@ -44,7 +55,13 @@ export function DataField({
       </dt>
       <dd>
         {isEmpty(children) ? (
-          <span className="text-muted-foreground text-xs font-light italic">
+          <span
+            className={cn(
+              "text-muted-foreground text-xs font-light italic",
+              variant === "icon" &&
+                "text-muted-foreground text-xs font-light italic",
+            )}
+          >
             {empty}
           </span>
         ) : (

@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { Client } from "@/lib/types";
 import { formatPhone, formatTaxId, normalizePhone } from "@/lib/utils";
+import { DataField } from "@/components/ui/data-field";
 
 interface ClientContactCardProps {
   client: Client;
@@ -38,12 +38,42 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
       </CardHeader>
       <CardContent className="flex flex-col gap-5 md:h-62">
         <div className="grid grid-cols-1 gap-x-6 gap-y-6.5 text-sm sm:grid-cols-2">
-          {/* Left column: company, tax, and address details */}
+          <div className="flex flex-col gap-8">
+            <DataField label="Contact">
+              {client.firstName} {client.lastName}
+            </DataField>
+            <DataField label="Email Address" empty="Not provided">
+              {client.email && (
+                <a
+                  href={`mailto:${client.email}`}
+                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
+                  <p className="truncate group-hover:underline">
+                    {client.email}
+                  </p>
+                </a>
+              )}
+            </DataField>
+            <DataField label="Phone Number" empty="Not provided">
+              {client.phone && (
+                <a
+                  href={`tel:${normalizePhone(client.phone)}`}
+                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
+                  <span className="group-hover:underline">
+                    {formatPhone(client.phone)}
+                  </span>
+                </a>
+              )}
+            </DataField>
+          </div>
           <div className="flex flex-col gap-6.5">
-            {hasAddress && (
-              <div className="flex flex-col gap-2">
-                <Label>Primary Address</Label>
-
+            <DataField
+              label="Primary Address"
+              empty="Not provided"
+              className="h-21"
+            >
+              {hasAddress && (
                 <div className="flex flex-col">
                   {client.street && <span>{client.street}</span>}
                   {hasCityStateZip && (
@@ -80,11 +110,10 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                     );
                   })()}
                 </div>
-              </div>
-            )}
+              )}
+            </DataField>
 
-            <div className="flex flex-col gap-2">
-              <Label>Tax ID</Label>
+            <DataField label="Tax ID" empty="Not provided">
               {client.taxId ? (
                 <p>{formatTaxId(client.taxId)}</p>
               ) : !client.taxable ? (
@@ -103,53 +132,11 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              ) : (
-                <p className="text-muted-foreground text-sm">—</p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Tax Status</Label>
+              ) : null}
+            </DataField>
+            <DataField label="Tax Status">
               {client.taxable ? <p>Taxable</p> : <p>Tax Exempt</p>}
-            </div>
-          </div>
-
-          {/* Right column: direct contact details */}
-          <div className="flex flex-col gap-8">
-            <div className="flex flex-col gap-2">
-              <Label>Contact</Label>
-              <p>
-                {client.firstName} {client.lastName}
-              </p>
-            </div>
-
-            {client.email && (
-              <div className="flex flex-col gap-2">
-                <Label>Email Address</Label>
-                <a
-                  href={`mailto:${client.email}`}
-                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
-                >
-                  <p className="truncate group-hover:underline">
-                    {client.email}
-                  </p>
-                </a>
-              </div>
-            )}
-
-            {client.phone && (
-              <div className="flex flex-col gap-2">
-                <Label>Phone Number</Label>
-                <a
-                  href={`tel:${normalizePhone(client.phone)}`}
-                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
-                >
-                  <span className="group-hover:underline">
-                    {formatPhone(client.phone)}
-                  </span>
-                </a>
-              </div>
-            )}
+            </DataField>
           </div>
         </div>
       </CardContent>

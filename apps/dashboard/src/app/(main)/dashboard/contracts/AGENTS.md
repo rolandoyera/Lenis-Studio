@@ -23,7 +23,8 @@ Routes: `contracts/page.tsx` is the list (reads real `getContracts`, rows link t
 to edit it. `ContractBuilder` takes an optional `contract` prop — when present it seeds `values`,
 `scopeItems`, `selectedProjectId`, `contractId`, and `status` from it (the `key` forces a remount so
 those `useState` initializers re-run per contract). Opening a non-draft contract shows it locked
-(saves disabled); there's still no dedicated read-only viewer that renders from `lockedSnapshot`.
+(saves and project changes disabled); there's still no dedicated read-only viewer that renders from
+`lockedSnapshot`.
 Active-page inputs under "Fields to Populate" show `FIELD_DEFS.explainer` below each input; pinned
 global fields do not.
 
@@ -51,6 +52,10 @@ Keep it that way for now.
 - **Project + client** are read from the CRM: pick a project (`getProjects`), its `clientId`
   fetches the `Client` (`getClient`). `PROJECT_ADDRESS` and `CLIENT_*` are `auto`/project-derived —
   there is **no inline client creation** here; clients are added in the CRM.
+- Draft contracts may change project. Saved drafts require a confirmation dialog first because the
+  preview's client, project address, and project name will update while manual values and scope
+  items stay put. Non-draft contracts must keep the project selector read-only, and project changes
+  must never touch `lockedSnapshot`.
 - **Firm identity + dark logo** come from `getOrganization(orgId).companyProfile` / `.branding`.
 - `resolved` (a `useMemo`) composes every token's display string from values + project + client +
   company. Currency tokens (`CURRENCY_TOKENS`) format via `formatCurrency`; the `CurrencyField`

@@ -89,7 +89,6 @@ export function getLeadsColumns(
       cell: ({ row }) => {
         return (
           <Badge variant={LEAD_STAGE_VARIANT[row.original.stage]}>
-            <span className="size-1.5 rounded-full bg-current" />
             {LEAD_STAGE_LABELS[row.original.stage]}
           </Badge>
         );

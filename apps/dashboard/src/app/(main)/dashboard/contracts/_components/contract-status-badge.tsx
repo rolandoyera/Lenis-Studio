@@ -2,18 +2,13 @@ import { Badge } from "@/components/ui/badge";
 
 import type { ContractStatus } from "@/lib/types";
 
-type BadgeVariant =
-  | "secondary"
-  | "info"
-  | "warning"
-  | "success"
-  | "destructive";
+type BadgeVariant = "ghost" | "info" | "warning" | "success" | "destructive";
 
 const STATUS_CONFIG: Record<
   ContractStatus,
   { label: string; variant: BadgeVariant }
 > = {
-  draft: { label: "Draft", variant: "secondary" },
+  draft: { label: "Draft", variant: "ghost" },
   sent: { label: "Sent", variant: "info" },
   viewed: { label: "Viewed", variant: "warning" },
   signed: { label: "Signed", variant: "success" },

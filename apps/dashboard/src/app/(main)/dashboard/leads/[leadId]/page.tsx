@@ -14,6 +14,7 @@ import {
   Pencil,
   Phone,
   UserCheck,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -218,7 +219,6 @@ export default function LeadDetailPage({ params }: PageProps) {
         <div className="flex items-center gap-3">
           <H1>{getLeadName(lead)}</H1>
           <Badge variant={LEAD_STAGE_VARIANT[lead.stage]}>
-            <span className="size-1.5 rounded-full bg-current" />
             {LEAD_STAGE_LABELS[lead.stage]}
           </Badge>
         </div>
@@ -262,10 +262,13 @@ export default function LeadDetailPage({ params }: PageProps) {
       )}
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        <div className="flex flex-col gap-6 lg:col-span-7">
-          <Card>
+        <div className="flex flex-col gap-6 lg:col-span-4">
+          <Card variant="panel">
             <CardHeader>
-              <CardTitle>Contact</CardTitle>
+              <CardTitle>
+                <UserPlus className="icons" />
+                Lead Details
+              </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3 text-sm">
               <DetailRow

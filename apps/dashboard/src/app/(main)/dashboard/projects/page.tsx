@@ -17,7 +17,7 @@ import {
   User,
 } from "lucide-react";
 import { toast } from "sonner";
-
+import { DataField } from "@/components/ui/data-field";
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,7 @@ import {
 } from "@/lib/db";
 import type { Client, Project } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+import { Avatar } from "@/components/ui/avatar";
 
 import {
   EMPTY_PROJECT_FORM,
@@ -169,7 +170,7 @@ export default function ProjectsPage() {
           ) : (
             <Button onClick={handleOpenAdd}>
               <Plus className="size-4" />
-              New Project
+              Project
             </Button>
           )}
         </div>
@@ -205,8 +206,7 @@ export default function ProjectsPage() {
             {!searchQuery && clients.length > 0 && (
               <Button
                 onClick={handleOpenAdd}
-                className="mt-4 flex items-center gap-2"
-              >
+                className="mt-4 flex items-center gap-2">
                 <Plus className="size-4" />
                 Start Project
               </Button>
@@ -220,13 +220,27 @@ export default function ProjectsPage() {
               );
 
               return (
-                <Card variant="panel" key={project.projectId} className="group">
+                <Card
+                  variant="panel"
+                  key={project.projectId}
+                  className="group transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
                   <CardHeader className="justify-between">
-                    <CardTitle className="transition-colors hover:text-primary">
+                    <CardTitle className="transition-colors group-has-[.detail-link:hover]:text-primary">
+                      <Link
+                        href={`/dashboard/projects/${project.clientId}`}
+                        className="detail-link shrink-0 cursor-pointer">
+                        <Avatar className="size-8">
+                          {parentClient?.company ? (
+                            <Building2 className="size-4" />
+                          ) : (
+                            <User className="size-4" />
+                          )}
+                        </Avatar>
+                      </Link>
                       <Link
                         href={`/dashboard/projects/${project.projectId}`}
                         prefetch={false}
-                      >
+                        className="detail-link cursor-pointer">
                         {project.name}
                       </Link>
                     </CardTitle>
@@ -237,42 +251,33 @@ export default function ProjectsPage() {
 
                   <CardContent className="py-2">
                     <div className="flex flex-col gap-2 rounded-lg border border-muted/50 bg-muted p-3">
-                      {parentClient?.company && (
-                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                          <Building2 className="size-3.5 text-muted-foreground/60" />
-                          <span className="font-medium text-foreground/80">
-                            {parentClient.company}
-                          </span>
-                        </div>
-                      )}
-                      {!parentClient?.company && (
-                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                          <User className="size-3.5 text-muted-foreground/60" />
-                          <span className="font-medium text-foreground/80">
-                            {parentClient
-                              ? `${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim()
-                              : "Not set"}
-                          </span>
-                        </div>
-                      )}
-                      {project.budget !== undefined && project.budget > 0 && (
-                        <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                          <DollarSign className="size-3.5 text-muted-foreground/60" />
-                          <span className="font-medium text-foreground/80">
-                            {formatCurrency(project.budget, {
+                      <DataField
+                        variant="icon"
+                        label={parentClient?.company ? <Building2 /> : <User />}
+                        empty="Not set">
+                        {parentClient
+                          ? parentClient.company ||
+                            `${parentClient.firstName ?? ""} ${parentClient.lastName ?? ""}`.trim()
+                          : null}
+                      </DataField>
+                      <DataField
+                        variant="icon"
+                        label={<DollarSign />}
+                        empty="Not set">
+                        {project.budget
+                          ? formatCurrency(project.budget, {
                               noDecimals: true,
-                            })}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                        <MapPin className="size-3.5 text-muted-foreground/60" />
-                        <span className="font-medium text-foreground/80">
-                          {[project.city, project.state, project.zip]
-                            .filter(Boolean)
-                            .join(", ") || "Not set"}
-                        </span>
-                      </div>
+                            })
+                          : null}
+                      </DataField>
+                      <DataField
+                        variant="icon"
+                        label={<MapPin />}
+                        empty="Not set">
+                        {[project.city, project.state, project.zip]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </DataField>
                     </div>
                   </CardContent>
                   <CardFooter>
@@ -280,13 +285,11 @@ export default function ProjectsPage() {
                       variant="link"
                       size="sm"
                       asChild
-                      className="ml-auto -mr-2"
-                    >
+                      className="ml-auto -mr-2 detail-link">
                       <Link
                         href={`/dashboard/projects/${project.projectId}`}
                         prefetch={false}
-                        className="group/btn flex items-center gap-0.5"
-                      >
+                        className="group/btn flex items-center gap-0.5">
                         View Project
                         <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
                       </Link>
