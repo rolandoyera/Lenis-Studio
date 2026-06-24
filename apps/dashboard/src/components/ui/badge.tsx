@@ -13,14 +13,18 @@ const badgeVariants = cva(
         secondary:
           "border-primary/20 bg-primary/10 text-primary [a]:hover:bg-primary/20",
         destructive:
-          "text-destructive dark:text-red-400 font-mono uppercase tracking-wider",
+          "text-destructive dark:text-red-400 font-mono uppercase tracking-wider before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']",
         outline:
           "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
         ghost:
-          "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
+          "text-muted-foreground font-mono uppercase tracking-wider before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']",
         link: "text-primary underline-offset-4 hover:underline",
         success:
+          "text-green-600 dark:text-green-400/60 font-mono uppercase tracking-wider before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']",
+        trendingUp:
           "text-green-600 dark:text-green-400/60 font-mono uppercase tracking-wider",
+        trendingDown:
+          "text-destructive dark:text-red-400 font-mono uppercase tracking-wider",
         warning:
           "text-yellow-700 dark:text-yellow-300/60 font-mono uppercase tracking-wider",
         info: "text-cyan-600 dark:text-cyan-400 font-mono uppercase tracking-wider before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']",

@@ -100,7 +100,7 @@ export function LibraryItemCard({
             )}
           </div>
           <div className="text-right mt-2 -mb-4">
-            <Badge variant={profitable ? "success" : "warning"}>
+            <Badge variant={profitable ? "trendingUp" : "trendingDown"}>
               {profitable ? (
                 <TrendingUp className="size-3" />
               ) : (

@@ -57,6 +57,12 @@ export function BadgeGallery() {
         <Swatch label='variant="success"'>
           <Badge variant="success">Success</Badge>
         </Swatch>
+        <Swatch label='variant="trendingUp"'>
+          <Badge variant="trendingUp">Trending Up</Badge>
+        </Swatch>
+        <Swatch label='variant="trendingDown"'>
+          <Badge variant="trendingDown">Trending Down</Badge>
+        </Swatch>
         <Swatch label='variant="warning"'>
           <Badge variant="warning">Warning</Badge>
         </Swatch>

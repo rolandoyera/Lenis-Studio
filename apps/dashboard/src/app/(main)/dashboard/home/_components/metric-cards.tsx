@@ -148,7 +148,7 @@ export function MetricCards() {
             <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
               1,234
             </div>
-            <Badge variant="destructive">
+            <Badge variant="trendingDown">
               <TrendingDown className="size-3" />
               -20%
             </Badge>
@@ -238,8 +238,8 @@ export function MetricCards() {
                   <Badge
                     variant={
                       igFollowers.comparison.isPositive
-                        ? "default"
-                        : "destructive"
+                        ? "trendingUp"
+                        : "trendingDown"
                     }
                   >
                     {igFollowers.comparison.isPositive ? (

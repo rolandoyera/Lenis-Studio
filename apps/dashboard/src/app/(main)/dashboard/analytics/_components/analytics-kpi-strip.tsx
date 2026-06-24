@@ -67,7 +67,9 @@ export async function AnalyticsKpiStrip({
                     </span>
                   ) : (
                     <Badge
-                      variant={metric.isPositive ? "success" : "destructive"}
+                      variant={
+                        metric.isPositive ? "trendingUp" : "trendingDown"
+                      }
                     >
                       {metric.isPositive ? <TrendingUp /> : <TrendingDown />}
                       {metric.change}

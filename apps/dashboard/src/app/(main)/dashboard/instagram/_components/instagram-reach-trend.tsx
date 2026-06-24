@@ -46,7 +46,7 @@ export async function InstagramReachTrend({ range }: { range?: string }) {
               <span className="text-muted-foreground text-xs">No change</span>
             ) : (
               <Badge
-                variant={comparison.isPositive ? "success" : "destructive"}
+                variant={comparison.isPositive ? "trendingUp" : "trendingDown"}
               >
                 {comparison.isPositive ? <TrendingUp /> : <TrendingDown />}
                 {comparison.change}
