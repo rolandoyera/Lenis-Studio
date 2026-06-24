@@ -57,7 +57,8 @@ export function ProjectProposalsCard({
           size="sm"
           onClick={onAddProposal}
           disabled={addingProposal}
-          className="flex items-center gap-1.5">
+          className="flex items-center gap-1.5"
+        >
           {addingProposal ? (
             <Loader2 className="size-3 animate-spin" />
           ) : (
@@ -77,7 +78,8 @@ export function ProjectProposalsCard({
               variant="link"
               size="sm"
               onClick={onAddProposal}
-              className="mt-1 h-auto p-0 font-medium">
+              className="mt-1 h-auto p-0 font-medium"
+            >
               Create First Proposal
             </Button>
           </div>
@@ -95,13 +97,15 @@ export function ProjectProposalsCard({
               {proposals.map((proposal) => (
                 <TableRow
                   key={proposal.proposalId}
-                  className="group hover:bg-muted/30">
+                  className="group hover:bg-muted/30"
+                >
                   <TableCell className="py-4 font-medium font-serif text-foreground">
                     <div className="flex flex-col">
                       <Link
                         href={`/dashboard/proposals/${proposal.proposalId}`}
                         prefetch={false}
-                        className="hover:text-primary hover:underline">
+                        className="hover:text-primary hover:underline"
+                      >
                         {proposal.title || "Untitled Proposal"}
                       </Link>
                       <span className="mt-0.5 text-[11px] text-muted-foreground/70">
@@ -128,7 +132,8 @@ export function ProjectProposalsCard({
                     <Link
                       href={`/dashboard/proposals/${proposal.proposalId}`}
                       prefetch={false}
-                      className="flex items-center gap-0.5 font-semibold text-muted-foreground text-xs opacity-0 transition-opacity hover:text-primary group-hover:opacity-100">
+                      className="flex items-center gap-0.5 font-semibold text-muted-foreground text-xs opacity-0 transition-opacity hover:text-primary group-hover:opacity-100"
+                    >
                       Open
                       <ArrowRight className="size-3" />
                     </Link>

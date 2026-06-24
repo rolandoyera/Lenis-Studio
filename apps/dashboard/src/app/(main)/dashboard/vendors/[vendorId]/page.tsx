@@ -260,7 +260,8 @@ export default function VendorDetailPage({ params }: PageProps) {
             <DataField
               label="Address"
               empty="Not provided"
-              className="min-h-21">
+              className="min-h-21"
+            >
               {addressLines.length > 0 ? (
                 <div className="flex flex-col">
                   {addressLines.map((line, i) => (
@@ -272,7 +273,8 @@ export default function VendorDetailPage({ params }: PageProps) {
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                    className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                  >
                     google maps
                     <ExternalLink className="size-3" />
                   </a>
@@ -282,7 +284,8 @@ export default function VendorDetailPage({ params }: PageProps) {
             <DataField
               label="Sourcing Notes"
               empty="Not provided"
-              className="h-21">
+              className="h-21"
+            >
               {vendor.notes}
             </DataField>
           </CardContent>
@@ -341,14 +344,16 @@ export default function VendorDetailPage({ params }: PageProps) {
                       {items.map((item) => (
                         <div
                           key={item.itemId}
-                          className="flex items-center justify-between p-2.5 text-xs">
+                          className="flex items-center justify-between p-2.5 text-xs"
+                        >
                           <span className="max-w-[240px] truncate font-medium">
                             {item.name}
                           </span>
                           <Link
                             href={`/dashboard/library/${item.itemId}`}
                             onClick={() => setIsDeleteOpen(false)}
-                            className="font-semibold text-primary hover:underline">
+                            className="font-semibold text-primary hover:underline"
+                          >
                             View Item
                           </Link>
                         </div>
@@ -376,7 +381,8 @@ export default function VendorDetailPage({ params }: PageProps) {
                   variant="destructive"
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="gap-2">
+                  className="gap-2"
+                >
                   {deleting && <Loader2 className="size-4 animate-spin" />}
                   Delete Vendor
                 </AlertDialogAction>

@@ -38,7 +38,8 @@ export function DataField({
         className={cn(
           "flex items-center gap-2 text-muted-foreground text-xs uppercase leading-none tracking-wider",
           labelClassName,
-        )}>
+        )}
+      >
         {label}
       </dt>
       <dd>

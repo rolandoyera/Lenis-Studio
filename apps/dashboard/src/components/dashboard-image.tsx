@@ -40,8 +40,8 @@ export function DashboardImage({
   ...props
 }: DashboardImageProps) {
   if (!canUseNextImage(src)) {
-    // biome-ignore lint/performance/noImgElement: Unknown scraped/vendor hosts cannot use next/image without broad allow-listing.
     return (
+      // biome-ignore lint/performance/noImgElement: Unknown scraped/vendor hosts cannot use next/image without broad allow-listing.
       <img
         src={src}
         alt={alt}

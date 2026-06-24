@@ -370,6 +370,120 @@ export interface Proposal {
   createdAt: number;
 }
 
+// --- CONTRACTS ---
+// Flat top-level `contracts` collection (queried by organizationId). Drafts stay
+// lightweight: only `values` + `scopeItems` are persisted as editable inputs —
+// `resolved`/`pages`/`parties`/`projectSnapshot` are regenerated from the
+// code-based template (contract-template.ts) + project/client/org data. When a
+// contract is Sent, the fully-rendered document is frozen into `lockedSnapshot`,
+// which is what the future client portal reads (never the live draft fields).
+
+export type ContractStatus = "draft" | "sent" | "viewed" | "signed" | "void";
+
+/** The code-based template a contract was generated from. */
+export type ContractTemplateKey = "interior-design-agreement";
+
+export interface ContractScopeItem {
+  id: string;
+  value: string;
+}
+
+/** A rendered template page, frozen into a snapshot. */
+export interface ContractPage {
+  page: number;
+  heading: string;
+  body: string;
+}
+
+/** The two parties' denormalized contact details at snapshot time. */
+export interface ContractParties {
+  clientName: string;
+  clientEmail: string;
+  clientAddress: string;
+  companyLegalName: string;
+  companyEmail: string;
+  companyAddress: string;
+}
+
+export interface ContractProjectSnapshot {
+  name: string;
+  address: string;
+}
+
+/** The fully-rendered, self-contained contract document (frozen at send time). */
+export interface ContractSnapshot {
+  templateKey: ContractTemplateKey;
+  templateVersion: number;
+  values: Record<string, string>;
+  scopeItems: ContractScopeItem[];
+  resolved: Record<string, string>;
+  pages: ContractPage[];
+  parties: ContractParties;
+  projectSnapshot: ContractProjectSnapshot;
+}
+
+/** A `ContractSnapshot` stamped with who/when it was locked. */
+export type LockedContractSnapshot = ContractSnapshot & {
+  lockedAt: number;
+  lockedBy: string;
+};
+
+/** The editable content fields supplied when creating a draft contract. */
+export type ContractDraftInput = Pick<
+  Contract,
+  | "title"
+  | "projectId"
+  | "clientId"
+  | "clientName"
+  | "projectName"
+  | "templateKey"
+  | "templateVersion"
+  | "values"
+  | "scopeItems"
+>;
+
+export interface Contract {
+  contractId: string;
+  organizationId: string;
+
+  title: string;
+  status: ContractStatus;
+
+  projectId: string;
+  clientId: string;
+
+  // Denormalized for list rendering without extra lookups.
+  clientName: string;
+  projectName: string;
+
+  templateKey: ContractTemplateKey;
+  templateVersion: number;
+
+  // Editable draft inputs — the rest of the document is regenerated from these.
+  values: Record<string, string>;
+  scopeItems: ContractScopeItem[];
+
+  // Frozen document; null until Sent, then read-only.
+  lockedSnapshot: LockedContractSnapshot | null;
+
+  // Audit — all user references store UIDs only; timestamps are epoch millis.
+  createdBy: string;
+  createdAt: number;
+  updatedBy: string;
+  updatedAt: number;
+
+  sentBy?: string;
+  sentAt?: number;
+
+  viewedAt?: number;
+
+  signedBy?: string;
+  signedAt?: number;
+
+  voidedBy?: string;
+  voidedAt?: number;
+}
+
 export interface DiagnosticParsedData {
   name?: string;
   sku?: string;

@@ -1,17 +1,23 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { type ReactNode, useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import {
   CircleCheck,
   FileText,
+  Loader2,
   Plus,
   Send,
   TriangleAlert,
 } from "lucide-react";
+import { toast } from "sonner";
 
-import { PageTitle } from "@/components/page-title-updater";
+import { useAuth } from "@/components/auth-context";
 import PageHeader from "@/components/page-header";
+import { PageTitle } from "@/components/page-title-updater";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -22,10 +28,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getContracts } from "@/lib/db";
+import type { Contract } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 import { ContractStatusBadge } from "./_components/contract-status-badge";
-import { MOCK_CONTRACTS } from "./_components/contracts-mock";
 
 function MetricCard({
   label,
@@ -50,7 +57,8 @@ function MetricCard({
           </span>
         </div>
         <div
-          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${accent}`}>
+          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${accent}`}
+        >
           {icon}
         </div>
       </CardContent>
@@ -58,12 +66,52 @@ function MetricCard({
   );
 }
 
+/** "Jun 18, 2026" from an epoch-ms timestamp. */
+function formatUpdated(ms: number): string {
+  return new Date(ms).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+/** The contract's headline figure is the initial retainer (a raw number string). */
+function retainerLabel(contract: Contract): string {
+  const raw = contract.values.RETAINER_FEE;
+  const amount = raw ? Number(raw) : Number.NaN;
+  return Number.isFinite(amount)
+    ? formatCurrency(amount, { noDecimals: true })
+    : "—";
+}
+
 export default function ContractsPage() {
-  const drafts = MOCK_CONTRACTS.filter((c) => c.status === "draft").length;
-  const sent = MOCK_CONTRACTS.filter((c) => c.status === "sent").length;
-  const signed = MOCK_CONTRACTS.filter((c) => c.status === "signed").length;
+  const router = useRouter();
+  const { organizationId, loading: authLoading } = useAuth();
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (authLoading || !organizationId) return;
+    const orgId = organizationId; // stable string dep; profile identity churns
+
+    async function loadContracts() {
+      try {
+        setContracts(await getContracts(orgId));
+      } catch (error) {
+        console.error("Failed to load contracts:", error);
+        toast.error("Failed to fetch contracts from database.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    void loadContracts();
+  }, [organizationId, authLoading]);
+
+  const drafts = contracts.filter((c) => c.status === "draft").length;
+  const sent = contracts.filter((c) => c.status === "sent").length;
+  const signed = contracts.filter((c) => c.status === "signed").length;
   // Anything sent or viewed but not yet signed is awaiting the client.
-  const needsAttention = MOCK_CONTRACTS.filter(
+  const needsAttention = contracts.filter(
     (c) => c.status === "sent" || c.status === "viewed",
   ).length;
 
@@ -120,30 +168,56 @@ export default function ContractsPage() {
                 <TableHead>Contract</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Project</TableHead>
-                <TableHead className="text-right">Value</TableHead>
+                <TableHead className="text-right">Retainer</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Updated</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {MOCK_CONTRACTS.map((contract) => (
-                <TableRow key={contract.id}>
-                  <TableCell className="font-medium text-foreground">
-                    {contract.title}
-                  </TableCell>
-                  <TableCell>{contract.client}</TableCell>
-                  <TableCell>{contract.project}</TableCell>
-                  <TableCell className="text-right font-mono text-foreground/80">
-                    {formatCurrency(contract.value, { noDecimals: true })}
-                  </TableCell>
-                  <TableCell>
-                    <ContractStatusBadge status={contract.status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {contract.updatedAt}
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="h-32 text-center text-muted-foreground"
+                  >
+                    <Loader2 className="mx-auto size-5 animate-spin" />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : contracts.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="h-32 text-center text-muted-foreground text-sm"
+                  >
+                    No contracts yet. Create your first one to get started.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                contracts.map((contract) => (
+                  <TableRow
+                    key={contract.contractId}
+                    onClick={() =>
+                      router.push(`/dashboard/contracts/${contract.contractId}`)
+                    }
+                    className="cursor-pointer"
+                  >
+                    <TableCell className="font-medium text-foreground">
+                      {contract.title}
+                    </TableCell>
+                    <TableCell>{contract.clientName}</TableCell>
+                    <TableCell>{contract.projectName}</TableCell>
+                    <TableCell className="text-right font-mono text-foreground/80">
+                      {retainerLabel(contract)}
+                    </TableCell>
+                    <TableCell>
+                      <ContractStatusBadge status={contract.status} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatUpdated(contract.updatedAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </Card>

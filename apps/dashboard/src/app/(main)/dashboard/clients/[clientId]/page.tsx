@@ -18,12 +18,7 @@ import {
   softDeleteClientNote,
   updateClient,
 } from "@/lib/db";
-import type {
-  ActivityActor,
-  Client,
-  ClientNote,
-  Project,
-} from "@/lib/types";
+import type { ActivityActor, Client, ClientNote, Project } from "@/lib/types";
 
 import type { ProjectFormData } from "../../projects/_components/project-constants";
 import { ProjectFormDialog } from "../../projects/_components/project-form-dialog";

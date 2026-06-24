@@ -1,8 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 
-import type { ContractStatus } from "./contracts-mock";
+import type { ContractStatus } from "@/lib/types";
 
-type BadgeVariant = "secondary" | "info" | "warning" | "success" | "destructive";
+type BadgeVariant =
+  | "secondary"
+  | "info"
+  | "warning"
+  | "success"
+  | "destructive";
 
 const STATUS_CONFIG: Record<
   ContractStatus,

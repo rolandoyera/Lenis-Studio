@@ -15,7 +15,8 @@ export function H1({ children, className }: H1Props) {
       className={cn(
         "scroll-m-20 text-3xl font-medium tracking-tight text-balance",
         className,
-      )}>
+      )}
+    >
       {children}
     </h1>
   );
@@ -27,7 +28,8 @@ export function H2({ children, className }: H1Props) {
       className={cn(
         "scroll-m-20 text-2xl font-medium tracking-tight",
         className,
-      )}>
+      )}
+    >
       {children}
     </h2>
   );
@@ -39,7 +41,8 @@ export function H3({ children, className }: H1Props) {
       className={cn(
         "font-heading text-lg leading-snug font-medium text-card-foreground",
         className,
-      )}>
+      )}
+    >
       {children}
     </h3>
   );

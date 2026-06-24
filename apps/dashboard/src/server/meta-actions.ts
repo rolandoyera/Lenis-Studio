@@ -149,9 +149,7 @@ export async function getMetaPendingPages(): Promise<MetaPendingPage[]> {
 }
 
 /** Connects the chosen Page from the picker and clears the pending selection. */
-export async function selectMetaPage(
-  pageId: string,
-): Promise<{
+export async function selectMetaPage(pageId: string): Promise<{
   success: boolean;
   error?: string;
   connection?: MetaIntegrationConfig;

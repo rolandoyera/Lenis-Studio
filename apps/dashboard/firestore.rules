@@ -128,6 +128,29 @@ service cloud.firestore {
       allow update: if updatesInOwnOrg();
     }
 
+    // Contracts carry their own organizationId (org-scoped reads/writes). A
+    // contract is born a draft with no snapshot; "sending" freezes the rendered
+    // document into lockedSnapshot. Two extra invariants beyond the org check:
+    //   - create must start as a draft with lockedSnapshot null (no pre-locked
+    //     contracts), and
+    //   - once a contract leaves draft (sent/viewed/signed/void) it is locked:
+    //     only lifecycle/audit fields may change, so the frozen lockedSnapshot
+    //     (and the editable inputs it was built from) can never be rewritten.
+    // The draft→sent transition itself is allowed because the pre-image is still
+    // a draft at that moment.
+    match /contracts/{id} {
+      allow read, delete: if readsOwnOrg();
+      allow create: if createsInOwnOrg()
+        && request.resource.data.status == 'draft'
+        && request.resource.data.lockedSnapshot == null;
+      allow update: if updatesInOwnOrg() && (
+        resource.data.status == 'draft'
+        || request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'viewedAt', 'signedBy', 'signedAt',
+                       'voidedBy', 'voidedAt', 'updatedBy', 'updatedAt'])
+      );
+    }
+
     match /trades/{id} {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg();

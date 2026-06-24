@@ -7,6 +7,7 @@ import {
   getDoc,
   getDocs,
   query,
+  runTransaction,
   setDoc,
   updateDoc,
   where,
@@ -27,6 +28,9 @@ import type {
   ActivityActor,
   Client,
   ClientNote,
+  Contract,
+  ContractDraftInput,
+  ContractSnapshot,
   DiagnosticRun,
   Lead,
   LibraryItem,
@@ -1544,5 +1548,173 @@ export async function deleteTrade(tradeId: string): Promise<void> {
       await deleteDoc(doc(db, "trades", tradeId));
     },
     () => tradeId,
+  );
+}
+
+// --- CONTRACT HELPER FUNCTIONS ---
+// Flat `contracts` collection, org-scoped. Drafts persist only editable inputs;
+// `sendContract` freezes the rendered document into `lockedSnapshot` (the future
+// client portal reads that, never the live draft fields). Numeric epoch-ms
+// timestamps throughout, matching the rest of the app (so `cleanUndefined`'s
+// JSON round-trip stays safe — no Firestore sentinels are written).
+
+/**
+ * Create a new draft contract with a single write. The id is taken from a fresh
+ * doc ref and written back onto the document. Returns the new contractId.
+ */
+export async function addContract(
+  organizationId: string,
+  userId: string,
+  data: ContractDraftInput,
+): Promise<string> {
+  return trace(
+    "contracts",
+    "WRITE",
+    "addContract",
+    async () => {
+      const docRef = doc(collection(db, "contracts"));
+      const now = Date.now();
+      const contract: Contract = {
+        ...data,
+        contractId: docRef.id,
+        organizationId,
+        status: "draft",
+        lockedSnapshot: null,
+        createdBy: userId,
+        createdAt: now,
+        updatedBy: userId,
+        updatedAt: now,
+      };
+      await setDoc(docRef, cleanUndefined(contract));
+      return docRef.id;
+    },
+    (id) => id,
+  );
+}
+
+/**
+ * Update a draft contract's editable fields. Preserves organizationId, createdBy,
+ * createdAt, and lockedSnapshot (never passed here). Callers must not invoke this
+ * for sent/signed/void contracts — those are locked.
+ */
+export async function updateContract(
+  contractId: string,
+  userId: string,
+  data: Partial<ContractDraftInput>,
+): Promise<void> {
+  return trace(
+    "contracts",
+    "WRITE",
+    "updateContract",
+    async () => {
+      const docRef = doc(db, "contracts", contractId);
+      await updateDoc(
+        docRef,
+        cleanUndefined({ ...data, updatedBy: userId, updatedAt: Date.now() }),
+      );
+    },
+    () => contractId,
+  );
+}
+
+export async function getContract(
+  contractId: string,
+): Promise<Contract | null> {
+  try {
+    return await trace(
+      "contracts",
+      "READ",
+      "getContract",
+      async () => {
+        const docRef = doc(db, "contracts", contractId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          return docSnap.data() as Contract;
+        }
+        return null;
+      },
+      (c) => (c ? contractId : "not found"),
+    );
+  } catch (error) {
+    console.error("Error fetching contract:", error);
+    return null;
+  }
+}
+
+export async function getContracts(
+  organizationId: string,
+): Promise<Contract[]> {
+  try {
+    return await trace(
+      "contracts",
+      "READ",
+      "getContracts",
+      async () => {
+        const collRef = collection(db, "contracts");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const filteredSnapshot = await getDocs(q);
+
+        const contracts: Contract[] = [];
+        filteredSnapshot.forEach((d) => {
+          contracts.push(d.data() as Contract);
+        });
+
+        // Sort in memory (newest first) to avoid a composite index, matching
+        // the clients/projects pattern.
+        return contracts.sort((a, b) => b.updatedAt - a.updatedAt);
+      },
+      (c) => `${c.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching contracts:", error);
+    return [];
+  }
+}
+
+/**
+ * Lock and send a draft. Runs in a transaction so the draft→sent transition and
+ * snapshot freeze are atomic: only a `draft` with no existing `lockedSnapshot`
+ * can be sent, and a locked snapshot is never overwritten.
+ */
+export async function sendContract(
+  contractId: string,
+  userId: string,
+  snapshotPayload: ContractSnapshot,
+): Promise<void> {
+  return trace(
+    "contracts",
+    "WRITE",
+    "sendContract",
+    async () => {
+      const docRef = doc(db, "contracts", contractId);
+      await runTransaction(db, async (tx) => {
+        const docSnap = await tx.get(docRef);
+        if (!docSnap.exists()) throw new Error("Contract not found.");
+        const current = docSnap.data() as Contract;
+        if (current.status !== "draft") {
+          throw new Error("Only draft contracts can be sent.");
+        }
+        if (current.lockedSnapshot) {
+          throw new Error("Contract is already locked.");
+        }
+        const now = Date.now();
+        tx.update(
+          docRef,
+          cleanUndefined({
+            status: "sent",
+            lockedSnapshot: {
+              ...snapshotPayload,
+              lockedAt: now,
+              lockedBy: userId,
+            },
+            sentBy: userId,
+            sentAt: now,
+            updatedBy: userId,
+            updatedAt: now,
+          }),
+        );
+      });
+    },
+    () => contractId,
   );
 }

@@ -50,6 +50,7 @@ function ContactCard({ client }: { client: Client }) {
   const hasAddress = Boolean(
     client.street ?? client.city ?? client.state ?? client.zip,
   );
+  const hasCityLine = Boolean(client.city ?? client.state ?? client.zip);
 
   return (
     <Card variant="panel">
@@ -66,11 +67,12 @@ function ContactCard({ client }: { client: Client }) {
             <DataField
               label="Primary Address"
               empty="Not provided"
-              className="h-21">
+              className="h-21"
+            >
               {hasAddress && (
                 <div className="flex flex-col">
                   {client.street && <span>{client.street}</span>}
-                  {(client.city || client.state || client.zip) && (
+                  {hasCityLine && (
                     <span className="mt-0.5">
                       {[
                         client.city,
@@ -95,7 +97,8 @@ function ContactCard({ client }: { client: Client }) {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                        >
                           google maps
                           <ExternalLink className="size-3" />
                         </a>
@@ -143,7 +146,8 @@ function ContactCard({ client }: { client: Client }) {
               {client.email && (
                 <a
                   href={`mailto:${client.email}`}
-                  className="group flex items-center gap-1.5 transition-colors hover:text-primary">
+                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
                   <p className="truncate group-hover:underline">
                     {client.email}
                   </p>
@@ -155,7 +159,8 @@ function ContactCard({ client }: { client: Client }) {
               {client.phone && (
                 <a
                   href={`tel:${normalizePhone(client.phone)}`}
-                  className="group flex items-center gap-1.5 transition-colors hover:text-primary">
+                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
                   <span className="group-hover:underline">
                     {formatPhone(client.phone)}
                   </span>

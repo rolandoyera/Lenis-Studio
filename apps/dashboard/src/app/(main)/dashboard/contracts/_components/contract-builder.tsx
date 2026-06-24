@@ -4,33 +4,69 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
 import Link from "next/link";
 
-import { ArrowLeft, Plus, Printer, Save, Send, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  DollarSign,
+  Hammer,
+  Loader2,
+  Lock,
+  MoreVertical,
+  Plus,
+  Printer,
+  Save,
+  Send,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+} from "@/components/ui/combobox";
+import {
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  TooltipDropdownMenu,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  addContract,
   formatProjectAddress,
   getClient,
   getOrganization,
   getProjects,
+  sendContract,
+  updateContract,
 } from "@/lib/db";
-import type { Client, Project } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import type { Client, Contract, ContractStatus, Project } from "@/lib/types";
+import { cn, formatCurrency, formatCurrencyInput } from "@/lib/utils";
 
 import { getClientName } from "../../clients/_components/client-name";
+import {
+  buildContractSnapshot,
+  buildDraftContractPayload,
+} from "./build-contract-payload";
 import {
   boldText,
   CURRENCY_TOKENS,
@@ -66,6 +102,15 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** Temporary helper copy shown under active contract inputs. */
+function FieldExplainer({ label }: { label: string }) {
+  return (
+    <p className="text-muted-foreground text-xs leading-5">
+      Explainer paragraph for {label}
+    </p>
+  );
+}
+
 /** Inline render of one line: swap {{TOKEN}} markers and **bold** runs. */
 function renderSegments(text: string, resolved: Record<string, string>) {
   return text.split(SEGMENT_SPLIT_RE).map((part, i) => {
@@ -98,7 +143,7 @@ function renderSegments(text: string, resolved: Record<string, string>) {
       <span
         // biome-ignore lint/suspicious/noArrayIndexKey: static template, stable order
         key={i}
-        className="contract-placeholder rounded bg-yellow-100 px-1.5 py-0.5 font-semibold text-[13px] text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300"
+        className="contract-placeholder rounded bg-yellow-100 px-1.5 py-0.5 font-semibold text-[13px] text-yellow-800"
       >
         {def?.label ?? name}
       </span>
@@ -135,6 +180,46 @@ function DocumentBody({
   );
 }
 
+/**
+ * Whole-dollar currency input: a $ addon plus a focus bridge — thousands-grouped
+ * when idle, raw digits while typing — storing the raw number string.
+ */
+function CurrencyField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [text, setText] = useState("");
+  const numeric = value ? Number(value) : undefined;
+  const formatted = formatCurrencyInput(numeric, { noDecimals: true });
+  return (
+    <InputGroup>
+      <InputGroupAddon align="inline-start">
+        <DollarSign />
+      </InputGroupAddon>
+      <InputGroupInput
+        type="text"
+        inputMode="numeric"
+        placeholder="0"
+        value={focused ? text : formatted}
+        onFocus={() => {
+          setFocused(true);
+          setText(formatted);
+        }}
+        onBlur={() => setFocused(false)}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/[^0-9]/g, "");
+          onChange(raw);
+          setText(raw === "" ? "" : Number(raw).toLocaleString("en-US"));
+        }}
+      />
+    </InputGroup>
+  );
+}
+
 /** The right input control for a page-scoped field. */
 function PageFieldInput({
   def,
@@ -155,14 +240,21 @@ function PageFieldInput({
     );
   }
   if (def.type === "currency") {
+    return <CurrencyField value={value} onChange={onChange} />;
+  }
+  if (def.token === "PROJECT_DURATION_MONTHS") {
     return (
-      <Input
-        type="number"
-        inputMode="numeric"
-        placeholder="0"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      <InputGroup>
+        <InputGroupAddon align="inline-start">
+          <Calendar />
+        </InputGroupAddon>
+        <InputGroupInput
+          inputMode="numeric"
+          placeholder={def.placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </InputGroup>
     );
   }
   return (
@@ -195,12 +287,20 @@ function ScopeListField({
       <Label>{label}</Label>
       <div className="flex flex-col gap-2">
         {items.map((item, i) => (
-          <div key={item.id} className="flex items-center gap-2">
-            <Input
-              placeholder={placeholder ?? `Item ${i + 1}`}
-              value={item.value}
-              onChange={(e) => onChange(item.id, e.target.value)}
-            />
+          <div key={item.id} className="flex items-start gap-2">
+            <div className="flex flex-1 flex-col gap-2">
+              <InputGroup>
+                <InputGroupAddon align="inline-start">
+                  <Hammer />
+                </InputGroupAddon>
+                <InputGroupInput
+                  placeholder={placeholder ?? `Item ${i + 1}`}
+                  value={item.value}
+                  onChange={(e) => onChange(item.id, e.target.value)}
+                />
+              </InputGroup>
+              <FieldExplainer label={label} />
+            </div>
             <Button
               type="button"
               variant="ghost"
@@ -228,6 +328,23 @@ function ScopeListField({
   );
 }
 
+/**
+ * Stable key of the editable draft state for dirty-tracking. Scope-item ids are
+ * random so only their values count; value keys are sorted for order-stability.
+ */
+function draftKey(
+  values: Record<string, string>,
+  scopeItems: ScopeItem[],
+  projectId: string,
+): string {
+  const v = Object.keys(values)
+    .sort()
+    .map((k) => `${k}=${values[k]}`)
+    .join("|");
+  const s = scopeItems.map((item) => item.value).join("|");
+  return `${projectId}~${v}~${s}`;
+}
+
 /** Today as a `YYYY-MM-DD` string in local time (for the date input default). */
 function todayIso(): string {
   const now = new Date();
@@ -244,16 +361,41 @@ const DEFAULT_VALUES: Record<string, string> = {
   MONTHLY_ADMINISTRATION_FEE: "3000",
 };
 
-export function ContractBuilder() {
-  const { organizationId } = useAuth();
-  const [values, setValues] = useState<Record<string, string>>(() => ({
-    ...DEFAULT_VALUES,
-  }));
+/** When `contract` is passed the builder edits that existing draft; otherwise it
+ * creates a new one. */
+export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
+  const { organizationId, uid } = useAuth();
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    contract ? { ...contract.values } : { ...DEFAULT_VALUES },
+  );
   const [activePage, setActivePage] = useState(1);
   // Projects (and their client) are read from the CRM — no inline creation here.
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    contract?.projectId ?? "",
+  );
   const [client, setClient] = useState<Client | null>(null);
+  // Persistence state. `contractId` is set after the first save (or seeded when
+  // editing) so subsequent Save Draft calls update the same document. Once
+  // `status` leaves "draft" the contract is locked (its snapshot is frozen) and
+  // editable saves are blocked.
+  const [contractId, setContractId] = useState<string | null>(
+    contract?.contractId ?? null,
+  );
+  const [status, setStatus] = useState<ContractStatus>(
+    contract?.status ?? "draft",
+  );
+  const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  // Snapshot of the last-persisted editable state; current state differing from
+  // it means there are unsaved changes (drives the leave-without-saving guard).
+  const savedKeyRef = useRef(
+    draftKey(
+      contract ? contract.values : DEFAULT_VALUES,
+      contract?.scopeItems.length ? contract.scopeItems : [],
+      contract?.projectId ?? "",
+    ),
+  );
   // Firm-side values read from the org's company profile (legal name + address +
   // email) and branding (dark logo shown atop the document).
   const [company, setCompany] = useState({
@@ -262,10 +404,13 @@ export function ContractBuilder() {
     email: "",
     logoDarkUrl: "",
   });
-  // Exhibit A scope of work — a dynamic, add/remove list (starts with one row).
-  const [scopeItems, setScopeItems] = useState<ScopeItem[]>(() => [
-    { id: crypto.randomUUID(), value: "" },
-  ]);
+  // Exhibit A scope of work — a dynamic, add/remove list (starts with one row,
+  // or the saved rows when editing).
+  const [scopeItems, setScopeItems] = useState<ScopeItem[]>(() =>
+    contract?.scopeItems.length
+      ? contract.scopeItems.map((item) => ({ ...item }))
+      : [{ id: crypto.randomUUID(), value: "" }],
+  );
 
   const addScopeItem = () =>
     setScopeItems((prev) => [...prev, { id: crypto.randomUUID(), value: "" }]);
@@ -412,7 +557,7 @@ export function ContractBuilder() {
     [resolved],
   );
 
-  // Gate save/send/print on a complete document; otherwise jump to the first gap.
+  // Gate send/print on a complete document; otherwise jump to the first gap.
   const guard = (actionLabel: string, run: () => void) => {
     if (missingFields.length > 0) {
       const first = missingFields[0];
@@ -429,6 +574,111 @@ export function ContractBuilder() {
     run();
   };
 
+  // A locked contract (sent/viewed/signed/void) is read-only — no more saves.
+  const isLocked = status !== "draft";
+
+  // Unsaved-changes guard: only meaningful while the draft is still editable.
+  const hasUnsavedChanges =
+    !isLocked &&
+    draftKey(values, scopeItems, selectedProjectId) !== savedKeyRef.current;
+
+  // Warns (and intercepts in-app navigation) before leaving with unsaved edits.
+  // "Save & leave" persists the draft, then the hook navigates.
+  const { dialog: leaveDialog } = useUnsavedChangesGuard({
+    when: hasUnsavedChanges,
+    title: "Save your draft?",
+    description:
+      "You have unsaved changes to this contract. Save them as a draft before you leave, or discard them.",
+    onSave: async () => {
+      try {
+        const id = await persistDraft();
+        if (!id) return false; // persistDraft toasted why; keep the dialog open
+        savedKeyRef.current = draftKey(values, scopeItems, selectedProjectId);
+        toast.success("Draft saved.");
+        return true;
+      } catch (error) {
+        console.error("Failed to save contract draft:", error);
+        toast.error("Couldn't save the draft. Please try again.");
+        return false;
+      }
+    },
+  });
+
+  /**
+   * Persist the editable draft. Drafts may be incomplete, so this skips the
+   * required-field guard — it only needs an org, a user, and a selected
+   * project/client. Creates on first save, then updates the same document.
+   * Returns the contractId on success, or null on failure / missing prereqs.
+   */
+  const persistDraft = async (): Promise<string | null> => {
+    if (!organizationId || !uid || !selectedProject || !client) {
+      toast.error("Pick a project before saving.");
+      return null;
+    }
+    const payload = buildDraftContractPayload({
+      selectedProject,
+      client,
+      values,
+      scopeItems,
+      resolved,
+    });
+    if (contractId) {
+      await updateContract(contractId, uid, payload);
+      return contractId;
+    }
+    const newId = await addContract(organizationId, uid, payload);
+    setContractId(newId);
+    return newId;
+  };
+
+  const handleSaveDraft = async () => {
+    if (isLocked || saving) return;
+    setSaving(true);
+    try {
+      const id = await persistDraft();
+      if (id) {
+        savedKeyRef.current = draftKey(values, scopeItems, selectedProjectId);
+        toast.success("Draft saved.");
+      }
+    } catch (error) {
+      console.error("Failed to save contract draft:", error);
+      toast.error("Couldn't save the draft. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runSend = async () => {
+    if (!selectedProject || !uid) return;
+    setSending(true);
+    try {
+      const id = await persistDraft();
+      if (!id) return;
+      const snapshot = buildContractSnapshot({
+        selectedProject,
+        values,
+        scopeItems,
+        resolved,
+      });
+      await sendContract(id, uid, snapshot);
+      setStatus("sent");
+      toast.success("Contract sent to the client.");
+    } catch (error) {
+      console.error("Failed to send contract:", error);
+      toast.error("Couldn't send the contract. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendContract = () => {
+    if (isLocked || sending) return;
+    // Send requires a complete document.
+    guard("send", () => {
+      void runSend();
+    });
+  };
+
   return (
     <div className="flex w-full flex-col gap-6 lg:h-[calc(100svh-var(--dashboard-header-height)-3rem)]">
       {/* Header */}
@@ -441,42 +691,59 @@ export function ContractBuilder() {
             <ArrowLeft className="size-3.5" />
             Back to Contracts
           </Link>
-          <h1 className="font-heading font-semibold text-2xl">New Contract</h1>
+          <h1 className="font-heading font-semibold text-2xl">
+            {contract ? "Edit Contract" : "New Contract"}
+          </h1>
           <p className="text-muted-foreground text-sm">
-            Fill in the highlighted fields — the document updates as you go.
+            {isLocked
+              ? "This contract is locked — its sent copy can no longer be edited."
+              : "Fill in the highlighted fields — the document updates as you go."}
           </p>
         </div>
-        <div className="flex items-center gap-2 sm:self-start">
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/contracts">Cancel</Link>
-          </Button>
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => guard("print", () => window.print())}
-          >
-            <Printer className="size-4" />
-            Print / PDF
-          </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={() =>
-              guard("save the draft", () => toast.success("Draft saved."))
-            }
-          >
-            <Save className="size-4" />
-            Save Draft
-          </Button>
-          <Button
-            type="button"
-            onClick={() =>
-              guard("send", () => toast.success("Contract sent to the client."))
-            }
-          >
-            <Send className="size-4" />
-            Send
-          </Button>
+        <div className="sm:self-start">
+          <TooltipDropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                disabled={saving || sending}
+              >
+                {saving || sending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <MoreVertical className="size-4" />
+                )}
+                <span className="sr-only">Contract actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={handleSendContract}
+                  disabled={isLocked || sending}
+                >
+                  <Send className="size-4" />
+                  Send
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    void handleSaveDraft();
+                  }}
+                  disabled={isLocked || saving}
+                >
+                  <Save className="size-4" />
+                  Save Draft
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => guard("print", () => window.print())}
+                >
+                  <Printer className="size-4" />
+                  Print / PDF
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </TooltipDropdownMenu>
         </div>
       </div>
 
@@ -488,64 +755,90 @@ export function ContractBuilder() {
           </CardHeader>
           <CardContent className="flex flex-col gap-5 lg:min-h-0 lg:flex-1">
             {/* Pinned global fields — always visible (frozen zone) */}
-            <div className="flex flex-col gap-5 lg:shrink-0">
-              <Field label="Project">
-                <Select
-                  value={selectedProjectId}
-                  onValueChange={setSelectedProjectId}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue
-                      placeholder={
-                        projects.length
-                          ? "Select a project"
-                          : "No projects in the CRM yet"
+            <div className="grid grid-cols-3 items-start gap-4 lg:shrink-0">
+              <div className="flex flex-col gap-4">
+                <Field label="Project">
+                  <Combobox
+                    value={selectedProject ?? null}
+                    onValueChange={(p: Project | null) =>
+                      setSelectedProjectId(p?.projectId ?? "")
+                    }
+                    items={[...projects].sort((a, b) =>
+                      a.name.localeCompare(b.name),
+                    )}
+                    filter={(item: Project, inputValue: string) =>
+                      item.name.toLowerCase().includes(inputValue.toLowerCase())
+                    }
+                  >
+                    <ComboboxTrigger
+                      render={
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex h-10 w-full items-center justify-between whitespace-nowrap rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors",
+                            "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                            "dark:bg-input/30",
+                            !selectedProject && "text-muted-foreground",
+                          )}
+                        >
+                          {selectedProject
+                            ? selectedProject.name
+                            : projects.length
+                              ? "Select a project"
+                              : "No projects in the CRM yet"}
+                        </button>
                       }
                     />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.map((p) => (
-                      <SelectItem key={p.projectId} value={p.projectId}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              {selectedProject && (
-                <div className="-mt-2 flex flex-col gap-0.5 text-muted-foreground text-xs">
-                  {resolved.CLIENT_NAME && (
-                    <span className="text-foreground">
-                      {resolved.CLIENT_NAME}
-                    </span>
-                  )}
-                  {resolved.PROJECT_ADDRESS && (
-                    <span>{resolved.PROJECT_ADDRESS}</span>
-                  )}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <Label>Firm Legal Name</Label>
-                  <div className="flex h-10 items-center gap-2 rounded-lg border border-border border-dashed bg-muted/40 px-3 text-muted-foreground text-sm">
-                    <span className="truncate">
-                      {company.legalName || "Not set in Company Profile"}
-                    </span>
-                    <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider">
-                      Auto
-                    </span>
-                  </div>
-                </div>
-                <Field label="Effective Date">
-                  <Input
-                    type="date"
-                    value={values.EFFECTIVE_DATE ?? ""}
-                    onChange={(e) => setValue("EFFECTIVE_DATE", e.target.value)}
-                  />
+                    <ComboboxContent>
+                      <ComboboxInput
+                        showTrigger={false}
+                        placeholder="Search projects..."
+                      />
+                      <ComboboxEmpty>No project found.</ComboboxEmpty>
+                      <ComboboxList>
+                        {(item: Project) => (
+                          <ComboboxItem key={item.projectId} value={item}>
+                            {item.name}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                 </Field>
+
+                {selectedProject && (
+                  <div className="flex flex-col gap-0.5 text-muted-foreground text-sm">
+                    {resolved.CLIENT_NAME && (
+                      <span className="text-foreground">
+                        {resolved.CLIENT_NAME}
+                      </span>
+                    )}
+                    {resolved.PROJECT_ADDRESS && (
+                      <span>{resolved.PROJECT_ADDRESS}</span>
+                    )}
+                  </div>
+                )}
               </div>
+
+              <div className="flex flex-col gap-2">
+                <Label>Firm Legal Name</Label>
+                <div className="flex h-10 items-center gap-2 rounded-lg border border-input  bg-muted/40 px-3 text-muted-foreground text-sm">
+                  <span className="truncate">
+                    {company.legalName || "Not set in Company Profile"}
+                  </span>
+                  <span className="ml-auto shrink-0">
+                    <Lock className="size-3.5 text-muted-foreground/50" />
+                  </span>
+                </div>
+              </div>
+
+              <Field label="Effective Date">
+                <Input
+                  type="date"
+                  value={values.EFFECTIVE_DATE ?? ""}
+                  onChange={(e) => setValue("EFFECTIVE_DATE", e.target.value)}
+                />
+              </Field>
             </div>
 
             <Separator className="lg:shrink-0" />
@@ -563,26 +856,37 @@ export function ContractBuilder() {
 
               <div className="lg:min-h-0 lg:flex-1 lg:pb-1">
                 {activeFields.length > 0 ? (
-                  <div className="flex flex-col gap-5">
+                  <div className="flex flex-wrap gap-4">
                     {activeFields.map((def) =>
                       def.type === "list" ? (
-                        <ScopeListField
-                          key={def.token}
-                          label={def.label}
-                          placeholder={def.placeholder}
-                          items={scopeItems}
-                          onAdd={addScopeItem}
-                          onRemove={removeScopeItem}
-                          onChange={updateScopeItem}
-                        />
-                      ) : (
-                        <Field key={def.token} label={def.label}>
-                          <PageFieldInput
-                            def={def}
-                            value={values[def.token] ?? ""}
-                            onChange={(v) => setValue(def.token, v)}
+                        <div key={def.token} className="basis-full">
+                          <ScopeListField
+                            label={def.label}
+                            placeholder={def.placeholder}
+                            items={scopeItems}
+                            onAdd={addScopeItem}
+                            onRemove={removeScopeItem}
+                            onChange={updateScopeItem}
                           />
-                        </Field>
+                        </div>
+                      ) : (
+                        <div
+                          key={def.token}
+                          className={
+                            def.type === "textarea"
+                              ? "basis-full"
+                              : "min-w-40 flex-1"
+                          }
+                        >
+                          <Field label={def.label}>
+                            <PageFieldInput
+                              def={def}
+                              value={values[def.token] ?? ""}
+                              onChange={(v) => setValue(def.token, v)}
+                            />
+                            <FieldExplainer label={def.label} />
+                          </Field>
+                        </div>
                       ),
                     )}
                   </div>
@@ -630,6 +934,9 @@ export function ContractBuilder() {
           ))}
         </div>
       </div>
+
+      {/* Unsaved-changes leave dialog + nav interception (shared hook). */}
+      {leaveDialog}
     </div>
   );
 }

@@ -205,7 +205,8 @@ export default function ProjectsPage() {
             {!searchQuery && clients.length > 0 && (
               <Button
                 onClick={handleOpenAdd}
-                className="mt-4 flex items-center gap-2">
+                className="mt-4 flex items-center gap-2"
+              >
                 <Plus className="size-4" />
                 Start Project
               </Button>
@@ -224,7 +225,8 @@ export default function ProjectsPage() {
                     <CardTitle className="transition-colors hover:text-primary">
                       <Link
                         href={`/dashboard/projects/${project.projectId}`}
-                        prefetch={false}>
+                        prefetch={false}
+                      >
                         {project.name}
                       </Link>
                     </CardTitle>
@@ -278,11 +280,13 @@ export default function ProjectsPage() {
                       variant="link"
                       size="sm"
                       asChild
-                      className="ml-auto -mr-2">
+                      className="ml-auto -mr-2"
+                    >
                       <Link
                         href={`/dashboard/projects/${project.projectId}`}
                         prefetch={false}
-                        className="group/btn flex items-center gap-0.5">
+                        className="group/btn flex items-center gap-0.5"
+                      >
                         View Project
                         <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
                       </Link>

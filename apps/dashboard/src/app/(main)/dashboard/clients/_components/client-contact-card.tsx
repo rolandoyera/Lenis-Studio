@@ -71,7 +71,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                          className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                        >
                           google maps
                           <ExternalLink className="size-3" />
                         </a>
@@ -127,7 +128,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                 <Label>Email Address</Label>
                 <a
                   href={`mailto:${client.email}`}
-                  className="group flex items-center gap-1.5 transition-colors hover:text-primary">
+                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
                   <p className="truncate group-hover:underline">
                     {client.email}
                   </p>
@@ -140,7 +142,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
                 <Label>Phone Number</Label>
                 <a
                   href={`tel:${normalizePhone(client.phone)}`}
-                  className="group flex items-center gap-1.5 transition-colors hover:text-primary">
+                  className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+                >
                   <span className="group-hover:underline">
                     {formatPhone(client.phone)}
                   </span>

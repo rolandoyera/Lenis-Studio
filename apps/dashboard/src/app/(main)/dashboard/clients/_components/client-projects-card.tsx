@@ -49,7 +49,8 @@ export function ClientProjectsCard({
             {projects.map((project) => (
               <div
                 key={project.projectId}
-                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4">
+                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4"
+              >
                 <div className="mt-1 flex items-center justify-between">
                   <H3 className="text-muted-foreground">{project.name}</H3>
                   <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
@@ -85,7 +86,8 @@ export function ClientProjectsCard({
                   <Link
                     href={`/dashboard/projects/${project.projectId}`}
                     prefetch={false}
-                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline">
+                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline"
+                  >
                     View Project
                   </Link>
                 </div>

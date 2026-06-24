@@ -130,7 +130,8 @@ export default function ClientsPage() {
           />
           <Button
             onClick={() => setIsDialogOpen(true)}
-            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
+            className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
+          >
             <Plus className="size-4" />
             Client
           </Button>
@@ -165,7 +166,8 @@ export default function ClientsPage() {
             {!searchQuery && (
               <Button
                 onClick={() => setIsDialogOpen(true)}
-                className="mt-4 flex items-center gap-2">
+                className="mt-4 flex items-center gap-2"
+              >
                 <Plus className="size-4" />
                 Add Client profile
               </Button>
@@ -184,11 +186,13 @@ export default function ClientsPage() {
                 <Card
                   variant="panel"
                   key={client.uid}
-                  className="group relative flex h-full flex-col overflow-hidden transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md">
+                  className="group relative flex h-full flex-col overflow-hidden transition-all duration-200 has-[.detail-link:hover]:-translate-y-0.5 has-[.detail-link:hover]:border-primary/30 has-[.detail-link:hover]:shadow-md"
+                >
                   <CardHeader className="flex flex-row items-center gap-4">
                     <Link
                       href={`/dashboard/clients/${client.uid}`}
-                      className="detail-link shrink-0 cursor-pointer">
+                      className="detail-link shrink-0 cursor-pointer"
+                    >
                       <Avatar className="size-8">
                         {client.company ? (
                           <Building2 className="size-4" />
@@ -201,7 +205,8 @@ export default function ClientsPage() {
                       <H3 className="truncate transition-colors group-has-[.detail-link:hover]:text-primary">
                         <Link
                           href={`/dashboard/clients/${client.uid}`}
-                          className="detail-link cursor-pointer">
+                          className="detail-link cursor-pointer"
+                        >
                           {client.company
                             ? client.company
                             : `${firstName} ${lastName}`}

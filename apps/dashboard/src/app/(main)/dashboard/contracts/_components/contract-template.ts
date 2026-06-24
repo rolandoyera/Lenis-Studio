@@ -4,7 +4,14 @@
 // where its value comes from). Client values are still mock; firm + signed-in
 // user values come from the org profile / auth session.
 
-import type { CompanyAddress } from "@/lib/types";
+import type { CompanyAddress, ContractTemplateKey } from "@/lib/types";
+
+/** The code-based template this builder renders. */
+export const CONTRACT_TEMPLATE_KEY: ContractTemplateKey =
+  "interior-design-agreement";
+
+/** Bump when TEMPLATE_PAGES / FIELD_DEFS change in a way that alters output. */
+export const CONTRACT_TEMPLATE_VERSION = 1;
 
 export type FieldType =
   | "text"
@@ -299,7 +306,7 @@ To the fullest extent permitted by law, Designer shall not be liable for indirec
 Designer's total liability under this Agreement shall not exceed the total amount of design fees actually paid by Client to Designer, excluding furniture, fixtures, finishes, materials, decor, accessories, freight, delivery, storage, reimbursable expenses, sales tax, purchasing fees, procurement fees, and third-party costs.
 
 **4.1 Third Parties and Product Warranties.**
-Designer is not responsible for the acts, errors, omissions, delays, pricing, workmanship, safety, code compliance, licensing, insurance, warranties, or performance of any vendor, manufacturer, carrier, receiver, installer, contractor, trade professional, or other third party.
+Designer is not responsible for errors, omissions, inaccuracies, delays, defects, or failures caused by any third party, including vendors, manufacturers, contractors, installers, trades, carriers, receivers, or other professionals involved in the Project.
 
 Designer does not provide any warranty or guarantee for items manufactured, supplied, delivered, installed, repaired, or serviced by third parties. Any applicable third-party warranty shall be between Client and the applicable third party. Designer may assist with warranty-related communication upon request, but Designer is not responsible for initiating, pursuing, enforcing, or resolving warranty claims unless otherwise agreed in writing.
 

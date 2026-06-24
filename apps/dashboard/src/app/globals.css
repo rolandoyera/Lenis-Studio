@@ -143,6 +143,27 @@ These serve as the fallback; there is no separate default.css file. */
   --sidebar-ring: oklch(0.7731 0 0);
 }
 
+/* The contract preview is "paper": always render it in light theme so the
+   sheet, ink, and (light-background) letterhead read correctly no matter the
+   app's mode. Re-declares the light token values for this subtree only. */
+.contract-print-area {
+  --background: oklch(0.9818 0.0054 95.0986);
+  --foreground: oklch(0 0.0269 95.7226);
+  --card: oklch(0.9818 0.0054 95.0986);
+  --card-foreground: oklch(0.1908 0.002 106.5859);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2671 0.0196 98.939);
+  --primary: oklch(0.6 0.1375 39.0427);
+  --primary-foreground: oklch(1 0 0);
+  --muted: oklch(0.9341 0.0153 90.239);
+  --muted-foreground: oklch(0.6059 0.0075 97.4233);
+  --accent: oklch(0.9245 0.0138 92.9892);
+  --accent-foreground: oklch(0.2671 0.0196 98.939);
+  --border: oklch(0.8847 0.0069 97.3627);
+  --input: oklch(0.7621 0.0156 98.3528);
+  --ring: oklch(0.6171 0.1375 39.0427);
+}
+
 @keyframes shimmer {
   from {
     transform: translateX(-100%);
