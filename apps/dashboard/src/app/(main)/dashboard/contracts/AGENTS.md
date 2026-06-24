@@ -24,8 +24,8 @@ to edit it. `ContractBuilder` takes an optional `contract` prop — when present
 `scopeItems`, `selectedProjectId`, `contractId`, and `status` from it (the `key` forces a remount so
 those `useState` initializers re-run per contract). Opening a non-draft contract shows it locked
 (saves disabled); there's still no dedicated read-only viewer that renders from `lockedSnapshot`.
-Active-page inputs under "Fields to Populate" also show temporary explainer text below each input;
-pinned global fields do not.
+Active-page inputs under "Fields to Populate" show `FIELD_DEFS.explainer` below each input; pinned
+global fields do not.
 
 ## The template is code, not data
 
@@ -36,7 +36,8 @@ Keep it that way for now.
   `**bold**` runs. `heading` is internal (nav/debug), **not rendered**.
 - `FIELD_DEFS` — the field manifest that drives everything: each token's `label`, `type`
   (`text|date|currency|textarea|client|auto|list`), `scope` (`global|page`), `source`
-  (`user|client|company|project`), optional `page`, and `optional` (skipped by the send guard).
+  (`user|client|company|project`), optional `page`, `explainer`, and `optional` (skipped by the send
+  guard).
 - Rendering: `SEGMENT_SPLIT_RE` splits a line into tokens / bold / plain. `DocumentBody` renders
   **line-by-line** as `<p>` so `isHeadingLine` (a single all-caps bold-only line) can center
   article/section headers. Don't collapse this back into one block — centering depends on it.

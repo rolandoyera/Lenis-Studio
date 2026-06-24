@@ -103,11 +103,10 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 /** Temporary helper copy shown under active contract inputs. */
-function FieldExplainer({ label }: { label: string }) {
+function FieldExplainer({ children }: { children?: string }) {
+  if (!children) return null;
   return (
-    <p className="text-muted-foreground text-xs leading-5">
-      Explainer paragraph for {label}
-    </p>
+    <p className="text-card-foreground text-sm leading-5 mt-2">{children}</p>
   );
 }
 
@@ -270,6 +269,7 @@ function PageFieldInput({
 function ScopeListField({
   label,
   placeholder,
+  explainer,
   items,
   onAdd,
   onRemove,
@@ -277,6 +277,7 @@ function ScopeListField({
 }: {
   label: string;
   placeholder?: string;
+  explainer?: string;
   items: ScopeItem[];
   onAdd: () => void;
   onRemove: (id: string) => void;
@@ -299,7 +300,7 @@ function ScopeListField({
                   onChange={(e) => onChange(item.id, e.target.value)}
                 />
               </InputGroup>
-              <FieldExplainer label={label} />
+              <FieldExplainer>{explainer}</FieldExplainer>
             </div>
             <Button
               type="button"
@@ -863,6 +864,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                           <ScopeListField
                             label={def.label}
                             placeholder={def.placeholder}
+                            explainer={def.explainer}
                             items={scopeItems}
                             onAdd={addScopeItem}
                             onRemove={removeScopeItem}
@@ -875,7 +877,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                           className={
                             def.type === "textarea"
                               ? "basis-full"
-                              : "min-w-40 flex-1"
+                              : "min-w-40 basis-[calc(50%-0.5rem)]"
                           }
                         >
                           <Field label={def.label}>
@@ -884,7 +886,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                               value={values[def.token] ?? ""}
                               onChange={(v) => setValue(def.token, v)}
                             />
-                            <FieldExplainer label={def.label} />
+                            <FieldExplainer>{def.explainer}</FieldExplainer>
                           </Field>
                         </div>
                       ),

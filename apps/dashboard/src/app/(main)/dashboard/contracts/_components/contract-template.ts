@@ -36,6 +36,8 @@ export interface FieldDef {
   /** Required for page-scoped fields: which page surfaces this input. */
   page?: number;
   placeholder?: string;
+  /** Helper copy shown below the active-page input in the builder. */
+  explainer?: string;
   /** When true, the field may be left blank (skipped by save/print validation). */
   optional?: boolean;
 }
@@ -119,6 +121,7 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
     scope: "page",
     source: "user",
     page: 2,
+    explainer: "The upfront payment due at signing before design work begins.",
   },
   BILLABLE_RATE: {
     token: "BILLABLE_RATE",
@@ -127,6 +130,8 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
     scope: "page",
     source: "user",
     page: 2,
+    explainer:
+      "The hourly amount charged for design time, extra revisions, site visits, and other billable services not included in the retainer. This field is prefilled but is editable.",
   },
   STYLING_FEE: {
     token: "STYLING_FEE",
@@ -135,6 +140,8 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
     scope: "page",
     source: "user",
     page: 3,
+    explainer:
+      "The fee for final styling, furniture placement, accessory setup, and other finishing touches at the end of the project. This field is prefilled but is editable.",
   },
   PROJECT_DURATION_MONTHS: {
     token: "PROJECT_DURATION_MONTHS",
@@ -144,6 +151,8 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
     source: "user",
     page: 4,
     placeholder: "e.g. 6",
+    explainer:
+      "The expected length of the project in months before any monthly extension fee may apply.",
   },
   MONTHLY_ADMINISTRATION_FEE: {
     token: "MONTHLY_ADMINISTRATION_FEE",
@@ -152,6 +161,8 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
     scope: "page",
     source: "user",
     page: 4,
+    explainer:
+      "A monthly fee that applies if the project goes beyond the agreed timeline because of client delays, purchasing delays, or third-party delays. This field is prefilled but is editable.",
   },
   PROJECT_OBJECTIVES: {
     token: "PROJECT_OBJECTIVES",
@@ -162,6 +173,7 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
     page: 9,
     optional: true,
     placeholder: "Summarize the overall objectives for the project.",
+    explainer: "Explainer paragraph for Project objectives",
   },
   SCOPE_ITEMS: {
     token: "SCOPE_ITEMS",
@@ -172,6 +184,7 @@ export const FIELD_DEFS: Record<string, FieldDef> = {
     page: 9,
     optional: true,
     placeholder: "Describe a scope item",
+    explainer: "Explainer paragraph for Scope of work",
   },
 };
 
