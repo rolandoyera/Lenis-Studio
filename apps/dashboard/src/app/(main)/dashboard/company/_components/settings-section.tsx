@@ -108,7 +108,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Default Markup</Label>
             <InputGroup>
               <InputGroupInput
@@ -134,7 +135,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Default Tax Rate</Label>
             <InputGroup>
               <InputGroupInput
@@ -160,7 +162,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Proposal Expiration (days)</Label>
             <Input
               {...field}

@@ -13,10 +13,7 @@ import {
 } from "@/lib/db";
 import type { Organization } from "@/lib/types";
 
-import {
-  BrandColorsCard,
-  BrandColorsFields,
-} from "./brand-colors-section";
+import { BrandColorsCard, BrandColorsFields } from "./brand-colors-section";
 import { LogoCard, LogoFields } from "./logo-section";
 import { formToOrganizationUpdate } from "./company-constants";
 import { CompanyInfoCard, CompanyInfoFields } from "./company-info-section";

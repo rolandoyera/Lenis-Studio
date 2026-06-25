@@ -1,0 +1,95 @@
+---
+title: Tables
+order: 6
+---
+
+import { TablesPlayground } from "./_components/tables-playground";
+
+# Tables
+
+`TanTable` (`components/ui/tan-table.tsx`) is the **default data table for the
+app**. Use it for any list of records — contracts, clients, leads, invoices, and
+so on. It wraps `components/ui/table.tsx` and a TanStack Table instance with the
+shared theme (cell/header padding, header sizing, row borders) and an optional
+pagination footer, so every table looks and behaves the same.
+
+Reach for it instead of hand-rolling `<Table>` markup. If you find yourself
+copying header-group / row-model boilerplate or re-styling cells, use `TanTable`
+instead and extend the component if something is missing.
+
+## What it owns (and what it doesn't)
+
+`TanTable` renders the **table body** and an optional **pagination footer**. It
+deliberately does _not_ own the surrounding card, the toolbar (search, filters,
+"Add" button), or the `useReactTable` setup — those stay with the caller because
+they're page-specific. This keeps `TanTable` reusable across any data shape.
+
+## Usage
+
+Define your columns, build a table instance with `useReactTable`, then render
+`<TanTable table={table} />`. Opt into row selection with `selectionColumn()` and
+into the footer with the `pagination` prop:
+
+```tsx
+import { useReactTable, getCoreRowModel } from "@tanstack/react-table";
+
+import { TanTable, selectionColumn } from "@/components/ui/tan-table";
+
+const columns = [
+  selectionColumn<Contract>(), // optional checkbox column
+  { accessorKey: "title", header: "Contract" },
+  // ...your columns
+];
+
+function ContractsTable({ data }: { data: Contract[] }) {
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    // add getSortedRowModel / getFilteredRowModel / getPaginationRowModel
+    // and the matching state as needed
+  });
+
+  return <TanTable table={table} pagination noun="contracts" />;
+}
+```
+
+### Props
+
+- **`table`** (required) — the TanStack `Table` instance from `useReactTable`.
+- **`pagination`** — render the count + pager footer. Requires
+  `getPaginationRowModel()` on the table. Defaults to `false`.
+- **`noun`** — plural noun for the count row, e.g. `"contracts"` →
+  "Viewing 10 out of 12 contracts". Defaults to `"rows"`.
+- **`emptyMessage`** — text shown when there are no rows. Defaults to
+  `"No results."`.
+- **`onRowClick`** — when set, rows become clickable (`cursor-pointer`) and the
+  handler receives that row's data (see the snippet below for navigating on
+  click). Note: clicks on a checkbox or action button inside a row also bubble to
+  `onRowClick` — call `e.stopPropagation()` in those cells if you need them to act
+  independently of the row click.
+
+```tsx
+<TanTable
+  table={table}
+  onRowClick={(contract) => router.push(`/dashboard/contracts/${contract.id}`)}
+/>
+```
+
+### Optional pieces
+
+- **Checkboxes** — spread `selectionColumn<TData>()` into your `columns` (and set
+  `enableRowSelection: true`). It renders the select-all / select-row checkboxes.
+- **Sorting** — make a header clickable by rendering a sort toggle (see the
+  `SortableHeader` example in the playground) and add `getSortedRowModel()`.
+- **Search / filters** — wire your toolbar inputs to the `table` instance
+  (`table.setGlobalFilter`, `table.getColumn(id)?.setFilterValue`).
+
+## Playground
+
+A live example with mock Contracts data — `selectionColumn()`, sortable headers,
+a status filter, search, and the `pagination` footer all wired to one `TanTable`.
+The card and toolbar around it are the page's own; only the table comes from the
+component.
+
+<TablesPlayground />

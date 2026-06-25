@@ -139,14 +139,16 @@ export function SectionEditDialog({
       open={open}
       onOpenChange={(v) => {
         if (!isSubmitting) onOpenChange(v);
-      }}>
+      }}
+    >
       <DialogContent className="sm:max-w-2xl">
         <div ref={setContainer} />
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-4"
           noValidate
-          autoComplete="off">
+          autoComplete="off"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl">{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -161,13 +163,15 @@ export function SectionEditDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}>
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2">
+              className="flex items-center gap-2"
+            >
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
               Save Changes
             </Button>

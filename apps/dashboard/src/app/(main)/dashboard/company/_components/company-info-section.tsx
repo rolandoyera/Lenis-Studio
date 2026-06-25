@@ -99,7 +99,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>
                 Company Name <span className="ml-0.5 text-destructive">*</span>
               </Label>
@@ -118,7 +119,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>Legal Name</Label>
               <Input
                 {...field}
@@ -135,7 +137,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>Email</Label>
               <Input
                 {...field}
@@ -175,7 +178,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>Phone</Label>
               <Input
                 {...field}
@@ -197,7 +201,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>Website</Label>
               <Input
                 {...field}
@@ -220,7 +225,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>Address Line 1</Label>
               <Input {...field} aria-invalid={fieldState.invalid} />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -233,7 +239,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>Address Line 2</Label>
               <Input
                 {...field}
@@ -268,7 +275,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>City</Label>
               <Input {...field} aria-invalid={fieldState.invalid} />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -281,7 +289,8 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}>
+              data-invalid={fieldState.invalid}
+            >
               <Label className={LABEL_CLASS}>
                 {regionLabelFor(countryValue)}
               </Label>
@@ -298,7 +307,8 @@ export function CompanyInfoFields({
             return (
               <Field
                 className="flex flex-col gap-1.5"
-                data-invalid={fieldState.invalid}>
+                data-invalid={fieldState.invalid}
+              >
                 <Label className={LABEL_CLASS}>
                   {isUs ? "ZIP Code" : "Postal Code"}
                 </Label>

@@ -17,7 +17,8 @@ persists the result. It is intentionally minimal. **Do not add** (all explicitly
 PDF-export libraries, e-signature, the client portal, email sending, payment logic, in-app template
 editing, or a version-history UI. "Print / PDF" is just the browser print dialog.
 
-Routes: `contracts/page.tsx` is the list (reads real `getContracts`, rows link to the editor);
+Routes: `contracts/page.tsx` is the list (reads real `getContracts`, renders them in the shared
+`TanTable`, and uses an eye-icon link per row to open the editor);
 `new/page.tsx` renders `<ContractBuilder />` (create); `[contractId]/page.tsx` fetches one contract
 (`getContract`, with an org-match tenant guard) and renders `<ContractBuilder contract={…} key={id}/>`
 to edit it. `ContractBuilder` takes an optional `contract` prop — when present it seeds `values`,

@@ -163,7 +163,8 @@ export const usersColumns: ColumnDef<UserRow>[] = [
       <Button
         variant="ghost"
         className="-ml-3 flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
         User
         <ArrowUpDown className="size-3.5" />
       </Button>
@@ -192,7 +193,8 @@ export const usersColumns: ColumnDef<UserRow>[] = [
       <Button
         variant="ghost"
         className="-ml-3 flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
         Role
         <ArrowUpDown className="size-3.5" />
       </Button>
