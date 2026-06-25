@@ -270,7 +270,7 @@ Client is responsible for all freight, shipping, receiving, inspection, storage,
 If Client requests Designer to coordinate final styling, furniture placement, accessory setup, or other design-related final placement services, Designer may charge a separate styling and final placement fee of {{STYLING_FEE}}, due before such services begin.
 
 **2.6 Damaged, Defective, Delayed, or Backordered Items.**
-Client understands that approved items may be delayed, backordered, discontinued, damaged in transit, defective, or unavailable for reasons outside Designer's control.
+Client understands that approved items may be delayed, backordered, discontinued, damaged in transit, defective, have variation in color, texture or unavailable for reasons outside Designer's control.
 
 For items purchased through Designer, Designer will make reasonable efforts to assist with claims, replacements, repairs, returns, or exchanges when available. Client remains responsible for any applicable freight, storage, delivery, handling, repair, replacement, or restocking costs unless covered by the vendor, manufacturer, carrier, or other responsible party.
 

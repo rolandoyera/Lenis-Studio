@@ -112,11 +112,16 @@ export function MetricCards() {
   const activeProjectCount = projects.filter(
     (project) => project.status === "in_progress",
   ).length;
+  const projectStatus = loadingProjects
+    ? "loading"
+    : projectsError
+      ? "error"
+      : "ready";
 
   return (
     <div className="grid grid-cols-1 gap-6 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center gap-4">
           <CardTitle>
             <div className="flex size-7 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
               <DollarSign className="size-4" />
@@ -135,7 +140,7 @@ export function MetricCards() {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center gap-4">
           <CardTitle>
             <div className="flex size-7 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
               <UserPlus className="size-4" />
@@ -146,7 +151,7 @@ export function MetricCards() {
         <CardContent className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
-              1,234
+              22
             </div>
             <Badge variant="trendingDown">
               <TrendingDown className="size-3" />
@@ -159,28 +164,21 @@ export function MetricCards() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <div className="flex size-7 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
-              <Users className="size-4" />
-            </div>
-          </CardTitle>
-          <CardDescription>Active Projects</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6 pt-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {loadingProjects ? (
-              <Skeleton className="h-9 w-16" />
-            ) : (
-              <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
-                {activeProjectCount.toLocaleString()}
-              </div>
-            )}
+      <div className="flex flex-col gap-4 overflow-hidden rounded-xl bg-card p-4 text-sm text-card-foreground shadow-xs bg-linear-to-t from-primary/5 to-card dark:bg-card ring-1 ring-foreground/10">
+        <div className="flex items-center gap-4">
+          <div className="flex size-7 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
+            <Users className="size-4" />
           </div>
-          {loadingProjects ? (
-            <Skeleton className="h-5 w-28" />
-          ) : projectsError ? (
+
+          <h2 className="text-sm text-muted-foreground">Active Projects</h2>
+        </div>
+        <div className="flex flex-col gap-6 p-0 pt-2">
+          {projectStatus === "loading" ? (
+            <>
+              <Skeleton className="h-9 w-16" />
+              <Skeleton className="h-5 w-28" />
+            </>
+          ) : projectStatus === "error" ? (
             <div className="flex h-5 items-center justify-between gap-3">
               <p className="text-muted-foreground text-sm">
                 Unable to load projects
@@ -188,27 +186,31 @@ export function MetricCards() {
               <Link
                 href="/dashboard/projects"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm"
-              >
+                className="flex items-center gap-1 font-medium text-primary text-sm">
                 View projects
                 <ArrowRight className="size-3" />
               </Link>
             </div>
           ) : (
-            <div className="flex h-5 ml-auto">
-              <Link
-                href="/dashboard/projects"
-                prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm h-6"
-              >
-                <Button variant="link">
-                  View projects <ArrowRight className="size-3" />
-                </Button>
-              </Link>
-            </div>
+            <>
+              <div className="flex items-center gap-2">
+                <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
+                  {activeProjectCount.toLocaleString()}
+                </div>
+              </div>
+              <div className="flex h-5 ml-auto">
+                <Link
+                  href="/dashboard/projects"
+                  prefetch={false}
+                  className="flex items-center gap-1 font-medium text-primary text-sm">
+                  View projects
+                  <ArrowRight className="size-3" />
+                </Link>
+              </div>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {(igLoading || igFollowers) && (
         <Card>
@@ -240,8 +242,7 @@ export function MetricCards() {
                       igFollowers.comparison.isPositive
                         ? "trendingUp"
                         : "trendingDown"
-                    }
-                  >
+                    }>
                     {igFollowers.comparison.isPositive ? (
                       <TrendingUp className="size-3" />
                     ) : (
@@ -269,8 +270,7 @@ export function MetricCards() {
               <Link
                 href="/dashboard/instagram"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm h-6"
-              >
+                className="flex items-center gap-1 font-medium text-primary text-sm h-6">
                 <Button variant="link">
                   View More <ArrowRight className="size-3" />
                 </Button>
