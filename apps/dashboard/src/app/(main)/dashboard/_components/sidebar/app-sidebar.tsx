@@ -34,8 +34,7 @@ export function AppSidebar({ brand, ...props }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="group-data-[collapsible=icon]:p-0.5!"
-            >
+              className="group-data-[collapsible=icon]:p-0.5!">
               <Link prefetch={false} href="/dashboard/home">
                 <Image
                   src={brand.image.iconSrc}
@@ -66,7 +65,7 @@ export function AppSidebar({ brand, ...props }: AppSidebarProps) {
                   )}
                 />
                 <span className="font-semibold font-lora text-2xl text-black dark:text-white">
-                  {brand.name}
+                  {brand.shortName}
                 </span>
               </Link>
             </SidebarMenuButton>

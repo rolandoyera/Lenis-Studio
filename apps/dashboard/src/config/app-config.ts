@@ -2,6 +2,7 @@ import packageJson from "../../package.json";
 
 export interface AppBrand {
   name: string;
+  shortName: string;
   tagline: string;
   meta: {
     title: string;
@@ -18,6 +19,7 @@ export interface AppBrand {
 
 const defaultBrand: AppBrand = {
   name: "Lenis Studio",
+  shortName: "Lenis Studio",
   tagline: "Design. Build. Repeat.",
   meta: {
     title: "Lenis Studio",
@@ -35,6 +37,7 @@ const defaultBrand: AppBrand = {
 
 const sarvianBrand: AppBrand = {
   name: "Sarvian Design Group",
+  shortName: "Sarvian Studio",
   tagline: "Design. Build. Repeat.",
   meta: {
     title: "Sarvian Design Group",

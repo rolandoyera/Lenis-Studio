@@ -3,6 +3,7 @@ import createMDX from "@next/mdx";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactCompiler: true,
+  allowedDevOrigins: ["app.sarviandg.local"],
   // Let `.mdx` files act as routes/pages alongside `.ts`/`.tsx`.
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   experimental: {
