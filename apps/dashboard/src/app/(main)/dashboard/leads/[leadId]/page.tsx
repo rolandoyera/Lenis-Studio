@@ -8,13 +8,12 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   ArrowRightLeft,
+  ExternalLink,
   Loader2,
-  Mail,
-  MapPin,
   Pencil,
-  Phone,
-  UserCheck,
   UserPlus,
+  House,
+  Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -56,6 +55,7 @@ import {
   PROPERTY_TYPE_LABELS,
 } from "../_components/lead-constants";
 import { LeadFormDialog } from "../_components/lead-form-dialog";
+import { DataField } from "@/components/ui/data-field";
 
 interface PageProps {
   params: Promise<{ leadId: string }>;
@@ -126,7 +126,6 @@ export default function LeadDetailPage({ params }: PageProps) {
 
   // A freshly created lead has updatedAt === createdAt; only treat it as
   // "updated" once a real edit bumps updatedAt past creation.
-  const wasUpdated = lead ? lead.updatedAt !== lead.createdAt : false;
 
   const handleEditSubmit = async (data: LeadFormData) => {
     if (!lead || !uid || !currentActor) return;
@@ -202,14 +201,13 @@ export default function LeadDetailPage({ params }: PageProps) {
   if (!lead) return null;
 
   const isConverted = !!lead.convertedClientId;
-  const fullAddress = [
-    lead.street,
-    [lead.city, lead.state].filter(Boolean).join(", "),
-    lead.zip,
-    lead.country,
-  ]
+  const hasAddress = Boolean(
+    lead.street ?? lead.city ?? lead.state ?? lead.zip,
+  );
+  const hasCityStateZip = Boolean(lead.city ?? lead.state ?? lead.zip);
+  const fullAddress = [lead.street, lead.city, lead.state, lead.zip]
     .filter(Boolean)
-    .join(" ");
+    .join(", ");
 
   return (
     <div className="flex w-full flex-col gap-6 pb-10">
@@ -226,16 +224,14 @@ export default function LeadDetailPage({ params }: PageProps) {
           <Button
             variant="outline"
             onClick={() => setIsEditOpen(true)}
-            className="flex items-center gap-2"
-          >
+            className="flex items-center gap-2">
             <Pencil className="size-4" />
             Edit
           </Button>
           <Button
             onClick={() => setIsConvertOpen(true)}
             disabled={isConverted}
-            className="flex items-center gap-2"
-          >
+            className="flex items-center gap-2">
             <ArrowRightLeft className="size-4" />
             {isConverted ? "Converted" : "Convert to Client"}
           </Button>
@@ -262,146 +258,141 @@ export default function LeadDetailPage({ params }: PageProps) {
       )}
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        <div className="flex flex-col gap-6 lg:col-span-4">
-          <Card variant="panel">
-            <CardHeader>
-              <CardTitle>
-                <UserPlus className="icons" />
-                Lead Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 text-sm">
-              <DetailRow
-                label="Name"
-                value={
-                  `${lead.firstName ?? ""} ${lead.lastName ?? ""}`.trim() || "—"
-                }
-              />
-              <DetailRow label="Company" value={lead.company || "—"} />
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="size-4 shrink-0" />
-                {lead.email ? <span>{lead.email}</span> : <span>—</span>}
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="size-4 shrink-0" />
+        <Card variant="panel" className="lg:col-span-4">
+          <CardHeader>
+            <CardTitle>
+              <UserPlus className="icons" />
+              Lead Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6 min-h-60">
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <DataField label="Name" empty="Not set">
+                {`${lead.firstName ?? ""} ${lead.lastName ?? ""}`.trim()}
+              </DataField>
+              <DataField label="Company" empty="Not set">
+                {lead.company}
+              </DataField>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <DataField label="Email" empty="Not set">
+                {lead.email}
+              </DataField>
+              <DataField label="Phone" empty="Not set">
                 {lead.phone ? (
                   <a
                     href={`tel:${normalizePhone(lead.phone)}`}
-                    className="hover:text-primary"
-                  >
+                    className="hover:text-primary">
                     {formatPhone(lead.phone)}
                   </a>
-                ) : (
-                  <span>—</span>
+                ) : null}
+              </DataField>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <DataField label="Address" empty="Not set">
+                {hasAddress && (
+                  <div className="flex flex-col">
+                    {lead.street && <span>{lead.street}</span>}
+                    {hasCityStateZip && (
+                      <span className="mt-0.5">
+                        {[
+                          lead.city,
+                          [lead.state, lead.zip].filter(Boolean).join(" "),
+                        ]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </span>
+                    )}
+                    {fullAddress && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                        google maps
+                        <ExternalLink className="size-3" />
+                      </a>
+                    )}
+                  </div>
                 )}
-              </div>
-              <div className="flex items-start gap-2 text-muted-foreground">
-                <MapPin className="size-4 shrink-0" />
-                <span>{fullAddress || "—"}</span>
-              </div>
-            </CardContent>
-          </Card>
+              </DataField>
+            </div>
+          </CardContent>
+        </Card>
 
+        <Card variant="panel" className="lg:col-span-4">
+          <CardHeader>
+            <CardTitle>
+              <House className="icons" />
+              Project Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6 min-h-60">
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <DataField label="Property Type" empty="Not set">
+                {lead.propertyType
+                  ? PROPERTY_TYPE_LABELS[lead.propertyType]
+                  : null}
+              </DataField>
+              <DataField label="Budget Range" empty="Not set">
+                {lead.budgetRange
+                  ? BUDGET_RANGE_LABELS[lead.budgetRange]
+                  : null}
+              </DataField>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <DataField label="Desired Timeline" empty="Not set">
+                {lead.desiredTimeline
+                  ? DESIRED_TIMELINE_LABELS[lead.desiredTimeline]
+                  : null}
+              </DataField>
+              <DataField label="Assigned To">
+                {resolveUser(lead.assignedTo)}
+              </DataField>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2"></div>
+          </CardContent>
+        </Card>
+        <Card variant="panel" className="lg:col-span-4">
+          <CardHeader>
+            <CardTitle>
+              <Megaphone className="icons" />
+              Source Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6 min-h-60">
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <DataField label="Created At" empty="Not set">
+                {format(new Date(lead.createdAt), "PPp")}
+              </DataField>
+              <DataField label="Created By" empty="Not set">
+                {resolveActor(lead.createdBy)}
+              </DataField>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <DataField label="Source" empty="Not set">
+                {lead.source ? LEAD_SOURCE_LABELS[lead.source] : null}
+              </DataField>
+              <DataField label="Source Detail" empty="Not set">
+                {lead.sourceDetail}
+              </DataField>
+            </div>
+            <DataField label="Source Detail" empty="Not set">
+              {lead.sourceDetail}
+            </DataField>
+          </CardContent>
+        </Card>
+
+        {lead.notes && (
           <Card>
             <CardHeader>
-              <CardTitle>Project Details</CardTitle>
+              <CardTitle>Notes</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-3 text-sm">
-              <DetailRow
-                label="Property Type"
-                value={
-                  lead.propertyType
-                    ? PROPERTY_TYPE_LABELS[lead.propertyType]
-                    : "—"
-                }
-              />
-              <DetailRow
-                label="Budget Range"
-                value={
-                  lead.budgetRange ? BUDGET_RANGE_LABELS[lead.budgetRange] : "—"
-                }
-              />
-              <DetailRow
-                label="Desired Timeline"
-                value={
-                  lead.desiredTimeline
-                    ? DESIRED_TIMELINE_LABELS[lead.desiredTimeline]
-                    : "—"
-                }
-              />
-              <DetailRow
-                label="Source"
-                value={lead.source ? LEAD_SOURCE_LABELS[lead.source] : "—"}
-              />
-              <DetailRow
-                label="Source Detail"
-                value={lead.sourceDetail || "—"}
-              />
+            <CardContent className="whitespace-pre-wrap text-muted-foreground text-sm">
+              {lead.notes}
             </CardContent>
           </Card>
-
-          {lead.notes && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Notes</CardTitle>
-              </CardHeader>
-              <CardContent className="whitespace-pre-wrap text-muted-foreground text-sm">
-                {lead.notes}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-6 lg:col-span-5">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCheck className="size-4" />
-                Assignment
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 text-sm">
-              <DetailRow
-                label="Assigned To"
-                value={resolveUser(lead.assignedTo)}
-              />
-              {lead.assignedAt && (
-                <p className="text-muted-foreground text-xs">
-                  Assigned {format(new Date(lead.assignedAt), "PPP")}
-                </p>
-              )}
-              <p className="text-muted-foreground text-xs">
-                Edit the lead to change its assignee.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="pt-0">
-            <CardHeader className="py-3 bg-muted/50">
-              <CardTitle>Audit</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 text-sm">
-              <DetailRow
-                label="Created At"
-                value={format(new Date(lead.createdAt), "PPp")}
-              />
-              <DetailRow
-                label="Created By"
-                value={resolveActor(lead.createdBy)}
-              />
-              <DetailRow
-                label="Updated At"
-                value={
-                  wasUpdated ? format(new Date(lead.updatedAt), "PPp") : "—"
-                }
-              />
-              <DetailRow
-                label="Updated By"
-                value={wasUpdated ? resolveActor(lead.updatedBy) : "—"}
-              />
-            </CardContent>
-          </Card>
-        </div>
+        )}
       </div>
 
       <LeadFormDialog
@@ -438,23 +429,13 @@ export default function LeadDetailPage({ params }: PageProps) {
                 void handleConvert();
               }}
               disabled={converting}
-              className="flex items-center gap-1.5"
-            >
+              className="flex items-center gap-1.5">
               {converting && <Loader2 className="size-4 animate-spin" />}
               Convert to Client
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium text-foreground">{value}</span>
     </div>
   );
 }
