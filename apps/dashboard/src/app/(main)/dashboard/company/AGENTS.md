@@ -67,15 +67,21 @@ just that section. There is no single page-wide "Save."
 - `persist` (in `CompanyProfileForm`) updates `org` state **optimistically**, awaits
   `updateOrganization`, runs storage cleanup, and **reverts on error**.
 - Because every dialog seeds from the full org, saving one section (e.g. `{ companyProfile }`)
-  preserves the fields it doesn't show. Each section writes only its own top-level block
+  preserves the fields it doesn't show. Each dialog writes only its own top-level block
   (`companyProfile`, `branding`, or `settings`); the Settings dialog also silently injects
   `currency`/`measurementUnit` (see below).
+- **The `branding` block is split across two display cards / two dialogs in two files** — **Logo**
+  (`logo-section.tsx`: light/dark logos + icon marks, with storage upload +
+  `deleteReplacedStorageFiles` cleanup; `LogoCard`/`LogoFields`) and **Brand Colors**
+  (`brand-colors-section.tsx`: primary/accent hex, no storage; `BrandColorsCard`/`BrandColorsFields`).
+  Both seed from the full org and patch the whole `branding` block, so each preserves the other's
+  fields.
 - **Each section lives in its own file** — `company-info-section.tsx`, `settings-section.tsx`,
-  `branding-section.tsx` each export that section's display card **and** its edit-dialog field group.
-  Shared shell is in `section-dialog.tsx` (`SectionEditDialog`, `EditableCardHeader`, `LABEL_CLASS`,
-  the `SectionDialogChildProps`/`PatchResult` types); the Country/Timezone combobox is
+  `logo-section.tsx`, `brand-colors-section.tsx` each export that section's display card **and** its
+  edit-dialog field group. Shared shell is in `section-dialog.tsx` (`SectionEditDialog`, `EditableCardHeader`,
+  `LABEL_CLASS`, the `SectionDialogChildProps`/`PatchResult` types); the Country/Timezone combobox is
   `search-select.tsx`. `company-profile-form.tsx` is now just the orchestrator (load + `persist` +
-  wire the three dialogs).
+  wire the four dialogs: company, Logo, Brand Colors, settings).
 
 ## Conventions that are easy to break
 

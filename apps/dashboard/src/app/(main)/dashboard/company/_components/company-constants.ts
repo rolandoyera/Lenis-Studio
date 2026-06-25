@@ -68,6 +68,7 @@ export const companyProfileSchema = z
     // Branding
     primaryColor: hexColor,
     accentColor: hexColor,
+    tertiaryColor: hexColor,
     logoLightUrl: z.string(),
     logoLightPath: z.string(),
     logoDarkUrl: z.string(),
@@ -123,6 +124,7 @@ export const EMPTY_COMPANY_PROFILE_FORM: CompanyProfileFormData = {
   country: "US",
   primaryColor: "",
   accentColor: "",
+  tertiaryColor: "",
   logoLightUrl: "",
   logoLightPath: "",
   logoDarkUrl: "",
@@ -167,6 +169,7 @@ export function organizationToForm(org: Organization): CompanyProfileFormData {
     country: addr?.country ?? "US",
     primaryColor: b?.primaryColor ?? "",
     accentColor: b?.accentColor ?? "",
+    tertiaryColor: b?.tertiaryColor ?? "",
     logoLightUrl: b?.logoLightUrl ?? "",
     logoLightPath: b?.logoLightPath ?? "",
     logoDarkUrl: b?.logoDarkUrl ?? "",
@@ -226,6 +229,7 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
   const branding: OrgBranding = {
     primaryColor: emptyToUndef(data.primaryColor),
     accentColor: emptyToUndef(data.accentColor),
+    tertiaryColor: emptyToUndef(data.tertiaryColor),
     logoLightUrl: emptyToUndef(data.logoLightUrl),
     logoLightPath: emptyToUndef(data.logoLightPath),
     logoDarkUrl: emptyToUndef(data.logoDarkUrl),

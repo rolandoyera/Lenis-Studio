@@ -12,12 +12,7 @@ import {
 } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
-import {
-  CardAction,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -61,33 +56,28 @@ export interface PatchResult {
 /** Card header with a ⋮ → Edit dropdown, shared by every display card. */
 export function EditableCardHeader({
   title,
-  description,
   onEdit,
 }: {
   title: string;
-  description: string;
   onEdit: () => void;
 }) {
   return (
-    <CardHeader className="bg-muted/50 py-3">
+    <CardHeader>
       <CardTitle>{title}</CardTitle>
-      <CardDescription>{description}</CardDescription>
-      <CardAction>
-        <TooltipDropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <MoreVertical className="size-4" />
-              <span className="sr-only">Actions Menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={onEdit}>
-              <Edit className="size-4" />
-              Edit
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </TooltipDropdownMenu>
-      </CardAction>
+      <TooltipDropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <MoreVertical className="size-4" />
+            <span className="sr-only">Actions Menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem onClick={onEdit}>
+            <Edit className="size-4" />
+            Edit
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </TooltipDropdownMenu>
     </CardHeader>
   );
 }
@@ -149,16 +139,14 @@ export function SectionEditDialog({
       open={open}
       onOpenChange={(v) => {
         if (!isSubmitting) onOpenChange(v);
-      }}
-    >
+      }}>
       <DialogContent className="sm:max-w-2xl">
         <div ref={setContainer} />
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col gap-4"
           noValidate
-          autoComplete="off"
-        >
+          autoComplete="off">
           <DialogHeader>
             <DialogTitle className="text-xl">{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -173,15 +161,13 @@ export function SectionEditDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
+              disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2"
-            >
+              className="flex items-center gap-2">
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
               Save Changes
             </Button>

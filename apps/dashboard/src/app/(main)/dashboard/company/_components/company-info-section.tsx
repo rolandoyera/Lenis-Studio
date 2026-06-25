@@ -20,6 +20,7 @@ import {
   LABEL_CLASS,
   type SectionDialogChildProps,
 } from "./section-dialog";
+import { DataField } from "@/components/ui/data-field";
 
 export function CompanyInfoCard({
   org,
@@ -31,90 +32,50 @@ export function CompanyInfoCard({
   const cp = org.companyProfile;
 
   return (
-    <Card className="pt-0 lg:col-span-1">
-      <EditableCardHeader
-        title="Company Information"
-        description="Core details used across proposals, invoices, and reports."
-        onEdit={onEdit}
-      />
+    <Card variant="panel" className="pt-0 lg:col-span-1">
+      <EditableCardHeader title="Company Information" onEdit={onEdit} />
       <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-6">
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Company Name
-            </Label>
-            {(cp?.displayName ?? org.name) ? (
-              <p>{cp?.displayName ?? org.name}</p>
+          <DataField label="Company Name" empty="Not Set">
+            {cp?.displayName ?? org.name}
+          </DataField>
+          <DataField label="Legal Name" empty="Not Set">
+            {cp?.legalName}
+          </DataField>
+          <DataField label="Address" empty="Not Set">
+            {org.companyProfile?.address?.line1 ? (
+              <p>{org.companyProfile?.address?.line1}</p>
             ) : (
               <p className="text-muted-foreground">—</p>
             )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Legal Name
-            </Label>
-            {cp?.legalName ? (
-              <p>{cp?.legalName}</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Address
-            </Label>
-            <div className="text-sm">
-              {org.companyProfile?.address?.line1 ? (
-                <p>{org.companyProfile?.address?.line1}</p>
-              ) : (
-                <p className="text-muted-foreground">—</p>
-              )}
-              {org.companyProfile?.address?.line2 ? (
-                <p>{org.companyProfile?.address?.line2}</p>
-              ) : null}
-              {org.companyProfile?.address?.city ? (
-                <p className="flex gap-1">
-                  <span>{org.companyProfile?.address?.city},</span>
-                  <span>{org.companyProfile?.address?.state}</span>{" "}
-                  <span>{org.companyProfile?.address?.postalCode}</span>
-                </p>
-              ) : null}
-              <p>
-                {org.companyProfile?.address?.country
-                  ? countryName(org.companyProfile.address.country)
-                  : "—"}
+            {org.companyProfile?.address?.line2 ? (
+              <p>{org.companyProfile?.address?.line2}</p>
+            ) : null}
+            {org.companyProfile?.address?.city ? (
+              <p className="flex gap-1">
+                <span>{org.companyProfile?.address?.city},</span>
+                <span>{org.companyProfile?.address?.state}</span>{" "}
+                <span>{org.companyProfile?.address?.postalCode}</span>
               </p>
-            </div>
-          </div>
+            ) : null}
+            <p>
+              {org.companyProfile?.address?.country
+                ? countryName(org.companyProfile.address.country)
+                : "—"}
+            </p>
+          </DataField>
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">Email</Label>
-            {cp?.email ? (
-              <p>{cp?.email}</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">Phone</Label>
-            {cp?.phone ? (
-              <p>{cp?.phone}</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Website
-            </Label>
-            {cp?.website ? (
-              <p>{cp?.website}</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
+          <DataField label="Email" empty="Not Set">
+            {cp?.email}
+          </DataField>
+          <DataField label="Phone" empty="Not Set">
+            {cp?.phone}
+          </DataField>
+          <DataField label="Website" empty="Not Set">
+            {cp?.website}
+          </DataField>
         </div>
       </CardContent>
     </Card>
@@ -138,8 +99,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>
                 Company Name <span className="ml-0.5 text-destructive">*</span>
               </Label>
@@ -158,8 +118,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>Legal Name</Label>
               <Input
                 {...field}
@@ -176,8 +135,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>Email</Label>
               <Input
                 {...field}
@@ -217,8 +175,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>Phone</Label>
               <Input
                 {...field}
@@ -240,8 +197,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>Website</Label>
               <Input
                 {...field}
@@ -264,8 +220,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>Address Line 1</Label>
               <Input {...field} aria-invalid={fieldState.invalid} />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -278,8 +233,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5 sm:col-span-2"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>Address Line 2</Label>
               <Input
                 {...field}
@@ -314,8 +268,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>City</Label>
               <Input {...field} aria-invalid={fieldState.invalid} />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -328,8 +281,7 @@ export function CompanyInfoFields({
           render={({ field, fieldState }) => (
             <Field
               className="flex flex-col gap-1.5"
-              data-invalid={fieldState.invalid}
-            >
+              data-invalid={fieldState.invalid}>
               <Label className={LABEL_CLASS}>
                 {regionLabelFor(countryValue)}
               </Label>
@@ -346,8 +298,7 @@ export function CompanyInfoFields({
             return (
               <Field
                 className="flex flex-col gap-1.5"
-                data-invalid={fieldState.invalid}
-              >
+                data-invalid={fieldState.invalid}>
                 <Label className={LABEL_CLASS}>
                   {isUs ? "ZIP Code" : "Postal Code"}
                 </Label>

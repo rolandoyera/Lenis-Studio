@@ -18,7 +18,7 @@ import { cn, getInitials } from "@/lib/utils";
 import type { UserRow } from "./data";
 
 function RoleCell({ role }: { role: string }) {
-  return <span className="whitespace-nowrap font-medium text-sm">{role}</span>;
+  return <span className="whitespace-nowrap text-sm">{role}</span>;
 }
 
 const statusVariant: Record<
@@ -33,12 +33,7 @@ const statusVariant: Record<
 };
 
 function StatusBadge({ status }: { status: UserRow["status"] }) {
-  return (
-    <Badge variant={statusVariant[status]}>
-      <span className="size-1.5 rounded-full bg-current" />
-      {status}
-    </Badge>
-  );
+  return <Badge variant={statusVariant[status]}>{status}</Badge>;
 }
 
 function getAvatarTone(name: string) {
@@ -168,8 +163,7 @@ export const usersColumns: ColumnDef<UserRow>[] = [
       <Button
         variant="ghost"
         className="-ml-3 flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
         User
         <ArrowUpDown className="size-3.5" />
       </Button>
@@ -198,8 +192,7 @@ export const usersColumns: ColumnDef<UserRow>[] = [
       <Button
         variant="ghost"
         className="-ml-3 flex cursor-pointer items-center gap-1.5 font-normal text-muted-foreground hover:bg-transparent hover:text-foreground"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
         Role
         <ArrowUpDown className="size-3.5" />
       </Button>

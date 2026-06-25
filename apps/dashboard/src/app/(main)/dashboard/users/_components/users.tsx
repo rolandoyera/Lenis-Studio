@@ -37,7 +37,6 @@ import { PageTitle } from "@/components/page-title-updater";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -333,14 +332,13 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus /> Add User
+              <Plus /> User
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <form
               onSubmit={form.handleSubmit(handleAddUser)}
-              className="contents"
-            >
+              className="contents">
               <DialogHeader>
                 <DialogTitle>Add New User</DialogTitle>
                 <DialogDescription>
@@ -356,8 +354,7 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   render={({ field, fieldState }) => (
                     <Field
                       className="gap-1.5"
-                      data-invalid={fieldState.invalid}
-                    >
+                      data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="add-fullName">Full Name</FieldLabel>
                       <Input
                         {...field}
@@ -378,8 +375,7 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   render={({ field, fieldState }) => (
                     <Field
                       className="gap-1.5"
-                      data-invalid={fieldState.invalid}
-                    >
+                      data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="add-email">Email Address</FieldLabel>
                       <Input
                         {...field}
@@ -401,14 +397,12 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   render={({ field, fieldState }) => (
                     <Field
                       className="gap-1.5"
-                      data-invalid={fieldState.invalid}
-                    >
+                      data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="add-role">Role</FieldLabel>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={isSubmitting}
-                      >
+                        disabled={isSubmitting}>
                         <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
@@ -434,8 +428,7 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={isSubmitting}
-                  >
+                    disabled={isSubmitting}>
                     Cancel
                   </Button>
                 </DialogClose>
@@ -460,79 +453,72 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
         </Tabs>
       </div>
 
-      <Card>
-        <CardHeader className="border-b has-data-[slot=card-action]:grid-cols-1 md:has-data-[slot=card-action]:grid-cols-[1fr_auto]">
+      <Card variant="panel" className="gap-0">
+        <CardHeader>
           <CardTitle className="sr-only">Users</CardTitle>
           <CardDescription className="sr-only">
             Manage your organization members and their access.
           </CardDescription>
-          <CardAction className="col-start-1 row-start-auto flex w-full flex-wrap justify-start gap-2 justify-self-stretch md:col-start-2 md:row-span-2 md:row-start-1 md:w-auto md:flex-nowrap md:justify-end md:justify-self-end">
-            <div className="text-muted-foreground text-sm tabular-nums">
-              {selectedCount} selected
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <Select
-                  value={roleFilter}
-                  onValueChange={(value) =>
-                    setColumnSelectFilter("role", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <span className="text-muted-foreground">Role:</span>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" align="start">
-                    <SelectGroup>
-                      {filters.role.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+          <div className="flex w-full flex-wrap items-center justify-between">
+            <div className="text-sm tabular-nums">{selectedCount} selected</div>
 
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value) =>
-                    setColumnSelectFilter("status", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <span className="text-muted-foreground">Status:</span>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" align="start">
-                    <SelectGroup>
-                      {filters.status.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="hidden md:flex items-center gap-4">
+              <Select
+                value={roleFilter}
+                onValueChange={(value) => setColumnSelectFilter("role", value)}>
+                <SelectTrigger>
+                  <span className="text-muted-foreground">Role:</span>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start">
+                  <SelectGroup>
+                    {filters.role.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={statusFilter}
+                onValueChange={(value) =>
+                  setColumnSelectFilter("status", value)
+                }>
+                <SelectTrigger>
+                  <span className="text-muted-foreground">Status:</span>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start">
+                  <SelectGroup>
+                    {filters.status.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <InputGroup className="w-full md:w-64">
+                <InputGroupAddon align="inline-start">
+                  <Search className="size-3.5" />
+                </InputGroupAddon>
+                <InputGroupInput
+                  placeholder="Search users..."
+                  value={searchQuery}
+                  onChange={(event) => {
+                    table
+                      .getColumn("search")
+                      ?.setFilterValue(event.target.value || undefined);
+                    table.setPageIndex(0);
+                  }}
+                />
+              </InputGroup>
             </div>
-            <InputGroup className="w-full md:w-64">
-              <InputGroupAddon align="inline-start">
-                <Search className="size-3.5" />
-              </InputGroupAddon>
-              <InputGroupInput
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(event) => {
-                  table
-                    .getColumn("search")
-                    ?.setFilterValue(event.target.value || undefined);
-                  table.setPageIndex(0);
-                }}
-              />
-            </InputGroup>
-          </CardAction>
+          </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4 px-0">
+        <CardContent className="px-0 pt-0">
           <UsersTable table={table} />
         </CardContent>
       </Card>

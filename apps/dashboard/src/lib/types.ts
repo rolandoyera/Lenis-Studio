@@ -554,6 +554,7 @@ export interface CompanyProfile {
 export interface OrgBranding {
   primaryColor?: string;
   accentColor?: string;
+  tertiaryColor?: string;
   logoLightUrl?: string;
   logoLightPath?: string;
   logoDarkUrl?: string;

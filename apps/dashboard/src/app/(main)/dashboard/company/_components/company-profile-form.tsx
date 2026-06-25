@@ -13,13 +13,17 @@ import {
 } from "@/lib/db";
 import type { Organization } from "@/lib/types";
 
-import { BrandingCard, BrandingFields } from "./branding-section";
+import {
+  BrandColorsCard,
+  BrandColorsFields,
+} from "./brand-colors-section";
+import { LogoCard, LogoFields } from "./logo-section";
 import { formToOrganizationUpdate } from "./company-constants";
 import { CompanyInfoCard, CompanyInfoFields } from "./company-info-section";
 import { SectionEditDialog } from "./section-dialog";
 import { SettingsCard, SettingsFields } from "./settings-section";
 
-type EditSection = "company" | "branding" | "settings" | null;
+type EditSection = "company" | "logo" | "colors" | "settings" | null;
 
 export function CompanyProfileForm() {
   const { organizationId, loading: authLoading } = useAuth();
@@ -84,7 +88,8 @@ export function CompanyProfileForm() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <CompanyInfoCard org={org} onEdit={() => setEditing("company")} />
         <SettingsCard org={org} onEdit={() => setEditing("settings")} />
-        <BrandingCard org={org} onEdit={() => setEditing("branding")} />
+        <LogoCard org={org} onEdit={() => setEditing("logo")} />
+        <BrandColorsCard org={org} onEdit={() => setEditing("colors")} />
       </div>
 
       {/* Company Information (company + address → companyProfile block) */}
@@ -104,12 +109,12 @@ export function CompanyProfileForm() {
         {(props) => <CompanyInfoFields {...props} />}
       </SectionEditDialog>
 
-      {/* Branding (light/dark logos, icon marks, and brand colors) */}
+      {/* Logo (light/dark logos and icon marks) */}
       <SectionEditDialog
-        open={editing === "branding"}
-        onOpenChange={(v) => setEditing(v ? "branding" : null)}
-        title="Edit Branding"
-        description="Logos and brand colors used throughout the app and exports."
+        open={editing === "logo"}
+        onOpenChange={(v) => setEditing(v ? "logo" : null)}
+        title="Edit Logo"
+        description="Logos and icon marks used throughout the app and exports."
         org={org}
         persist={persist}
         buildPatch={(data) => {
@@ -132,8 +137,23 @@ export function CompanyProfileForm() {
         }}
       >
         {(props) => (
-          <BrandingFields {...props} organizationId={organizationId ?? ""} />
+          <LogoFields {...props} organizationId={organizationId ?? ""} />
         )}
+      </SectionEditDialog>
+
+      {/* Brand Colors (primary + accent) */}
+      <SectionEditDialog
+        open={editing === "colors"}
+        onOpenChange={(v) => setEditing(v ? "colors" : null)}
+        title="Edit Brand Colors"
+        description="Primary and accent colors used throughout the app and exports."
+        org={org}
+        persist={persist}
+        buildPatch={(data) => ({
+          patch: { branding: formToOrganizationUpdate(data).branding },
+        })}
+      >
+        {(props) => <BrandColorsFields {...props} />}
       </SectionEditDialog>
 
       {/* Settings */}

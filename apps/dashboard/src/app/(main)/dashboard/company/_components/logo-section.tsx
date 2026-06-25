@@ -7,8 +7,6 @@ import { Controller } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadOrgBrandingImage } from "@/lib/db";
 import type { Organization } from "@/lib/types";
@@ -22,7 +20,7 @@ import {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-function BrandingImageUpload({
+function LogoImageUpload({
   id,
   label,
   hint,
@@ -81,8 +79,7 @@ function BrandingImageUpload({
         className={cn(
           "group/img relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-border transition-all hover:border-primary/50",
           dark ? "bg-neutral-900" : "bg-background",
-        )}
-      >
+        )}>
         {uploading ? (
           <div className="flex flex-col items-center justify-center gap-1.5 p-4 text-center text-primary">
             <Loader2 className="size-6 animate-spin" />
@@ -90,7 +87,7 @@ function BrandingImageUpload({
           </div>
         ) : url ? (
           <>
-            {/* biome-ignore lint/performance/noImgElement: form preview uses dynamic branding URLs. */}
+            {/* biome-ignore lint/performance/noImgElement: form preview uses dynamic logo URLs. */}
             <img
               src={url}
               alt={label}
@@ -99,15 +96,13 @@ function BrandingImageUpload({
             <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover/img:opacity-100">
               <Label
                 htmlFor={id}
-                className="cursor-pointer rounded bg-white px-2 py-1 font-medium text-[10px] text-black hover:bg-gray-100"
-              >
+                className="cursor-pointer rounded bg-white px-2 py-1 font-medium text-[10px] text-black hover:bg-gray-100">
                 Change
               </Label>
               <button
                 type="button"
                 onClick={() => onChange("", "")}
-                className="rounded bg-destructive px-2 py-1 font-medium text-[10px] text-destructive-foreground hover:bg-destructive/90"
-              >
+                className="rounded bg-destructive px-2 py-1 font-medium text-[10px] text-destructive-foreground hover:bg-destructive/90">
                 Remove
               </button>
             </div>
@@ -115,8 +110,7 @@ function BrandingImageUpload({
         ) : (
           <Label
             htmlFor={id}
-            className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
-          >
+            className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground">
             <Upload className="size-6 text-muted-foreground/40" />
             <p className="font-medium text-[11px]">Upload {label}</p>
             <p className="text-[9px] text-muted-foreground/50">
@@ -129,45 +123,7 @@ function BrandingImageUpload({
   );
 }
 
-function ColorField({
-  label,
-  value,
-  invalid,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  invalid?: boolean;
-  onChange: (hex: string) => void;
-}) {
-  return (
-    <Field className="flex flex-col gap-1.5" data-invalid={invalid}>
-      <Label className={LABEL_CLASS}>{label}</Label>
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          aria-label={`${label} swatch`}
-          value={value || "#000000"}
-          onChange={(e) => onChange(e.target.value.toUpperCase())}
-          className="size-10 shrink-0 cursor-pointer rounded-lg border border-input bg-transparent p-1"
-        />
-        <Input
-          value={value}
-          placeholder="#000000"
-          maxLength={7}
-          aria-invalid={invalid}
-          onChange={(e) => {
-            let v = e.target.value.toUpperCase();
-            if (v && !v.startsWith("#")) v = `#${v}`;
-            onChange(v.replace(/[^#0-9A-F]/g, ""));
-          }}
-        />
-      </div>
-    </Field>
-  );
-}
-
-function BrandingThumb({
+function LogoThumb({
   label,
   url,
   dark,
@@ -182,11 +138,10 @@ function BrandingThumb({
       <div
         className={cn(
           "relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg border border-border",
-          dark ? "bg-neutral-900" : "bg-background",
-        )}
-      >
+          dark ? "bg-neutral-900" : "bg-white",
+        )}>
         {url ? (
-          // biome-ignore lint/performance/noImgElement: display uses dynamic branding URLs.
+          // biome-ignore lint/performance/noImgElement: display uses dynamic logo URLs.
           <img
             src={url}
             alt={label}
@@ -200,26 +155,7 @@ function BrandingThumb({
   );
 }
 
-function ColorSwatch({ label, value }: { label: string; value?: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <Label className={LABEL_CLASS}>{label}</Label>
-      {value ? (
-        <span className="flex items-center gap-2 text-sm">
-          <span
-            className="size-5 rounded border border-border"
-            style={{ backgroundColor: value }}
-          />
-          {value}
-        </span>
-      ) : (
-        <span className="text-muted-foreground/50 text-sm">—</span>
-      )}
-    </div>
-  );
-}
-
-export function BrandingCard({
+export function LogoCard({
   org,
   onEdit,
 }: {
@@ -228,32 +164,24 @@ export function BrandingCard({
 }) {
   const b = org.branding;
   return (
-    <Card className="pt-0 lg:col-span-2">
-      <EditableCardHeader
-        title="Branding"
-        description="Logos and brand colors used throughout the app and exports."
-        onEdit={onEdit}
-      />
+    <Card variant="panel" className="lg:col-span-1">
+      <EditableCardHeader title="Logo" onEdit={onEdit} />
       <CardContent className="flex flex-col gap-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <BrandingThumb label="Light Logo" url={b?.logoLightUrl} dark />
-          <BrandingThumb
+          <LogoThumb label="Light Logo" url={b?.logoLightUrl} dark />
+          <LogoThumb
             label="Dark Logo - (For light backgrounds)"
             url={b?.logoDarkUrl}
           />
-          <BrandingThumb label="Light Icon" url={b?.iconLightUrl} dark />
-          <BrandingThumb label="Dark Icon" url={b?.iconDarkUrl} />
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <ColorSwatch label="Primary Brand Color" value={b?.primaryColor} />
-          <ColorSwatch label="Accent Color" value={b?.accentColor} />
+          <LogoThumb label="Light Icon" url={b?.iconLightUrl} dark />
+          <LogoThumb label="Dark Icon" url={b?.iconDarkUrl} />
         </div>
       </CardContent>
     </Card>
   );
 }
 
-export function BrandingFields({
+export function LogoFields({
   control,
   setValue,
   organizationId,
@@ -265,7 +193,7 @@ export function BrandingFields({
           control={control}
           name="logoLightUrl"
           render={({ field }) => (
-            <BrandingImageUpload
+            <LogoImageUpload
               id="org-logo-light-uploader"
               label="Light Logo"
               hint="For dark backgrounds"
@@ -284,7 +212,7 @@ export function BrandingFields({
           control={control}
           name="logoDarkUrl"
           render={({ field }) => (
-            <BrandingImageUpload
+            <LogoImageUpload
               id="org-logo-dark-uploader"
               label="Dark Logo"
               hint="For light backgrounds"
@@ -302,7 +230,7 @@ export function BrandingFields({
           control={control}
           name="iconLightUrl"
           render={({ field }) => (
-            <BrandingImageUpload
+            <LogoImageUpload
               id="org-icon-light-uploader"
               label="Light Icon"
               hint="For dark backgrounds"
@@ -321,7 +249,7 @@ export function BrandingFields({
           control={control}
           name="iconDarkUrl"
           render={({ field }) => (
-            <BrandingImageUpload
+            <LogoImageUpload
               id="org-icon-dark-uploader"
               label="Dark Icon"
               hint="For light backgrounds"
@@ -332,32 +260,6 @@ export function BrandingFields({
                 field.onChange(url);
                 setValue("iconDarkPath", path, { shouldDirty: true });
               }}
-            />
-          )}
-        />
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Controller
-          control={control}
-          name="primaryColor"
-          render={({ field, fieldState }) => (
-            <ColorField
-              label="Primary Brand Color"
-              value={field.value}
-              invalid={fieldState.invalid}
-              onChange={field.onChange}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="accentColor"
-          render={({ field, fieldState }) => (
-            <ColorField
-              label="Accent Color"
-              value={field.value}
-              invalid={fieldState.invalid}
-              onChange={field.onChange}
             />
           )}
         />

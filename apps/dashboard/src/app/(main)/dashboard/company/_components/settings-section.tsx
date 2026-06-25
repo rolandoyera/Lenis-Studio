@@ -4,6 +4,7 @@ import { Percent } from "lucide-react";
 import { Controller } from "react-hook-form";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { DataField } from "@/components/ui/data-field";
 import { Field, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -46,57 +47,31 @@ export function SettingsCard({
 }) {
   const s = org.settings;
   return (
-    <Card className="pt-0">
-      <EditableCardHeader
-        title="Settings"
-        description="Defaults applied to proposals, pricing, and localization."
-        onEdit={onEdit}
-      />
+    <Card variant="panel">
+      <EditableCardHeader title="Company Settings" onEdit={onEdit} />
 
       <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-6">
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Timezone
-            </Label>
-            {s?.timezone ? (
-              <p>{s?.timezone}</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Proposal Expiration
-            </Label>
-            {typeof s?.proposalExpirationDays === "number" ? (
-              <p>{s?.proposalExpirationDays} days</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
+          <DataField label="Timezone" empty="Not Set">
+            {s?.timezone}
+          </DataField>
+          <DataField label="Proposal Expiration" empty="Not Set">
+            {typeof s?.proposalExpirationDays === "number"
+              ? `${s.proposalExpirationDays} days`
+              : null}
+          </DataField>
         </div>
         <div className="space-y-6">
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Default Markup
-            </Label>
-            {typeof s?.defaultMarkupPercent === "number" ? (
-              <p>{s.defaultMarkupPercent}%</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label className="mb-1 text-muted-foreground text-xs">
-              Default Tax Rate
-            </Label>
-            {typeof s?.defaultTaxRate === "number" ? (
-              <p>{s.defaultTaxRate}%</p>
-            ) : (
-              <p className="text-muted-foreground">—</p>
-            )}
-          </div>
+          <DataField label="Default Markup" empty="Not Set">
+            {typeof s?.defaultMarkupPercent === "number"
+              ? `${s.defaultMarkupPercent}%`
+              : null}
+          </DataField>
+          <DataField label="Default Tax Rate" empty="Not Set">
+            {typeof s?.defaultTaxRate === "number"
+              ? `${s.defaultTaxRate}%`
+              : null}
+          </DataField>
         </div>
       </CardContent>
     </Card>
@@ -133,8 +108,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>Default Markup</Label>
             <InputGroup>
               <InputGroupInput
@@ -160,8 +134,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>Default Tax Rate</Label>
             <InputGroup>
               <InputGroupInput
@@ -187,8 +160,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>Proposal Expiration (days)</Label>
             <Input
               {...field}

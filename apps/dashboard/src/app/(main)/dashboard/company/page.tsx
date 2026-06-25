@@ -11,8 +11,7 @@ export default function Page() {
         <div>
           <H1>Company Profile</H1>
           <p className="mt-1 text-muted-foreground text-sm">
-            Manage your organization details, branding, and defaults used across
-            the app.
+            Manage your organization details and branding used across the app.
           </p>
         </div>
 

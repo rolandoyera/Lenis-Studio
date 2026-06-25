@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -67,7 +66,7 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="py-4 font-normal">
+                  <TableHead key={header.id} className="py-2 font-normal">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -86,8 +85,7 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
                 <TableRow
                   key={row.id}
                   className="border-border/60 hover:bg-white/2.5"
-                  data-state={row.getIsSelected() && "selected"}
-                >
+                  data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="px-3 py-4 align-middle">
                       {flexRender(
@@ -102,8 +100,7 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
               <TableRow>
                 <TableCell
                   colSpan={table.getVisibleLeafColumns().length}
-                  className="h-24 text-center"
-                >
+                  className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>
@@ -112,21 +109,17 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
         </Table>
       </div>
 
-      <Separator />
-
-      <div className="flex items-center justify-between px-4">
+      <div className="flex items-center justify-between px-4 py-4 bg-muted/50">
         <div className="flex items-center gap-4 text-muted-foreground text-sm">
           <div className="flex items-center gap-2">
             <span>Rows per page</span>
             <Select
               value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => table.setPageSize(Number(value))}
-            >
+              onValueChange={(value) => table.setPageSize(Number(value))}>
               <SelectTrigger
                 size="sm"
                 className="w-20"
-                id="users-rows-per-page"
-              >
+                id="users-rows-per-page">
                 <SelectValue placeholder={rowsPerPage} />
               </SelectTrigger>
               <SelectContent side="top">
@@ -139,10 +132,10 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
                 </SelectGroup>
               </SelectContent>
             </Select>
+            <span>
+              Page {currentPage} of {pageCount}
+            </span>
           </div>
-          <span>
-            Page {currentPage} of {pageCount}
-          </span>
         </div>
 
         <Pagination className="mx-0 w-auto justify-start md:justify-end">
@@ -177,8 +170,7 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
                   onClick={(event) => {
                     preventPaginationNavigation(event);
                     table.setPageIndex(pageNumber - 1);
-                  }}
-                >
+                  }}>
                   {pageNumber}
                 </PaginationLink>
               </PaginationItem>
@@ -207,7 +199,7 @@ export function UsersTable({ table }: { table: TableType<UserRow> }) {
         </Pagination>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t px-4 pt-4 text-muted-foreground text-xs">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-muted-foreground text-xs">
         <span className="font-semibold text-[10px] text-muted-foreground/80 uppercase tracking-wider">
           Activity Key:
         </span>
