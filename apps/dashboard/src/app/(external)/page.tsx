@@ -19,10 +19,10 @@ export default async function Home() {
             once the image slides in behind it. */}
         <div className="relative order-1 h-full">
           <ViewTransition name="auth-brand">
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-10 text-center text-foreground">
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-10 text-center text-foreground gap-4">
               <div className="size-44 mb-8">
                 <Image
-                  src={brand.image.src}
+                  src={brand.image.iconSrc}
                   className={cn(
                     "drop-shadow-sm dark:hidden",
                     brand.image.invertOnDark && "dark:invert",
@@ -34,7 +34,7 @@ export default async function Home() {
                   priority
                 />
                 <Image
-                  src={brand.image.darkSrc}
+                  src={brand.image.iconSrc}
                   className={cn(
                     "hidden drop-shadow-sm dark:block",
                     brand.image.invertOnDark && "dark:invert",
@@ -49,12 +49,12 @@ export default async function Home() {
               <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">
                 {brand.name}
               </h1>
-              <p className="font-light text-base text-foreground/80 tracking-widest drop-shadow-sm">
+              <p className="font-light text-base text-foreground/80 tracking-widest drop-shadow-sm mt-4">
                 {brand.tagline}
               </p>
             </div>
           </ViewTransition>
-          <div className="absolute inset-x-0 bottom-84 z-10 flex justify-center">
+          <div className="absolute inset-x-0 bottom-60 z-10 flex justify-center">
             <Button asChild size="lg" className="px-10">
               <Link href="/auth/login">Login</Link>
             </Button>

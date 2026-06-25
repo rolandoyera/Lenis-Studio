@@ -33,24 +33,27 @@ const defaultBrand: AppBrand = {
   },
 };
 
+const sarvianBrand: AppBrand = {
+  name: "Sarvian Design Group",
+  tagline: "Design. Build. Repeat.",
+  meta: {
+    title: "Sarvian Design Group",
+    description: "Sarvian Design Group dashboard.",
+  },
+  image: {
+    src: "/brands/app.sarviandg.com/logo-dark.svg",
+    darkSrc: "/brands/app.sarviandg.com/logo-light.svg",
+    iconSrc: "/brands/app.sarviandg.com/icon-dark.svg",
+    iconDarkSrc: "/brands/app.sarviandg.com/icon-light.svg",
+  },
+};
+
 export const APP_CONFIG = {
   version: packageJson.version,
   brand: defaultBrand,
   hostBrands: {
-    "app.sarviandg.com": {
-      name: "Sarvian Design Group",
-      tagline: "Design. Build. Repeat.",
-      meta: {
-        title: "Sarvian Design Group",
-        description: "Sarvian Design Group dashboard.",
-      },
-      image: {
-        src: "/brands/app.sarviandg.com/logo-dark.svg",
-        darkSrc: "/brands/app.sarviandg.com/logo-light.svg",
-        iconSrc: "/brands/app.sarviandg.com/icon-dark.svg",
-        iconDarkSrc: "/brands/app.sarviandg.com/icon-light.svg",
-      },
-    },
+    "app.sarviandg.com": sarvianBrand,
+    "app.sarviandg.local": sarvianBrand,
   },
 } satisfies {
   version: string;

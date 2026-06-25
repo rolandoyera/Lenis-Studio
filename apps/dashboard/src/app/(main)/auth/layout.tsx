@@ -31,7 +31,7 @@ export default async function Layout({
           <div className="pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-1/2 flex-col items-center justify-center px-10 text-center text-white lg:flex">
             <div className="size-44 mb-8">
               <Image
-                src={brand.image.darkSrc}
+                src={brand.image.iconDarkSrc}
                 className={cn(
                   "drop-shadow-sm",
                   brand.image.invertOnDark && "invert",
@@ -46,7 +46,7 @@ export default async function Layout({
             <h1 className="font-medium text-5xl font-lora tracking-tight drop-shadow-md">
               {brand.name}
             </h1>
-            <p className="font-light text-base text-white tracking-widest drop-shadow-sm">
+            <p className="font-light text-base text-white tracking-widest drop-shadow-sm mt-4">
               {brand.tagline}
             </p>
           </div>
