@@ -13,7 +13,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { db } from "@/lib/firebase";
@@ -56,8 +55,7 @@ export function UserProfile() {
         className="mt-2 min-w-56 space-y-1 rounded-lg"
         side="bottom"
         align="end"
-        sideOffset={4}
-      >
+        sideOffset={4}>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Link href="/dashboard/profile" className="hover:cursor-pointer">
@@ -66,7 +64,6 @@ export function UserProfile() {
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
           <LogOut />
           Log out
