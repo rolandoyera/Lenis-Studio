@@ -28,6 +28,7 @@ import type {
 } from "@/lib/types";
 
 import { sendContractEmail } from "./brevo";
+import { buildContractEmailHtml } from "./contract-email-template";
 import { hasRecentPortalOpen, writeContractAuditEvent } from "./contract-audit";
 import { generateAndStoreFinalContractPdf } from "./contract-pdf";
 import { getAdminDb } from "./firebase-admin";
@@ -219,16 +220,20 @@ export async function sendContractForSignature(input: {
     org?.companyProfile?.legalName ||
     org?.companyProfile?.displayName ||
     "Sarvian Design Group";
+  // Logo only renders in email if it's an absolute URL (clients can't resolve
+  // app-relative paths); otherwise the template falls back to the company name.
+  const rawLogo = org?.branding?.logoDarkUrl;
+  const logoUrl = rawLogo?.startsWith("http") ? rawLogo : undefined;
   const emailResult = await sendContractEmail({
     to: { email: sentToEmail, name: contract.clientName },
     sender: { email: signer.email, name: companyName },
     subject: `Your contract from ${companyName} is ready to sign`,
-    htmlContent: `
-      <p>Hello ${contract.clientName || "there"},</p>
-      <p>${companyName} has sent you a contract to review and sign.</p>
-      <p><a href="${portalUrl}">Open and sign your contract</a></p>
-      <p>This link is private to you. If you didn't expect this, you can ignore this email.</p>
-    `,
+    htmlContent: buildContractEmailHtml({
+      clientName: contract.clientName,
+      companyName,
+      portalUrl,
+      logoUrl,
+    }),
     metadata: {
       contractId,
       contractVersionId,
