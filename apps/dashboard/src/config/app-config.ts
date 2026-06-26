@@ -55,7 +55,7 @@ export const APP_CONFIG = {
   version: packageJson.version,
   brand: defaultBrand,
   hostBrands: {
-    "app.sarviandg.com": sarvianBrand,
+    "studio.sarviandg.com": sarvianBrand,
     "app.sarviandg.local": sarvianBrand,
   },
 } satisfies {
