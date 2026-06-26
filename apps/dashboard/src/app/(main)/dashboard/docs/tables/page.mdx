@@ -63,6 +63,9 @@ function ContractsTable({ data }: { data: Contract[] }) {
   "Viewing 10 out of 12 contracts". Defaults to `"rows"`.
 - **`emptyMessage`** — text shown when there are no rows. Defaults to
   `"No results."`.
+- **`borderTop`** — render the top border above the header row. Defaults to
+  `true`; set `false` when the table sits flush under a card header that already
+  has its own divider.
 - **`onRowClick`** — when set, rows become clickable (`cursor-pointer`) and the
   handler receives that row's data (see the snippet below for navigating on
   click). Note: clicks on a checkbox or action button inside a row also bubble to

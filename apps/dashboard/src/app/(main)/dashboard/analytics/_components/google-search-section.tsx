@@ -8,13 +8,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Display,
+  DisplayContent,
+  DisplayHeader,
+  DisplayTitle,
+} from "@/components/ui/display";
 import {
   fetchSearchTotals,
   fetchTopSearchPages,
@@ -22,15 +20,7 @@ import {
 } from "@/server/search-console-actions";
 
 import { AnalyticsSetupRequired } from "./analytics-setup-required";
-
-// GSC returns full page URLs; show just the path so the table stays readable.
-function toPath(url: string): string {
-  try {
-    return new URL(url).pathname || "/";
-  } catch {
-    return url;
-  }
-}
+import { SearchPagesTable, SearchQueriesTable } from "./google-search-tables";
 
 export async function GoogleSearchSection({ range }: { range?: string }) {
   const [totals, queries, pages] = await Promise.all([
@@ -62,18 +52,16 @@ export async function GoogleSearchSection({ range }: { range?: string }) {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <Card key={kpi.label} className="gap-2">
-            <CardHeader>
-              <CardTitle className="font-normal text-muted-foreground text-sm">
-                {kpi.label}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="font-semibold text-2xl tabular-nums">
+          <Display key={kpi.label}>
+            <DisplayHeader>
+              <DisplayTitle>{kpi.label}</DisplayTitle>
+            </DisplayHeader>
+            <DisplayContent>
+              <div className="text-2xl leading-none tracking-tight tabular-nums">
                 {kpi.value}
-              </span>
-            </CardContent>
-          </Card>
+              </div>
+            </DisplayContent>
+          </Display>
         ))}
       </div>
 
@@ -86,68 +74,16 @@ export async function GoogleSearchSection({ range }: { range?: string }) {
               <Ellipsis className="size-4" />
             </CardAction>
           </CardHeader>
-          <CardContent className="px-0">
-            <Table className="[&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
-              <TableHeader className="[&_tr]:border-border/50">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="h-8 font-normal">Query</TableHead>
-                  <TableHead className="h-8 w-20 text-right font-normal">
-                    Clicks
-                  </TableHead>
-                  <TableHead className="h-8 w-24 text-right font-normal">
-                    Impr.
-                  </TableHead>
-                  <TableHead className="h-8 w-20 text-right font-normal">
-                    CTR
-                  </TableHead>
-                  <TableHead className="h-8 w-20 text-right font-normal">
-                    Pos.
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="[&_tr]:border-border/50">
-                {!queries.success ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={5} className="py-4">
-                      <AnalyticsSetupRequired
-                        error={queries.error}
-                        title="Queries Error"
-                        className="min-h-32"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : queries.data.length === 0 ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell
-                      colSpan={5}
-                      className="h-32 py-4 text-center text-muted-foreground text-sm"
-                    >
-                      No query data available for this range.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  queries.data.map((row) => (
-                    <TableRow className="hover:bg-transparent" key={row.query}>
-                      <TableCell className="max-w-0 truncate py-4 font-medium">
-                        {row.query}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.clicks}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular-nums">
-                        {row.impressions}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular-nums">
-                        {row.ctr}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular-nums">
-                        {row.position}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <CardContent className="px-0 pt-0">
+            {!queries.success ? (
+              <AnalyticsSetupRequired
+                error={queries.error}
+                title="Queries Error"
+                className="min-h-32"
+              />
+            ) : (
+              <SearchQueriesTable data={queries.data} />
+            )}
           </CardContent>
         </Card>
 
@@ -159,68 +95,16 @@ export async function GoogleSearchSection({ range }: { range?: string }) {
               <Ellipsis className="size-4" />
             </CardAction>
           </CardHeader>
-          <CardContent className="px-0">
-            <Table className="[&_td:first-child]:pl-4 [&_td:last-child]:pr-4 [&_th:first-child]:pl-4 [&_th:last-child]:pr-4">
-              <TableHeader className="[&_tr]:border-border/50">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="h-8 font-normal">Page</TableHead>
-                  <TableHead className="h-8 w-20 text-right font-normal">
-                    Clicks
-                  </TableHead>
-                  <TableHead className="h-8 w-24 text-right font-normal">
-                    Impr.
-                  </TableHead>
-                  <TableHead className="h-8 w-20 text-right font-normal">
-                    CTR
-                  </TableHead>
-                  <TableHead className="h-8 w-20 text-right font-normal">
-                    Pos.
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="[&_tr]:border-border/50">
-                {!pages.success ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell colSpan={5} className="py-4">
-                      <AnalyticsSetupRequired
-                        error={pages.error}
-                        title="Pages Error"
-                        className="min-h-32"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : pages.data.length === 0 ? (
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell
-                      colSpan={5}
-                      className="h-32 py-4 text-center text-muted-foreground text-sm"
-                    >
-                      No page data available for this range.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  pages.data.map((row) => (
-                    <TableRow className="hover:bg-transparent" key={row.page}>
-                      <TableCell className="max-w-0 truncate py-4 font-medium">
-                        {toPath(row.page)}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {row.clicks}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular-nums">
-                        {row.impressions}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular-nums">
-                        {row.ctr}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground tabular-nums">
-                        {row.position}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+          <CardContent className="px-0 pt-0">
+            {!pages.success ? (
+              <AnalyticsSetupRequired
+                error={pages.error}
+                title="Pages Error"
+                className="min-h-32"
+              />
+            ) : (
+              <SearchPagesTable data={pages.data} />
+            )}
           </CardContent>
         </Card>
       </div>

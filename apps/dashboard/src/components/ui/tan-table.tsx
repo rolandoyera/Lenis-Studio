@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 interface TanTableProps<TData> {
   table: TanstackTable<TData>;
@@ -33,6 +34,8 @@ interface TanTableProps<TData> {
   pagination?: boolean;
   /** Plural noun for the pagination count, e.g. "contracts" → "out of 12 contracts". */
   noun?: string;
+  /** Render the top border above the header row. Defaults to `true`. */
+  borderTop?: boolean;
   /** When set, rows become clickable and call this with the row's data. */
   onRowClick?: (row: TData) => void;
 }
@@ -93,6 +96,7 @@ export function TanTable<TData>({
   emptyMessage = "No results.",
   pagination = false,
   noun = "rows",
+  borderTop = true,
   onRowClick,
 }: TanTableProps<TData>) {
   const currentPage = table.getState().pagination.pageIndex + 1;
@@ -105,9 +109,14 @@ export function TanTable<TData>({
     <>
       <div className="overflow-hidden">
         <Table className="**:data-[slot='table-cell']:px-4 **:data-[slot='table-head']:px-4 **:data-[slot='table-cell']:py-4">
-          <TableHeader className="h-16 border-t **:data-[slot='table-head']:h-11 **:data-[slot='table-head']:font-medium **:data-[slot='table-head']:text-foreground **:data-[slot='table-head']:text-sm">
+          <TableHeader
+            className={cn(
+              "h-16 **:data-[slot='table-head']:h-11 **:data-[slot='table-head']:font-medium **:data-[slot='table-head']:text-foreground **:data-[slot='table-head']:text-sm",
+              borderTop && "border-t",
+            )}
+          >
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => (
                   <TableHead key={header.id} colSpan={header.colSpan}>
                     {header.isPlaceholder
@@ -121,7 +130,7 @@ export function TanTable<TData>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="**:data-[slot='table-row']:border-border/50 **:data-[slot='table-row']:hover:bg-transparent">
+          <TableBody className="**:data-[slot='table-row']:border-border/50">
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
