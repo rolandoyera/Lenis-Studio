@@ -213,7 +213,7 @@ export default function LeadDetailPage({ params }: PageProps) {
     <div className="flex w-full flex-col gap-6 pb-10">
       <HeaderBackLink href="/dashboard/leads" />
 
-      <div className="flex flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 pb-4 md:flex-row md:items-center">
         <div className="flex items-center gap-3">
           <H1>{getLeadName(lead)}</H1>
           <Badge variant={LEAD_STAGE_VARIANT[lead.stage]}>
@@ -256,6 +256,24 @@ export default function LeadDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       )}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+          <CardContent className="flex items-center justify-between gap-4 py-4 text-sm">
+            <span className="text-muted-foreground">
+              This lead was converted on{" "}
+              {lead.convertedAt
+                ? format(new Date(lead.convertedAt), "PPP")
+                : "—"}{" "}
+              by {resolveUser(lead.convertedBy)}.
+            </span>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/dashboard/clients/${lead.convertedClientId}`}>
+                View Client
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <Card variant="panel" className="lg:col-span-4">

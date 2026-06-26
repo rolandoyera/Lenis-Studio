@@ -23,6 +23,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Display,
+  DisplayContent,
+  DisplayFooter,
+  DisplayHeader,
+  DisplayIcon,
+  DisplayTitle,
+} from "@/components/ui/display";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getProjects } from "@/lib/db";
 import type { Project } from "@/lib/types";
@@ -139,91 +147,113 @@ export function MetricCards() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex items-center gap-4">
-          <CardTitle>
-            <div className="flex size-7 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
-              <UserPlus className="size-4" />
-            </div>
-          </CardTitle>
-          <CardDescription>New Opportunities</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
-              22
-            </div>
-            <Badge variant="trendingDown">
-              <TrendingDown className="size-3" />
-              -20%
-            </Badge>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            Acquisition needs attention
-          </p>
-        </CardContent>
-      </Card>
+      <Display>
+        <DisplayHeader>
+          <DisplayIcon>
+            <UserPlus className="size-4" />
+          </DisplayIcon>
+          <DisplayTitle>New Leads</DisplayTitle>
+        </DisplayHeader>
 
-      <div className="flex flex-col gap-4 overflow-hidden rounded-xl bg-card p-4 text-sm text-card-foreground shadow-xs bg-linear-to-t from-primary/5 to-card dark:bg-card ring-1 ring-foreground/10">
-        <div className="flex items-center gap-4">
-          <div className="flex size-7 items-center justify-center rounded-lg border bg-muted text-muted-foreground">
-            <Users className="size-4" />
-          </div>
-
-          <h2 className="text-sm text-muted-foreground">Active Projects</h2>
-        </div>
-        <div className="flex flex-col gap-6 p-0 pt-2">
-          {projectStatus === "loading" ? (
-            <>
-              <Skeleton className="h-9 w-16" />
-              <Skeleton className="h-5 w-28" />
-            </>
-          ) : projectStatus === "error" ? (
-            <div className="flex h-5 items-center justify-between gap-3">
-              <p className="text-muted-foreground text-sm">
-                Unable to load projects
-              </p>
-              <Link
-                href="/dashboard/projects"
-                prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm">
-                View projects
-                <ArrowRight className="size-3" />
-              </Link>
-            </div>
-          ) : (
-            <>
+        <DisplayContent>
+          <div className="flex flex-wrap items-center gap-6 pl-11">
+            {projectStatus === "loading" ? (
+              <>
+                <Skeleton className="h-9 w-16" />
+                <Skeleton className="h-5 w-28" />
+              </>
+            ) : projectStatus === "error" ? (
+              <div className="flex h-5 items-center justify-between gap-3">
+                <p className="text-muted-foreground text-sm">
+                  Unable to load leads
+                </p>
+              </div>
+            ) : (
               <div className="flex items-center gap-2">
                 <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
                   {activeProjectCount.toLocaleString()}
                 </div>
               </div>
-              <div className="flex h-5 ml-auto">
-                <Link
-                  href="/dashboard/projects"
-                  prefetch={false}
-                  className="flex items-center gap-1 font-medium text-primary text-sm">
-                  View projects
-                  <ArrowRight className="size-3" />
-                </Link>
+            )}
+          </div>
+        </DisplayContent>
+
+        <DisplayFooter>
+          <Button
+            variant="link"
+            size="sm"
+            asChild
+            className="ml-auto p-0 detail-link">
+            <Link
+              href="/dashboard/instagram"
+              prefetch={false}
+              className="group/btn flex items-center gap-0.5">
+              View Leads
+              <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
+            </Link>
+          </Button>
+        </DisplayFooter>
+      </Display>
+
+      <Display>
+        <DisplayHeader>
+          <DisplayIcon>
+            <Users className="size-4" />
+          </DisplayIcon>
+          <DisplayTitle>Active Projects</DisplayTitle>
+        </DisplayHeader>
+
+        <DisplayContent>
+          <div className="flex flex-wrap items-center gap-6 pl-11">
+            {projectStatus === "loading" ? (
+              <>
+                <Skeleton className="h-9 w-16" />
+                <Skeleton className="h-5 w-28" />
+              </>
+            ) : projectStatus === "error" ? (
+              <div className="flex h-5 items-center justify-between gap-3">
+                <p className="text-muted-foreground text-sm">
+                  Unable to load projects
+                </p>
               </div>
-            </>
-          )}
-        </div>
-      </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
+                  {activeProjectCount.toLocaleString()}
+                </div>
+              </div>
+            )}
+          </div>
+        </DisplayContent>
+
+        <DisplayFooter>
+          <Button
+            variant="link"
+            size="sm"
+            asChild
+            className="ml-auto p-0 detail-link">
+            <Link
+              href="/dashboard/instagram"
+              prefetch={false}
+              className="group/btn flex items-center gap-0.5">
+              View Projects
+              <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
+            </Link>
+          </Button>
+        </DisplayFooter>
+      </Display>
 
       {(igLoading || igFollowers) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <div className="flex size-7 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <InstagramIcon size={20} strokeWidth={1.5} />
-              </div>
-            </CardTitle>
-            <CardDescription>Instagram Followers</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-6 pt-2">
-            <div className="flex flex-wrap items-center gap-6">
+        <Display>
+          <DisplayHeader>
+            <DisplayIcon>
+              <InstagramIcon size={20} strokeWidth={1.5} />
+            </DisplayIcon>
+            <DisplayTitle>Instagram Followers</DisplayTitle>
+          </DisplayHeader>
+
+          <DisplayContent>
+            <div className="flex flex-wrap items-center gap-6 pl-11">
               {igLoading || !igFollowers ? (
                 <Skeleton className="h-8 w-20" />
               ) : (
@@ -253,31 +283,37 @@ export function MetricCards() {
                 )
               ) : null}
             </div>
-            <div className="flex gap-4 justify-between items-end">
-              <Label>
-                {igFollowers?.comparison ? (
-                  <>
-                    vs{" "}
-                    <span className="text-base text-card-foreground">
-                      {igFollowers.comparison.previousValue.toLocaleString()}
-                    </span>{" "}
-                    Previous 30 Days
-                  </>
-                ) : (
-                  "Last 30 days"
-                )}
-              </Label>
+          </DisplayContent>
+
+          <DisplayFooter className="justify-between">
+            <Label>
+              {igFollowers?.comparison ? (
+                <>
+                  vs{" "}
+                  <span className="text-base text-card-foreground">
+                    {igFollowers.comparison.previousValue.toLocaleString()}
+                  </span>{" "}
+                  Previous 30 Days
+                </>
+              ) : (
+                "Last 30 days"
+              )}
+            </Label>
+            <Button
+              variant="link"
+              size="sm"
+              asChild
+              className="ml-auto p-0 detail-link">
               <Link
                 href="/dashboard/instagram"
                 prefetch={false}
-                className="flex items-center gap-1 font-medium text-primary text-sm h-6">
-                <Button variant="link">
-                  View More <ArrowRight className="size-3" />
-                </Button>
+                className="group/btn flex items-center gap-0.5">
+                View More
+                <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
               </Link>
-            </div>
-          </CardContent>
-        </Card>
+            </Button>
+          </DisplayFooter>
+        </Display>
       )}
     </div>
   );

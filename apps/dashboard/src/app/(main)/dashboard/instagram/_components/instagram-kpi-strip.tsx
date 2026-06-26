@@ -1,7 +1,13 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Display,
+  DisplayContent,
+  DisplayFooter,
+  DisplayHeader,
+  DisplayTitle,
+} from "@/components/ui/display";
 import { Label } from "@/components/ui/label";
 import { fetchInstagramKpis } from "@/server/meta-actions";
 
@@ -55,57 +61,52 @@ export async function InstagramKpiStrip({ range }: { range?: string }) {
           {asOfLabel(result.asOf)}.
         </div>
       )}
-      <div className="overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
-        <div className="grid divide-y *:data-[slot=card]:rounded-none *:data-[slot=card]:ring-0 md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-5">
-          {kpis.map(({ title, metric }) => {
-            const noChange = Number.parseFloat(metric.change) === 0;
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-5">
+        {kpis.map(({ title, metric }) => {
+          const noChange = Number.parseFloat(metric.change) === 0;
 
-            return (
-              <Card key={title}>
-                <CardHeader>
-                  <CardTitle className="font-normal text-sm">{title}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="text-2xl leading-none tracking-tight">
-                      {formatCount(metric.value)}
-                    </div>
-                    {!isFallback &&
-                      (noChange ? (
-                        <span className="text-muted-foreground text-xs">
-                          No change
-                        </span>
-                      ) : (
-                        <Badge
-                          variant={
-                            metric.isPositive ? "trendingUp" : "trendingDown"
-                          }
-                        >
-                          {metric.isPositive ? (
-                            <TrendingUp />
-                          ) : (
-                            <TrendingDown />
-                          )}
-                          {metric.change}
-                        </Badge>
-                      ))}
+          return (
+            <Display key={title}>
+              <DisplayHeader>
+                <DisplayTitle>{title}</DisplayTitle>
+              </DisplayHeader>
+              <DisplayContent>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="text-2xl leading-none tracking-tight">
+                    {formatCount(metric.value)}
                   </div>
-                  {isFallback ? (
-                    <Label>{asOfLabel(result.asOf)}</Label>
-                  ) : (
-                    <Label>
-                      vs{" "}
-                      <span className="text-base text-card-foreground">
-                        {formatCount(metric.previousValue)}
-                      </span>{" "}
-                      {comparisonLabel}
-                    </Label>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                  {!isFallback &&
+                    (noChange ? (
+                      <span className="text-muted-foreground text-xs">
+                        No change
+                      </span>
+                    ) : (
+                      <Badge
+                        variant={
+                          metric.isPositive ? "trendingUp" : "trendingDown"
+                        }>
+                        {metric.isPositive ? <TrendingUp /> : <TrendingDown />}
+                        {metric.change}
+                      </Badge>
+                    ))}
+                </div>
+              </DisplayContent>
+              <DisplayFooter>
+                {isFallback ? (
+                  <Label>{asOfLabel(result.asOf)}</Label>
+                ) : (
+                  <Label>
+                    vs{" "}
+                    <span className="text-base text-card-foreground">
+                      {formatCount(metric.previousValue)}
+                    </span>{" "}
+                    {comparisonLabel}
+                  </Label>
+                )}
+              </DisplayFooter>
+            </Display>
+          );
+        })}
       </div>
     </div>
   );
