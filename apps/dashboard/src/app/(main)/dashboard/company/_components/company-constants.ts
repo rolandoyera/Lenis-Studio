@@ -91,6 +91,15 @@ export const companyProfileSchema = z
     proposalExpirationDays: z
       .string()
       .refine(numericOrEmpty, "Enter a whole number of days."),
+
+    // Contract signer — the person authorized to sign contracts on the company's
+    // behalf (stamped onto a contract when it is sent for signature).
+    contractSignerName: z.string(),
+    contractSignerTitle: z.string(),
+    contractSignerEmail: z.union([
+      z.string().email("Please enter a valid email address."),
+      z.literal(""),
+    ]),
   })
   // US/CA phone numbers (without a leading +) must be a complete 10-digit number;
   // international numbers are validated loosely (see isValidVendorPhone).
@@ -139,6 +148,9 @@ export const EMPTY_COMPANY_PROFILE_FORM: CompanyProfileFormData = {
   defaultMarkupPercent: "",
   defaultTaxRate: "",
   proposalExpirationDays: "",
+  contractSignerName: "",
+  contractSignerTitle: "",
+  contractSignerEmail: "",
 };
 
 const numToStr = (n: number | undefined): string =>
@@ -186,6 +198,9 @@ export function organizationToForm(org: Organization): CompanyProfileFormData {
     defaultMarkupPercent: numToStr(s?.defaultMarkupPercent),
     defaultTaxRate: numToStr(s?.defaultTaxRate),
     proposalExpirationDays: numToStr(s?.proposalExpirationDays),
+    contractSignerName: s?.contractSigner?.name ?? "",
+    contractSignerTitle: s?.contractSigner?.title ?? "",
+    contractSignerEmail: s?.contractSigner?.email ?? "",
   };
 }
 
@@ -248,6 +263,18 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
     defaultMarkupPercent: numberOrUndef(data.defaultMarkupPercent),
     defaultTaxRate: numberOrUndef(data.defaultTaxRate),
     proposalExpirationDays: numberOrUndef(data.proposalExpirationDays),
+    // Only persist a signer when all three parts are present — partial signer
+    // identity isn't usable for an authorization stamp.
+    contractSigner:
+      emptyToUndef(data.contractSignerName) &&
+      emptyToUndef(data.contractSignerTitle) &&
+      emptyToUndef(data.contractSignerEmail)
+        ? {
+            name: data.contractSignerName.trim(),
+            title: data.contractSignerTitle.trim(),
+            email: data.contractSignerEmail.trim(),
+          }
+        : undefined,
   };
 
   return { companyProfile, branding, settings };

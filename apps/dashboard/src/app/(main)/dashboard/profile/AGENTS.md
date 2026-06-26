@@ -30,7 +30,7 @@ are display-only mirrors of state.
 
 - **Pending invite** → keyed by **lowercased email** (`users/{emailKey}`), `status: "Pending"`,
   carrying `organizationId`, `role`, `fullName`. Created by an Admin elsewhere; this folder only
-  *resends* it.
+  _resends_ it.
 - **Active user** → keyed by **Auth UID** (`users/{uid}`), `status: "Active"`.
 
 The accept flow (`auth/invite/page.tsx`) reads the email-keyed pending doc, creates the UID-keyed
@@ -50,7 +50,7 @@ Two independent gates, both required:
    if `targetOrgId !== loggedInOrgId` ([page.tsx](./page.tsx), "Tenant isolation check"). So the
    Resend/Edit actions are only reachable for a same-org target.
 2. **Rules gate (authoritative).** The resend's `setDoc(users/{emailKey}, {joinedDate}, merge)`
-   is an *update*; `firestore.rules` only allows it via the Admin clause, which requires
+   is an _update_; `firestore.rules` only allows it via the Admin clause, which requires
    `resource.data.organizationId == userOrg()` and forbids changing `organizationId`. A
    cross-tenant resend is **denied at the rules layer**, not just hidden in the UI.
 
@@ -71,9 +71,9 @@ source of truth for the new user's org.
 ## Current issues / known weaknesses
 
 - **`mail` is writable by any signed-in user.** `firestore.rules` has `match /mail/{mailId} {
-  allow create: if isSignedIn(); }` — no role/org scoping. Any authenticated account (any tenant,
+allow create: if isSignedIn(); }` — no role/org scoping. Any authenticated account (any tenant,
   any role) can enqueue arbitrary `to`/`subject`/`html` and send mail from our identity. Not a
-  cross-tenant *data leak*, but an abuse/phishing vector. **Deferred** (owner asked to hold). The
+  cross-tenant _data leak_, but an abuse/phishing vector. **Deferred** (owner asked to hold). The
   intended fix is to move mail-sending into a server action and set `mail` to `write: false`
   (same pattern as `organizations/{orgId}/secrets`), or at minimum gate `create` to `isAdmin()`.
 - **Pending invite docs are world-readable by email.** `users` `allow get` permits reading any

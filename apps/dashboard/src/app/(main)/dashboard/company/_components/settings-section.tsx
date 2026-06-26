@@ -73,6 +73,15 @@ export function SettingsCard({
               : null}
           </DataField>
         </div>
+        <DataField
+          label="Contract Signer"
+          empty="Not Set"
+          className="sm:col-span-2"
+        >
+          {s?.contractSigner
+            ? `${s.contractSigner.name} — ${s.contractSigner.title} (${s.contractSigner.email})`
+            : null}
+        </DataField>
       </CardContent>
     </Card>
   );
@@ -171,6 +180,54 @@ export function SettingsFields({
               placeholder="e.g. 30"
               aria-invalid={fieldState.invalid}
               onChange={(e) => field.onChange(sanitizeInteger(e.target.value))}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <div className="sm:col-span-2">
+        <Label className={LABEL_CLASS}>Contract Signer</Label>
+        <p className="mt-1 text-muted-foreground text-xs">
+          Authorized to sign contracts on the company's behalf. Required before
+          a contract can be sent for signature.
+        </p>
+      </div>
+      <Controller
+        control={control}
+        name="contractSignerName"
+        render={({ field }) => (
+          <Field className="flex flex-col gap-1.5">
+            <Label className={LABEL_CLASS}>Signer Name</Label>
+            <Input {...field} placeholder="e.g. Jordan Lenis" />
+          </Field>
+        )}
+      />
+      <Controller
+        control={control}
+        name="contractSignerTitle"
+        render={({ field }) => (
+          <Field className="flex flex-col gap-1.5">
+            <Label className={LABEL_CLASS}>Signer Title</Label>
+            <Input {...field} placeholder="e.g. Principal Designer" />
+          </Field>
+        )}
+      />
+      <Controller
+        control={control}
+        name="contractSignerEmail"
+        render={({ field, fieldState }) => (
+          <Field
+            className="flex flex-col gap-1.5 sm:col-span-2"
+            data-invalid={fieldState.invalid}
+          >
+            <Label className={LABEL_CLASS}>Signer Email</Label>
+            <Input
+              {...field}
+              type="email"
+              inputMode="email"
+              placeholder="e.g. jordan@sarviandg.com"
+              aria-invalid={fieldState.invalid}
             />
             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
           </Field>

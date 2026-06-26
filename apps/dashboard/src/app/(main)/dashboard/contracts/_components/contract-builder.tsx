@@ -65,11 +65,12 @@ import {
   getClient,
   getOrganization,
   getProjects,
-  sendContract,
   updateContract,
 } from "@/lib/db";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
+import { COMPANY_SEND_AUTHORIZATION_TEXT } from "@/lib/contract-text";
 import type { Client, Contract, ContractStatus, Project } from "@/lib/types";
+import { sendContractForSignature } from "@/server/contract-signing";
 import { cn, formatCurrency, formatCurrencyInput } from "@/lib/utils";
 
 import { getClientName } from "../../clients/_components/client-name";
@@ -399,6 +400,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
   );
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
   // Snapshot of the last-persisted editable state; current state differing from
   // it means there are unsaved changes (drives the leave-without-saving guard).
   const savedKeyRef = useRef(
@@ -687,9 +689,24 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
         scopeItems,
         resolved,
       });
-      await sendContract(id, uid, snapshot);
+      // Server freezes the version, authorizes the company signature, mints the
+      // signing link, and emails it. The server determines version/hash/recipient.
+      const result = await sendContractForSignature({
+        contractId: id,
+        userId: uid,
+        snapshot,
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setSendConfirmOpen(false);
       setStatus("sent");
-      toast.success("Contract sent to the client.");
+      toast.success(
+        result.emailSent
+          ? "Contract sent to the client for signature."
+          : "Contract sent. Email delivery is not configured — share the link manually.",
+      );
     } catch (error) {
       console.error("Failed to send contract:", error);
       toast.error("Couldn't send the contract. Please try again.");
@@ -700,9 +717,9 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
 
   const handleSendContract = () => {
     if (isLocked || sending) return;
-    // Send requires a complete document.
+    // Send requires a complete document; then confirm the company authorization.
     guard("send", () => {
-      void runSend();
+      setSendConfirmOpen(true);
     });
   };
 
@@ -986,6 +1003,32 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmProjectChange}>
               Change Project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Send confirmation — sending IS the company's signature authorization. */}
+      <AlertDialog open={sendConfirmOpen} onOpenChange={setSendConfirmOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Send this contract for signature?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {COMPANY_SEND_AUTHORIZATION_TEXT}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={sending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void runSend();
+              }}
+              disabled={sending}
+            >
+              {sending ? "Sending…" : "Send Contract"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

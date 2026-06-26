@@ -99,7 +99,7 @@ const contractRows: ContractRow[] = [
     projectName: "Lakeshore Penthouse",
     durationMonths: "12",
     retainer: 38000,
-    status: "signed",
+    status: "fully_executed",
     updatedByName: "You",
     updatedAt: Date.now() - 9 * DAY,
   },
@@ -110,7 +110,7 @@ const contractRows: ContractRow[] = [
     projectName: "Downtown Studio",
     durationMonths: "2",
     retainer: 4500,
-    status: "void",
+    status: "voided",
     updatedByName: "Sam Ellis",
     updatedAt: Date.now() - 14 * DAY,
   },
@@ -154,7 +154,7 @@ const contractRows: ContractRow[] = [
     projectName: "Summit View",
     durationMonths: "8",
     retainer: 21500,
-    status: "signed",
+    status: "fully_executed",
     updatedByName: "Sam Ellis",
     updatedAt: Date.now() - 24 * DAY,
   },
@@ -187,7 +187,7 @@ const contractRows: ContractRow[] = [
     projectName: "Westgate Townhome",
     durationMonths: "11",
     retainer: 32000,
-    status: "signed",
+    status: "fully_executed",
     updatedByName: "Sam Ellis",
     updatedAt: Date.now() - 34 * DAY,
   },
@@ -198,8 +198,9 @@ const statusOptions = [
   "draft",
   "sent",
   "viewed",
-  "signed",
-  "void",
+  "fully_executed",
+  "expired",
+  "voided",
 ] as const;
 
 /** "Jun 18, 2026" from an epoch-ms timestamp. */
@@ -429,7 +430,10 @@ export function TablesPlayground() {
                     <DropdownMenuRadioItem key={option} value={option}>
                       {option === "all"
                         ? "All statuses"
-                        : option.charAt(0).toUpperCase() + option.slice(1)}
+                        : option
+                            .split("_")
+                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                            .join(" ")}
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>

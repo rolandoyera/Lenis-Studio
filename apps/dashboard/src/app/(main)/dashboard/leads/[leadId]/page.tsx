@@ -224,14 +224,16 @@ export default function LeadDetailPage({ params }: PageProps) {
           <Button
             variant="outline"
             onClick={() => setIsEditOpen(true)}
-            className="flex items-center gap-2">
+            className="flex items-center gap-2"
+          >
             <Pencil className="size-4" />
             Edit
           </Button>
           <Button
             onClick={() => setIsConvertOpen(true)}
             disabled={isConverted}
-            className="flex items-center gap-2">
+            className="flex items-center gap-2"
+          >
             <ArrowRightLeft className="size-4" />
             {isConverted ? "Converted" : "Convert to Client"}
           </Button>
@@ -300,7 +302,8 @@ export default function LeadDetailPage({ params }: PageProps) {
                 {lead.phone ? (
                   <a
                     href={`tel:${normalizePhone(lead.phone)}`}
-                    className="hover:text-primary">
+                    className="hover:text-primary"
+                  >
                     {formatPhone(lead.phone)}
                   </a>
                 ) : null}
@@ -326,7 +329,8 @@ export default function LeadDetailPage({ params }: PageProps) {
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                        className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                      >
                         google maps
                         <ExternalLink className="size-3" />
                       </a>
@@ -447,7 +451,8 @@ export default function LeadDetailPage({ params }: PageProps) {
                 void handleConvert();
               }}
               disabled={converting}
-              className="flex items-center gap-1.5">
+              className="flex items-center gap-1.5"
+            >
               {converting && <Loader2 className="size-4 animate-spin" />}
               Convert to Client
             </AlertDialogAction>

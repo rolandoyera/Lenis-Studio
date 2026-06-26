@@ -27,7 +27,9 @@ Everything is stored **directly on the existing `organizations/{organizationId}`
 three top-level fields (typed in `src/lib/types.ts`): `companyProfile` (identity + nested `address`,
 plus `phone`/`phoneCountry`), `branding` (colors + light/dark logo + favicon URLs/paths), and
 `settings` (timezone, currency, measurementUnit, defaultMarkupPercent, defaultTaxRate,
-proposalExpirationDays). There is **no logo on `companyProfile`** — the only logos are the light/dark
+proposalExpirationDays, and `contractSigner` — a `{ name, title, email }` object used by the contract
+signing flow; the form maps it as three flat fields and only persists it when all three are present).
+There is **no logo on `companyProfile`** — the only logos are the light/dark
 pair under `branding`, alongside a light/dark **icon mark** pair (`iconLight*`/`iconDark*`) — a small
 in-app icon (not a browser favicon), same convention: light variant for dark backgrounds, dark
 variant for light backgrounds.

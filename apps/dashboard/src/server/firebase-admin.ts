@@ -1,5 +1,6 @@
 import { type App, cert, getApps, initializeApp } from "firebase-admin/app";
 import { type Firestore, getFirestore } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 
 let adminApp: App | null = null;
 let adminDb: Firestore | null = null;
@@ -33,8 +34,14 @@ function getAdminApp(): App {
     );
   }
 
+  const serviceAccount = parseServiceAccountKey(serviceAccountKey);
   adminApp = initializeApp({
-    credential: cert(parseServiceAccountKey(serviceAccountKey)),
+    credential: cert(serviceAccount),
+    // Default bucket for signed-PDF + raw-webhook-payload storage. Prefer an
+    // explicit env override; otherwise derive from the service account project.
+    storageBucket:
+      process.env.FIREBASE_STORAGE_BUCKET ||
+      `${serviceAccount.project_id}.firebasestorage.app`,
   });
   return adminApp;
 }
@@ -44,4 +51,13 @@ export function getAdminDb(): Firestore {
   if (adminDb) return adminDb;
   adminDb = getFirestore(getAdminApp());
   return adminDb;
+}
+
+/**
+ * Server-only default Storage bucket — holds private contract artifacts (final
+ * signed PDFs, raw Brevo webhook payloads). These objects are never made public;
+ * clients reach the PDF only through a token-gated download route that streams it.
+ */
+export function getAdminBucket() {
+  return getStorage(getAdminApp()).bucket();
 }

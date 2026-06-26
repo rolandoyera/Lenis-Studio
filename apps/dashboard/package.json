@@ -11,7 +11,8 @@
     "check": "biome check",
     "check:fix": "biome check --write",
     "prepare": "husky",
-    "generate:presets": "ts-node -P tsconfig.scripts.json src/scripts/generate-theme-presets.ts"
+    "generate:presets": "ts-node -P tsconfig.scripts.json src/scripts/generate-theme-presets.ts",
+    "mint:portal": "ts-node -P tsconfig.scripts.json -r tsconfig-paths/register src/scripts/mint-portal-token.ts"
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx}": [
@@ -28,6 +29,7 @@
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.2.9",
+    "@react-pdf/renderer": "^4.5.1",
     "@tanstack/react-table": "^8.21.3",
     "@types/mdx": "^2.0.14",
     "class-variance-authority": "^0.7.1",

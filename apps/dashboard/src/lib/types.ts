@@ -378,7 +378,17 @@ export interface Proposal {
 // contract is Sent, the fully-rendered document is frozen into `lockedSnapshot`,
 // which is what the future client portal reads (never the live draft fields).
 
-export type ContractStatus = "draft" | "sent" | "viewed" | "signed" | "void";
+// Lifecycle: draft → sent → viewed → fully_executed. `expired` and `voided` are
+// terminal off-ramps. `fully_executed` is reached only after the client signs and
+// the company's authorized-on-send signature is applied (see the signing flow in
+// `src/server/contract-signing.ts`).
+export type ContractStatus =
+  | "draft"
+  | "sent"
+  | "viewed"
+  | "fully_executed"
+  | "expired"
+  | "voided";
 
 /** The code-based template a contract was generated from. */
 export type ContractTemplateKey = "interior-design-agreement";
@@ -466,6 +476,31 @@ export interface Contract {
   // Frozen document; null until Sent, then read-only.
   lockedSnapshot: LockedContractSnapshot | null;
 
+  // ─── Signing / execution (all set server-side on send & on signature) ───
+  // A stable id minted on send that identifies this exact frozen version, and a
+  // SHA-256 of the canonical `lockedSnapshot` JSON. Both are computed server-side
+  // and re-checked at signing time so the client signs the exact version sent.
+  contractVersionId?: string;
+  contractHash?: string;
+
+  // Email the signing link was sent to (server-determined; the signer's identity).
+  sentToEmail?: string;
+
+  // The company side is authorized when an authorized user sends the contract —
+  // there is no separate company-approval step. Applied to the final document if
+  // and when the client signs.
+  companySignatureAuthorization?: CompanySignatureAuthorization;
+
+  // The client's typed adopted signature + the consent they accepted. Set only
+  // once, at signing, server-side.
+  clientSignature?: ClientSignature;
+
+  // Final signed PDF (both signatures + certificate page). `finalPdfPath` is a
+  // private Storage path; the client downloads it through a token-gated route,
+  // never a public URL.
+  finalPdfPath?: string;
+  finalPdfGeneratedAt?: number;
+
   // Audit — all user references store UIDs only; timestamps are epoch millis.
   createdBy: string;
   createdAt: number;
@@ -477,11 +512,167 @@ export interface Contract {
 
   viewedAt?: number;
 
-  signedBy?: string;
-  signedAt?: number;
+  // Fully executed = client signed and the company signature was applied.
+  executedAt?: number;
 
   voidedBy?: string;
   voidedAt?: number;
+}
+
+/**
+ * The company's signature authorization, captured when an authorized user sends
+ * the contract for signature. There is deliberately no separate approval step:
+ * sending IS the authorization. The signer identity comes from the org-level
+ * configured contract signer (`OrgSettings.contractSigner`), not the sender.
+ */
+export interface CompanySignatureAuthorization {
+  authorizedAt: number;
+  /** UID of the user who sent (and thereby authorized) the contract. */
+  authorizedBy: string;
+  signerName: string;
+  signerTitle: string;
+  signerEmail: string;
+  signatureType: "authorized_on_send";
+}
+
+/**
+ * The client's electronic signature. Typed adopted-name model: the binding force
+ * is the accepted consent plus the audit trail (IP, UA, version hash, timestamp),
+ * not a drawn image. Email/version/hash/timestamps are all server-determined —
+ * never trusted from the client.
+ */
+export interface ClientSignature {
+  /** The name the client typed to adopt as their signature. */
+  signerName: string;
+  /** Server-determined from `sentToEmail` — not accepted from the client. */
+  signerEmail: string;
+  signedAt: number;
+  /** The exact consent text the client accepted, frozen for the record. */
+  consentText: string;
+  consentAcceptedAt: number;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+// ─── Contract audit trail ────────────────────────────────────────────────────
+// Append-only events at `contracts/{contractId}/audit/{eventId}`. Each event is
+// written once and never mutated, building an evidence chain: sent → email
+// delivered → portal opened → consent accepted → signed → fully executed. Brevo
+// delivery is evidence the email reached the address — NOT that the client read
+// it; email event labels stay precise ("delivered"/"bounced"/"blocked"/"sent").
+
+export type ContractAuditEventType =
+  | "contract_sent"
+  | "email_sent"
+  | "email_delivered"
+  | "email_bounced"
+  | "email_blocked"
+  | "portal_opened"
+  | "electronic_signature_consent_accepted"
+  | "contract_signed"
+  | "contract_fully_executed";
+
+interface ContractAuditEventBase {
+  /** Firestore doc id within the `audit` subcollection. */
+  auditEventId: string;
+  type: ContractAuditEventType;
+  occurredAt: number;
+}
+
+export type ContractAuditEvent =
+  | (ContractAuditEventBase & {
+      type: "contract_sent";
+      actorType: "company_user";
+      actorId: string;
+      recipientEmail: string;
+      contractVersionId: string;
+      contractHash: string;
+    })
+  | (ContractAuditEventBase & {
+      type:
+        | "email_sent"
+        | "email_delivered"
+        | "email_bounced"
+        | "email_blocked";
+      actorType: "system";
+      provider: "brevo";
+      recipientEmail: string;
+      providerMessageId?: string;
+      brevoEventId?: string;
+      /** Storage path to the trimmed raw provider payload — never the client. */
+      rawProviderPayloadPath?: string;
+    })
+  | (ContractAuditEventBase & {
+      type: "portal_opened";
+      actorType: "client";
+      recipientEmail: string;
+      accessTokenId: string;
+      ipAddress?: string;
+      userAgent?: string;
+    })
+  | (ContractAuditEventBase & {
+      type: "electronic_signature_consent_accepted";
+      actorType: "client";
+      recipientEmail: string;
+      accessTokenId: string;
+      /** The exact consent language the client accepted. */
+      consentText: string;
+      ipAddress?: string;
+      userAgent?: string;
+    })
+  | (ContractAuditEventBase & {
+      type: "contract_signed";
+      actorType: "client";
+      signerName: string;
+      signerEmail: string;
+      accessTokenId: string;
+      contractVersionId: string;
+      contractHash: string;
+      ipAddress?: string;
+      userAgent?: string;
+    })
+  | (ContractAuditEventBase & {
+      type: "contract_fully_executed";
+      actorType: "system";
+      contractVersionId: string;
+      contractHash: string;
+      finalPdfPath?: string;
+    });
+
+// ─── Client portal access ────────────────────────────────────────────────────
+// A token-gated pointer to an existing contract, read by the unauthenticated
+// client portal. The contract document is never moved — portalAccess just grants
+// scoped, time-limited read access to it. The raw access token lives only in the
+// emailed link; Firestore stores its SHA-256 hash (`tokenHash`) so a leaked DB
+// row can't reconstruct a working link. All portal reads/writes go through the
+// firebase-admin SDK (server-only); client-SDK access is denied by the rules.
+
+export type PortalAccessType = "contract_signature";
+
+export type PortalAccessStatus = "active" | "completed" | "expired" | "revoked";
+
+export interface PortalAccess {
+  portalAccessId: string;
+  type: PortalAccessType;
+  organizationId: string;
+  clientId: string;
+  projectId: string;
+  contractId: string;
+  /** SHA-256 hex of the access token; the raw token is never stored. */
+  tokenHash: string;
+  status: PortalAccessStatus;
+  createdAt: number;
+  expiresAt: number;
+  /** First time the client opened the linked contract. */
+  viewedAt?: number;
+  /** When the client accepted the e-signature/records consent. */
+  consentAcceptedAt?: number;
+  /** Set when the client completes signing — the link is then `completed`. */
+  completedAt?: number;
+  /** Set when an authorized user revokes the link (status → `revoked`). */
+  revokedAt?: number;
+  /** Email the link was sent to (audit only — never shown in the portal). */
+  sentToEmail: string;
 }
 
 export interface DiagnosticParsedData {
@@ -565,6 +756,17 @@ export interface OrgBranding {
   iconDarkPath?: string;
 }
 
+/**
+ * The person authorized to sign contracts on the company's behalf. Their identity
+ * is stamped into `companySignatureAuthorization` when a contract is sent, and
+ * rendered in the company signature block of the final PDF.
+ */
+export interface ContractSignerConfig {
+  name: string;
+  title: string;
+  email: string;
+}
+
 export interface OrgSettings {
   timezone?: string;
   currency?: string;
@@ -572,6 +774,7 @@ export interface OrgSettings {
   defaultMarkupPercent?: number;
   defaultTaxRate?: number;
   proposalExpirationDays?: number;
+  contractSigner?: ContractSignerConfig;
 }
 
 export interface Organization {

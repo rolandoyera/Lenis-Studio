@@ -129,32 +129,44 @@ service cloud.firestore {
     }
 
     // Contracts carry their own organizationId (org-scoped reads/writes). A
-    // contract is born a draft with no snapshot; "sending" freezes the rendered
-    // document into lockedSnapshot. Two extra invariants beyond the org check:
-    //   - create must start as a draft with lockedSnapshot null (no pre-locked
-    //     contracts), and
-    //   - once a contract leaves draft (sent/viewed/signed/void) it is locked:
-    //     only lifecycle/audit fields may change, so the frozen lockedSnapshot
-    //     (and the editable inputs it was built from) can never be rewritten.
-    // The draft→sent transition itself is allowed because the pre-image is still
-    // a draft at that moment.
+    // contract is born a draft with no snapshot. Everything past draft — sending
+    // (freeze + authorize + mint token), portal viewedAt/status, and signing/
+    // execution — runs through the firebase-admin SDK (server-only), which
+    // bypasses these rules. So the client SDK is confined to drafts:
+    //   - create must start as a draft with lockedSnapshot null, and
+    //   - update is allowed ONLY while the contract is still a draft. Once it is
+    //     sent it is locked to client writes entirely; no client-side edits after
+    //     send (voiding / new versions, if ever built, go through the server).
     match /contracts/{id} {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg()
         && request.resource.data.status == 'draft'
         && request.resource.data.lockedSnapshot == null;
-      allow update: if updatesInOwnOrg() && (
-        resource.data.status == 'draft'
-        || request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['status', 'viewedAt', 'signedBy', 'signedAt',
-                       'voidedBy', 'voidedAt', 'updatedBy', 'updatedAt'])
-      );
+      allow update: if updatesInOwnOrg() && resource.data.status == 'draft';
+
+      // Append-only audit trail (contract_sent, email_*, portal_opened, consent,
+      // signed, executed) is written and read only by the server (admin SDK).
+      // Deny all client access — it can carry IPs/UAs and raw provider refs.
+      match /audit/{eventId} {
+        allow read, write: if false;
+      }
     }
 
     match /trades/{id} {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg();
       allow update: if updatesInOwnOrg();
+    }
+
+    // Token-gated pointers to contracts for the unauthenticated client portal.
+    // All portal validation, viewedAt stamping, and link creation happen via the
+    // firebase-admin SDK (server-only), which bypasses these rules — so client
+    // writes are fully denied. Signed-in org members may read their own org's
+    // records (e.g. to show "link sent" / "viewed" in the dashboard later); the
+    // raw token never lives here, only its hash.
+    match /portalAccess/{id} {
+      allow read: if readsOwnOrg();
+      allow write: if false;
     }
 
     // Rooms have no organizationId field; their org is the parent project's.

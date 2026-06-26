@@ -13,9 +13,14 @@ stale AGENTS.md is worse than none — treat updating it as part of "done."
 ## What this feature is (and is NOT)
 
 A single-page contract **builder** that fills a fixed, code-based legal template with CRM data and
-persists the result. It is intentionally minimal. **Do not add** (all explicitly out of scope):
-PDF-export libraries, e-signature, the client portal, email sending, payment logic, in-app template
-editing, or a version-history UI. "Print / PDF" is just the browser print dialog.
+persists the result, plus a client portal that delivers, displays, and **e-signs** that contract.
+Still intentionally minimal — **do not add**: in-app template editing, or a version-history UI. The
+in-app "Print / PDF" action is still just the browser print dialog (the _final signed_ PDF is a
+separate server-generated artifact, see "Contract delivery & signing").
+
+The **client portal** now supports the full delivery + signing workflow (see "Client portal" and
+"Contract delivery & signing" below): send-for-signature, e-sign consent, typed client signature,
+the pre-authorized company signature, a final dual-signature PDF, and an append-only audit trail.
 
 Routes: `contracts/page.tsx` is the list (reads real `getContracts`, renders them in the shared
 `TanTable`, and uses an eye-icon link per row to open the editor);
@@ -24,8 +29,8 @@ Routes: `contracts/page.tsx` is the list (reads real `getContracts`, renders the
 to edit it. `ContractBuilder` takes an optional `contract` prop — when present it seeds `values`,
 `scopeItems`, `selectedProjectId`, `contractId`, and `status` from it (the `key` forces a remount so
 those `useState` initializers re-run per contract). Opening a non-draft contract shows it locked
-(saves and project changes disabled); there's still no dedicated read-only viewer that renders from
-`lockedSnapshot`.
+(saves and project changes disabled); the dashboard editor still renders from the live fields, while
+the **client portal** is the read-only viewer that renders from `lockedSnapshot`.
 Active-page inputs under "Fields to Populate" show `FIELD_DEFS.explainer` below each input; pinned
 global fields do not.
 
@@ -86,8 +91,8 @@ filters by it). Two payload shapes built in
   SDK fetches whole docs; don't bloat them with the ~9-page body).
 - **`lockedSnapshot` = the frozen document.** Built only on **Send**. Holds `resolved` + `pages`
   (raw template bodies, tokens unsubstituted) so the contract renders identically even if
-  `contract-template.ts` changes later. **The future client portal must read `lockedSnapshot`, never
-  the live draft fields.**
+  `contract-template.ts` changes later. **The client portal reads `lockedSnapshot`, never the live
+  draft fields** (see "Client portal" below).
 
 Hard rules that bit us / are easy to break:
 
@@ -99,10 +104,14 @@ Hard rules that bit us / are easy to break:
   `contractId` back, and `setDoc`s once. Don't `addDoc` then `updateDoc`.
 - **`getContracts` sorts in memory** by `updatedAt` desc — no Firestore `orderBy` (avoids a
   composite index), matching clients/projects.
-- **`sendContract` is a `runTransaction`.** It verifies `status === 'draft'` and `lockedSnapshot`
-  is empty, then freezes the snapshot + flips to `sent`. **Never overwrite an existing
-  `lockedSnapshot`.** Future changes to a sent contract = void/resend, duplicate-to-draft, or
-  versioning — none built yet.
+- **Sending now runs server-side**, not via the client `db.ts`. The builder's Send button opens a
+  confirmation modal (company-authorization language from `@/lib/contract-text`) and calls the
+  `sendContractForSignature` **server action** (`src/server/contract-signing.ts`, admin SDK). That
+  action freezes the snapshot, computes `contractVersionId` + `contractHash`, stamps
+  `companySignatureAuthorization` from the org-configured signer, mints the portalAccess token,
+  writes the `contract_sent` audit event, and emails the link via Brevo. The old client-side
+  `sendContract` transaction in `db.ts` is **no longer used by the builder** (left only for any
+  legacy caller). **Never overwrite an existing `lockedSnapshot`.**
 - **Save Draft skips the required-field guard** (drafts may be incomplete); it only needs org + uid
   - selected project + client. **Send runs the full `guard()`** — all non-`optional` tokens must be
     filled. `isLocked = status !== 'draft'` disables both buttons once sent.
@@ -123,8 +132,71 @@ this hook for other forms with unsaved-state rather than copying the logic.
 
 `contracts/{id}` has a block in [firestore.rules](../../../../../firestore.rules). Without it,
 client-SDK writes hit the default deny. It enforces org-scoping plus: create must be a `draft` with
-`lockedSnapshot == null`; once status leaves draft, only lifecycle/audit keys may change (so the
-snapshot can't be rewritten). The draft→sent transition is allowed because the **pre-image** is still
-a draft. **Rules must be deployed** (`firebase deploy --only firestore:rules`) for persistence to
-work. When the portal is added, an unauthenticated client read needs a separate token-gated path —
-not these org rules.
+`lockedSnapshot == null`, and **client-SDK update is allowed only while the contract is still a
+draft.** Everything past draft (send, viewedAt, signing/execution) runs through the firebase-admin
+SDK, which bypasses rules — so once sent, the client can't edit it at all (no edits after send). The
+`contracts/{id}/audit/*` subcollection denies all client access (server-only). **Rules must be
+deployed** (`firebase deploy --only firestore:rules`). The `portalAccess` collection denies client
+writes (org-scoped reads only); all portal reads/writes go through firebase-admin.
+
+## Client portal
+
+A read-only, **unauthenticated** client view of a sent contract. Routes live OUTSIDE this folder at
+`src/app/portal/[accessToken]/…` (deliberately not in the `(main)` group, so no dashboard auth
+guard/sidebar). The server access layer is [`src/server/portal.ts`](../../../../../server/portal.ts).
+
+- **`portalAccess/{id}` collection** (typed `PortalAccess` in `src/lib/types.ts`) is a token-gated
+  pointer to an existing `contracts/{id}` doc — contracts are **never moved**. It stores
+  `tokenHash` (SHA-256 of the access token; the raw token lives only in the emailed link), `status`
+  (`active|completed|expired|revoked`), `expiresAt`, `viewedAt`, and the `organizationId/clientId/
+projectId/contractId` it grants access to.
+- **Validation is fully server-side** (`resolvePortalContract`): hash the URL token → match
+  `tokenHash` → require not `revoked`/`expired` and not past `expiresAt` → require `access.contractId`
+  matches the route → load the contract → require its org/client/project match the access record.
+  Both `active` (open for signing) and `completed` (already signed — still viewable/downloadable
+  read-only) render; only `revoked`/`expired` are blocked. Any identity/existence mismatch returns
+  `not_found` so the portal never confirms which contracts exist.
+- **Renders from `lockedSnapshot` only** (`PortalContractDocument`), reusing the template's pure
+  render helpers. Internal-only fields (audit, ids, status) are never passed to the portal.
+- **Open tracking** (`recordPortalOpen`, in `contract-signing.ts`): stamps `portalAccess.viewedAt`
+  once, advances a still-`sent` contract to `viewed`, and writes a `portal_opened` audit event,
+  **deduped within 30 min** per access token (`hasRecentPortalOpen`). Best-effort; never blocks render.
+- Portal routes are `noindex/nofollow` (robots metadata in the portal layout).
+
+## Contract delivery & signing
+
+The full e-sign workflow. Statuses are now
+`draft → sent → viewed → fully_executed` with `expired`/`voided` off-ramps. Sending **is** the
+company's signature authorization — there is no separate approval step. Server modules:
+
+- **`src/server/contract-signing.ts`** (`"use server"`) — the only writer of contract lifecycle past
+  draft. `sendContractForSignature` (freeze + authorize + mint token + email + audit),
+  `recordPortalOpen`, and `signContract`. Security-critical values are **server-determined**:
+  `contractVersionId` (minted), `contractHash` (SHA-256 of the canonical `lockedSnapshot`),
+  timestamps, the recipient email (read from the `clients/{id}` doc, not the UI), and the company
+  signer identity (from `OrgSettings.contractSigner`). The signer config is set in **Company
+  Settings**; sending fails with a clear error if it's missing.
+- **Signing** is a typed adopted signature: the client types their name + accepts the exact consent
+  text (`ELECTRONIC_SIGNATURE_CONSENT_TEXT` in `@/lib/contract-text`). `signContract` re-validates the
+  token, status (`sent`/`viewed`), and that the persisted snapshot still hashes to `contractHash`,
+  then in one transaction sets `fully_executed` + `clientSignature` + `executedAt` and completes the
+  token. It writes `electronic_signature_consent_accepted` (with the frozen consent text),
+  `contract_signed`, and `contract_fully_executed`, then generates the final PDF.
+- **Audit trail** (`src/server/contract-audit.ts`) — append-only `contracts/{id}/audit/{eventId}`
+  subcollection, typed `ContractAuditEvent`. Evidence chain: contract*sent → email*\* (Brevo) →
+  portal_opened → consent → signed → fully_executed. Use the distributive `ContractAuditEventInput`
+  type when writing. Raw Brevo payloads go to **private Storage** (`storeRawBrevoPayload`), never the
+  contract doc; only the path is referenced on the normalized event.
+- **Brevo** (`src/server/brevo.ts`) — `sendContractEmail` attaches contract metadata as an
+  `X-Mailin-custom` header so the webhook (`src/app/api/webhooks/brevo/route.ts`) can attribute
+  delivery events back to the contract. **Graceful when `BREVO_API_KEY` is unset** (logs + reports
+  "not configured"; the rest of the flow still works). Email labels stay precise
+  (delivered/bounced/blocked/sent) — Brevo proves delivery to an address, never that the client read
+  it. Optional `BREVO_WEBHOOK_SECRET` guards the webhook via `?secret=`.
+- **Final PDF** (`src/server/contract-pdf.tsx`, `@react-pdf/renderer`) — the frozen document + both
+  signature blocks + a signature certificate (version id, hash, delivery facts, signer details,
+  IP/UA). Stored privately in Storage; the client downloads it via the **token-gated** route
+  `portal/[accessToken]/contract/[contractId]/download` (re-validates access, streams from Storage —
+  never a public URL). Generated on signing; regenerated on demand if missing.
+- **Env:** `FIREBASE_STORAGE_BUCKET` (optional; defaults to `<project>.firebasestorage.app`),
+  `BREVO_API_KEY`, `BREVO_WEBHOOK_SECRET` (all optional — features degrade gracefully).

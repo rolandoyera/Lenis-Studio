@@ -11,8 +11,9 @@ const STATUS_CONFIG: Record<
   draft: { label: "Draft", variant: "ghost" },
   sent: { label: "Sent", variant: "info" },
   viewed: { label: "Viewed", variant: "warning" },
-  signed: { label: "Signed", variant: "success" },
-  void: { label: "Void", variant: "destructive" },
+  fully_executed: { label: "Fully Executed", variant: "success" },
+  expired: { label: "Expired", variant: "ghost" },
+  voided: { label: "Voided", variant: "destructive" },
 };
 
 export function ContractStatusBadge({ status }: { status: ContractStatus }) {

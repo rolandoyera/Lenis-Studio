@@ -77,8 +77,9 @@ const statusOptions = [
   "draft",
   "sent",
   "viewed",
-  "signed",
-  "void",
+  "fully_executed",
+  "expired",
+  "voided",
 ] as const satisfies readonly ("all" | ContractStatus)[];
 
 function SortableHeader({
@@ -101,7 +102,8 @@ function SortableHeader({
       className={cn(
         "-mx-3 h-8 gap-1.5 px-3 font-medium text-foreground text-sm hover:bg-transparent",
         align === "right" && "flex-row-reverse",
-      )}>
+      )}
+    >
       {children}
       <Icon
         className={cn(
@@ -163,7 +165,8 @@ export default function ContractsPage() {
       cell: ({ row }) => (
         <Link
           href={`/dashboard/contracts/${row.original.contractId}`}
-          className="font-medium text-foreground text-sm hover:text-primary hover:underline">
+          className="font-medium text-foreground text-sm hover:text-primary hover:underline"
+        >
           {row.original.title}
         </Link>
       ),
@@ -347,12 +350,18 @@ export default function ContractsPage() {
                         .getColumn("status")
                         ?.setFilterValue(value === "all" ? undefined : value);
                       table.setPageIndex(0);
-                    }}>
+                    }}
+                  >
                     {statusOptions.map((option) => (
                       <DropdownMenuRadioItem key={option} value={option}>
                         {option === "all"
                           ? "All statuses"
-                          : option.charAt(0).toUpperCase() + option.slice(1)}
+                          : option
+                              .split("_")
+                              .map(
+                                (w) => w.charAt(0).toUpperCase() + w.slice(1),
+                              )
+                              .join(" ")}
                       </DropdownMenuRadioItem>
                     ))}
                   </DropdownMenuRadioGroup>
