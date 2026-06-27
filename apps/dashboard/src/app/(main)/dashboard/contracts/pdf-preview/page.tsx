@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react";
 
 import type { CertData } from "@/lib/contract-pdf-document";
 import { ContractPdf } from "@/lib/contract-pdf-document";
-import type { Contract, ContractAuditEvent } from "@/lib/types";
+import type { Contract } from "@/lib/types";
 import { loadContractPdfPreview } from "@/server/contract-pdf-preview";
 
 // @react-pdf's DOM viewer can't be server-rendered.
@@ -24,7 +24,7 @@ const PDFViewer = dynamic(
   { ssr: false },
 );
 
-const DEFAULT_CONTRACT_ID = "FYCkZWGlpZyKbmdJeH3R";
+const DEFAULT_CONTRACT_ID = "aGqXglLX6nnyfdiKnmYt";
 
 export default function ContractPdfPreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();
@@ -49,7 +49,6 @@ function PreviewInner() {
   const [data, setData] = useState<{
     contract: Contract;
     cert: CertData;
-    events: ContractAuditEvent[];
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,22 +56,7 @@ function PreviewInner() {
     setData(null);
     setError(null);
     loadContractPdfPreview(contractId)
-      .then((loaded) => {
-        // Dev-only: inspect the raw audit trail (esp. email_* delivery events).
-        console.log(`[pdf-preview] contract ${contractId} — cert:`, loaded.cert);
-        console.log(
-          `[pdf-preview] ${loaded.events.length} audit events:`,
-          loaded.events,
-        );
-        console.table(
-          loaded.events.map((e) => ({
-            type: e.type,
-            occurredAt: new Date(e.occurredAt).toLocaleString(),
-            actorType: "actorType" in e ? e.actorType : undefined,
-          })),
-        );
-        setData(loaded);
-      })
+      .then(setData)
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : "Failed to load contract."),
       );

@@ -62,30 +62,7 @@ async function handleEvent(payload: RawPayload): Promise<void> {
   );
 }
 
-// TEMP DIAGNOSTIC: log the method + headers Brevo actually sends, so we can see
-// which header carries the auth token (values truncated so the secret isn't fully
-// printed). Remove once the webhook is confirmed working.
-function logBrevoRequest(req: NextRequest, tag: string): void {
-  const headers: Record<string, string> = {};
-  req.headers.forEach((value, key) => {
-    headers[key] =
-      value.length > 16 ? `${value.slice(0, 12)}…(len ${value.length})` : value;
-  });
-  console.log(`[brevo webhook ${tag}] ${req.method} ${req.nextUrl.pathname}`, {
-    headers,
-    hasSecret: Boolean(process.env.BREVO_WEBHOOK_SECRET),
-  });
-}
-
-// TEMP: respond 200 to GET/HEAD so a save-time verification ping doesn't 405.
-export async function GET(req: NextRequest) {
-  logBrevoRequest(req, "GET");
-  return new Response("ok", { status: 200 });
-}
-
 export async function POST(req: NextRequest) {
-  logBrevoRequest(req, "POST"); // TEMP DIAGNOSTIC — remove when confirmed.
-
   // Optional shared-secret guard. When BREVO_WEBHOOK_SECRET is set, require it via
   // Brevo's "Token" auth — the token is sent in the `Authorization` header (with or
   // without a `Bearer ` prefix). Set BREVO_WEBHOOK_SECRET to that exact token value.
@@ -96,7 +73,6 @@ export async function POST(req: NextRequest) {
       ?.replace(/^Bearer\s+/i, "")
       .trim();
     if (provided !== expected) {
-      console.warn("[brevo webhook] 403 — auth token did not match.");
       return new Response("Forbidden", { status: 403 });
     }
   }

@@ -69,6 +69,11 @@ function isExhibitHeading(line: string): boolean {
   return m ? /^EXHIBIT\b/.test(m[1].trim()) : false;
 }
 
+/** A numbered subsection lead-in (e.g. "**2.2 Payment for Approved Items.**"). */
+function isSubsectionLine(line: string): boolean {
+  return /^\*\*\d+\.\d+\s/.test(line.trim());
+}
+
 const styles = StyleSheet.create({
   page: {
     paddingHorizontal: 56,
@@ -85,6 +90,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
   },
   paragraph: { marginBottom: 4 },
+  paragraphSpaced: { marginBottom: 4, marginTop: 8 },
   bold: { fontFamily: "Helvetica-Bold" },
   sectionTitle: {
     fontSize: 12,
@@ -208,14 +214,16 @@ function SignatureBlock({
 function ParagraphLine({
   line,
   resolved,
+  spaced,
 }: {
   line: string;
   resolved: Record<string, string>;
+  spaced?: boolean;
 }) {
   const segments = richSegments(line, resolved);
   if (segments.length === 0) return <Text style={styles.paragraph}> </Text>;
   return (
-    <Text style={styles.paragraph}>
+    <Text style={spaced ? styles.paragraphSpaced : styles.paragraph}>
       {segments.map((seg, j) =>
         seg.bold ? (
           // biome-ignore lint/suspicious/noArrayIndexKey: frozen template, stable order
@@ -303,24 +311,31 @@ export function ContractPdf({
               />
             </View>
           ) : (
-            page.body.split("\n").map((line, i) =>
-              isHeading(line) ? (
-                <Text
-                  // biome-ignore lint/suspicious/noArrayIndexKey: frozen template, stable order
-                  key={`${page.page}-${i}`}
-                  style={styles.heading}
-                  break={isExhibitHeading(line)}>
-                  {renderLine(line, resolved)}
-                </Text>
-              ) : (
-                <ParagraphLine
-                  // biome-ignore lint/suspicious/noArrayIndexKey: frozen template, stable order
-                  key={`${page.page}-${i}`}
-                  line={line}
-                  resolved={resolved}
-                />
-              ),
-            )
+            (() => {
+              const lines = page.body.split("\n");
+              return lines.map((line, i) =>
+                isHeading(line) ? (
+                  <Text
+                    // biome-ignore lint/suspicious/noArrayIndexKey: frozen template, stable order
+                    key={`${page.page}-${i}`}
+                    style={styles.heading}
+                    break={isExhibitHeading(line)}>
+                    {renderLine(line, resolved)}
+                  </Text>
+                ) : (
+                  <ParagraphLine
+                    // biome-ignore lint/suspicious/noArrayIndexKey: frozen template, stable order
+                    key={`${page.page}-${i}`}
+                    line={line}
+                    resolved={resolved}
+                    spaced={
+                      isSubsectionLine(line) &&
+                      (i === 0 || lines[i - 1].trim() !== "")
+                    }
+                  />
+                ),
+              );
+            })()
           ),
         )}
       </Page>

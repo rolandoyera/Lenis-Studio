@@ -4,17 +4,15 @@
 // derives its delivery cert with the admin SDK so the browser preview renders
 // the same inputs the production generator uses. Refuses to run in production.
 
-import type { Contract, ContractAuditEvent } from "@/lib/types";
+import type { Contract } from "@/lib/types";
 import { type CertData, deriveDelivery } from "@/lib/contract-pdf-document";
 
 import { getContractAuditEvents } from "./contract-audit";
 import { getAdminDb } from "./firebase-admin";
 
-export async function loadContractPdfPreview(contractId: string): Promise<{
-  contract: Contract;
-  cert: CertData;
-  events: ContractAuditEvent[];
-}> {
+export async function loadContractPdfPreview(
+  contractId: string,
+): Promise<{ contract: Contract; cert: CertData }> {
   if (process.env.NODE_ENV === "production") {
     throw new Error("PDF preview is disabled in production.");
   }
@@ -27,5 +25,5 @@ export async function loadContractPdfPreview(contractId: string): Promise<{
 
   const contract = snap.data() as Contract;
   const events = await getContractAuditEvents(contractId);
-  return { contract, cert: deriveDelivery(events), events };
+  return { contract, cert: deriveDelivery(events) };
 }

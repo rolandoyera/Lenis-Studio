@@ -901,7 +901,11 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
               </div>
 
               <div className="lg:min-h-0 lg:flex-1 lg:pb-1">
-                {activeFields.length > 0 ? (
+                {isLocked ? (
+                  <p className="rounded-lg border border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm">
+                    This contract has been sent and is no longer editable.
+                  </p>
+                ) : activeFields.length > 0 ? (
                   <div className="flex flex-wrap gap-4">
                     {activeFields.map((def) =>
                       def.type === "list" ? (
