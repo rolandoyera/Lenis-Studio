@@ -181,7 +181,10 @@ projectId/contractId` it grants access to.
   `not_found` so the portal never confirms which contracts exist. Expired/unavailable failures render
   the branded `PortalMessage`, which names the org ("contact <org> for a new one") — the resolver
   attaches `orgName` (via `getOrgName`, legal→display→org name) on those paths since a valid token has
-  already identified the org; `not_found` paths 404 and never include it.
+  already identified the org; `not_found` paths call `notFound()`, which renders
+  `portal/[accessToken]/not-found.tsx` — a generic in-shell 404 (the layout can't resolve org branding
+  for a bad token, so it shows the default app brand and names no firm). The portal header/footer stay
+  consistent across all cases.
 - **Renders from `lockedSnapshot` only** (`PortalContractDocument`), reusing the template's pure
   render helpers. Internal-only fields (audit, ids, status) are never passed to the portal. **Once
   `fully_executed`, the on-screen document is hidden** and the page shows only the `PortalSignedState`
