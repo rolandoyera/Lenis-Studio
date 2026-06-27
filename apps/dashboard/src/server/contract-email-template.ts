@@ -28,7 +28,7 @@ export function buildContractEmailHtml({
   const year = new Date().getFullYear();
 
   const brand = logoUrl
-    ? `<img src="${logoUrl}" alt="${companyName}" height="64" style="display:block;border:0;outline:none;text-decoration:none;height:64px;width:auto;margin:0 auto;" />`
+    ? `<img src="${logoUrl}" alt="${companyName}" height="96" style="display:block;border:0;outline:none;text-decoration:none;height:96px;width:auto;margin:0 auto;" />`
     : `<span style="font-family:${FONT};font-size:22px;font-weight:bold;color:#2B2B2B;">${companyName}</span>`;
 
   return `<!doctype html>
@@ -46,7 +46,7 @@ export function buildContractEmailHtml({
                 <h1 style="margin:0 0 24px;font-family:${FONT};font-size:30px;line-height:1.2;font-weight:bold;color:#1F1B16;">${companyName} has sent you a contract to sign.</h1>
                 <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">${greeting}</p>
                 <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">${companyName} has prepared a contract for you to review and sign electronically. You can read the full agreement using the secure link below.</p>
-                <p style="margin:0 0 32px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">This link is private to you. If you weren't expecting this, you can safely ignore this email.</p>
+                <p style="margin:0 0 32px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">This link is private to you. If you weren't expecting this email please call .</p>
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
                     <td align="center" bgcolor="${BUTTON_BG}" style="border-radius:4px;">

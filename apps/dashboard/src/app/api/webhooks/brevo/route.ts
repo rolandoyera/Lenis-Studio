@@ -63,11 +63,15 @@ async function handleEvent(payload: RawPayload): Promise<void> {
 }
 
 export async function POST(req: NextRequest) {
-  // Optional shared-secret guard. When BREVO_WEBHOOK_SECRET is set, require it as
-  // a `?secret=` query param (Brevo lets you append it to the webhook URL).
+  // Optional shared-secret guard. When BREVO_WEBHOOK_SECRET is set, require it via
+  // Brevo's "Token" auth — the token is sent in the `Authorization` header (with or
+  // without a `Bearer ` prefix). Set BREVO_WEBHOOK_SECRET to that exact token value.
   const expected = process.env.BREVO_WEBHOOK_SECRET;
   if (expected) {
-    const provided = req.nextUrl.searchParams.get("secret");
+    const provided = req.headers
+      .get("authorization")
+      ?.replace(/^Bearer\s+/i, "")
+      .trim();
     if (provided !== expected) {
       return new Response("Forbidden", { status: 403 });
     }
