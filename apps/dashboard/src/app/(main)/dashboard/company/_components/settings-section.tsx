@@ -77,16 +77,15 @@ export function SettingsCard({
               ? `${s.defaultTaxRate}%`
               : null}
           </DataField>
+          <DataField
+            label="Contract Signer"
+            empty="Not Set"
+            className="sm:col-span-2">
+            {s?.contractSigner
+              ? `${s.contractSigner.name} — ${s.contractSigner.title} (${s.contractSigner.email})`
+              : null}
+          </DataField>
         </div>
-        <DataField
-          label="Contract Signer"
-          empty="Not Set"
-          className="sm:col-span-2"
-        >
-          {s?.contractSigner
-            ? `${s.contractSigner.name} — ${s.contractSigner.title} (${s.contractSigner.email})`
-            : null}
-        </DataField>
       </CardContent>
     </Card>
   );
@@ -122,8 +121,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>Default Markup</Label>
             <InputGroup>
               <InputGroupInput
@@ -149,8 +147,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>Default Tax Rate</Label>
             <InputGroup>
               <InputGroupInput
@@ -176,8 +173,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>Proposal Expiration (days)</Label>
             <Input
               {...field}
@@ -196,8 +192,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>
               Contract Link Expiration (days)
             </Label>
@@ -246,8 +241,7 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5 sm:col-span-2"
-            data-invalid={fieldState.invalid}
-          >
+            data-invalid={fieldState.invalid}>
             <Label className={LABEL_CLASS}>Signer Email</Label>
             <Input
               {...field}
