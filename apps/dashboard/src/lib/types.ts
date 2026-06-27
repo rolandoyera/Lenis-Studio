@@ -651,6 +651,9 @@ export type PortalAccessType = "contract_signature";
 
 export type PortalAccessStatus = "active" | "completed" | "expired" | "revoked";
 
+/** How the client proves identity before viewing/signing a portal contract. */
+export type PortalVerificationMethod = "phone_last4";
+
 export interface PortalAccess {
   portalAccessId: string;
   type: PortalAccessType;
@@ -673,6 +676,21 @@ export interface PortalAccess {
   revokedAt?: number;
   /** Email the link was sent to (audit only — never shown in the portal). */
   sentToEmail: string;
+
+  // ── Identity verification ──
+  // The client must pass a verification step before the contract document is
+  // rendered or signed. All fields are server-owned (client-SDK writes denied);
+  // the expected secret is stored only as a salted hash, never as plain digits.
+  /** Verification challenge type. Absent on legacy links (treated as unverified). */
+  verificationMethod?: PortalVerificationMethod;
+  /** SHA-256 of the client's phone last-4, salted by portalAccessId. Never plain digits. */
+  verificationPhoneLast4Hash?: string;
+  /** Set once verification passes — gates document view + signing. */
+  verifiedAt?: number;
+  /** Failed verification attempts; the link locks at 5. */
+  failedVerificationAttempts?: number;
+  /** Set when too many failed attempts lock the link. */
+  verificationLockedAt?: number;
 }
 
 export interface DiagnosticParsedData {

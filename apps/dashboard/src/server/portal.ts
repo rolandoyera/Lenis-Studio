@@ -30,6 +30,22 @@ export function hashAccessToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+/** Max failed verification attempts before a link locks. */
+export const MAX_VERIFICATION_ATTEMPTS = 5;
+
+/**
+ * SHA-256 hex of a phone's last-4 digits, salted by the access record id so the
+ * same digits hash differently per link (and a DB leak can't be matched across
+ * records). Last-4 is inherently low-entropy — the real brute-force control is
+ * the attempt limit, not the hash. The raw digits are never persisted or sent
+ * to the browser.
+ */
+export function hashPhoneLast4(portalAccessId: string, last4: string): string {
+  return createHash("sha256")
+    .update(`${portalAccessId}:${last4}`)
+    .digest("hex");
+}
+
 /** Why a portal link can't be opened. `not_found` is also used to hide existence. */
 export type PortalFailureReason = "not_found" | "expired" | "unavailable";
 
@@ -198,9 +214,16 @@ export async function resolvePortalContract(
 export async function createContractPortalAccess(input: {
   contract: Contract;
   sentToEmail: string;
+  /** Plain last-4 of the client's phone; hashed here, never stored or returned. */
+  phoneLast4: string;
   ttlDays?: number;
 }): Promise<{ portalAccessId: string; accessToken: string }> {
-  const { contract, sentToEmail, ttlDays = DEFAULT_TTL_DAYS } = input;
+  const {
+    contract,
+    sentToEmail,
+    phoneLast4,
+    ttlDays = DEFAULT_TTL_DAYS,
+  } = input;
   const ref = getAdminDb().collection(PORTAL_ACCESS_COLLECTION).doc();
   const accessToken = randomBytes(32).toString("base64url");
   const now = Date.now();
@@ -217,6 +240,9 @@ export async function createContractPortalAccess(input: {
     createdAt: now,
     expiresAt: now + ttlDays * 24 * 60 * 60 * 1000,
     sentToEmail,
+    verificationMethod: "phone_last4",
+    verificationPhoneLast4Hash: hashPhoneLast4(ref.id, phoneLast4),
+    failedVerificationAttempts: 0,
   };
 
   await ref.set(access);

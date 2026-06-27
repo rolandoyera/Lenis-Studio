@@ -18,7 +18,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { Contract } from "@/lib/types";
+import type { Client, Contract } from "@/lib/types";
+import { normalizePhone } from "@/lib/utils";
 import { getAdminDb } from "@/server/firebase-admin";
 import { createContractPortalAccess } from "@/server/portal";
 
@@ -94,9 +95,21 @@ async function main() {
   const sentToEmail =
     contract.lockedSnapshot.parties.clientEmail || "preview@local.test";
 
+  // The portal now gates on the client's phone last-4. Pull it from the client
+  // record so the minted link is verifiable; fall back to 0000 for dev data
+  // without a phone. The digits to type are printed below.
+  const clientSnap = await getAdminDb()
+    .collection("clients")
+    .doc(contract.clientId)
+    .get();
+  const client = clientSnap.data() as Client | undefined;
+  const phoneDigits = normalizePhone(client?.phone ?? "");
+  const phoneLast4 = phoneDigits.length >= 4 ? phoneDigits.slice(-4) : "0000";
+
   const { portalAccessId, accessToken } = await createContractPortalAccess({
     contract,
     sentToEmail,
+    phoneLast4,
   });
 
   const path = `/portal/${accessToken}/contract/${contract.contractId}`;
@@ -105,6 +118,7 @@ async function main() {
   console.log(`   Contract:       ${contract.title} (${contract.contractId})`);
   console.log(`   Status:         ${contract.status}`);
   console.log(`   portalAccessId: ${portalAccessId}`);
+  console.log(`   Verify with:    ${phoneLast4} (last 4 of client phone)`);
   console.log("\n   Open in the browser:\n");
   // Sarvian branding only resolves on the sarvian host (see app-config.ts); add
   // `127.0.0.1 app.sarviandg.local` to your hosts file to see it locally.

@@ -7,7 +7,7 @@
 // fully executed, the on-screen document is hidden and only the signed-state
 // download box renders (the signed PDF stays downloadable via the token route).
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { recordPortalOpen } from "@/server/contract-signing";
 import { resolvePortalContract } from "@/server/portal";
@@ -34,6 +34,12 @@ export default async function PortalContractPage({
   }
 
   const { access, contract, firmLogoUrl } = result;
+
+  // Identity gate: the document must never render until the client has passed
+  // server-side verification. Unverified (or locked) visitors are sent back to the
+  // landing page, which owns the verification / lock UI. Defense in depth — the
+  // landing page is the primary gate, but the contract URL is independently guarded.
+  if (!access.verifiedAt) redirect(`/portal/${accessToken}`);
 
   // lockedSnapshot is guaranteed present by resolvePortalContract.
   const snapshot = contract.lockedSnapshot;

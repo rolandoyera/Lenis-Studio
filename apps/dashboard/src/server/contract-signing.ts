@@ -17,7 +17,7 @@ import { cookies, headers } from "next/headers";
 
 import { ELECTRONIC_SIGNATURE_CONSENT_TEXT } from "@/lib/contract-text";
 import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
-import { formatVendorPhone, vendorPhoneTel } from "@/lib/utils";
+import { formatVendorPhone, normalizePhone, vendorPhoneTel } from "@/lib/utils";
 import type {
   Client,
   CompanySignatureAuthorization,
@@ -37,6 +37,8 @@ import {
   createContractPortalAccess,
   DEFAULT_TTL_DAYS,
   hashAccessToken,
+  hashPhoneLast4,
+  MAX_VERIFICATION_ATTEMPTS,
 } from "./portal";
 
 const CONTRACTS_COLLECTION = "contracts";
@@ -162,6 +164,18 @@ export async function sendContractForSignature(input: {
     return { ok: false, error: "The client has no email address on file." };
   }
 
+  // Identity verification uses the last 4 digits of the client's phone. Without a
+  // usable number there's nothing to verify against, so block sending for now.
+  const phoneDigits = normalizePhone(client?.phone ?? "");
+  if (phoneDigits.length < 4) {
+    return {
+      ok: false,
+      error:
+        "The client needs a phone number on file — it's used to verify their identity before signing.",
+    };
+  }
+  const phoneLast4 = phoneDigits.slice(-4);
+
   const now = Date.now();
   const lockedSnapshot: LockedContractSnapshot = {
     ...snapshot,
@@ -213,6 +227,7 @@ export async function sendContractForSignature(input: {
   const { portalAccessId, accessToken } = await createContractPortalAccess({
     contract: { ...contract, organizationId },
     sentToEmail,
+    phoneLast4,
     ttlDays: expirationDays,
   });
 
@@ -337,6 +352,114 @@ export async function recordPortalOpen(
   }
 }
 
+// ─── Verify identity ─────────────────────────────────────────────────────────
+
+export type VerifyPortalResult =
+  | { ok: true }
+  | { ok: false; error: string; locked?: boolean };
+
+/**
+ * Confirm the client's identity (last 4 digits of their phone) before the
+ * contract document or signing form is ever rendered. Runs entirely server-side:
+ * the expected value lives only as a salted hash, the submitted digits are never
+ * echoed back, and success is recorded as `verifiedAt` on the access record (a
+ * field the client SDK can't write). Failures increment a counter and lock the
+ * link after MAX_VERIFICATION_ATTEMPTS.
+ */
+export async function verifyPortalAccess(input: {
+  accessToken: string;
+  contractId: string;
+  phoneLast4: string;
+}): Promise<VerifyPortalResult> {
+  const { accessToken, contractId } = input;
+  const phoneLast4 = (input.phoneLast4 ?? "").replace(/\D/g, "");
+  const db = getAdminDb();
+
+  if (phoneLast4.length !== 4) {
+    return { ok: false, error: "Enter the last 4 digits of your phone number." };
+  }
+
+  // Resolve + validate the access token.
+  const accessQuery = await db
+    .collection(PORTAL_ACCESS_COLLECTION)
+    .where("tokenHash", "==", hashAccessToken(accessToken))
+    .limit(1)
+    .get();
+  if (accessQuery.empty) return { ok: false, error: "Invalid link." };
+  const accessRef = accessQuery.docs[0].ref;
+  const access = accessQuery.docs[0].data() as PortalAccess;
+
+  if (
+    access.type !== "contract_signature" ||
+    access.contractId !== contractId ||
+    access.status === "revoked"
+  ) {
+    return { ok: false, error: "This link is no longer valid." };
+  }
+  if (access.status === "expired" || access.expiresAt < Date.now()) {
+    return { ok: false, error: "This link has expired." };
+  }
+  if (access.verificationLockedAt) {
+    return {
+      ok: false,
+      locked: true,
+      error:
+        "This link has been locked after too many failed attempts. Please contact the designer for a new link.",
+    };
+  }
+  // Already verified — idempotent success.
+  if (access.verifiedAt) return { ok: true };
+
+  // The contract must exist, match the access record, and be frozen to verify.
+  const contractSnap = await db
+    .collection(CONTRACTS_COLLECTION)
+    .doc(contractId)
+    .get();
+  const contract = contractSnap.exists
+    ? (contractSnap.data() as Contract)
+    : undefined;
+  if (!contract?.lockedSnapshot) {
+    return { ok: false, error: "This contract is not available." };
+  }
+  if (
+    contract.organizationId !== access.organizationId ||
+    contract.clientId !== access.clientId ||
+    contract.projectId !== access.projectId
+  ) {
+    return { ok: false, error: "This contract is not available." };
+  }
+
+  const expected = access.verificationPhoneLast4Hash;
+  const matches =
+    !!expected && hashPhoneLast4(access.portalAccessId, phoneLast4) === expected;
+
+  if (matches) {
+    await accessRef.update({ verifiedAt: Date.now() });
+    return { ok: true };
+  }
+
+  // Wrong digits: count the attempt and lock at the limit.
+  const attempts = (access.failedVerificationAttempts ?? 0) + 1;
+  const reachedLimit = attempts >= MAX_VERIFICATION_ATTEMPTS;
+  await accessRef.update({
+    failedVerificationAttempts: attempts,
+    ...(reachedLimit ? { verificationLockedAt: Date.now() } : {}),
+  });
+  if (reachedLimit) {
+    return {
+      ok: false,
+      locked: true,
+      error:
+        "This link has been locked after too many failed attempts. Please contact the designer for a new link.",
+    };
+  }
+  return {
+    ok: false,
+    error:
+      "That did not match our records. Please check the number and try again.",
+  };
+}
+
 // ─── Sign ────────────────────────────────────────────────────────────────────
 
 export type SignContractResult = { ok: true } | { ok: false; error: string };
@@ -381,6 +504,18 @@ export async function signContract(input: {
     access.expiresAt < Date.now()
   ) {
     return { ok: false, error: "This signing link is no longer valid." };
+  }
+
+  // Identity must have been verified server-side before signing is allowed.
+  if (access.verificationLockedAt) {
+    return {
+      ok: false,
+      error:
+        "This link has been locked after too many failed attempts. Please contact the designer for a new link.",
+    };
+  }
+  if (!access.verifiedAt) {
+    return { ok: false, error: "Please verify your identity before signing." };
   }
 
   const contractRef = db.collection(CONTRACTS_COLLECTION).doc(contractId);

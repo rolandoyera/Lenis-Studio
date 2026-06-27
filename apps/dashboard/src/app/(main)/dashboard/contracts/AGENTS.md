@@ -185,6 +185,19 @@ projectId/contractId` it grants access to.
   `portal/[accessToken]/not-found.tsx` — a generic in-shell 404 (the layout can't resolve org branding
   for a bad token, so it shows the default app brand and names no firm). The portal header/footer stay
   consistent across all cases.
+- **Identity verification gate (phone last-4).** Before any contract data renders, the client must
+  prove identity. On **Send**, `createContractPortalAccess` reads the client's phone, stores only a
+  salted SHA-256 of the last 4 digits (`verificationPhoneLast4Hash`, salted by `portalAccessId` —
+  never the plain digits) plus `verificationMethod: 'phone_last4'` and `failedVerificationAttempts: 0`;
+  send is blocked if the client has no usable phone. The landing page (`portal/[accessToken]/page.tsx`)
+  is the gate: it shows the OTP-style `PortalVerifyForm` (4-digit input) until `access.verifiedAt` is
+  set, a lock notice once `verificationLockedAt` is set, or the "review" hand-off when verified. The
+  form submits only `{accessToken, contractId, phoneLast4}` to the `verifyPortalAccess` server action
+  (in `contract-signing.ts`), which compares the salted hash **server-side**, sets `verifiedAt` on
+  success, or increments `failedVerificationAttempts` and sets `verificationLockedAt` after
+  `MAX_VERIFICATION_ATTEMPTS` (5). The expected digits never reach the browser. The contract page
+  independently `redirect()`s back to the landing page when `!access.verifiedAt` (defense in depth),
+  and `signContract` also refuses to sign unless `verifiedAt` is set and the link isn't locked.
 - **Renders from `lockedSnapshot` only** (`PortalContractDocument`), reusing the template's pure
   render helpers. Internal-only fields (audit, ids, status) are never passed to the portal. **Once
   `fully_executed`, the on-screen document is hidden** and the page shows only the `PortalSignedState`
