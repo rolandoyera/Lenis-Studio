@@ -133,18 +133,31 @@ this hook for other forms with unsaved-state rather than copying the logic.
 ## Firestore rules
 
 `contracts/{id}` has a block in [firestore.rules](../../../../../firestore.rules). Without it,
-client-SDK writes hit the default deny. It enforces org-scoping plus: create must be a `draft` with
-`lockedSnapshot == null`, and **client-SDK update is allowed only while the contract stays a draft
-AND only the draft-editable fields change.** The update rule constrains the _post-image_, not just
-the pre-image: it requires `request.resource.data.status == 'draft'`,
-`get('lockedSnapshot', null) == null`, and a `diff(...).affectedKeys().hasOnly([...])` allowlist that
-**mirrors `ContractDraftInput`** (`src/lib/types.ts`) plus `updatedBy`/`updatedAt`. Keep that
-allowlist in sync with `ContractDraftInput` — if you add/remove a draft-editable field, update the
-rule too. The security comes from the post-image constraint + allowlist (those block the client from
-flipping status or forging `lockedSnapshot`/signature/lifecycle fields); the `get()` default is just
-robustness against a missing field (its failure mode is _deny_, never _allow_). Everything past draft
-(send, viewedAt, signing/execution) runs through the firebase-admin SDK, which bypasses rules — so
-once sent, the client can't edit it at all (no edits after send). The
+client-SDK writes hit the default deny. It enforces org-scoping plus a **draft-only** client surface:
+
+- **Create** must be a `draft` with `lockedSnapshot == null`, must carry `contractId == id`,
+  self-attribute (`createdBy == request.auth.uid`, `updatedBy == request.auth.uid`), and hold
+  **only** the known `Contract` write fields via `keys().hasOnly([...])` — so a client can't smuggle
+  in server-owned signature/lifecycle fields (`clientSignature`, `executedAt`, `finalPdfPath`, …) or
+  forge attribution at creation.
+- **Update** is allowed only while the contract **stays a draft AND only draft-editable fields
+  change.** It constrains the _post-image_, not just the pre-image: `request.resource.data.status ==
+  'draft'`, `get('lockedSnapshot', null) == null`, `updatedBy == request.auth.uid`, and a
+  `diff(...).affectedKeys().hasOnly([...])` allowlist of `ContractDraftInput` + `updatedBy`/
+  `updatedAt`.
+- **Delete** is allowed only while `status == 'draft'`. Once sent, a contract is an audit record:
+  locked to client writes and **not deletable client-side**. (No `deleteContract` helper exists yet;
+  when added it must target drafts only.)
+
+The security comes from the post-image constraint + allowlists (they block flipping status, writing
+`lockedSnapshot`, or forging signature/lifecycle/attribution fields); the `get()` default is just
+robustness against a missing field (its failure mode is _deny_, never _allow_). Keep the allowlists in
+sync with the `Contract` write shape — if you add/remove a draft-editable field, update both rules.
+
+Everything **past draft** — send, viewedAt, signing/execution, **and voiding** — runs through the
+firebase-admin SDK, which bypasses rules. So once sent the client can't edit, delete, or void it; in
+particular **voiding is a server action** that stamps `voidedBy`/`voidedAt` (the client update rule
+can't reach a non-draft and the allowlist excludes those fields, so a client can never void). The
 `contracts/{id}/audit/*` subcollection denies all client access (server-only). **Rules must be
 deployed** (`firebase deploy --only firestore:rules`). The `portalAccess` collection denies client
 writes (org-scoped reads only); all portal reads/writes go through firebase-admin.

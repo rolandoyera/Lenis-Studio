@@ -133,23 +133,42 @@ service cloud.firestore {
     // (freeze + authorize + mint token), portal viewedAt/status, and signing/
     // execution — runs through the firebase-admin SDK (server-only), which
     // bypasses these rules. So the client SDK is confined to drafts:
-    //   - create must start as a draft with lockedSnapshot null, and
+    //   - create must start as a draft with lockedSnapshot null, carry the doc's
+    //     own id, self-attribute createdBy/updatedBy, and hold ONLY the draft
+    //     fields (no server-owned signature/lifecycle fields smuggled in), and
     //   - update is allowed ONLY while the contract stays a draft AND only the
     //     draft-editable fields change. The post-image is constrained (not just
     //     the pre-image) so a client can't flip status, write lockedSnapshot, or
-    //     forge any server-owned lifecycle/signature field. Once sent it is locked
-    //     to client writes entirely (voiding / new versions go through the server).
-    // The hasOnly allowlist mirrors `ContractDraftInput` in src/lib/types.ts plus
-    // the two audit fields updateContract stamps — keep them in sync.
+    //     forge any server-owned lifecycle/signature field, and
+    //   - delete is allowed ONLY while still a draft. Once sent, a contract is an
+    //     audit record: it's locked to client writes entirely and can no longer be
+    //     deleted client-side. Past-draft transitions (send, viewedAt, signing/
+    //     execution, and voiding) all go through the firebase-admin SDK (server-
+    //     only), which bypasses these rules — voiding stamps voidedBy/voidedAt
+    //     server-side, never as a client write.
+    // The create/update allowlists mirror the `Contract` write shape in
+    // src/lib/types.ts (`ContractDraftInput` + the audit/identity fields
+    // addContract/updateContract stamp) — keep them in sync.
     match /contracts/{id} {
-      allow read, delete: if readsOwnOrg();
+      allow read: if readsOwnOrg();
+      allow delete: if readsOwnOrg() && resource.data.status == 'draft';
       allow create: if createsInOwnOrg()
         && request.resource.data.status == 'draft'
-        && request.resource.data.lockedSnapshot == null;
+        && request.resource.data.lockedSnapshot == null
+        && request.resource.data.contractId == id
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+             'title', 'projectId', 'clientId', 'clientName', 'projectName',
+             'templateKey', 'templateVersion', 'values', 'scopeItems',
+             'contractId', 'organizationId', 'status', 'lockedSnapshot',
+             'createdBy', 'createdAt', 'updatedBy', 'updatedAt'
+           ]);
       allow update: if updatesInOwnOrg()
         && resource.data.status == 'draft'
         && request.resource.data.status == 'draft'
         && request.resource.data.get('lockedSnapshot', null) == null
+        && request.resource.data.updatedBy == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
              'title', 'projectId', 'clientId', 'clientName', 'projectName',
              'templateKey', 'templateVersion', 'values', 'scopeItems',
