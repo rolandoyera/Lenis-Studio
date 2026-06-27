@@ -221,5 +221,13 @@ company's signature authorization — there is no separate approval step. Server
   IP/UA). Stored privately in Storage; the client downloads it via the **token-gated** route
   `portal/[accessToken]/contract/[contractId]/download` (re-validates access, streams from Storage —
   never a public URL). Generated on signing; regenerated on demand if missing.
+  - **Timestamps**: all contract times are stored as epoch-ms (UTC instants). The certificate/
+    signature-block formatter (`fmtDate` in `src/lib/contract-pdf-document.tsx`) renders **UTC always,
+    plus the org's configured timezone** when set — each labeled with its zone abbreviation, so the
+    certificate is self-describing regardless of where it was generated. The zone comes from
+    `OrgSettings.timezone` (Company Settings), fetched via `getOrgTimezone` and threaded as the
+    `timeZone` prop into `<ContractPdf>` from both the real generator and the dev `pdf-preview`. Never
+    format these times without an explicit `timeZone` — a bare `toLocaleString` would silently use the
+    server's zone (UTC on Vercel) with no label.
 - **Env:** `FIREBASE_STORAGE_BUCKET` (optional; defaults to `<project>.firebasestorage.app`),
   `BREVO_API_KEY`, `BREVO_WEBHOOK_SECRET` (all optional — features degrade gracefully).

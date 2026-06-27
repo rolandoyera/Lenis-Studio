@@ -6,11 +6,30 @@
 
 import { renderToBuffer } from "@react-pdf/renderer";
 
-import type { Contract } from "@/lib/types";
+import type { Contract, OrgSettings } from "@/lib/types";
 import { ContractPdf, deriveDelivery } from "@/lib/contract-pdf-document";
 
 import { getContractAuditEvents } from "./contract-audit";
-import { getAdminBucket } from "./firebase-admin";
+import { getAdminBucket, getAdminDb } from "./firebase-admin";
+
+/**
+ * The org's configured IANA timezone (Company Settings), used to render
+ * certificate times alongside UTC. Undefined when unset — the certificate then
+ * shows UTC only. Best-effort; a read failure never blocks PDF generation.
+ */
+export async function getOrgTimezone(
+  organizationId: string,
+): Promise<string | undefined> {
+  try {
+    const snap = await getAdminDb()
+      .collection("organizations")
+      .doc(organizationId)
+      .get();
+    return (snap.data()?.settings as OrgSettings | undefined)?.timezone;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Render the final dual-signature PDF and store it privately. Returns the Storage
@@ -22,9 +41,10 @@ export async function generateAndStoreFinalContractPdf(input: {
   const { contract } = input;
   const events = await getContractAuditEvents(contract.contractId);
   const cert = deriveDelivery(events);
+  const timeZone = await getOrgTimezone(contract.organizationId);
 
   const buffer = await renderToBuffer(
-    <ContractPdf contract={contract} cert={cert} />,
+    <ContractPdf contract={contract} cert={cert} timeZone={timeZone} />,
   );
 
   const path = `organizations/${contract.organizationId}/contracts/${contract.contractId}/final/contract-${contract.contractVersionId}.pdf`;

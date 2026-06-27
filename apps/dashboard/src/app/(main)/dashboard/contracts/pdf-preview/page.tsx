@@ -49,6 +49,7 @@ function PreviewInner() {
   const [data, setData] = useState<{
     contract: Contract;
     cert: CertData;
+    timeZone?: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +81,11 @@ function PreviewInner() {
 
   return (
     <PDFViewer style={{ width: "100%", height: "100vh", border: "none" }}>
-      <ContractPdf contract={data.contract} cert={data.cert} />
+      <ContractPdf
+        contract={data.contract}
+        cert={data.cert}
+        timeZone={data.timeZone}
+      />
     </PDFViewer>
   );
 }

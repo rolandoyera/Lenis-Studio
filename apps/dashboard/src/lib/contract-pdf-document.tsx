@@ -8,12 +8,28 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import type { Contract, ContractAuditEvent } from "@/lib/types";
 
-function fmtDate(ms?: number): string {
-  if (!ms) return "—";
+/** Date + time in a given IANA zone, tagged with its abbreviation (e.g. "EST"). */
+function fmtInZone(ms: number, timeZone: string): string {
   return new Date(ms).toLocaleString("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone,
+    timeZoneName: "short",
   });
+}
+
+/**
+ * A certificate/signature timestamp. Always shows UTC (the canonical stored
+ * instant, timezone-agnostic), and when the org has a configured timezone that
+ * isn't UTC, leads with that zone and appends UTC in parentheses — each labeled
+ * with its abbreviation so the certificate is self-describing regardless of where
+ * the PDF was generated.
+ */
+function fmtDate(ms?: number, timeZone?: string): string {
+  if (!ms) return "—";
+  const utc = fmtInZone(ms, "UTC");
+  if (!timeZone || timeZone === "UTC") return utc;
+  return `${fmtInZone(ms, timeZone)} (${utc})`;
 }
 
 /** Substitute {{TOKEN}} markers, leaving **bold** markup intact. */
@@ -179,11 +195,13 @@ function SignatureBlock({
   contract,
   client,
   company,
+  timeZone,
 }: {
   snapshot: NonNullable<Contract["lockedSnapshot"]>;
   contract: Contract;
   client: Contract["clientSignature"];
   company: Contract["companySignatureAuthorization"];
+  timeZone?: string;
 }) {
   const { resolved } = snapshot;
   const designerParty =
@@ -197,14 +215,14 @@ function SignatureBlock({
         party={designerParty}
         signerName={company?.signerName ?? ""}
         title={company?.signerTitle}
-        date={fmtDate(contract.executedAt)}
+        date={fmtDate(contract.executedAt, timeZone)}
       />
       <View style={styles.sigGap} />
       <PartySignature
         label="Client"
         party={clientParty}
         signerName={client?.signerName ?? ""}
-        date={fmtDate(client?.signedAt)}
+        date={fmtDate(client?.signedAt, timeZone)}
       />
     </View>
   );
@@ -278,9 +296,12 @@ export function deriveDelivery(events: ContractAuditEvent[]): CertData {
 export function ContractPdf({
   contract,
   cert,
+  timeZone,
 }: {
   contract: Contract;
   cert: CertData;
+  /** Org's configured IANA timezone; certificate times show it alongside UTC. */
+  timeZone?: string;
 }) {
   const snapshot = contract.lockedSnapshot;
   if (!snapshot) throw new Error("Contract has no locked snapshot.");
@@ -308,6 +329,7 @@ export function ContractPdf({
                 contract={contract}
                 client={client}
                 company={company}
+                timeZone={timeZone}
               />
             </View>
           ) : (
@@ -357,19 +379,25 @@ export function ContractPdf({
 
         <Text style={styles.certGroupTitleSub}>Delivery</Text>
         <CertField label="Sent to:" value={contract.sentToEmail ?? "—"} />
-        <CertField label="Sent at:" value={fmtDate(contract.sentAt)} />
+        <CertField label="Sent at:" value={fmtDate(contract.sentAt, timeZone)} />
         <CertField label="Provider:" value="Brevo" />
         <CertField label="Status:" value={cert.brevoDeliveryStatus} />
         <CertField label="Message ID:" value={cert.brevoMessageId} />
-        <CertField label="Delivered at:" value={fmtDate(cert.deliveredAt)} />
+        <CertField
+          label="Delivered at:"
+          value={fmtDate(cert.deliveredAt, timeZone)}
+        />
 
         <Text style={styles.certGroupTitleSub}>Client Signature</Text>
         <CertField label="Signer:" value={client?.signerName ?? "—"} />
         <CertField label="Email:" value={client?.signerEmail ?? "—"} />
-        <CertField label="Signed at:" value={fmtDate(client?.signedAt)} />
+        <CertField
+          label="Signed at:"
+          value={fmtDate(client?.signedAt, timeZone)}
+        />
         <CertField
           label="Consent accepted:"
-          value={fmtDate(client?.consentAcceptedAt)}
+          value={fmtDate(client?.consentAcceptedAt, timeZone)}
         />
         <CertField label="IP Address:" value={client?.ipAddress ?? "—"} />
         <CertField
@@ -382,9 +410,12 @@ export function ContractPdf({
         <CertField label="Title:" value={company?.signerTitle ?? "—"} />
         <CertField
           label="Authorized at:"
-          value={fmtDate(company?.authorizedAt)}
+          value={fmtDate(company?.authorizedAt, timeZone)}
         />
-        <CertField label="Applied at:" value={fmtDate(contract.executedAt)} />
+        <CertField
+          label="Applied at:"
+          value={fmtDate(contract.executedAt, timeZone)}
+        />
         <CertField label="Authorization Type:" value="Authorized on Send" />
       </Page>
     </Document>

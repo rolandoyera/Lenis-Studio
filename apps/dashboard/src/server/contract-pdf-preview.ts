@@ -8,11 +8,12 @@ import type { Contract } from "@/lib/types";
 import { type CertData, deriveDelivery } from "@/lib/contract-pdf-document";
 
 import { getContractAuditEvents } from "./contract-audit";
+import { getOrgTimezone } from "./contract-pdf";
 import { getAdminDb } from "./firebase-admin";
 
 export async function loadContractPdfPreview(
   contractId: string,
-): Promise<{ contract: Contract; cert: CertData }> {
+): Promise<{ contract: Contract; cert: CertData; timeZone?: string }> {
   if (process.env.NODE_ENV === "production") {
     throw new Error("PDF preview is disabled in production.");
   }
@@ -25,5 +26,6 @@ export async function loadContractPdfPreview(
 
   const contract = snap.data() as Contract;
   const events = await getContractAuditEvents(contractId);
-  return { contract, cert: deriveDelivery(events) };
+  const timeZone = await getOrgTimezone(contract.organizationId);
+  return { contract, cert: deriveDelivery(events), timeZone };
 }
