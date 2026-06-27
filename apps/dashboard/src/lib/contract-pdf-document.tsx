@@ -8,14 +8,29 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 import type { Contract, ContractAuditEvent } from "@/lib/types";
 
-/** Date + time in a given IANA zone, tagged with its abbreviation (e.g. "EST"). */
-function fmtInZone(ms: number, timeZone: string): string {
-  return new Date(ms).toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone,
-    timeZoneName: "short",
-  });
+/**
+ * Date + time in a given IANA zone, tagged with its abbreviation (e.g. "EST").
+ * Returns null when the runtime can't resolve the zone — some server runtimes
+ * (e.g. Lambda with limited ICU data) throw RangeError for non-UTC IANA zones,
+ * and a stored zone could be malformed. PDF generation must never crash over a
+ * timestamp label, so the caller falls back to UTC.
+ */
+function fmtInZone(ms: number, timeZone: string): string | null {
+  try {
+    return new Date(ms).toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone,
+      timeZoneName: "short",
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Plain UTC fallback that needs no ICU/timezone data (always succeeds). */
+function fmtUtcFallback(ms: number): string {
+  return `${new Date(ms).toISOString().slice(0, 16).replace("T", " ")} UTC`;
 }
 
 /**
@@ -23,13 +38,14 @@ function fmtInZone(ms: number, timeZone: string): string {
  * instant, timezone-agnostic), and when the org has a configured timezone that
  * isn't UTC, leads with that zone and appends UTC in parentheses — each labeled
  * with its abbreviation so the certificate is self-describing regardless of where
- * the PDF was generated.
+ * the PDF was generated. Degrades to UTC-only if a zone can't be resolved.
  */
 function fmtDate(ms?: number, timeZone?: string): string {
   if (!ms) return "—";
-  const utc = fmtInZone(ms, "UTC");
+  const utc = fmtInZone(ms, "UTC") ?? fmtUtcFallback(ms);
   if (!timeZone || timeZone === "UTC") return utc;
-  return `${fmtInZone(ms, timeZone)} (${utc})`;
+  const local = fmtInZone(ms, timeZone);
+  return local ? `${local} (${utc})` : utc;
 }
 
 /** Substitute {{TOKEN}} markers, leaving **bold** markup intact. */
