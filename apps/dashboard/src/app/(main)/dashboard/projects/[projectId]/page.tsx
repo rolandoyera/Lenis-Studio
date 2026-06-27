@@ -191,7 +191,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
   return (
     <>
       <PageTitle title={`${project.name} | Project Profile`} />
-      <div className="flex w-full flex-col gap-6 pb-10">
+      <div className="flex w-full flex-col gap-6">
         <ProjectHeader
           project={project}
           client={client}
@@ -204,20 +204,16 @@ export default function ProjectDetailPage({ params }: PageProps) {
         {/* Tab 1 Page Content - Project Overview */}
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-            <div className="flex flex-col gap-6 lg:col-span-7">
-              <ProjectProposalsCard
-                proposals={proposals}
-                onAddProposal={handleAddProposal}
-                addingProposal={addingProposal}
-              />
-              <ProjectNotesCard
-                project={project}
-                onEdit={() => setIsEditOpen(true)}
-              />
-            </div>
-            <div className="flex flex-col gap-6 lg:col-span-5">
-              <ProjectInformationCard project={project} client={client} />
-            </div>
+            <ProjectInformationCard project={project} client={client} />
+            <ProjectProposalsCard
+              proposals={proposals}
+              onAddProposal={handleAddProposal}
+              addingProposal={addingProposal}
+            />
+            <ProjectNotesCard
+              project={project}
+              onEdit={() => setIsEditOpen(true)}
+            />
           </div>
         )}
 

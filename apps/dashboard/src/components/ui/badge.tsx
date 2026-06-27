@@ -26,7 +26,7 @@ const badgeVariants = cva(
         trendingDown:
           "text-destructive dark:text-red-400 font-mono uppercase tracking-wider text-[12px]",
         warning:
-          "text-yellow-700 dark:text-yellow-300/60 font-mono uppercase tracking-wider",
+          "text-yellow-700 dark:text-yellow-300/60 font-mono uppercase tracking-wider before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']",
         info: "text-cyan-600 dark:text-cyan-400 font-mono uppercase tracking-wider before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']",
         overlay: "gap-2 bg-black/55 text-white backdrop-blur-xs",
       },

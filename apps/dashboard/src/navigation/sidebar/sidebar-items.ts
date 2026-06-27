@@ -133,7 +133,7 @@ export const sidebarItems: NavGroup[] = [
   },
   {
     id: 3,
-    label: "Pages",
+    label: "Administration",
     items: [
       {
         title: "Users",
