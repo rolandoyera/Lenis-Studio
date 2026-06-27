@@ -37,8 +37,14 @@ export async function GET(
         .doc(contractId)
         .update({ finalPdfPath: path, finalPdfGeneratedAt: Date.now() });
     } catch (error) {
-      console.error("On-demand PDF generation failed:", error);
-      return new Response("Document unavailable", { status: 500 });
+      console.error(
+        `[contract-download] On-demand PDF generation failed for contract ${contractId}:`,
+        error,
+      );
+      return new Response(
+        `PDF generation failed: ${error instanceof Error ? error.stack ?? error.message : String(error)}`,
+        { status: 500 },
+      );
     }
   }
 
@@ -52,7 +58,13 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error("Failed to stream signed PDF:", error);
-    return new Response("Document unavailable", { status: 500 });
+    console.error(
+      `[contract-download] Failed to stream signed PDF for contract ${contractId} (path=${path}):`,
+      error,
+    );
+    return new Response(
+      `Storage read failed (path=${path}): ${error instanceof Error ? error.message : String(error)}`,
+      { status: 500 },
+    );
   }
 }
