@@ -1,0 +1,20 @@
+---
+title: Emails
+order: 7
+---
+
+import { EmailGallery } from "./_components/email-gallery";
+
+# Emails
+
+The branded transactional emails sent during the contract delivery + signing
+flow, rendered from the production templates with mock data. They're built to
+survive real email clients: table-based layouts with **inline styles only**
+(Gmail/Outlook strip `<style>` blocks and external CSS), a white content card on
+a tinted page, and a muted footer. The logo only renders when an absolute
+`https` URL is configured; otherwise the header falls back to the company name.
+
+These are the canonical email surfaces — **don't restyle them without
+approval**, and keep both templates visually in sync.
+
+<EmailGallery />
