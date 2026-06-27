@@ -10,16 +10,21 @@ import type { Contract, ContractAuditEvent } from "@/lib/types";
 
 /**
  * Date + time in a given IANA zone, tagged with its abbreviation (e.g. "EST").
- * Returns null when the runtime can't resolve the zone — some server runtimes
- * (e.g. Lambda with limited ICU data) throw RangeError for non-UTC IANA zones,
- * and a stored zone could be malformed. PDF generation must never crash over a
- * timestamp label, so the caller falls back to UTC.
+ * Uses explicit component options on purpose: ECMA-402 forbids combining
+ * `dateStyle`/`timeStyle` with `timeZoneName` and throws `TypeError: Invalid
+ * option`, which previously crashed PDF generation. Returns null when the zone
+ * still can't be resolved (a malformed stored zone, or a runtime with limited
+ * ICU data) so the caller can fall back to UTC — the timestamp label must never
+ * crash the document.
  */
 function fmtInZone(ms: number, timeZone: string): string | null {
   try {
     return new Date(ms).toLocaleString("en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
       timeZone,
       timeZoneName: "short",
     });
