@@ -11,8 +11,8 @@ export default function PortalNotFound() {
         This link isn't valid
       </h1>
       <p className="text-neutral-500 text-sm leading-6">
-        The link you followed doesn't lead to a contract. Please double-check the
-        link from your email, or contact your designer for a new one.
+        The link you followed isn't valid. Please check the link, or contact
+        your designer for assistance.
       </p>
     </div>
   );
