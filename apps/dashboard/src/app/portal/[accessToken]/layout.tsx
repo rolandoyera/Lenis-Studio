@@ -44,8 +44,11 @@ export default async function PortalLayout({
       <header
         className="border-neutral-200 border-b"
         style={
-          branding?.primaryColor
-            ? { backgroundColor: branding.primaryColor }
+          branding
+            ? {
+                backgroundColor: branding.primaryColor,
+                color: branding.tertiaryColor,
+              }
             : undefined
         }
       >
@@ -64,7 +67,17 @@ export default async function PortalLayout({
         {children}
       </main>
 
-      <footer className="border-neutral-200 border-t bg-white px-4 py-6 text-center text-neutral-400 text-xs">
+      <footer
+        className="border-neutral-200 border-t bg-white px-4 py-6 text-center text-neutral-400 text-xs"
+        style={
+          branding
+            ? {
+                backgroundColor: branding.primaryColor,
+                color: branding.tertiaryColor,
+              }
+            : undefined
+        }
+      >
         © {new Date().getFullYear()} {brand.name}. This document is
         confidential.
       </footer>
