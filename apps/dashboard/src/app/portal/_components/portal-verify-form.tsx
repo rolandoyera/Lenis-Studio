@@ -52,9 +52,11 @@ export function PortalVerifyForm({
       }
       setError(result.error);
       if (result.locked) setLocked(true);
+      else setCode(""); // clear the wrong digits so they can retry on empty slots
       setSubmitting(false);
     } catch {
       setError("Something went wrong. Please try again.");
+      setCode("");
       setSubmitting(false);
     }
   };
@@ -80,6 +82,7 @@ export function PortalVerifyForm({
           Last 4 digits of phone number
         </span>
         <InputOTP
+          autoFocus
           maxLength={4}
           value={code}
           inputMode="numeric"
