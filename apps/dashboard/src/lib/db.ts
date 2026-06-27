@@ -7,7 +7,6 @@ import {
   getDoc,
   getDocs,
   query,
-  runTransaction,
   setDoc,
   updateDoc,
   where,
@@ -30,7 +29,6 @@ import type {
   ClientNote,
   Contract,
   ContractDraftInput,
-  ContractSnapshot,
   DiagnosticRun,
   Lead,
   LibraryItem,
@@ -1669,52 +1667,4 @@ export async function getContracts(
     console.error("Error fetching contracts:", error);
     return [];
   }
-}
-
-/**
- * Lock and send a draft. Runs in a transaction so the draft→sent transition and
- * snapshot freeze are atomic: only a `draft` with no existing `lockedSnapshot`
- * can be sent, and a locked snapshot is never overwritten.
- */
-export async function sendContract(
-  contractId: string,
-  userId: string,
-  snapshotPayload: ContractSnapshot,
-): Promise<void> {
-  return trace(
-    "contracts",
-    "WRITE",
-    "sendContract",
-    async () => {
-      const docRef = doc(db, "contracts", contractId);
-      await runTransaction(db, async (tx) => {
-        const docSnap = await tx.get(docRef);
-        if (!docSnap.exists()) throw new Error("Contract not found.");
-        const current = docSnap.data() as Contract;
-        if (current.status !== "draft") {
-          throw new Error("Only draft contracts can be sent.");
-        }
-        if (current.lockedSnapshot) {
-          throw new Error("Contract is already locked.");
-        }
-        const now = Date.now();
-        tx.update(
-          docRef,
-          cleanUndefined({
-            status: "sent",
-            lockedSnapshot: {
-              ...snapshotPayload,
-              lockedAt: now,
-              lockedBy: userId,
-            },
-            sentBy: userId,
-            sentAt: now,
-            updatedBy: userId,
-            updatedAt: now,
-          }),
-        );
-      });
-    },
-    () => contractId,
-  );
 }

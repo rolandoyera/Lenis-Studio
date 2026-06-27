@@ -110,8 +110,10 @@ Hard rules that bit us / are easy to break:
   action freezes the snapshot, computes `contractVersionId` + `contractHash`, stamps
   `companySignatureAuthorization` from the org-configured signer, mints the portalAccess token,
   writes the `contract_sent` audit event, and emails the link via Brevo. The old client-side
-  `sendContract` transaction in `db.ts` is **no longer used by the builder** (left only for any
-  legacy caller). **Never overwrite an existing `lockedSnapshot`.**
+  `sendContract` transaction in `db.ts` has been **removed** — the tightened update rule would reject
+  it anyway (a client can no longer write `status: 'sent'` or `lockedSnapshot`), and leaving a broken
+  path around invited a future caller. Sending is server-only. **Never overwrite an existing
+  `lockedSnapshot`.**
 - **Save Draft skips the required-field guard** (drafts may be incomplete); it only needs org + uid
   - selected project + client. **Send runs the full `guard()`** — all non-`optional` tokens must be
     filled. `isLocked = status !== 'draft'` disables both buttons once sent.
@@ -132,9 +134,17 @@ this hook for other forms with unsaved-state rather than copying the logic.
 
 `contracts/{id}` has a block in [firestore.rules](../../../../../firestore.rules). Without it,
 client-SDK writes hit the default deny. It enforces org-scoping plus: create must be a `draft` with
-`lockedSnapshot == null`, and **client-SDK update is allowed only while the contract is still a
-draft.** Everything past draft (send, viewedAt, signing/execution) runs through the firebase-admin
-SDK, which bypasses rules — so once sent, the client can't edit it at all (no edits after send). The
+`lockedSnapshot == null`, and **client-SDK update is allowed only while the contract stays a draft
+AND only the draft-editable fields change.** The update rule constrains the _post-image_, not just
+the pre-image: it requires `request.resource.data.status == 'draft'`,
+`get('lockedSnapshot', null) == null`, and a `diff(...).affectedKeys().hasOnly([...])` allowlist that
+**mirrors `ContractDraftInput`** (`src/lib/types.ts`) plus `updatedBy`/`updatedAt`. Keep that
+allowlist in sync with `ContractDraftInput` — if you add/remove a draft-editable field, update the
+rule too. The security comes from the post-image constraint + allowlist (those block the client from
+flipping status or forging `lockedSnapshot`/signature/lifecycle fields); the `get()` default is just
+robustness against a missing field (its failure mode is _deny_, never _allow_). Everything past draft
+(send, viewedAt, signing/execution) runs through the firebase-admin SDK, which bypasses rules — so
+once sent, the client can't edit it at all (no edits after send). The
 `contracts/{id}/audit/*` subcollection denies all client access (server-only). **Rules must be
 deployed** (`firebase deploy --only firestore:rules`). The `portalAccess` collection denies client
 writes (org-scoped reads only); all portal reads/writes go through firebase-admin.

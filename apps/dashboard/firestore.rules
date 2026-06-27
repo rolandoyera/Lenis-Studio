@@ -134,15 +134,27 @@ service cloud.firestore {
     // execution — runs through the firebase-admin SDK (server-only), which
     // bypasses these rules. So the client SDK is confined to drafts:
     //   - create must start as a draft with lockedSnapshot null, and
-    //   - update is allowed ONLY while the contract is still a draft. Once it is
-    //     sent it is locked to client writes entirely; no client-side edits after
-    //     send (voiding / new versions, if ever built, go through the server).
+    //   - update is allowed ONLY while the contract stays a draft AND only the
+    //     draft-editable fields change. The post-image is constrained (not just
+    //     the pre-image) so a client can't flip status, write lockedSnapshot, or
+    //     forge any server-owned lifecycle/signature field. Once sent it is locked
+    //     to client writes entirely (voiding / new versions go through the server).
+    // The hasOnly allowlist mirrors `ContractDraftInput` in src/lib/types.ts plus
+    // the two audit fields updateContract stamps — keep them in sync.
     match /contracts/{id} {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg()
         && request.resource.data.status == 'draft'
         && request.resource.data.lockedSnapshot == null;
-      allow update: if updatesInOwnOrg() && resource.data.status == 'draft';
+      allow update: if updatesInOwnOrg()
+        && resource.data.status == 'draft'
+        && request.resource.data.status == 'draft'
+        && request.resource.data.get('lockedSnapshot', null) == null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+             'title', 'projectId', 'clientId', 'clientName', 'projectName',
+             'templateKey', 'templateVersion', 'values', 'scopeItems',
+             'updatedBy', 'updatedAt'
+           ]);
 
       // Append-only audit trail (contract_sent, email_*, portal_opened, consent,
       // signed, executed) is written and read only by the server (admin SDK).
