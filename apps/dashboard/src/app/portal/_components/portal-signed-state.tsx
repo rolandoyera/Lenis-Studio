@@ -26,7 +26,7 @@ export function PortalSignedState({
   signedAt?: number;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-neutral-200 bg-white px-8 py-8 text-center shadow-sm">
+    <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4 border border-neutral-200 bg-white px-8 py-8 text-center shadow-sm">
       <div className="flex size-12 items-center justify-center rounded-full bg-green-500/10 text-green-600">
         <CheckCircle2 className="size-6" />
       </div>
@@ -41,8 +41,7 @@ export function PortalSignedState({
       </div>
       <a
         href={`/portal/${accessToken}/contract/${contractId}/download`}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800"
-      >
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800">
         <Download className="size-4" />
         Download signed PDF
       </a>

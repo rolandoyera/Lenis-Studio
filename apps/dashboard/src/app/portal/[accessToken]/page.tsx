@@ -27,7 +27,7 @@ export default async function PortalLandingPage({
   const { access } = result;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-5 rounded-2xl border border-neutral-200 bg-white px-8 py-12 text-center shadow-sm">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-5 border border-neutral-200 bg-white px-8 py-12 text-center shadow-sm">
       <div className="flex size-12 items-center justify-center rounded-full bg-neutral-900/5 text-neutral-700">
         <FileText className="size-6" />
       </div>
@@ -42,8 +42,7 @@ export default async function PortalLandingPage({
       </div>
       <Link
         href={`/portal/${accessToken}/contract/${access.contractId}`}
-        className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800"
-      >
+        className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800">
         Review your contract
       </Link>
     </div>

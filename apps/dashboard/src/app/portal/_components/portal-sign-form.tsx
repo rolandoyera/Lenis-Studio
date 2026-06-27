@@ -53,7 +53,7 @@ export function PortalSignForm({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-5 rounded-2xl border border-neutral-200 bg-white px-8 py-8 shadow-sm">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-5 border border-neutral-200 bg-white px-8 py-8 shadow-sm">
       <div className="flex flex-col gap-1">
         <h2 className="font-heading font-semibold text-lg text-neutral-900">
           Sign this contract
@@ -100,8 +100,7 @@ export function PortalSignForm({
         type="button"
         onClick={handleSign}
         disabled={!canSign}
-        className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
-      >
+        className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40">
         {submitting ? "Signing…" : "Sign contract"}
       </button>
     </div>
