@@ -11,6 +11,8 @@ interface ContractEmailParams {
   portalUrl: string;
   /** Absolute https logo URL (dark logo, centered in the tinted header). Optional. */
   logoUrl?: string;
+  /** Days until the signing link expires, surfaced in the footer. */
+  expirationDays: number;
 }
 
 const PAGE_BG = "#F0E9DB";
@@ -23,9 +25,11 @@ export function buildContractEmailHtml({
   companyName,
   portalUrl,
   logoUrl,
+  expirationDays,
 }: ContractEmailParams): string {
   const greeting = clientName ? `Hello ${clientName},` : "Hello,";
   const year = new Date().getFullYear();
+  const expiryLabel = `${expirationDays} day${expirationDays === 1 ? "" : "s"}`;
 
   const brand = logoUrl
     ? `<img src="${logoUrl}" alt="${companyName}" height="96" style="display:block;border:0;outline:none;text-decoration:none;height:96px;width:auto;margin:0 auto;" />`
@@ -58,6 +62,7 @@ export function buildContractEmailHtml({
             </tr>
             <tr>
               <td style="padding:24px 8px;font-family:${FONT};font-size:13px;line-height:1.6;color:#8A8174;">
+                <p style="margin:0 0 8px;">This link will expire in ${expiryLabel}.</p>
                 <p style="margin:0 0 8px;">If the button doesn't work, copy and paste this link into your browser:<br /><a href="${portalUrl}" style="color:${BUTTON_BG};text-decoration:underline;">${portalUrl}</a></p>
                 <p style="margin:0;">&copy; ${year} ${companyName}. All rights reserved.</p>
               </td>

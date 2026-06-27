@@ -774,6 +774,8 @@ export interface OrgSettings {
   defaultMarkupPercent?: number;
   defaultTaxRate?: number;
   proposalExpirationDays?: number;
+  /** Days a sent contract's signing link stays valid. Defaults to 30 when unset. */
+  contractExpirationDays?: number;
   contractSigner?: ContractSignerConfig;
 }
 

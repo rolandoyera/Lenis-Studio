@@ -178,7 +178,10 @@ projectId/contractId` it grants access to.
   matches the route → load the contract → require its org/client/project match the access record.
   Both `active` (open for signing) and `completed` (already signed — still viewable/downloadable
   read-only) render; only `revoked`/`expired` are blocked. Any identity/existence mismatch returns
-  `not_found` so the portal never confirms which contracts exist.
+  `not_found` so the portal never confirms which contracts exist. Expired/unavailable failures render
+  the branded `PortalMessage`, which names the org ("contact <org> for a new one") — the resolver
+  attaches `orgName` (via `getOrgName`, legal→display→org name) on those paths since a valid token has
+  already identified the org; `not_found` paths 404 and never include it.
 - **Renders from `lockedSnapshot` only** (`PortalContractDocument`), reusing the template's pure
   render helpers. Internal-only fields (audit, ids, status) are never passed to the portal. **Once
   `fully_executed`, the on-screen document is hidden** and the page shows only the `PortalSignedState`
@@ -201,7 +204,10 @@ company's signature authorization — there is no separate approval step. Server
   `contractVersionId` (minted), `contractHash` (SHA-256 of the canonical `lockedSnapshot`),
   timestamps, the recipient email (read from the `clients/{id}` doc, not the UI), and the company
   signer identity (from `OrgSettings.contractSigner`). The signer config is set in **Company
-  Settings**; sending fails with a clear error if it's missing.
+  Settings**; sending fails with a clear error if it's missing. The signing link's lifetime is
+  `OrgSettings.contractExpirationDays` (Company Settings), defaulting to `DEFAULT_TTL_DAYS` (30) when
+  unset or non-positive; it's passed as `ttlDays` to `createContractPortalAccess` (sets
+  `portalAccess.expiresAt`) and surfaced in the email footer ("This link will expire in X days").
 - **Signing** is a typed adopted signature: the client types their name + accepts the exact consent
   text (`ELECTRONIC_SIGNATURE_CONSENT_TEXT` in `@/lib/contract-text`). `signContract` re-validates the
   token, status (`sent`/`viewed`), and that the persisted snapshot still hashes to `contractHash`,

@@ -60,6 +60,11 @@ export function SettingsCard({
               ? `${s.proposalExpirationDays} days`
               : null}
           </DataField>
+          <DataField label="Contract Link Expiration" empty="30 days (default)">
+            {typeof s?.contractExpirationDays === "number"
+              ? `${s.contractExpirationDays} days`
+              : null}
+          </DataField>
         </div>
         <div className="space-y-6">
           <DataField label="Default Markup" empty="Not Set">
@@ -178,6 +183,28 @@ export function SettingsFields({
               {...field}
               inputMode="numeric"
               placeholder="e.g. 30"
+              aria-invalid={fieldState.invalid}
+              onChange={(e) => field.onChange(sanitizeInteger(e.target.value))}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+      <Controller
+        control={control}
+        name="contractExpirationDays"
+        render={({ field, fieldState }) => (
+          <Field
+            className="flex flex-col gap-1.5"
+            data-invalid={fieldState.invalid}
+          >
+            <Label className={LABEL_CLASS}>
+              Contract Link Expiration (days)
+            </Label>
+            <Input
+              {...field}
+              inputMode="numeric"
+              placeholder="Defaults to 30"
               aria-invalid={fieldState.invalid}
               onChange={(e) => field.onChange(sanitizeInteger(e.target.value))}
             />

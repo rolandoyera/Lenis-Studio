@@ -91,6 +91,9 @@ export const companyProfileSchema = z
     proposalExpirationDays: z
       .string()
       .refine(numericOrEmpty, "Enter a whole number of days."),
+    contractExpirationDays: z
+      .string()
+      .refine(numericOrEmpty, "Enter a whole number of days."),
 
     // Contract signer — the person authorized to sign contracts on the company's
     // behalf (stamped onto a contract when it is sent for signature).
@@ -148,6 +151,7 @@ export const EMPTY_COMPANY_PROFILE_FORM: CompanyProfileFormData = {
   defaultMarkupPercent: "",
   defaultTaxRate: "",
   proposalExpirationDays: "",
+  contractExpirationDays: "",
   contractSignerName: "",
   contractSignerTitle: "",
   contractSignerEmail: "",
@@ -198,6 +202,7 @@ export function organizationToForm(org: Organization): CompanyProfileFormData {
     defaultMarkupPercent: numToStr(s?.defaultMarkupPercent),
     defaultTaxRate: numToStr(s?.defaultTaxRate),
     proposalExpirationDays: numToStr(s?.proposalExpirationDays),
+    contractExpirationDays: numToStr(s?.contractExpirationDays),
     contractSignerName: s?.contractSigner?.name ?? "",
     contractSignerTitle: s?.contractSigner?.title ?? "",
     contractSignerEmail: s?.contractSigner?.email ?? "",
@@ -263,6 +268,7 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
     defaultMarkupPercent: numberOrUndef(data.defaultMarkupPercent),
     defaultTaxRate: numberOrUndef(data.defaultTaxRate),
     proposalExpirationDays: numberOrUndef(data.proposalExpirationDays),
+    contractExpirationDays: numberOrUndef(data.contractExpirationDays),
     // Only persist a signer when all three parts are present — partial signer
     // identity isn't usable for an authorization stamp.
     contractSigner:

@@ -21,7 +21,7 @@ export default async function PortalLandingPage({
 
   if (!result.ok) {
     if (result.reason === "not_found") notFound();
-    return <PortalMessage reason={result.reason} />;
+    return <PortalMessage reason={result.reason} orgName={result.orgName} />;
   }
 
   const { access } = result;

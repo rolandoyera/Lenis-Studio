@@ -10,15 +10,20 @@ import { createHash, randomBytes } from "node:crypto";
 
 import { cache } from "react";
 
-import type { Contract, OrgBranding, PortalAccess } from "@/lib/types";
+import type {
+  CompanyProfile,
+  Contract,
+  OrgBranding,
+  PortalAccess,
+} from "@/lib/types";
 
 import { getAdminDb } from "./firebase-admin";
 
 const PORTAL_ACCESS_COLLECTION = "portalAccess";
 const CONTRACTS_COLLECTION = "contracts";
 
-/** Default link lifetime when minting a new portal access record. */
-const DEFAULT_TTL_DAYS = 30;
+/** Default signing-link lifetime (days) when the org hasn't configured one. */
+export const DEFAULT_TTL_DAYS = 30;
 
 /** SHA-256 hex of an access token. The raw token is never persisted. */
 export function hashAccessToken(token: string): string {
@@ -30,11 +35,11 @@ export type PortalFailureReason = "not_found" | "expired" | "unavailable";
 
 export type PortalAccessResult =
   | { ok: true; access: PortalAccess }
-  | { ok: false; reason: PortalFailureReason };
+  | { ok: false; reason: PortalFailureReason; orgName?: string };
 
 export type PortalContractResult =
   | { ok: true; access: PortalAccess; contract: Contract; firmLogoUrl?: string }
-  | { ok: false; reason: PortalFailureReason };
+  | { ok: false; reason: PortalFailureReason; orgName?: string };
 
 /**
  * Look up the access record whose stored hash matches this token. Cached per
@@ -69,13 +74,37 @@ function accessFailureReason(
   return null;
 }
 
+/**
+ * The org's client-facing name (legal → display → org name), for branded portal
+ * messages. Cached per request. Undefined when unreadable. Only ever shown once a
+ * valid token has already identified the org, so it leaks nothing.
+ */
+export const getOrgName = cache(
+  async (organizationId: string): Promise<string | undefined> => {
+    try {
+      const snap = await getAdminDb()
+        .collection("organizations")
+        .doc(organizationId)
+        .get();
+      const data = snap.data();
+      const cp = data?.companyProfile as CompanyProfile | undefined;
+      return cp?.legalName || cp?.displayName || (data?.name as string) || undefined;
+    } catch {
+      return undefined;
+    }
+  },
+);
+
 /** Resolve a token to its (still-valid) access record — used by the landing page. */
 export async function resolvePortalAccess(
   accessToken: string,
 ): Promise<PortalAccessResult> {
   const access = await findAccessByToken(accessToken);
   const reason = accessFailureReason(access);
-  if (reason || !access) return { ok: false, reason: reason ?? "not_found" };
+  if (reason || !access) {
+    const orgName = access ? await getOrgName(access.organizationId) : undefined;
+    return { ok: false, reason: reason ?? "not_found", orgName };
+  }
   return { ok: true, access };
 }
 
@@ -125,7 +154,10 @@ export async function resolvePortalContract(
 ): Promise<PortalContractResult> {
   const access = await findAccessByToken(accessToken);
   const reason = accessFailureReason(access);
-  if (reason || !access) return { ok: false, reason: reason ?? "not_found" };
+  if (reason || !access) {
+    const orgName = access ? await getOrgName(access.organizationId) : undefined;
+    return { ok: false, reason: reason ?? "not_found", orgName };
+  }
 
   if (access.contractId !== contractId)
     return { ok: false, reason: "not_found" };
@@ -146,7 +178,13 @@ export async function resolvePortalContract(
   }
 
   // A portal link is only meaningful once the contract has been frozen on send.
-  if (!contract.lockedSnapshot) return { ok: false, reason: "unavailable" };
+  if (!contract.lockedSnapshot) {
+    return {
+      ok: false,
+      reason: "unavailable",
+      orgName: await getOrgName(access.organizationId),
+    };
+  }
 
   const { logoDarkUrl } = await getPortalBranding(contract.organizationId);
   return { ok: true, access, contract, firmLogoUrl: logoDarkUrl };

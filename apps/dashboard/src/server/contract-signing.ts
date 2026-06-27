@@ -32,7 +32,11 @@ import { buildContractEmailHtml } from "./contract-email-template";
 import { hasRecentPortalOpen, writeContractAuditEvent } from "./contract-audit";
 import { generateAndStoreFinalContractPdf } from "./contract-pdf";
 import { getAdminDb } from "./firebase-admin";
-import { createContractPortalAccess, hashAccessToken } from "./portal";
+import {
+  createContractPortalAccess,
+  DEFAULT_TTL_DAYS,
+  hashAccessToken,
+} from "./portal";
 
 const CONTRACTS_COLLECTION = "contracts";
 const PORTAL_ACCESS_COLLECTION = "portalAccess";
@@ -139,6 +143,13 @@ export async function sendContractForSignature(input: {
     };
   }
 
+  // How long the signing link stays valid: the org's configured value, or 30 days.
+  const configuredExpiration = org?.settings?.contractExpirationDays;
+  const expirationDays =
+    configuredExpiration && configuredExpiration > 0
+      ? configuredExpiration
+      : DEFAULT_TTL_DAYS;
+
   // The recipient is determined server-side from the client record, not the UI.
   const clientSnap = await db
     .collection("clients")
@@ -201,6 +212,7 @@ export async function sendContractForSignature(input: {
   const { portalAccessId, accessToken } = await createContractPortalAccess({
     contract: { ...contract, organizationId },
     sentToEmail,
+    ttlDays: expirationDays,
   });
 
   await writeContractAuditEvent(contractId, {
@@ -233,6 +245,7 @@ export async function sendContractForSignature(input: {
       companyName,
       portalUrl,
       logoUrl,
+      expirationDays,
     }),
     metadata: {
       contractId,
