@@ -6,7 +6,7 @@
 
 export default function PortalNotFound() {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-8 py-12 text-center shadow-sm">
+    <div className="mx-auto flex max-w-md flex-col items-center gap-3 border border-neutral-200 bg-white px-8 py-12 text-center shadow-sm">
       <h1 className="font-heading font-semibold text-neutral-900 text-xl">
         This link isn't valid
       </h1>
