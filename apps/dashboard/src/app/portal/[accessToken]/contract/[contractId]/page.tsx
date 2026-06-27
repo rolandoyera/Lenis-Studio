@@ -3,8 +3,9 @@
 // contractId, and org/client/project identity are all checked before any contract
 // data is rendered. The document renders from the frozen lockedSnapshot (never the
 // live editable fields). Opening stamps viewedAt + a portal_opened audit event.
-// A still-open contract shows the typed-signature form; a fully-executed one shows
-// the signed state with a download link.
+// A still-open contract shows the full document + the typed-signature form; once
+// fully executed, the on-screen document is hidden and only the signed-state
+// download box renders (the signed PDF stays downloadable via the token route).
 
 import { notFound } from "next/navigation";
 
@@ -44,6 +45,21 @@ export default async function PortalContractPage({
 
   const isExecuted = contract.status === "fully_executed";
 
+  // Once executed, the on-screen document is replaced by just the download box —
+  // the signing flow is done, so showing the full agreement again only muddies
+  // whether anything is still required. The signed PDF (rendered from the same
+  // snapshot) remains downloadable through the token-gated route.
+  if (isExecuted) {
+    return (
+      <PortalSignedState
+        accessToken={accessToken}
+        contractId={contractId}
+        signerName={contract.clientSignature?.signerName}
+        signedAt={contract.clientSignature?.signedAt}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center">
@@ -51,24 +67,13 @@ export default async function PortalContractPage({
           {contract.title}
         </h1>
         <p className="mt-1 text-neutral-500 text-sm">
-          {isExecuted
-            ? "This contract has been signed and is fully executed."
-            : "Please review the full agreement below, then sign."}
+          Please review the full agreement below, then sign.
         </p>
       </div>
 
       <PortalContractDocument snapshot={snapshot} firmLogoUrl={firmLogoUrl} />
 
-      {isExecuted ? (
-        <PortalSignedState
-          accessToken={accessToken}
-          contractId={contractId}
-          signerName={contract.clientSignature?.signerName}
-          signedAt={contract.clientSignature?.signedAt}
-        />
-      ) : (
-        <PortalSignForm accessToken={accessToken} contractId={contractId} />
-      )}
+      <PortalSignForm accessToken={accessToken} contractId={contractId} />
     </div>
   );
 }

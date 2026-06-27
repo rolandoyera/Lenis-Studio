@@ -180,7 +180,10 @@ projectId/contractId` it grants access to.
   read-only) render; only `revoked`/`expired` are blocked. Any identity/existence mismatch returns
   `not_found` so the portal never confirms which contracts exist.
 - **Renders from `lockedSnapshot` only** (`PortalContractDocument`), reusing the template's pure
-  render helpers. Internal-only fields (audit, ids, status) are never passed to the portal.
+  render helpers. Internal-only fields (audit, ids, status) are never passed to the portal. **Once
+  `fully_executed`, the on-screen document is hidden** and the page shows only the `PortalSignedState`
+  download box (signing is done — re-showing the agreement only muddies whether action is still
+  needed). The signed PDF (same snapshot) stays downloadable via the token-gated route.
 - **Open tracking** (`recordPortalOpen`, in `contract-signing.ts`): stamps `portalAccess.viewedAt`
   once, advances a still-`sent` contract to `viewed`, and writes a `portal_opened` audit event,
   **deduped within 30 min** per access token (`hasRecentPortalOpen`). Best-effort; never blocks render.
