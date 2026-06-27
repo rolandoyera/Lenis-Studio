@@ -17,6 +17,7 @@ import { cookies, headers } from "next/headers";
 
 import { ELECTRONIC_SIGNATURE_CONSENT_TEXT } from "@/lib/contract-text";
 import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
+import { formatVendorPhone, vendorPhoneTel } from "@/lib/utils";
 import type {
   Client,
   CompanySignatureAuthorization,
@@ -236,6 +237,15 @@ export async function sendContractForSignature(input: {
   // app-relative paths); otherwise the template falls back to the company name.
   const rawLogo = org?.branding?.logoDarkUrl;
   const logoUrl = rawLogo?.startsWith("http") ? rawLogo : undefined;
+  // Company phone for the "please call" line — omitted from the email when unset.
+  const rawPhone = org?.companyProfile?.phone?.trim();
+  const phoneCountry = org?.companyProfile?.phoneCountry;
+  const companyPhone = rawPhone
+    ? formatVendorPhone(rawPhone, phoneCountry)
+    : undefined;
+  const companyPhoneTel = rawPhone
+    ? vendorPhoneTel(rawPhone, phoneCountry)
+    : undefined;
   const emailResult = await sendContractEmail({
     to: { email: sentToEmail, name: contract.clientName },
     sender: { email: signer.email, name: companyName },
@@ -246,6 +256,8 @@ export async function sendContractForSignature(input: {
       portalUrl,
       logoUrl,
       expirationDays,
+      companyPhone,
+      companyPhoneTel,
     }),
     metadata: {
       contractId,

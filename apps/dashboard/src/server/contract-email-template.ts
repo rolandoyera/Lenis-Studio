@@ -13,6 +13,10 @@ interface ContractEmailParams {
   logoUrl?: string;
   /** Days until the signing link expires, surfaced in the footer. */
   expirationDays: number;
+  /** Company phone for display in the "please call" line. Omitted when unset. */
+  companyPhone?: string;
+  /** `tel:`-safe form of the company phone (digits, leading + for intl). */
+  companyPhoneTel?: string;
 }
 
 const PAGE_BG = "#F0E9DB";
@@ -26,10 +30,16 @@ export function buildContractEmailHtml({
   portalUrl,
   logoUrl,
   expirationDays,
+  companyPhone,
+  companyPhoneTel,
 }: ContractEmailParams): string {
   const greeting = clientName ? `Hello ${clientName},` : "Hello,";
   const year = new Date().getFullYear();
   const expiryLabel = `${expirationDays} day${expirationDays === 1 ? "" : "s"}`;
+  // Only render the "please call" line when a company phone is configured.
+  const callSentence = companyPhone
+    ? ` If you weren't expecting this email, please call <a href="tel:${companyPhoneTel}" style="color:${BUTTON_BG};text-decoration:underline;">${companyPhone}</a>.`
+    : "";
 
   const brand = logoUrl
     ? `<img src="${logoUrl}" alt="${companyName}" height="96" style="display:block;border:0;outline:none;text-decoration:none;height:96px;width:auto;margin:0 auto;" />`
@@ -50,7 +60,7 @@ export function buildContractEmailHtml({
                 <h1 style="margin:0 0 24px;font-family:${FONT};font-size:30px;line-height:1.2;font-weight:bold;color:#1F1B16;">${companyName} has sent you a contract to sign.</h1>
                 <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">${greeting}</p>
                 <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">${companyName} has prepared a contract for you to review and sign electronically. You can read the full agreement using the secure link below.</p>
-                <p style="margin:0 0 32px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">This link is private to you. If you weren't expecting this email please call .</p>
+                <p style="margin:0 0 32px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">This link is private to you.${callSentence}</p>
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
                     <td align="center" bgcolor="${BUTTON_BG}" style="border-radius:4px;">
