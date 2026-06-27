@@ -798,156 +798,166 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
             <CardTitle>Contract Details</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-5 lg:min-h-0 lg:flex-1">
-            {/* Pinned global fields — always visible (frozen zone) */}
-            <div className="grid grid-cols-3 items-start gap-4 lg:shrink-0">
-              <div className="flex flex-col gap-4">
-                <Field label="Project">
-                  <Combobox
-                    value={selectedProject ?? null}
-                    onValueChange={handleProjectChange}
-                    items={[...projects].sort((a, b) =>
-                      a.name.localeCompare(b.name),
+            {isLocked ? (
+              <div className="flex flex-1 items-center justify-center lg:min-h-0">
+                <p className="rounded-lg border border-border border-dashed bg-muted/20 p-6 text-center text-muted-foreground text-sm">
+                  This contract has been sent and is no longer editable.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Pinned global fields — always visible (frozen zone) */}
+                <div className="grid grid-cols-3 items-start gap-4 lg:shrink-0">
+                  <div className="flex flex-col gap-4">
+                    <Field label="Project">
+                      <Combobox
+                        value={selectedProject ?? null}
+                        onValueChange={handleProjectChange}
+                        items={[...projects].sort((a, b) =>
+                          a.name.localeCompare(b.name),
+                        )}
+                        disabled={isLocked}
+                        filter={(item: Project, inputValue: string) =>
+                          item.name
+                            .toLowerCase()
+                            .includes(inputValue.toLowerCase())
+                        }
+                      >
+                        <ComboboxTrigger
+                          render={
+                            <button
+                              type="button"
+                              className={cn(
+                                "flex h-10 w-full items-center justify-between whitespace-nowrap rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors",
+                                "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+                                "dark:bg-input/30",
+                                isLocked &&
+                                  "cursor-not-allowed bg-muted/40 text-muted-foreground opacity-70",
+                                !selectedProject && "text-muted-foreground",
+                              )}
+                              disabled={isLocked}
+                            >
+                              {selectedProject
+                                ? selectedProject.name
+                                : projects.length
+                                  ? "Select a project"
+                                  : "No projects in the CRM yet"}
+                            </button>
+                          }
+                        />
+                        <ComboboxContent>
+                          <ComboboxInput
+                            showTrigger={false}
+                            placeholder="Search projects..."
+                          />
+                          <ComboboxEmpty>No project found.</ComboboxEmpty>
+                          <ComboboxList>
+                            {(item: Project) => (
+                              <ComboboxItem key={item.projectId} value={item}>
+                                {item.name}
+                              </ComboboxItem>
+                            )}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
+                    </Field>
+
+                    {selectedProject && (
+                      <div className="flex flex-col gap-0.5 text-muted-foreground text-sm">
+                        {resolved.CLIENT_NAME && (
+                          <span className="text-foreground">
+                            {resolved.CLIENT_NAME}
+                          </span>
+                        )}
+                        {resolved.PROJECT_ADDRESS && (
+                          <span>{resolved.PROJECT_ADDRESS}</span>
+                        )}
+                      </div>
                     )}
-                    disabled={isLocked}
-                    filter={(item: Project, inputValue: string) =>
-                      item.name.toLowerCase().includes(inputValue.toLowerCase())
-                    }
-                  >
-                    <ComboboxTrigger
-                      render={
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex h-10 w-full items-center justify-between whitespace-nowrap rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors",
-                            "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
-                            "dark:bg-input/30",
-                            isLocked &&
-                              "cursor-not-allowed bg-muted/40 text-muted-foreground opacity-70",
-                            !selectedProject && "text-muted-foreground",
-                          )}
-                          disabled={isLocked}
-                        >
-                          {selectedProject
-                            ? selectedProject.name
-                            : projects.length
-                              ? "Select a project"
-                              : "No projects in the CRM yet"}
-                        </button>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Label>Firm Legal Name</Label>
+                    <div className="flex h-10 items-center gap-2 rounded-lg border border-input  bg-muted/40 px-3 text-muted-foreground text-sm">
+                      <span className="truncate">
+                        {company.legalName || "Not set in Company Profile"}
+                      </span>
+                      <span className="ml-auto shrink-0">
+                        <Lock className="size-3.5 text-muted-foreground/50" />
+                      </span>
+                    </div>
+                  </div>
+
+                  <Field label="Effective Date">
+                    <Input
+                      type="date"
+                      value={values.EFFECTIVE_DATE ?? ""}
+                      onChange={(e) =>
+                        setValue("EFFECTIVE_DATE", e.target.value)
                       }
                     />
-                    <ComboboxContent>
-                      <ComboboxInput
-                        showTrigger={false}
-                        placeholder="Search projects..."
-                      />
-                      <ComboboxEmpty>No project found.</ComboboxEmpty>
-                      <ComboboxList>
-                        {(item: Project) => (
-                          <ComboboxItem key={item.projectId} value={item}>
-                            {item.name}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxList>
-                    </ComboboxContent>
-                  </Combobox>
-                </Field>
-
-                {selectedProject && (
-                  <div className="flex flex-col gap-0.5 text-muted-foreground text-sm">
-                    {resolved.CLIENT_NAME && (
-                      <span className="text-foreground">
-                        {resolved.CLIENT_NAME}
-                      </span>
-                    )}
-                    {resolved.PROJECT_ADDRESS && (
-                      <span>{resolved.PROJECT_ADDRESS}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Label>Firm Legal Name</Label>
-                <div className="flex h-10 items-center gap-2 rounded-lg border border-input  bg-muted/40 px-3 text-muted-foreground text-sm">
-                  <span className="truncate">
-                    {company.legalName || "Not set in Company Profile"}
-                  </span>
-                  <span className="ml-auto shrink-0">
-                    <Lock className="size-3.5 text-muted-foreground/50" />
-                  </span>
+                  </Field>
                 </div>
-              </div>
 
-              <Field label="Effective Date">
-                <Input
-                  type="date"
-                  value={values.EFFECTIVE_DATE ?? ""}
-                  onChange={(e) => setValue("EFFECTIVE_DATE", e.target.value)}
-                />
-              </Field>
-            </div>
+                <Separator className="lg:shrink-0" />
 
-            <Separator className="lg:shrink-0" />
+                {/* Active-page fields — swap as the user scrolls (scrolling zone) */}
+                <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
+                  <div className="flex items-center justify-between lg:shrink-0">
+                    <span className="font-semibold text-foreground text-sm">
+                      Fields to Populate
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      Page {activePage} of {totalPages}
+                    </span>
+                  </div>
 
-            {/* Active-page fields — swap as the user scrolls (scrolling zone) */}
-            <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
-              <div className="flex items-center justify-between lg:shrink-0">
-                <span className="font-semibold text-foreground text-sm">
-                  Fields to Populate
-                </span>
-                <span className="text-muted-foreground text-xs">
-                  Page {activePage} of {totalPages}
-                </span>
-              </div>
-
-              <div className="lg:min-h-0 lg:flex-1 lg:pb-1">
-                {isLocked ? (
-                  <p className="rounded-lg border border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm">
-                    This contract has been sent and is no longer editable.
-                  </p>
-                ) : activeFields.length > 0 ? (
-                  <div className="flex flex-wrap gap-4">
-                    {activeFields.map((def) =>
-                      def.type === "list" ? (
-                        <div key={def.token} className="basis-full">
-                          <ScopeListField
-                            label={def.label}
-                            placeholder={def.placeholder}
-                            explainer={def.explainer}
-                            items={scopeItems}
-                            onAdd={addScopeItem}
-                            onRemove={removeScopeItem}
-                            onChange={updateScopeItem}
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          key={def.token}
-                          className={
-                            def.type === "textarea"
-                              ? "basis-full"
-                              : "min-w-40 basis-[calc(50%-0.5rem)]"
-                          }
-                        >
-                          <Field label={def.label}>
-                            <PageFieldInput
-                              def={def}
-                              value={values[def.token] ?? ""}
-                              onChange={(v) => setValue(def.token, v)}
-                            />
-                            <FieldExplainer>{def.explainer}</FieldExplainer>
-                          </Field>
-                        </div>
-                      ),
+                  <div className="lg:min-h-0 lg:flex-1 lg:pb-1">
+                    {activeFields.length > 0 ? (
+                      <div className="flex flex-wrap gap-4">
+                        {activeFields.map((def) =>
+                          def.type === "list" ? (
+                            <div key={def.token} className="basis-full">
+                              <ScopeListField
+                                label={def.label}
+                                placeholder={def.placeholder}
+                                explainer={def.explainer}
+                                items={scopeItems}
+                                onAdd={addScopeItem}
+                                onRemove={removeScopeItem}
+                                onChange={updateScopeItem}
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              key={def.token}
+                              className={
+                                def.type === "textarea"
+                                  ? "basis-full"
+                                  : "min-w-40 basis-[calc(50%-0.5rem)]"
+                              }
+                            >
+                              <Field label={def.label}>
+                                <PageFieldInput
+                                  def={def}
+                                  value={values[def.token] ?? ""}
+                                  onChange={(v) => setValue(def.token, v)}
+                                />
+                                <FieldExplainer>{def.explainer}</FieldExplainer>
+                              </Field>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    ) : (
+                      <p className="rounded-lg border border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm">
+                        No fields on this page — keep scrolling for more fields.
+                      </p>
                     )}
                   </div>
-                ) : (
-                  <p className="rounded-lg border border-border border-dashed bg-muted/20 p-4 text-center text-muted-foreground text-sm">
-                    No fields on this page — keep scrolling for more fields.
-                  </p>
-                )}
-              </div>
-            </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
