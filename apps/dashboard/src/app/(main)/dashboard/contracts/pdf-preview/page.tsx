@@ -24,7 +24,7 @@ const PDFViewer = dynamic(
   { ssr: false },
 );
 
-const DEFAULT_CONTRACT_ID = "amxklDBsR3U5740gLUlY";
+const DEFAULT_CONTRACT_ID = "FYCkZWGlpZyKbmdJeH3R";
 
 export default function ContractPdfPreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();
