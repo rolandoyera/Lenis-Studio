@@ -34,6 +34,7 @@ import type {
   LibraryItem,
   Organization,
   Project,
+  ProjectDocument,
   ProjectRoom,
   ProjectRoomItem,
   Proposal,
@@ -956,6 +957,41 @@ export async function getProposals(
     );
   } catch (error) {
     console.error("Error fetching proposals:", error);
+    return [];
+  }
+}
+
+/**
+ * Project document references (the "Files" tab) for one project. Queried by org so
+ * the read satisfies the org-scoped rules, then filtered to the project in memory
+ * (mirrors getProposals — no composite index needed). Newest first.
+ */
+export async function getProjectDocuments(
+  organizationId: string,
+  projectId: string,
+): Promise<ProjectDocument[]> {
+  try {
+    return await trace(
+      "projectDocuments",
+      "READ",
+      "getProjectDocuments",
+      async () => {
+        const collRef = collection(db, "projectDocuments");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const snapshot = await getDocs(q);
+
+        const documents: ProjectDocument[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() as ProjectDocument;
+          if (data.projectId === projectId) documents.push(data);
+        });
+
+        return documents.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (d) => `${d.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching project documents:", error);
     return [];
   }
 }

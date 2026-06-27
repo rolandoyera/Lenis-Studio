@@ -28,14 +28,21 @@ export async function GET(
 
   // Generate on demand if the PDF wasn't produced at signing time (best-effort
   // generation can fail), then persist the path for next time.
-  let path = contract.finalPdfPath;
+  let path = contract.executedFilePath ?? contract.finalPdfPath;
   if (!path) {
     try {
-      path = await generateAndStoreFinalContractPdf({ contract });
+      const executed = await generateAndStoreFinalContractPdf({ contract });
+      path = executed.path;
       await getAdminDb()
         .collection("contracts")
         .doc(contractId)
-        .update({ finalPdfPath: path, finalPdfGeneratedAt: Date.now() });
+        .update({
+          executedFilePath: path,
+          executedFileName: executed.fileName,
+          executedFileGeneratedAt: Date.now(),
+          finalPdfPath: path,
+          finalPdfGeneratedAt: Date.now(),
+        });
     } catch (error) {
       console.error(
         `[contract-download] On-demand PDF generation failed for contract ${contractId}:`,

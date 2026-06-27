@@ -30,9 +30,14 @@ import type {
 
 import { sendContractEmail } from "./brevo";
 import { buildContractEmailHtml } from "./contract-email-template";
+import { buildContractSignedEmailHtml } from "./contract-signed-email-template";
 import { hasRecentPortalOpen, writeContractAuditEvent } from "./contract-audit";
-import { generateAndStoreFinalContractPdf } from "./contract-pdf";
+import {
+  type ExecutedContractPdf,
+  generateAndStoreFinalContractPdf,
+} from "./contract-pdf";
 import { getAdminDb } from "./firebase-admin";
+import { attachExecutedContractToProject } from "./project-documents";
 import {
   createContractPortalAccess,
   DEFAULT_TTL_DAYS,
@@ -621,19 +626,62 @@ export async function signContract(input: {
     userAgent,
   });
 
-  // Final dual-signature PDF + certificate. Best-effort: a failure here leaves the
-  // contract fully executed; the PDF can be regenerated.
-  let finalPdfPath: string | undefined;
+  // ── Post-execution artifacts (best-effort) ──
+  // The contract is already fully executed above; a failure here is logged but
+  // never unwinds execution. Order of operations: generate the executed PDF from
+  // the server-loaded snapshot → store it in Storage → reference it on the
+  // contract → reference it in the project's documents → email the client the
+  // exact stored copy → write the fully-executed audit event.
+  const executedContract: Contract = {
+    ...contract,
+    clientSignature,
+    executedAt: now,
+    status: "fully_executed",
+  };
+
+  let executedFilePath: string | undefined;
+  let executedPdf: ExecutedContractPdf | undefined;
   try {
-    finalPdfPath = await generateAndStoreFinalContractPdf({
-      contract: { ...contract, clientSignature, executedAt: now },
+    executedPdf = await generateAndStoreFinalContractPdf({
+      contract: executedContract,
     });
+    executedFilePath = executedPdf.path;
+
+    // Project-facing reference to the SAME stored file (no byte duplication).
+    const { fileUrl } = await attachExecutedContractToProject({
+      organizationId: contract.organizationId,
+      projectId: contract.projectId,
+      clientId: contract.clientId,
+      contractId,
+      title: contract.title,
+      fileName: executedPdf.fileName,
+      filePath: executedPdf.path,
+    });
+
     await contractRef.update({
-      finalPdfPath,
+      executedFilePath,
+      executedFileName: executedPdf.fileName,
+      executedFileUrl: fileUrl,
+      executedFileGeneratedAt: Date.now(),
+      // Kept in sync so the token-gated portal download route reads cleanly.
+      finalPdfPath: executedFilePath,
       finalPdfGeneratedAt: Date.now(),
     });
   } catch (error) {
-    console.error("Failed to generate final contract PDF:", error);
+    console.error("Failed to generate/store executed contract PDF:", error);
+  }
+
+  // Confirmation email to the client with the exact stored executed PDF attached.
+  if (executedPdf) {
+    try {
+      await sendExecutedContractConfirmation({
+        contract: executedContract,
+        recipientEmail: signerEmail,
+        pdf: executedPdf,
+      });
+    } catch (error) {
+      console.error("Failed to send contract confirmation email:", error);
+    }
   }
 
   await writeContractAuditEvent(contractId, {
@@ -642,8 +690,69 @@ export async function signContract(input: {
     actorType: "system",
     contractVersionId: contract.contractVersionId,
     contractHash: contract.contractHash,
-    finalPdfPath,
+    finalPdfPath: executedFilePath,
   });
 
   return { ok: true };
+}
+
+/**
+ * Email the client a confirmation that the contract is fully executed, with the
+ * stored executed PDF attached (the exact bytes we wrote to Storage — never a
+ * re-rendered copy). Branding is pulled best-effort from the org; the email
+ * carries no audit metadata, so it stays out of the signing-delivery certificate
+ * chain.
+ */
+async function sendExecutedContractConfirmation(input: {
+  contract: Contract;
+  recipientEmail: string;
+  pdf: ExecutedContractPdf;
+}): Promise<void> {
+  const { contract, recipientEmail, pdf } = input;
+
+  const orgSnap = await getAdminDb()
+    .collection("organizations")
+    .doc(contract.organizationId)
+    .get();
+  const org = orgSnap.data() as Organization | undefined;
+
+  const companyName =
+    org?.companyProfile?.legalName ||
+    org?.companyProfile?.displayName ||
+    "Sarvian Design Group";
+  const rawLogo = org?.branding?.logoDarkUrl;
+  const logoUrl = rawLogo?.startsWith("http") ? rawLogo : undefined;
+  const rawPhone = org?.companyProfile?.phone?.trim();
+  const phoneCountry = org?.companyProfile?.phoneCountry;
+  const companyPhone = rawPhone
+    ? formatVendorPhone(rawPhone, phoneCountry)
+    : undefined;
+  const companyPhoneTel = rawPhone
+    ? vendorPhoneTel(rawPhone, phoneCountry)
+    : undefined;
+
+  const senderEmail =
+    contract.companySignatureAuthorization?.signerEmail ||
+    org?.settings?.contractSigner?.email;
+  if (!senderEmail) {
+    console.warn(
+      `[contract-confirmation] No sender email for contract ${contract.contractId}; skipping confirmation email.`,
+    );
+    return;
+  }
+
+  await sendContractEmail({
+    to: { email: recipientEmail, name: contract.clientName },
+    sender: { email: senderEmail, name: companyName },
+    subject: `Your signed contract from ${companyName}`,
+    htmlContent: buildContractSignedEmailHtml({
+      clientName: contract.clientName,
+      companyName,
+      fileName: pdf.fileName,
+      logoUrl,
+      companyPhone,
+      companyPhoneTel,
+    }),
+    attachments: [{ content: pdf.buffer.toString("base64"), name: pdf.fileName }],
+  });
 }

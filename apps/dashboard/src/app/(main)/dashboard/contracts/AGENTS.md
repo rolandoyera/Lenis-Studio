@@ -228,8 +228,11 @@ company's signature authorization — there is no separate approval step. Server
   text (`ELECTRONIC_SIGNATURE_CONSENT_TEXT` in `@/lib/contract-text`). `signContract` re-validates the
   token, status (`sent`/`viewed`), and that the persisted snapshot still hashes to `contractHash`,
   then in one transaction sets `fully_executed` + `clientSignature` + `executedAt` and completes the
-  token. It writes `electronic_signature_consent_accepted` (with the frozen consent text),
-  `contract_signed`, and `contract_fully_executed`, then generates the final PDF.
+  token. It writes `electronic_signature_consent_accepted` (with the frozen consent text) and
+  `contract_signed`, then runs the **post-execution artifact pipeline** (order matters, all
+  best-effort — a failure is logged but never unwinds the already-executed contract): generate the
+  executed PDF → store it → reference it on the contract → reference it in the project's documents →
+  email the client a copy → write `contract_fully_executed`. See "Executed PDF artifact" below.
 - **Audit trail** (`src/server/contract-audit.ts`) — append-only `contracts/{id}/audit/{eventId}`
   subcollection, typed `ContractAuditEvent`. Evidence chain: contract*sent → email*\* (Brevo) →
   portal_opened → consent → signed → fully_executed. Use the distributive `ContractAuditEventInput`
@@ -237,15 +240,30 @@ company's signature authorization — there is no separate approval step. Server
   contract doc; only the path is referenced on the normalized event.
 - **Brevo** (`src/server/brevo.ts`) — `sendContractEmail` attaches contract metadata as an
   `X-Mailin-custom` header so the webhook (`src/app/api/webhooks/brevo/route.ts`) can attribute
-  delivery events back to the contract. **Graceful when `BREVO_API_KEY` is unset** (logs + reports
-  "not configured"; the rest of the flow still works). Email labels stay precise
+  delivery events back to the contract. `metadata` is **optional**: the post-sign confirmation email
+  omits it (and the contract tag) so it stays OUT of the signing-delivery certificate chain — the
+  webhook skips events with no contract metadata. `attachments` (base64 `content` + `name`) carries
+  the executed PDF on the confirmation email. **Graceful when `BREVO_API_KEY` is unset** (logs +
+  reports "not configured"; the rest of the flow still works). Email labels stay precise
   (delivered/bounced/blocked/sent) — Brevo proves delivery to an address, never that the client read
   it. Optional `BREVO_WEBHOOK_SECRET` guards the webhook via `?secret=`.
-- **Final PDF** (`src/server/contract-pdf.tsx`, `@react-pdf/renderer`) — the frozen document + both
-  signature blocks + a signature certificate (version id, hash, delivery facts, signer details,
-  IP/UA). Stored privately in Storage; the client downloads it via the **token-gated** route
-  `portal/[accessToken]/contract/[contractId]/download` (re-validates access, streams from Storage —
-  never a public URL). Generated on signing; regenerated on demand if missing.
+- **Executed PDF artifact** (`src/server/contract-pdf.tsx`, `@react-pdf/renderer`) — one combined,
+  immutable document: the frozen contract body + both signature blocks + a signature certificate
+  (version id, hash, delivery facts, signer details, IP/UA). Built **only** from the server-loaded
+  `lockedSnapshot` + server-side signature/execution data (never live draft fields, never browser DOM).
+  `generateAndStoreFinalContractPdf` returns `{ path, fileName, buffer }` and stores it once at the
+  **stable** path `organizations/{orgId}/contracts/{contractId}/executed/{contractId}-executed.pdf`
+  (a contract executes exactly once, so no version suffix). This is the **canonical permanent record
+  copy — do not regenerate it for normal use.** On signing, `signContract` records it on the contract
+  (`executedFileUrl`, `executedFilePath`, `executedFileName`, `executedFileGeneratedAt`; the legacy
+  `finalPdfPath`/`finalPdfGeneratedAt` are kept in sync to the same path for the portal route) and
+  attaches the **exact same bytes** (the returned `buffer`, not a re-render) to the confirmation email.
+  - **Two download routes, both stream from private Storage (never a public URL):** the client's
+    **token-gated** `portal/[accessToken]/contract/[contractId]/download` (re-validates access; reads
+    `executedFilePath ?? finalPdfPath`; regenerates on demand only if missing — for legacy contracts),
+    and the dashboard's **org-gated** `api/project-documents/[documentId]/download` (resolves the
+    `projectDocuments` record, checks the `ACTIVE_ORG_COOKIE` org matches, streams; **never**
+    regenerates).
   - **Timestamps**: all contract times are stored as epoch-ms (UTC instants). The certificate/
     signature-block formatter (`fmtDate` in `src/lib/contract-pdf-document.tsx`) renders **UTC always,
     plus the org's configured timezone** when set — each labeled with its zone abbreviation, so the
@@ -254,5 +272,21 @@ company's signature authorization — there is no separate approval step. Server
     `timeZone` prop into `<ContractPdf>` from both the real generator and the dev `pdf-preview`. Never
     format these times without an explicit `timeZone` — a bare `toLocaleString` would silently use the
     server's zone (UTC on Vercel) with no label.
+- **Project document reference** (`src/server/project-documents.ts`) — the executed PDF surfaces in
+  the project's **Files** tab without duplicating bytes. `attachExecutedContractToProject` upserts a
+  `projectDocuments/{contract-<contractId>}` record (deterministic id → idempotent on re-run) pointing
+  at the same Storage `filePath`, with `fileUrl` = the org-gated dashboard download route. The record
+  is typed `ProjectDocument` (`type: "contract"`, `contractId`, `projectId`, `title`, `fileName`,
+  `fileUrl`, `filePath`, `createdBy: "system"`). Firestore rule: `projectDocuments` is org-scoped
+  read, **client writes denied** (server-only, like `portalAccess`/audit) — keep this rule and the
+  `Contract`/`ProjectDocument` write shapes in sync. The Files tab (`ProjectFilesCard`, read via
+  `getProjectDocuments(orgId, projectId)` — queried by org, filtered to the project in memory) lists
+  documents with a Download button hitting `fileUrl`.
+- **Post-sign confirmation email** (`src/server/contract-signed-email-template.ts` →
+  `buildContractSignedEmailHtml`) — sent to the client by `sendExecutedContractConfirmation` in
+  `contract-signing.ts` once executed, with the executed PDF attached (the exact stored bytes).
+  Branding (company name, dark logo, phone) is pulled best-effort from the org; sender is the org
+  contract signer. **No audit metadata** is attached (see Brevo note), so it doesn't pollute the
+  signing-delivery certificate.
 - **Env:** `FIREBASE_STORAGE_BUCKET` (optional; defaults to `<project>.firebasestorage.app`),
   `BREVO_API_KEY`, `BREVO_WEBHOOK_SECRET` (all optional — features degrade gracefully).

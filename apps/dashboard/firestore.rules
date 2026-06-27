@@ -189,6 +189,16 @@ service cloud.firestore {
       allow update: if updatesInOwnOrg();
     }
 
+    // Project-facing document references (the project "Files" tab). Each record
+    // carries its own organizationId and just points at a file stored once in
+    // Storage. Created/updated server-side only (admin SDK) — e.g. the executed
+    // contract PDF reference written at signing — so client writes are denied;
+    // org members may read their own org's documents.
+    match /projectDocuments/{id} {
+      allow read: if readsOwnOrg();
+      allow write: if false;
+    }
+
     // Token-gated pointers to contracts for the unauthenticated client portal.
     // All portal validation, viewedAt stamping, and link creation happen via the
     // firebase-admin SDK (server-only), which bypasses these rules — so client

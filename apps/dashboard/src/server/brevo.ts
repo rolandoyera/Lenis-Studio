@@ -25,12 +25,27 @@ export function isBrevoConfigured(): boolean {
   return Boolean(process.env.BREVO_API_KEY);
 }
 
+/** A file attached to a transactional email (Brevo expects base64 `content`). */
+export interface BrevoAttachment {
+  /** Base64-encoded file bytes. */
+  content: string;
+  /** File name shown to the recipient. */
+  name: string;
+}
+
 export interface SendContractEmailInput {
   to: { email: string; name?: string };
   sender: { email: string; name: string };
   subject: string;
   htmlContent: string;
-  metadata: ContractEmailMetadata;
+  /**
+   * Contract metadata for the delivery webhook to match events back to the
+   * contract's audit trail. Omit for emails that should NOT enter that chain
+   * (e.g. the post-sign confirmation), so the signing-delivery certificate stays
+   * precise about the one signing-link email.
+   */
+  metadata?: ContractEmailMetadata;
+  attachments?: BrevoAttachment[];
 }
 
 export type SendContractEmailResult =
@@ -48,7 +63,9 @@ export async function sendContractEmail(
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
     console.warn(
-      `[brevo] BREVO_API_KEY not set — skipping email to ${input.to.email} for contract ${input.metadata.contractId}.`,
+      `[brevo] BREVO_API_KEY not set — skipping email to ${input.to.email}${
+        input.metadata ? ` for contract ${input.metadata.contractId}` : ""
+      }.`,
     );
     return { ok: false, reason: "not_configured" };
   }
@@ -66,8 +83,17 @@ export async function sendContractEmail(
         to: [input.to],
         subject: input.subject,
         htmlContent: input.htmlContent,
-        tags: [`contract:${input.metadata.contractId}`],
-        headers: { "X-Mailin-custom": JSON.stringify(input.metadata) },
+        // Only tag + attach audit metadata for emails that should feed the
+        // delivery webhook (the signing link). Confirmation emails omit it.
+        ...(input.metadata
+          ? {
+              tags: [`contract:${input.metadata.contractId}`],
+              headers: { "X-Mailin-custom": JSON.stringify(input.metadata) },
+            }
+          : {}),
+        ...(input.attachments?.length
+          ? { attachment: input.attachments }
+          : {}),
       }),
     });
 

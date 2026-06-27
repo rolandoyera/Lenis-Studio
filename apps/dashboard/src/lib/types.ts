@@ -251,6 +251,35 @@ export interface Project {
   lastActivityAt?: number;
 }
 
+/** Kind of file a project document reference points at. */
+export type ProjectDocumentType = "contract";
+
+/**
+ * A project-facing reference to a stored file (the project "Files" tab). The
+ * physical file lives once in Storage (`filePath`); this record just points at
+ * it so the same artifact can surface in the project without duplication. Written
+ * server-side only (admin SDK); read by org members via the client SDK.
+ */
+export interface ProjectDocument {
+  documentId: string;
+  organizationId: string;
+  projectId: string;
+  clientId?: string;
+  type: ProjectDocumentType;
+  /** The contract this document was produced from (when type === "contract"). */
+  contractId?: string;
+  title: string;
+  /** Human-friendly file name (also the download filename). */
+  fileName: string;
+  /** Authenticated app route that streams the file — never a public URL. */
+  fileUrl: string;
+  /** Canonical private Storage path (source of truth). */
+  filePath: string;
+  createdAt: number;
+  /** UID of the creator, or "system" for auto-generated documents. */
+  createdBy: string;
+}
+
 export interface Vendor {
   vendorId: string;
   organizationId: string;
@@ -495,9 +524,20 @@ export interface Contract {
   // once, at signing, server-side.
   clientSignature?: ClientSignature;
 
-  // Final signed PDF (both signatures + certificate page). `finalPdfPath` is a
-  // private Storage path; the client downloads it through a token-gated route,
-  // never a public URL.
+  // Final executed PDF (contract body + both signatures + certificate page). This
+  // is the canonical permanent record copy: generated once from the server-loaded
+  // lockedSnapshot when the contract becomes fully executed, then never
+  // regenerated for normal use. `executedFilePath` is a private Storage path;
+  // `executedFileUrl` is an authenticated app route that streams it (never a
+  // public URL). The same stored file is referenced from the project's documents
+  // and attached to the post-sign confirmation email.
+  executedFileUrl?: string;
+  executedFilePath?: string;
+  executedFileName?: string;
+  executedFileGeneratedAt?: number;
+
+  // @deprecated Use `executedFilePath`/`executedFileGeneratedAt`. Kept in sync
+  // (same Storage path) so the token-gated portal download route reads cleanly.
   finalPdfPath?: string;
   finalPdfGeneratedAt?: number;
 

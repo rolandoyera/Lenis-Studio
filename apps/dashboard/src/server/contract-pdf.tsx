@@ -31,13 +31,36 @@ export async function getOrgTimezone(
   }
 }
 
+/** The stored executed contract artifact: its Storage path, download name, bytes. */
+export interface ExecutedContractPdf {
+  /** Canonical private Storage path (source of truth). */
+  path: string;
+  /** Human-friendly download/display file name. */
+  fileName: string;
+  /** The exact bytes written to Storage (reused for the email attachment). */
+  buffer: Buffer;
+}
+
+/** A safe, readable file name for the executed contract PDF. */
+function executedFileName(contract: Contract): string {
+  const base = (contract.projectName || contract.title || "Contract")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+  return `Signed Contract - ${base || "Contract"}.pdf`;
+}
+
 /**
- * Render the final dual-signature PDF and store it privately. Returns the Storage
- * path (recorded on the contract + the fully-executed audit event).
+ * Render the final, fully-executed contract PDF (contract body + both signatures +
+ * signature certificate) from the server-loaded data and store it privately. This
+ * is the canonical permanent record copy — generated once when the contract is
+ * executed and not regenerated for normal use. Returns the Storage path, a
+ * readable file name, and the exact bytes (so the caller can attach the same file
+ * to the confirmation email without re-rendering).
  */
 export async function generateAndStoreFinalContractPdf(input: {
   contract: Contract;
-}): Promise<string> {
+}): Promise<ExecutedContractPdf> {
   const { contract } = input;
   const events = await getContractAuditEvents(contract.contractId);
   const cert = deriveDelivery(events);
@@ -47,9 +70,11 @@ export async function generateAndStoreFinalContractPdf(input: {
     <ContractPdf contract={contract} cert={cert} timeZone={timeZone} />,
   );
 
-  const path = `organizations/${contract.organizationId}/contracts/${contract.contractId}/final/contract-${contract.contractVersionId}.pdf`;
+  // Stable per-contract path: a contract is executed exactly once, so the executed
+  // artifact is immutable and addressable without a version suffix.
+  const path = `organizations/${contract.organizationId}/contracts/${contract.contractId}/executed/${contract.contractId}-executed.pdf`;
   await getAdminBucket()
     .file(path)
     .save(buffer, { contentType: "application/pdf" });
-  return path;
+  return { path, fileName: executedFileName(contract), buffer };
 }

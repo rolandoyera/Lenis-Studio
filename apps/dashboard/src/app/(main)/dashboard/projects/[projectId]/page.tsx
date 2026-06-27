@@ -29,6 +29,7 @@ import {
 } from "../_components/project-constants";
 import { ProjectFormDialog } from "../_components/project-form-dialog";
 import { ProjectHeader } from "../_components/project-header";
+import { ProjectFilesCard } from "../_components/project-files-card";
 import { ProjectInformationCard } from "../_components/project-information-card";
 import { ProjectNotesCard } from "../_components/project-notes-card";
 import { ProjectProposalsCard } from "../_components/project-proposals-card";
@@ -224,7 +225,14 @@ export default function ProjectDetailPage({ params }: PageProps) {
         {activeTab === "calendar" && <TabPlaceholder label="Calendar" />}
 
         {/* Tab 4 Page Content - Project Files */}
-        {activeTab === "files" && <TabPlaceholder label="Files" />}
+        {activeTab === "files" && (
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+            <ProjectFilesCard
+              projectId={project.projectId}
+              organizationId={project.organizationId}
+            />
+          </div>
+        )}
 
         {/* Tab 5 Page Content - Project Settings */}
         {activeTab === "settings" && <TabPlaceholder label="Settings" />}
