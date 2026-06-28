@@ -22,6 +22,7 @@ import {
   fetchRecentMedia,
   getStoredMetaCreds,
   type IgMediaItem,
+  type StoredMetaCreds,
   storeMetaConnection,
 } from "./meta-graph";
 
@@ -82,6 +83,19 @@ function compareMetric(current: number, previous: number): KpiMetric {
 async function getActiveOrgId(): Promise<string | null> {
   const cookieStore = await cookies();
   return cookieStore.get(ACTIVE_ORG_COOKIE)?.value ?? null;
+}
+
+async function getActiveInstagramContext(): Promise<
+  | { success: true; organizationId: string; creds: StoredMetaCreds }
+  | { success: false; error: string }
+> {
+  const organizationId = await getActiveOrgId();
+  if (!organizationId) return { success: false, error: NOT_CONNECTED };
+
+  const creds = await getStoredMetaCreds(organizationId);
+  if (!creds) return { success: false, error: NOT_CONNECTED };
+
+  return { success: true, organizationId, creds };
 }
 
 /** Returns the tenant's Meta integration config, or null when not connected. */
@@ -236,12 +250,14 @@ function flatMetric(value: number): KpiMetric {
 export async function fetchInstagramKpis(
   range?: string,
 ): Promise<InstagramKpiResult> {
-  const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, error: NOT_CONNECTED };
-  const creds = await getStoredMetaCreds(organizationId);
-  if (!creds) return { success: false, error: NOT_CONNECTED };
+  let organizationId: string | null = null;
 
   try {
+    const context = await getActiveInstagramContext();
+    if (!context.success) return { success: false, error: context.error };
+
+    organizationId = context.organizationId;
+    const { creds } = context;
     const { current, previous, comparisonLabel } = rangeToWindows(range);
     const [cur, prev] = await Promise.all([
       fetchAccountKpis(creds, current.since, current.until),
@@ -268,21 +284,27 @@ export async function fetchInstagramKpis(
       error,
     );
     // Live Graph call failed — serve the last stored snapshot so the strip isn't empty.
-    const snapshot = await getLatestSnapshot(organizationId);
-    if (snapshot) {
-      return {
-        success: true,
-        source: "fallback",
-        asOf: snapshot.date,
-        data: {
-          reach: flatMetric(snapshot.reach),
-          views: flatMetric(snapshot.views),
-          profileViews: flatMetric(snapshot.profileViews),
-          accountsEngaged: flatMetric(snapshot.accountsEngaged),
-          websiteClicks: flatMetric(snapshot.websiteClicks),
-          comparisonLabel: "",
-        },
-      };
+    if (organizationId) {
+      try {
+        const snapshot = await getLatestSnapshot(organizationId);
+        if (snapshot) {
+          return {
+            success: true,
+            source: "fallback",
+            asOf: snapshot.date,
+            data: {
+              reach: flatMetric(snapshot.reach),
+              views: flatMetric(snapshot.views),
+              profileViews: flatMetric(snapshot.profileViews),
+              accountsEngaged: flatMetric(snapshot.accountsEngaged),
+              websiteClicks: flatMetric(snapshot.websiteClicks),
+              comparisonLabel: "",
+            },
+          };
+        }
+      } catch (snapshotError) {
+        console.error("Failed to load Instagram KPI snapshot:", snapshotError);
+      }
     }
     return {
       success: false,
@@ -303,12 +325,11 @@ export async function fetchInstagramFollowers(): Promise<{
   data?: { followers: number; comparison: KpiMetric | null };
   error?: string;
 }> {
-  const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, error: NOT_CONNECTED };
-  const creds = await getStoredMetaCreds(organizationId);
-  if (!creds) return { success: false, error: NOT_CONNECTED };
-
   try {
+    const context = await getActiveInstagramContext();
+    if (!context.success) return { success: false, error: context.error };
+
+    const { creds } = context;
     const until = Math.floor(Date.now() / 1000);
     const since = until - 30 * 24 * 60 * 60;
     const [followers, gains] = await Promise.all([
@@ -343,12 +364,11 @@ export async function fetchInstagramHeadline(): Promise<{
   data?: InstagramHeadline;
   error?: string;
 }> {
-  const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, error: NOT_CONNECTED };
-  const creds = await getStoredMetaCreds(organizationId);
-  if (!creds) return { success: false, error: NOT_CONNECTED };
-
   try {
+    const context = await getActiveInstagramContext();
+    if (!context.success) return { success: false, error: context.error };
+
+    const { creds } = context;
     const until = Math.floor(Date.now() / 1000);
     const since = until - 30 * 24 * 60 * 60;
     const [kpis, gains] = await Promise.all([
@@ -393,12 +413,11 @@ export interface InstagramReachTrend {
 export async function fetchInstagramReachTrend(
   range?: string,
 ): Promise<{ success: boolean; data?: InstagramReachTrend; error?: string }> {
-  const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, error: NOT_CONNECTED };
-  const creds = await getStoredMetaCreds(organizationId);
-  if (!creds) return { success: false, error: NOT_CONNECTED };
-
   try {
+    const context = await getActiveInstagramContext();
+    if (!context.success) return { success: false, error: context.error };
+
+    const { creds } = context;
     const { current, previous, comparisonLabel } = rangeToWindows(range);
     const [curPoints, prevPoints] = await Promise.all([
       fetchReachTrend(creds, current.since, current.until),
@@ -437,13 +456,12 @@ export async function fetchInstagramMedia(limit = 10): Promise<{
   data: IgMediaItem[];
   error?: string;
 }> {
-  const organizationId = await getActiveOrgId();
-  if (!organizationId)
-    return { success: false, data: [], error: NOT_CONNECTED };
-  const creds = await getStoredMetaCreds(organizationId);
-  if (!creds) return { success: false, data: [], error: NOT_CONNECTED };
-
   try {
+    const context = await getActiveInstagramContext();
+    if (!context.success)
+      return { success: false, data: [], error: context.error };
+
+    const { creds, organizationId } = context;
     // The Graph API returns signed CDN URLs that rotate on every call, so re-fetching
     // on each navigation hands next/image a new src and busts both the optimizer and
     // browser caches. Cache the result per org so revisits reuse identical URLs. The 6h
@@ -480,12 +498,11 @@ export async function fetchInstagramDemographics(): Promise<{
   data?: InstagramDemographics;
   error?: string;
 }> {
-  const organizationId = await getActiveOrgId();
-  if (!organizationId) return { success: false, error: NOT_CONNECTED };
-  const creds = await getStoredMetaCreds(organizationId);
-  if (!creds) return { success: false, error: NOT_CONNECTED };
-
   try {
+    const context = await getActiveInstagramContext();
+    if (!context.success) return { success: false, error: context.error };
+
+    const { creds } = context;
     const [cities, countries, age, gender] = await Promise.all([
       fetchFollowerDemographics(creds, "city"),
       fetchFollowerDemographics(creds, "country"),

@@ -60,6 +60,10 @@ SuperAdmin exposure, but nothing surfaces it. To switch accounts, reconnect (the
   snapshot with `source: "fallback"` + `asOf`. The strip shows an "As of {date}" label then.
   Only the strip has this — other live reads have no snapshot equivalent.
 
+- **Server render safety:** Instagram live read actions must catch credential, Firestore, and Graph
+  failures and return `{ success: false }` instead of throwing. A bad Meta token or production
+  secret issue should show panel-level fallback UI, not 500 the `/dashboard/instagram` RSC payload.
+
 ## The cron
 
 - Route: `src/app/api/cron/instagram-snapshots/route.ts`. Auth via `Authorization: Bearer $CRON_SECRET`.
