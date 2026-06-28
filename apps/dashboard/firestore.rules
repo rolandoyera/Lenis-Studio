@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // Org-scoped rules for the SDG CRM (replaces the expiring test-mode rules).
-// Paste into Firebase console -> Firestore Database -> Rules -> Publish.
+// Deploy: `npx firebase deploy --only firestore:rules --project sarvian-design-group-db`
+// (wired in firebase.json). Can also be pasted into Firebase console -> Firestore.
 //
 // Model: every signed-in user has a profile at users/{uid} carrying
 // organizationId and role (SuperAdmin | Admin | Contributor). Data documents

@@ -58,8 +58,10 @@ access (see `firestore.rules`):
   the SuperAdmin-gated Tenants page (`../tenants/[tenantId]/page.tsx`, which writes `status` and
   `config`). Never widen the allowlist to include them, and never move profile saves to touch them.
 - Keep the allowlist an **allowlist**, not a denylist: new org fields are then locked-down by
-  default. `firestore.rules` is **not** CLI-deployed here — changes must be pasted into the Firebase
-  console (Firestore → Rules → Publish) to take effect.
+  default. `firestore.rules` is wired in `firebase.json` and deployed with
+  `npx firebase deploy --only firestore:rules --project sarvian-design-group-db` (or pasted into the
+  Firebase console → Firestore → Rules → Publish). Either way, rule changes only take effect once
+  deployed.
 
 ## Form architecture — display cards + per-section dialogs
 

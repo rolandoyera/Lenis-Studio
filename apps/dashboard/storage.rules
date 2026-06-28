@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // Storage rules for the SDG CRM (replaces expiring test-mode rules if present).
-// Paste into Firebase console -> Storage -> Rules -> Publish.
+// Deploy: `npx firebase deploy --only storage --project sarvian-design-group-db`
+// (wired in firebase.json). Can also be pasted into Firebase console -> Storage.
 //
 // Uploads happen client-side from the dashboard (library + vendor images, org
 // branding). Image display uses tokened download URLs, which work regardless of
