@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import {
   ArrowRightLeft,
-  ExternalLink,
   Loader2,
   Pencil,
   UserPlus,
@@ -29,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { AddressValue } from "@/components/ui/address-value";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -197,13 +197,6 @@ export default function LeadDetailPage({ params }: PageProps) {
   if (!lead) return null;
 
   const isConverted = !!lead.convertedClientId;
-  const hasAddress = Boolean(
-    lead.street ?? lead.city ?? lead.state ?? lead.zip,
-  );
-  const hasCityStateZip = Boolean(lead.city ?? lead.state ?? lead.zip);
-  const fullAddress = [lead.street, lead.city, lead.state, lead.zip]
-    .filter(Boolean)
-    .join(", ");
 
   return (
     <div className="flex w-full flex-col gap-6 pb-10">
@@ -307,32 +300,7 @@ export default function LeadDetailPage({ params }: PageProps) {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2">
               <DataField label="Address" empty="Not set">
-                {hasAddress && (
-                  <div className="flex flex-col">
-                    {lead.street && <span>{lead.street}</span>}
-                    {hasCityStateZip && (
-                      <span className="mt-0.5">
-                        {[
-                          lead.city,
-                          [lead.state, lead.zip].filter(Boolean).join(" "),
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </span>
-                    )}
-                    {fullAddress && (
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
-                      >
-                        google maps
-                        <ExternalLink className="size-3" />
-                      </a>
-                    )}
-                  </div>
-                )}
+                <AddressValue address={lead} />
               </DataField>
             </div>
           </CardContent>

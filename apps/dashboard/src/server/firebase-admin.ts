@@ -46,6 +46,17 @@ function getAdminApp(): App {
   return adminApp;
 }
 
+// settings() may be called only once per Firestore instance. In dev, Turbopack
+// bundles server actions into separate module graphs that each get a fresh copy
+// of `adminDb` (null) but share the same underlying Firestore singleton (keyed
+// by the app). Track the "settings applied" flag on globalThis so it survives
+// across those module instances and hot-reloads, preventing a double settings()
+// call that would otherwise throw.
+const settingsFlag = Symbol.for("crm.firebase-admin.settingsApplied");
+const globalState = globalThis as typeof globalThis & {
+  [settingsFlag]?: boolean;
+};
+
 /** Server-only Firestore client. Bypasses security rules — never expose to the client. */
 export function getAdminDb(): Firestore {
   if (adminDb) return adminDb;
@@ -53,7 +64,10 @@ export function getAdminDb(): Firestore {
   // Match the client SDK + cleanUndefined() behavior: omit undefined fields on
   // write instead of throwing. Must run before the instance is used elsewhere;
   // safe here because every caller goes through this cached accessor.
-  adminDb.settings({ ignoreUndefinedProperties: true });
+  if (!globalState[settingsFlag]) {
+    adminDb.settings({ ignoreUndefinedProperties: true });
+    globalState[settingsFlag] = true;
+  }
   return adminDb;
 }
 

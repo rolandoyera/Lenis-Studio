@@ -1,4 +1,5 @@
-import { CircleAlert, ExternalLink, Mail, Phone, User } from "lucide-react";
+import { CircleAlert, Mail, Phone, User } from "lucide-react";
+import { AddressValue } from "@/components/ui/address-value";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,11 +24,6 @@ interface ClientContactCardProps {
 
 /** Contact credentials panel: email, phone, company, plus quick email/call actions. */
 export function ClientContactCard({ client }: ClientContactCardProps) {
-  const hasAddress = Boolean(
-    client.street ?? client.city ?? client.state ?? client.zip,
-  );
-  const hasCityStateZip = Boolean(client.city ?? client.state ?? client.zip);
-
   return (
     <Card variant="panel">
       <CardHeader>
@@ -70,44 +66,7 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
             empty="Not provided"
             className="h-21"
           >
-            {hasAddress && (
-              <div className="flex flex-col">
-                {client.street && <span>{client.street}</span>}
-                {hasCityStateZip && (
-                  <span className="mt-0.5">
-                    {[
-                      client.city,
-                      [client.state, client.zip].filter(Boolean).join(" "),
-                    ]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </span>
-                )}
-                {(() => {
-                  const fullAddress = [
-                    client.street,
-                    client.city,
-                    client.state,
-                    client.zip,
-                  ]
-                    .filter(Boolean)
-                    .join(", ");
-                  return (
-                    fullAddress && (
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
-                      >
-                        google maps
-                        <ExternalLink className="size-3" />
-                      </a>
-                    )
-                  );
-                })()}
-              </div>
-            )}
+            <AddressValue address={client} />
           </DataField>
 
           <DataField label="Tax ID" empty="Not provided">

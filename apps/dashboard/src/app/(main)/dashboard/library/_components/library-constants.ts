@@ -173,7 +173,7 @@ export const EMPTY_LIBRARY_ITEM_FORM: LibraryItemFormData = {
   internalNote: "",
   taxable: true,
   unitCost: 0,
-  markup: 15,
+  markup: 20,
   msrp: 0,
   sellingPrice: 0,
   imageUrls: [],

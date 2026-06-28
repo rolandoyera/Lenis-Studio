@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Building2, ExternalLink } from "lucide-react";
+import { Building2 } from "lucide-react";
+import { AddressValue } from "@/components/ui/address-value";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataField } from "@/components/ui/data-field";
 import type { Client, Project } from "@/lib/types";
@@ -31,7 +32,7 @@ export function ProjectInformationCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-x-6 gap-y-6.5 text-sm sm:grid-cols-2 md:h-62">
-        <DataField label="Project Number" empty="Not set">
+        <DataField label="Project #" empty="Not set">
           {project.projectCode}
         </DataField>
         <DataField label="Client Name" empty="Not set">
@@ -39,53 +40,13 @@ export function ProjectInformationCard({
             <Link
               href={`/dashboard/clients/${client.uid}`}
               prefetch={false}
-              className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline"
-            >
+              className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline">
               {clientName}
             </Link>
           )}
         </DataField>
         <DataField label="Project Site" empty="Not set">
-          {/* biome-ignore lint/nursery/useNullishCoalescing: truthy check for address fields */}
-          {(project.street || project.city || project.state || project.zip) && (
-            <div className="flex flex-col">
-              {project.street && <span>{project.street}</span>}
-              {/* biome-ignore lint/nursery/useNullishCoalescing: truthy check for address fields */}
-              {(project.city || project.state || project.zip) && (
-                <span className="mt-0.5">
-                  {[
-                    project.city,
-                    [project.state, project.zip].filter(Boolean).join(" "),
-                  ]
-                    .filter(Boolean)
-                    .join(", ")}
-                </span>
-              )}
-              {(() => {
-                const fullAddress = [
-                  project.street,
-                  project.city,
-                  project.state,
-                  project.zip,
-                ]
-                  .filter(Boolean)
-                  .join(", ");
-                return (
-                  fullAddress && (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
-                    >
-                      Google Maps
-                      <ExternalLink className="size-3" />
-                    </a>
-                  )
-                );
-              })()}
-            </div>
-          )}
+          <AddressValue address={project} />
         </DataField>
         <DataField label="Budget" empty="Not set">
           {project.budget !== undefined &&

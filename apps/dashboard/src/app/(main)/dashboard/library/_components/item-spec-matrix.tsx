@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import type { LibraryItem, Vendor } from "@/lib/types";
+import type { LibraryItem } from "@/lib/types";
 
 import { withProtocol } from "./library-constants";
 
@@ -44,11 +44,10 @@ function SpecField({
 
 interface ItemSpecMatrixProps {
   item: LibraryItem;
-  vendor?: Vendor;
 }
 
 /** Spec grid plus assigned vendor and direct product link. */
-export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
+export function ItemSpecMatrix({ item }: ItemSpecMatrixProps) {
   return (
     <Card variant="panel">
       <CardHeader>
@@ -71,27 +70,12 @@ export function ItemSpecMatrix({ item, vendor }: ItemSpecMatrixProps) {
       </CardContent>
       <CardFooter className="h-14">
         <div className="flex w-full items-center justify-end gap-4">
-          {vendor?.website && (
-            <div>
-              <a
-                href={withProtocol(vendor.website)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="secondary" size="sm">
-                  <ExternalLink className="size-4" />
-                  Vendor Website
-                </Button>
-              </a>
-            </div>
-          )}
           {item.sourcingLink && (
             <div>
               <a
                 href={withProtocol(item.sourcingLink)}
                 target="_blank"
-                rel="noopener noreferrer"
-              >
+                rel="noopener noreferrer">
                 <Button variant="secondary" size="sm">
                   <ExternalLink className="size-4" />
                   Product Website

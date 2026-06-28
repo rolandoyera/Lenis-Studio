@@ -1053,7 +1053,7 @@ export function LibraryItemFormDialog({
                       <Label className={LABEL_CLASS}>Markup %</Label>
                       <Input
                         type="number"
-                        placeholder="15"
+                        placeholder="20"
                         value={formData.markup || ""}
                         onChange={(e) =>
                           form.updatePricing(

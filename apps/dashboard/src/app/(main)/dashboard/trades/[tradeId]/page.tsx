@@ -23,6 +23,7 @@ import {
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
+import { AddressValue } from "@/components/ui/address-value";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -280,41 +281,7 @@ export default function TradeDetailPage({ params }: PageProps) {
                 <Label>Location Address</Label>
                 <div className="flex items-start gap-2 text-foreground/80">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <div>
-                    {trade.street && (
-                      <span className="block">{trade.street}</span>
-                    )}
-                    {(trade.city || trade.state || trade.zip) && (
-                      <span className="mt-0.5 block">
-                        {[trade.city, trade.state].filter(Boolean).join(", ") +
-                          (trade.zip ? ` ${trade.zip}` : "")}
-                      </span>
-                    )}
-
-                    {(() => {
-                      const fullAddress = [
-                        trade.street,
-                        trade.city,
-                        trade.state,
-                        trade.zip,
-                      ]
-                        .filter(Boolean)
-                        .join(", ");
-                      return (
-                        fullAddress && (
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-3 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
-                          >
-                            Open Google Maps
-                            <ExternalLink className="size-3" />
-                          </a>
-                        )
-                      );
-                    })()}
-                  </div>
+                  <AddressValue address={trade} mapsLabel="Open Google Maps" />
                 </div>
               </div>
             ) : (

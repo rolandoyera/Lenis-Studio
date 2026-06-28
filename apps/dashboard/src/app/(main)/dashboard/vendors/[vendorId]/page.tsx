@@ -5,10 +5,11 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { Building2, ExternalLink, Loader2 } from "lucide-react";
+import { Building2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
+import { AddressValue } from "@/components/ui/address-value";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -264,24 +265,7 @@ export default function VendorDetailPage({ params }: PageProps) {
               empty="Not provided"
               className="min-h-21"
             >
-              {addressLines.length > 0 ? (
-                <div className="flex flex-col">
-                  {addressLines.map((line, i) => (
-                    <span key={line} className={i > 0 ? "mt-0.5" : undefined}>
-                      {line}
-                    </span>
-                  ))}
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressText)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
-                  >
-                    google maps
-                    <ExternalLink className="size-3" />
-                  </a>
-                </div>
-              ) : undefined}
+              <AddressValue lines={addressLines} query={addressText} />
             </DataField>
             <DataField
               label="Sourcing Notes"

@@ -199,7 +199,7 @@ export default function LibraryItemDetailPage({ params }: PageProps) {
 
         <div className="flex flex-col gap-6 lg:col-span-8">
           <ItemPricingCard item={item} />
-          <ItemSpecMatrix item={item} vendor={associatedVendor} />
+          <ItemSpecMatrix item={item} />
           <ItemNotesCards item={item} />
         </div>
       </div>
