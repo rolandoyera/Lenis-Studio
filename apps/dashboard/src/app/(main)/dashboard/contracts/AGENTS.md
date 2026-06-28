@@ -100,8 +100,12 @@ Hard rules that bit us / are easy to break:
   app uses epoch-ms numbers, and `cleanUndefined()` (`JSON.parse(JSON.stringify(...))`, used by
   every writer) would silently destroy a Firestore `FieldValue` sentinel. This applies to nested
   fields too (`lockedSnapshot.lockedAt`).
-- **Single-write create.** `addContract` mints the id with `doc(collection(db,"contracts"))`, writes
-  `contractId` back, and `setDoc`s once. Don't `addDoc` then `updateDoc`.
+- **Draft create is a server action.** `createContract(userId, data)` in
+  `src/server/contract-actions.ts` (`"use server"`, admin SDK) mints the id, allocates a
+  `contractCode`/`contractNumber` from the `organizations/{orgId}/counters/contractCodes` sequence in
+  a transaction, and writes the draft once. The old client-side `addContract` in `db.ts` is gone. Org
+  comes from the active-org cookie; `userId` is passed by the builder. Reference codes are internal
+  labels — they never replace `contractId`.
 - **`getContracts` sorts in memory** by `updatedAt` desc — no Firestore `orderBy` (avoids a
   composite index), matching clients/projects.
 - **Sending now runs server-side**, not via the client `db.ts`. The builder's Send button opens a
@@ -135,11 +139,10 @@ this hook for other forms with unsaved-state rather than copying the logic.
 `contracts/{id}` has a block in [firestore.rules](../../../../../firestore.rules). Without it,
 client-SDK writes hit the default deny. It enforces org-scoping plus a **draft-only** client surface:
 
-- **Create** must be a `draft` with `lockedSnapshot == null`, must carry `contractId == id`,
-  self-attribute (`createdBy == request.auth.uid`, `updatedBy == request.auth.uid`), and hold
-  **only** the known `Contract` write fields via `keys().hasOnly([...])` — so a client can't smuggle
-  in server-owned signature/lifecycle fields (`clientSignature`, `executedAt`, `finalPdfPath`, …) or
-  forge attribution at creation.
+- **Create** is `if false` — denied to the client SDK. Draft creation is server-only
+  (`createContract`, admin SDK) so every contract is assigned a `contractCode`/`contractNumber` from
+  the org counter; a client-SDK create would bypass that sequence. (The old draft-only create
+  allowlist is gone with the client-side `addContract`.)
 - **Update** is allowed only while the contract **stays a draft AND only draft-editable fields
   change.** It constrains the _post-image_, not just the pre-image: `request.resource.data.status ==
   'draft'`, `get('lockedSnapshot', null) == null`, `updatedBy == request.auth.uid`, and a

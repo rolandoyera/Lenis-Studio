@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import type { Organization } from "@/lib/types";
 
-import { TIMEZONE_OPTIONS } from "./company-constants";
+import { DEFAULT_REFERENCE_PREFIX, TIMEZONE_OPTIONS } from "./company-constants";
 import { type ComboItem, SearchSelect } from "./search-select";
 import {
   EditableCardHeader,
@@ -38,6 +38,10 @@ function sanitizeDecimal(value: string): string {
 /** Keep only digits (whole numbers, e.g. expiration days). */
 const sanitizeInteger = (value: string): string => value.replace(/\D/g, "");
 
+/** Strip whitespace and cap at 6 chars for the reference prefix. */
+const sanitizePrefix = (value: string): string =>
+  value.replace(/\s/g, "").slice(0, 6);
+
 export function SettingsCard({
   org,
   onEdit,
@@ -54,6 +58,9 @@ export function SettingsCard({
         <div className="space-y-6">
           <DataField label="Timezone" empty="Not Set">
             {s?.timezone}
+          </DataField>
+          <DataField label="Reference Prefix" empty="Not Set">
+            {s?.referencePrefix ?? DEFAULT_REFERENCE_PREFIX}
           </DataField>
           <DataField label="Proposal Expiration" empty="Not Set">
             {typeof s?.proposalExpirationDays === "number"
@@ -112,6 +119,25 @@ export function SettingsFields({
               emptyText="No timezone found."
               container={container}
             />
+          </Field>
+        )}
+      />
+      <Controller
+        control={control}
+        name="referencePrefix"
+        render={({ field, fieldState }) => (
+          <Field
+            className="flex flex-col gap-1.5"
+            data-invalid={fieldState.invalid}>
+            <Label className={LABEL_CLASS}>Reference Prefix</Label>
+            <Input
+              {...field}
+              maxLength={6}
+              placeholder="e.g. SDG"
+              aria-invalid={fieldState.invalid}
+              onChange={(e) => field.onChange(sanitizePrefix(e.target.value))}
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
           </Field>
         )}
       />

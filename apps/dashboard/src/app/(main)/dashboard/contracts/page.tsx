@@ -304,7 +304,14 @@ export default function ContractsPage() {
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    globalFilterFn: "includesString",
+    // Search across the human-facing identity fields plus the reference code.
+    globalFilterFn: (row, _columnId, filterValue: string) => {
+      const term = filterValue.toLowerCase();
+      const c = row.original;
+      return [c.title, c.clientName, c.projectName, c.contractCode].some(
+        (value) => (value ?? "").toLowerCase().includes(term),
+      );
+    },
   });
   const searchQuery = table.getState().globalFilter ?? "";
   const statusFilter =

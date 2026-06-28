@@ -66,6 +66,12 @@ export function ClientDetailHeader({
                   Private Residence
                 </span>
               )}
+              {client.clientCode && (
+                <>
+                  <span className="text-muted-foreground/30">•</span>
+                  <span className="font-mono">Client Ref: {client.clientCode}</span>
+                </>
+              )}
               <span className="text-muted-foreground/30">•</span>
               <span className="flex items-center gap-1">
                 <Calendar className="size-3.5 text-muted-foreground/80" />

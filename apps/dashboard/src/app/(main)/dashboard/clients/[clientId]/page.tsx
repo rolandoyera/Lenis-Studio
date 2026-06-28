@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth-context";
 import {
   addClientNote,
-  addProject,
   deleteClient,
   getClient,
   getClientNotes,
@@ -18,6 +17,7 @@ import {
   softDeleteClientNote,
   updateClient,
 } from "@/lib/db";
+import { createProject } from "@/server/project-actions";
 import type { ActivityActor, Client, ClientNote, Project } from "@/lib/types";
 
 import type { ProjectFormData } from "../../projects/_components/project-constants";
@@ -108,9 +108,8 @@ export default function ClientProfilePage({ params }: PageProps) {
     if (!profile) return;
     setAddingProject(true);
     try {
-      const created = await addProject({
+      const created = await createProject({
         ...data,
-        organizationId: profile.organizationId,
         createdBy: profile.uid,
         updatedBy: profile.uid,
       });

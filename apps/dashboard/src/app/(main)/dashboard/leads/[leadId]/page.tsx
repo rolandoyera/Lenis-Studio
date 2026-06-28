@@ -33,12 +33,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { H1 } from "@/components/ui/typography";
-import {
-  convertLeadToClient,
-  getLead,
-  getOrganizationUsers,
-  updateLead,
-} from "@/lib/db";
+import { getLead, getOrganizationUsers, updateLead } from "@/lib/db";
+import { convertLeadToClient } from "@/server/lead-actions";
 import type { ActivityActor, Lead, UserProfile } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
 
@@ -372,7 +368,7 @@ export default function LeadDetailPage({ params }: PageProps) {
                 {resolveUser(lead.assignedTo)}
               </DataField>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2" />
           </CardContent>
         </Card>
         <Card variant="panel" className="lg:col-span-4">

@@ -60,13 +60,13 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  addContract,
   formatProjectAddress,
   getClient,
   getOrganization,
   getProjects,
   updateContract,
 } from "@/lib/db";
+import { createContract } from "@/server/contract-actions";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { COMPANY_SEND_AUTHORIZATION_TEXT } from "@/lib/contract-text";
 import type { Client, Contract, ContractStatus, Project } from "@/lib/types";
@@ -655,7 +655,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
       await updateContract(contractId, uid, payload);
       return contractId;
     }
-    const newId = await addContract(organizationId, uid, payload);
+    const newId = await createContract(uid, payload);
     setContractId(newId);
     return newId;
   };

@@ -28,7 +28,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { H3 } from "@/components/ui/typography";
-import { addClient, getClients } from "@/lib/db";
+import { getClients } from "@/lib/db";
+import { createClient } from "@/server/client-actions";
 import type { Client } from "@/lib/types";
 import { formatPhone } from "@/lib/utils";
 
@@ -83,10 +84,7 @@ export default function ClientsPage() {
 
     setSubmitting(true);
     try {
-      const created = await addClient({
-        ...data,
-        organizationId: profile.organizationId,
-      });
+      const created = await createClient(data);
       setClients((prev) => [created, ...prev]);
       toast.success("New client created successfully!");
       setIsDialogOpen(false);
@@ -106,12 +104,14 @@ export default function ClientsPage() {
 
     const email = typeof client.email === "string" ? client.email : "";
     const company = typeof client.company === "string" ? client.company : "";
+    const clientCode = client.clientCode ?? "";
 
     return (
       firstName.toLowerCase().includes(term) ||
       lastName.toLowerCase().includes(term) ||
       email.toLowerCase().includes(term) ||
-      company.toLowerCase().includes(term)
+      company.toLowerCase().includes(term) ||
+      clientCode.toLowerCase().includes(term)
     );
   });
 

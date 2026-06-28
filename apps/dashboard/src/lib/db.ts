@@ -99,26 +99,8 @@ export async function getClients(organizationId: string): Promise<Client[]> {
   }
 }
 
-export async function addClient(
-  client: Omit<Client, "uid" | "createdAt">,
-): Promise<Client> {
-  return trace(
-    "clients",
-    "WRITE",
-    "addClient",
-    async () => {
-      const uid = `client-${Math.random().toString(36).substr(2, 9)}`;
-      const newClient: Client = {
-        ...client,
-        uid,
-        createdAt: Date.now(),
-      };
-      await setDoc(doc(db, "clients", uid), cleanUndefined(newClient));
-      return newClient;
-    },
-    (c) => c.uid,
-  );
-}
+// Client creation is server-side (transaction + reference code) in
+// `src/server/client-actions.ts` (createClient).
 
 export async function updateClient(
   uid: string,
@@ -387,65 +369,8 @@ export async function updateLead(
   );
 }
 
-/**
- * Converts a lead into a new client document in a single atomic batch: the client is created
- * (carrying `sourceLeadId`) and the lead is marked `won` with conversion audit fields. The lead
- * is never deleted. Returns the created client.
- */
-export async function convertLeadToClient(
-  lead: Lead,
-  convertedBy: string,
-  /** Who performed the conversion — stamped as the lead's `updatedBy`. */
-  actor: ActivityActor,
-): Promise<Client> {
-  return trace(
-    "leads",
-    "WRITE",
-    "convertLeadToClient",
-    async () => {
-      const batch = writeBatch(db);
-      const now = Date.now();
-
-      const clientUid = `client-${Math.random().toString(36).substr(2, 9)}`;
-      const newClient: Client = {
-        uid: clientUid,
-        organizationId: lead.organizationId,
-        isCompany: lead.isCompany,
-        company: lead.company,
-        firstName: lead.firstName ?? "",
-        lastName: lead.lastName ?? "",
-        email: lead.email ?? "",
-        phone: lead.phone ?? "",
-        phoneCountry: lead.phoneCountry,
-        street: lead.street,
-        city: lead.city,
-        state: lead.state,
-        zip: lead.zip,
-        country: lead.country,
-        sourceLeadId: lead.uid,
-        createdAt: now,
-      };
-      batch.set(doc(db, "clients", clientUid), cleanUndefined(newClient));
-
-      batch.update(
-        doc(db, "leads", lead.uid),
-        cleanUndefined({
-          stage: "won",
-          convertedClientId: clientUid,
-          convertedAt: now,
-          convertedBy,
-          updatedBy: actor,
-          updatedAt: now,
-          lastActivityAt: now,
-        }),
-      );
-
-      await batch.commit();
-      return newClient;
-    },
-    (c) => c.uid,
-  );
-}
+// Lead → Client conversion is server-side (transaction + reference code) in
+// `src/server/lead-actions.ts` (convertLeadToClient).
 
 // --- VENDOR HELPER HOOKS & FUNCTIONS ---
 
@@ -693,33 +618,8 @@ export function formatProjectAddress(
     .join(" ");
 }
 
-export async function addProject(
-  project: Omit<
-    Project,
-    "projectId" | "createdAt" | "updatedAt" | "lastActivityAt"
-  >,
-): Promise<Project> {
-  return trace(
-    "projects",
-    "WRITE",
-    "addProject",
-    async () => {
-      const projectId = `project-${Math.random().toString(36).substr(2, 9)}`;
-      const now = Date.now();
-
-      const newProject: Project = {
-        ...project,
-        projectId,
-        createdAt: now,
-        updatedAt: now,
-        lastActivityAt: now,
-      };
-      await setDoc(doc(db, "projects", projectId), cleanUndefined(newProject));
-      return newProject;
-    },
-    (p) => p.projectId,
-  );
-}
+// Project creation is server-side (transaction + reference code) in
+// `src/server/project-actions.ts` (createProject).
 
 /**
  * Persists a partial project update and stamps `updatedAt`/`lastActivityAt`. Callers must pass
@@ -1592,39 +1492,8 @@ export async function deleteTrade(tradeId: string): Promise<void> {
 // timestamps throughout, matching the rest of the app (so `cleanUndefined`'s
 // JSON round-trip stays safe — no Firestore sentinels are written).
 
-/**
- * Create a new draft contract with a single write. The id is taken from a fresh
- * doc ref and written back onto the document. Returns the new contractId.
- */
-export async function addContract(
-  organizationId: string,
-  userId: string,
-  data: ContractDraftInput,
-): Promise<string> {
-  return trace(
-    "contracts",
-    "WRITE",
-    "addContract",
-    async () => {
-      const docRef = doc(collection(db, "contracts"));
-      const now = Date.now();
-      const contract: Contract = {
-        ...data,
-        contractId: docRef.id,
-        organizationId,
-        status: "draft",
-        lockedSnapshot: null,
-        createdBy: userId,
-        createdAt: now,
-        updatedBy: userId,
-        updatedAt: now,
-      };
-      await setDoc(docRef, cleanUndefined(contract));
-      return docRef.id;
-    },
-    (id) => id,
-  );
-}
+// Draft contract creation is server-side (transaction + reference code) in
+// `src/server/contract-actions.ts` (createContract).
 
 /**
  * Update a draft contract's editable fields. Preserves organizationId, createdBy,

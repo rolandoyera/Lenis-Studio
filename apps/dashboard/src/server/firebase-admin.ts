@@ -50,6 +50,10 @@ function getAdminApp(): App {
 export function getAdminDb(): Firestore {
   if (adminDb) return adminDb;
   adminDb = getFirestore(getAdminApp());
+  // Match the client SDK + cleanUndefined() behavior: omit undefined fields on
+  // write instead of throwing. Must run before the instance is used elsewhere;
+  // safe here because every caller goes through this cached accessor.
+  adminDb.settings({ ignoreUndefinedProperties: true });
   return adminDb;
 }
 

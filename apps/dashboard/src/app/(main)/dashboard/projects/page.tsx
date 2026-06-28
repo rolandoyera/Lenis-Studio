@@ -31,12 +31,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
-  addProject,
   formatProjectAddress,
   getClients,
   getProjects,
   updateProject,
 } from "@/lib/db";
+import { createProject } from "@/server/project-actions";
 import type { Client, Project } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
@@ -114,9 +114,8 @@ export default function ProjectsPage() {
         );
         toast.success("Project specifications updated successfully!");
       } else {
-        const created = await addProject({
+        const created = await createProject({
           ...data,
-          organizationId: profile.organizationId,
           createdBy: profile.uid,
           updatedBy: profile.uid,
         });
@@ -146,6 +145,7 @@ export default function ProjectsPage() {
       (project.name || "").toLowerCase().includes(term) ||
       clientName.toLowerCase().includes(term) ||
       address.toLowerCase().includes(term) ||
+      (project.projectCode ?? "").toLowerCase().includes(term) ||
       project.notes?.toLowerCase().includes(term)
     );
   });

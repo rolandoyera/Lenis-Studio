@@ -59,7 +59,10 @@ service cloud.firestore {
 
     match /clients/{id} {
       allow read, delete: if readsOwnOrg();
-      allow create: if createsInOwnOrg();
+      // Creation is server-only (createClient / convertLeadToClient, admin SDK)
+      // so every client gets a reference code from the org counter. A client-SDK
+      // create would bypass the sequence.
+      allow create: if false;
       allow update: if updatesInOwnOrg();
     }
 
@@ -112,7 +115,9 @@ service cloud.firestore {
 
     match /projects/{id} {
       allow read, delete: if readsOwnOrg();
-      allow create: if createsInOwnOrg();
+      // Creation is server-only (createProject, admin SDK) so every project gets a
+      // reference code from the org counter. A client-SDK create would bypass it.
+      allow create: if false;
       allow update: if updatesInOwnOrg();
     }
 
@@ -152,18 +157,10 @@ service cloud.firestore {
     match /contracts/{id} {
       allow read: if readsOwnOrg();
       allow delete: if readsOwnOrg() && resource.data.status == 'draft';
-      allow create: if createsInOwnOrg()
-        && request.resource.data.status == 'draft'
-        && request.resource.data.lockedSnapshot == null
-        && request.resource.data.contractId == id
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.updatedBy == request.auth.uid
-        && request.resource.data.keys().hasOnly([
-             'title', 'projectId', 'clientId', 'clientName', 'projectName',
-             'templateKey', 'templateVersion', 'values', 'scopeItems',
-             'contractId', 'organizationId', 'status', 'lockedSnapshot',
-             'createdBy', 'createdAt', 'updatedBy', 'updatedAt'
-           ]);
+      // Draft creation is server-only (createContract, admin SDK) so every contract
+      // gets a reference code from the org counter. A client-SDK create would bypass
+      // the sequence. Editing a draft stays a client surface (see update below).
+      allow create: if false;
       allow update: if updatesInOwnOrg()
         && resource.data.status == 'draft'
         && request.resource.data.status == 'draft'
@@ -303,6 +300,13 @@ service cloud.firestore {
       // Integration secrets (Meta page access tokens, etc.) are server-only:
       // written and read exclusively via the firebase-admin SDK, never a client.
       match /secrets/{secretId} {
+        allow read, write: if false;
+      }
+
+      // Reference-code sequences (client/project/contract numbering). Allocated
+      // only inside server-side transactions (firebase-admin); a client must
+      // never read or move the counter or it could desync the sequence.
+      match /counters/{counterId} {
         allow read, write: if false;
       }
     }
