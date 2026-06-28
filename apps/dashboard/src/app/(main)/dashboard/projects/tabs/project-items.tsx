@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { arrayMove } from "@dnd-kit/sortable";
 import type { VisibilityState } from "@tanstack/react-table";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import {
@@ -85,7 +98,7 @@ import type {
   ProjectRoomItem,
   Vendor,
 } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 import { AddItemsDialog } from "./_tab_components/add-items-dialog";
 import { EditItemDialog } from "./_tab_components/edit-item-dialog";
@@ -119,7 +132,6 @@ interface RoomListCardProps {
   onAddItem: (room: ProjectRoom) => void;
   onEditItem: (item: ProjectRoomItem) => void;
   onDeleteItem: (item: ProjectRoomItem) => void;
-  onReorder: (orderedIds: string[]) => void;
 }
 
 function RoomListCard({
@@ -131,12 +143,15 @@ function RoomListCard({
   onAddItem,
   onEditItem,
   onDeleteItem,
-  onReorder,
 }: RoomListCardProps) {
   const subtotal = items.reduce(
     (acc, item) => acc + item.sellingPrice * item.quantity,
     0,
   );
+
+  // Droppable target so items can be dragged into this section (including when
+  // it's empty, where there are no sortable rows to drop onto).
+  const { setNodeRef, isOver } = useDroppable({ id: `room:${room.roomId}` });
 
   return (
     <Card variant="panel">
@@ -173,11 +188,18 @@ function RoomListCard({
         </TooltipDropdownMenu>
       </CardHeader>
 
-      <CardContent className="p-0">
+      <CardContent
+        ref={setNodeRef}
+        className={cn("p-0", isOver && "bg-primary/5 ring-1 ring-primary/30")}
+      >
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-12 text-center text-muted-foreground">
             <ShoppingBag className="mb-2 size-8 text-muted-foreground/30" />
-            <p className="font-medium text-xs">No items in section yet.</p>
+            <p className="font-medium text-xs">
+              {isOver
+                ? "Drop to add to this section."
+                : "No items in section yet."}
+            </p>
           </div>
         ) : (
           <ItemsTable
@@ -186,7 +208,6 @@ function RoomListCard({
             columnVisibility={visibleColumns}
             onEditItem={onEditItem}
             onDeleteItem={onDeleteItem}
-            onReorder={onReorder}
           />
         )}
       </CardContent>
@@ -372,27 +393,132 @@ export function ProjectItems({ project }: ProjectItemsProps) {
     // Handled in snapshot listener
   };
 
-  // Persist a section's new drag order. We optimistically renumber the affected
-  // items so the row doesn't flash back before the snapshot catches up.
-  const handleReorderItems = (orderedIds: string[]) => {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+
+  // Persist a section's new order, optimistically updating local state so rows
+  // don't flash back before the snapshot catches up. When `movedItemId` is set,
+  // that item was dragged in from another section and is re-homed to `roomId`.
+  const persistSection = (
+    orderedIds: string[],
+    roomId: string,
+    movedItemId?: string,
+  ) => {
     const orderById = new Map(orderedIds.map((id, index) => [id, index]));
     setRoomItems((prev) =>
       [...prev]
-        .map((item) =>
-          orderById.has(item.roomItemId)
-            ? { ...item, sortOrder: orderById.get(item.roomItemId) }
-            : item,
-        )
+        .map((item) => {
+          if (!orderById.has(item.roomItemId)) return item;
+          return {
+            ...item,
+            sortOrder: orderById.get(item.roomItemId),
+            roomId: item.roomItemId === movedItemId ? roomId : item.roomId,
+          };
+        })
         .sort(
           (a, b) => (a.sortOrder ?? a.createdAt) - (b.sortOrder ?? b.createdAt),
         ),
     );
     void reorderProjectRoomItems(
-      orderedIds.map((roomItemId, index) => ({ roomItemId, sortOrder: index })),
+      orderedIds.map((roomItemId, index) => ({
+        roomItemId,
+        sortOrder: index,
+        roomId: roomItemId === movedItemId ? roomId : undefined,
+      })),
     ).catch((error) => {
       console.error(error);
       toast.error("Failed to save the new order.");
     });
+  };
+
+  // The dragged item's section when the drag began. Lets drag-end tell whether
+  // the item changed sections (so we persist its new `roomId`) without an extra
+  // render. Set on drag start, cleared on drag end.
+  const dragOriginRoomRef = useRef<string | null>(null);
+
+  // Resolve the section a drop target belongs to: a row carries its item's
+  // `roomId`; a section drop zone uses the `room:<roomId>` id directly.
+  const resolveRoomId = (
+    overId: string,
+    items: ProjectRoomItem[],
+  ): string | undefined =>
+    overId.startsWith("room:")
+      ? overId.slice(5)
+      : items.find((i) => i.roomItemId === overId)?.roomId;
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeItem = roomItems.find((i) => i.roomItemId === event.active.id);
+    dragOriginRoomRef.current = activeItem?.roomId ?? null;
+  };
+
+  // Live cross-section preview: as soon as the pointer crosses into another
+  // section, re-home the dragged item in local state so its row actually moves
+  // and both lists animate. Same-section moves are left to the sortable strategy
+  // (handled visually by transforms, committed on drag end).
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    if (activeId === overId) return;
+
+    setRoomItems((prev) => {
+      const activeItem = prev.find((i) => i.roomItemId === activeId);
+      if (!activeItem) return prev;
+      const toRoomId = resolveRoomId(overId, prev);
+      if (!toRoomId || activeItem.roomId === toRoomId) return prev;
+
+      // Pull the item out, re-home it, and splice it next to the row it's over
+      // (or onto the end of the section when hovering its empty space).
+      const next = prev.filter((i) => i.roomItemId !== activeId);
+      const moved = { ...activeItem, roomId: toRoomId };
+      let insertAt: number;
+      if (overId.startsWith("room:")) {
+        const lastIdx = next.reduce(
+          (acc, item, idx) => (item.roomId === toRoomId ? idx : acc),
+          -1,
+        );
+        insertAt = lastIdx + 1;
+      } else {
+        const idx = next.findIndex((i) => i.roomItemId === overId);
+        insertAt = idx === -1 ? next.length : idx;
+      }
+      next.splice(insertAt, 0, moved);
+      return next;
+    });
+  };
+
+  // Commit the final order. By now `onDragOver` has already placed the item in
+  // its destination section, so this just settles the in-section position and
+  // persists, re-homing the item if it ended up in a different section.
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    const originRoom = dragOriginRoomRef.current;
+    dragOriginRoomRef.current = null;
+    if (!over) return;
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeItem = roomItems.find((i) => i.roomItemId === activeId);
+    if (!activeItem) return;
+    const roomId = activeItem.roomId;
+
+    let sectionIds = roomItems
+      .filter((i) => i.roomId === roomId)
+      .map((i) => i.roomItemId);
+    if (!overId.startsWith("room:") && activeId !== overId) {
+      const oldIndex = sectionIds.indexOf(activeId);
+      const newIndex = sectionIds.indexOf(overId);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        sectionIds = arrayMove(sectionIds, oldIndex, newIndex);
+      }
+    }
+
+    const movedItemId = originRoom !== roomId ? activeId : undefined;
+    // Nothing changed: same section, same position, no drop target shift.
+    if (!movedItemId && overId === activeId) return;
+    persistSection(sectionIds, roomId, movedItemId);
   };
 
   // Delete the confirmed item; the snapshot listener removes it from state.
@@ -732,32 +858,40 @@ export function ProjectItems({ project }: ProjectItemsProps) {
         </div>
       )}
 
-      {/* List View — one table per section */}
+      {/* List View — one table per section, draggable within and across sections */}
       {view === "list" && (
-        <div className="flex flex-col gap-6">
-          {rooms.map((room) => (
-            <RoomListCard
-              key={room.roomId}
-              room={room}
-              items={roomItems.filter((item) => item.roomId === room.roomId)}
-              vendors={vendors}
-              visibleColumns={columnVisibility}
-              onEdit={openEditRoom}
-              onAddItem={setActiveRoomForAddItems}
-              onEditItem={setEditingItem}
-              onDeleteItem={setDeletingItem}
-              onReorder={handleReorderItems}
-            />
-          ))}
-          <Button
-            variant="outline"
-            onClick={openCreateRoom}
-            className="w-fit gap-2 self-start"
-          >
-            <FolderPlus className="size-4" />
-            Create Section
-          </Button>
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis]}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex flex-col gap-6">
+            {rooms.map((room) => (
+              <RoomListCard
+                key={room.roomId}
+                room={room}
+                items={roomItems.filter((item) => item.roomId === room.roomId)}
+                vendors={vendors}
+                visibleColumns={columnVisibility}
+                onEdit={openEditRoom}
+                onAddItem={setActiveRoomForAddItems}
+                onEditItem={setEditingItem}
+                onDeleteItem={setDeletingItem}
+              />
+            ))}
+            <Button
+              variant="outline"
+              onClick={openCreateRoom}
+              className="w-fit gap-2 self-start"
+            >
+              <FolderPlus className="size-4" />
+              Create Section
+            </Button>
+          </div>
+        </DndContext>
       )}
 
       {/* ---------------------------------------------------- */}

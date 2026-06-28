@@ -4,16 +4,6 @@
 import type { ReactNode, CSSProperties } from "react";
 
 import {
-  closestCenter,
-  DndContext,
-  type DragEndEvent,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
-  arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
@@ -405,16 +395,15 @@ interface ItemsTableProps {
   columnVisibility: VisibilityState;
   onEditItem: (item: ProjectRoomItem) => void;
   onDeleteItem: (item: ProjectRoomItem) => void;
-  /** Called with the section's item ids in their new order after a drag. */
-  onReorder: (orderedIds: string[]) => void;
 }
 
 /**
  * The list-view table for a single section's items. A TanStack-powered variant
  * of the shared `TanTable`, with per-column widths, wrapping, and alignment the
- * generic table can't express. Rows reorder by dragging the grip handle (dnd-kit)
- * rather than by sorting columns; column visibility is controlled by the parent
- * so one picker drives every section consistently.
+ * generic table can't express. Rows reorder by dragging the grip handle, and can
+ * be dragged across sections — the surrounding `DndContext` (owned by the parent)
+ * spans every section. Column visibility is controlled by the parent so one
+ * picker drives every section consistently.
  */
 export function ItemsTable({
   items,
@@ -422,7 +411,6 @@ export function ItemsTable({
   columnVisibility,
   onEditItem,
   onDeleteItem,
-  onReorder,
 }: ItemsTableProps) {
   const columns = buildColumns(vendors, onEditItem, onDeleteItem);
 
@@ -434,59 +422,38 @@ export function ItemsTable({
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const ids = items.map((item) => item.roomItemId);
-    const oldIndex = ids.indexOf(active.id as string);
-    const newIndex = ids.indexOf(over.id as string);
-    if (oldIndex === -1 || newIndex === -1) return;
-    onReorder(arrayMove(ids, oldIndex, newIndex));
-  };
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      modifiers={[restrictToVerticalAxis]}
-      onDragEnd={handleDragEnd}
-    >
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              <TableHead className="w-10" />
-              {headerGroup.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className={headClass(header.column.id)}
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <SortableContext
-          items={items.map((item) => item.roomItemId)}
-          strategy={verticalListSortingStrategy}
-        >
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <SortableItemRow key={row.id} row={row} />
+    <Table>
+      <TableHeader>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            <TableHead className="w-10" />
+            {headerGroup.headers.map((header) => (
+              <TableHead
+                key={header.id}
+                className={headClass(header.column.id)}
+              >
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+              </TableHead>
             ))}
-          </TableBody>
-        </SortableContext>
-      </Table>
-    </DndContext>
+          </TableRow>
+        ))}
+      </TableHeader>
+      <SortableContext
+        items={items.map((item) => item.roomItemId)}
+        strategy={verticalListSortingStrategy}
+      >
+        <TableBody>
+          {table.getRowModel().rows.map((row) => (
+            <SortableItemRow key={row.id} row={row} />
+          ))}
+        </TableBody>
+      </SortableContext>
+    </Table>
   );
 }

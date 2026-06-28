@@ -75,11 +75,18 @@ truth for the new user's org.
 4. Adds a doc to the top-level `mail` collection with server-built invite HTML and a link to
    `/auth/invite?email=<emailKey>`.
 
-## Current issues / known weaknesses
+## Security invariants
 
 - **`mail` is server-only.** `firestore.rules` denies all client reads/writes for `/mail`; invite and
   resend actions enqueue Trigger Email docs through firebase-admin after server-side authorization.
   Keep it that way - do not re-open `/mail` to the client SDK.
+- **Client-side gates are UX only.** The Admin/self/role checks in `page.tsx` decide what controls
+  are shown; the real resend boundary is `src/server/invite-actions.ts`, while direct profile edits
+  are still bounded by `firestore.rules`. When changing access logic, update the authoritative layer,
+  not just the component.
+
+## Current issues / known weaknesses
+
 - **Pending invite docs are world-readable by email.** `users` `allow get` permits reading any
   `status == 'Pending'` doc with no auth - intentional (the invite page runs before the visitor has
   an account) but it exposes `fullName`, `role`, and `organizationId` to anyone who guesses an
@@ -89,7 +96,3 @@ truth for the new user's org.
     name from the organization doc when this goes truly multi-tenant.
 - **`joinedDate` is overloaded.** On resend it's written as the invite-sent timestamp, but on
   activation it's rewritten as the real join time. The field name reads as "joined" in both places.
-- **Client-side gates are UX only.** The Admin/self/role checks in `page.tsx` decide what controls
-  are shown; the real resend boundary is `src/server/invite-actions.ts`, while direct profile edits
-  are still bounded by `firestore.rules`. When changing access logic, update the authoritative layer,
-  not just the component.
