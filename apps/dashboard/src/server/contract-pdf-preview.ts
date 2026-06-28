@@ -18,10 +18,7 @@ export async function loadContractPdfPreview(
     throw new Error("PDF preview is disabled in production.");
   }
 
-  const snap = await getAdminDb()
-    .collection("contracts")
-    .doc(contractId)
-    .get();
+  const snap = await getAdminDb().collection("contracts").doc(contractId).get();
   if (!snap.exists) throw new Error(`Contract ${contractId} not found.`);
 
   const contract = snap.data() as Contract;

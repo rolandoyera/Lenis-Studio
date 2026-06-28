@@ -381,7 +381,10 @@ export async function verifyPortalAccess(input: {
   const db = getAdminDb();
 
   if (phoneLast4.length !== 4) {
-    return { ok: false, error: "Enter the last 4 digits of your phone number." };
+    return {
+      ok: false,
+      error: "Enter the last 4 digits of your phone number.",
+    };
   }
 
   // Resolve + validate the access token.
@@ -436,7 +439,8 @@ export async function verifyPortalAccess(input: {
 
   const expected = access.verificationPhoneLast4Hash;
   const matches =
-    !!expected && hashPhoneLast4(access.portalAccessId, phoneLast4) === expected;
+    !!expected &&
+    hashPhoneLast4(access.portalAccessId, phoneLast4) === expected;
 
   if (matches) {
     await accessRef.update({ verifiedAt: Date.now() });
@@ -753,6 +757,8 @@ async function sendExecutedContractConfirmation(input: {
       companyPhone,
       companyPhoneTel,
     }),
-    attachments: [{ content: pdf.buffer.toString("base64"), name: pdf.fileName }],
+    attachments: [
+      { content: pdf.buffer.toString("base64"), name: pdf.fileName },
+    ],
   });
 }

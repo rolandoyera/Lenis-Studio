@@ -15,7 +15,10 @@ import {
 import { Label } from "@/components/ui/label";
 import type { Organization } from "@/lib/types";
 
-import { DEFAULT_REFERENCE_PREFIX, TIMEZONE_OPTIONS } from "./company-constants";
+import {
+  DEFAULT_REFERENCE_PREFIX,
+  TIMEZONE_OPTIONS,
+} from "./company-constants";
 import { type ComboItem, SearchSelect } from "./search-select";
 import {
   EditableCardHeader,
@@ -87,7 +90,8 @@ export function SettingsCard({
           <DataField
             label="Contract Signer"
             empty="Not Set"
-            className="sm:col-span-2">
+            className="sm:col-span-2"
+          >
             {s?.contractSigner
               ? `${s.contractSigner.name} — ${s.contractSigner.title} (${s.contractSigner.email})`
               : null}
@@ -128,7 +132,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Reference Prefix</Label>
             <Input
               {...field}
@@ -147,7 +152,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Default Markup</Label>
             <InputGroup>
               <InputGroupInput
@@ -173,7 +179,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Default Tax Rate</Label>
             <InputGroup>
               <InputGroupInput
@@ -199,7 +206,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Proposal Expiration (days)</Label>
             <Input
               {...field}
@@ -218,7 +226,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>
               Contract Link Expiration (days)
             </Label>
@@ -267,7 +276,8 @@ export function SettingsFields({
         render={({ field, fieldState }) => (
           <Field
             className="flex flex-col gap-1.5 sm:col-span-2"
-            data-invalid={fieldState.invalid}>
+            data-invalid={fieldState.invalid}
+          >
             <Label className={LABEL_CLASS}>Signer Email</Label>
             <Input
               {...field}

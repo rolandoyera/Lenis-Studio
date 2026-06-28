@@ -99,7 +99,8 @@ export function ProjectHeader({
         <Tabs
           value={activeTab}
           onValueChange={onTabChange}
-          className="w-full md:w-auto">
+          className="w-full md:w-auto"
+        >
           <TabsList className="flex max-w-full flex-wrap gap-1.5">
             {PROJECT_TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>

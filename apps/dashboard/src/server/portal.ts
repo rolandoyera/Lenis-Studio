@@ -104,7 +104,9 @@ export const getOrgName = cache(
         .get();
       const data = snap.data();
       const cp = data?.companyProfile as CompanyProfile | undefined;
-      return cp?.legalName || cp?.displayName || (data?.name as string) || undefined;
+      return (
+        cp?.legalName || cp?.displayName || (data?.name as string) || undefined
+      );
     } catch {
       return undefined;
     }
@@ -118,7 +120,9 @@ export async function resolvePortalAccess(
   const access = await findAccessByToken(accessToken);
   const reason = accessFailureReason(access);
   if (reason || !access) {
-    const orgName = access ? await getOrgName(access.organizationId) : undefined;
+    const orgName = access
+      ? await getOrgName(access.organizationId)
+      : undefined;
     return { ok: false, reason: reason ?? "not_found", orgName };
   }
   return { ok: true, access };
@@ -171,7 +175,9 @@ export async function resolvePortalContract(
   const access = await findAccessByToken(accessToken);
   const reason = accessFailureReason(access);
   if (reason || !access) {
-    const orgName = access ? await getOrgName(access.organizationId) : undefined;
+    const orgName = access
+      ? await getOrgName(access.organizationId)
+      : undefined;
     return { ok: false, reason: reason ?? "not_found", orgName };
   }
 

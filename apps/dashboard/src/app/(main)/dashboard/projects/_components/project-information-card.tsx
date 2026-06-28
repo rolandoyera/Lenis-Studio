@@ -39,7 +39,8 @@ export function ProjectInformationCard({
             <Link
               href={`/dashboard/clients/${client.uid}`}
               prefetch={false}
-              className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline">
+              className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline"
+            >
               {clientName}
             </Link>
           )}
@@ -75,7 +76,8 @@ export function ProjectInformationCard({
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline">
+                      className="mt-1.5 flex w-fit items-center gap-1 text-primary text-xs hover:underline"
+                    >
                       Google Maps
                       <ExternalLink className="size-3" />
                     </a>

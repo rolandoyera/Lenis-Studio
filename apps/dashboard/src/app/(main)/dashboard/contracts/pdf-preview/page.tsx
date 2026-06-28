@@ -35,7 +35,8 @@ export default function ContractPdfPreviewPage() {
         <div className="flex h-screen items-center justify-center text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
-      }>
+      }
+    >
       <PreviewInner />
     </Suspense>
   );

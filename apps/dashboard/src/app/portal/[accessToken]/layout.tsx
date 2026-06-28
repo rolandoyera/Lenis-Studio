@@ -39,7 +39,8 @@ export default async function PortalLayout({
         branding?.tertiaryColor
           ? { backgroundColor: branding.tertiaryColor }
           : undefined
-      }>
+      }
+    >
       <header
         className="border-neutral-200 border-b"
         style={
@@ -49,7 +50,8 @@ export default async function PortalLayout({
                 color: branding.tertiaryColor,
               }
             : undefined
-        }>
+        }
+      >
         <div className="mx-auto flex h-30 w-full max-w-[1600px] flex-col items-center justify-center">
           {/* biome-ignore lint/performance/noImgElement: branding logo from a dynamic host-resolved URL. */}
           <img
@@ -65,7 +67,8 @@ export default async function PortalLayout({
                     color: branding.tertiaryColor,
                   }
                 : undefined
-            }>
+            }
+          >
             Sarvian Studio
           </p>
         </div>
@@ -84,7 +87,8 @@ export default async function PortalLayout({
                 color: branding.tertiaryColor,
               }
             : undefined
-        }>
+        }
+      >
         © {new Date().getFullYear()} {brand.name}. This document is
         confidential.
       </footer>

@@ -69,7 +69,9 @@ export function ClientDetailHeader({
               {client.clientCode && (
                 <>
                   <span className="text-muted-foreground/30">•</span>
-                  <span className="font-mono">Client Ref: {client.clientCode}</span>
+                  <span className="font-mono">
+                    Client Ref: {client.clientCode}
+                  </span>
                 </>
               )}
               <span className="text-muted-foreground/30">•</span>

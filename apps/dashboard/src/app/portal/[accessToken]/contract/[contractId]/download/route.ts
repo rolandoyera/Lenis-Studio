@@ -33,16 +33,13 @@ export async function GET(
     try {
       const executed = await generateAndStoreFinalContractPdf({ contract });
       path = executed.path;
-      await getAdminDb()
-        .collection("contracts")
-        .doc(contractId)
-        .update({
-          executedFilePath: path,
-          executedFileName: executed.fileName,
-          executedFileGeneratedAt: Date.now(),
-          finalPdfPath: path,
-          finalPdfGeneratedAt: Date.now(),
-        });
+      await getAdminDb().collection("contracts").doc(contractId).update({
+        executedFilePath: path,
+        executedFileName: executed.fileName,
+        executedFileGeneratedAt: Date.now(),
+        finalPdfPath: path,
+        finalPdfGeneratedAt: Date.now(),
+      });
     } catch (error) {
       console.error(
         `[contract-download] On-demand PDF generation failed for contract ${contractId}:`,

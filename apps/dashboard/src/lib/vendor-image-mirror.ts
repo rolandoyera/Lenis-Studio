@@ -34,7 +34,13 @@ export async function mirrorVendorImagesToFirebase(
     const result = await mirrorExternalImageUrl({
       url: logo,
       upload: (blob, extension) =>
-        uploadVendorImageBlob(organizationId, blob, "logo", vendorId, extension),
+        uploadVendorImageBlob(
+          organizationId,
+          blob,
+          "logo",
+          vendorId,
+          extension,
+        ),
       logPrefix: "Vendor Mirror",
     });
     if (result.mirrored) {
@@ -48,7 +54,13 @@ export async function mirrorVendorImagesToFirebase(
     const result = await mirrorExternalImageUrl({
       url: hero,
       upload: (blob, extension) =>
-        uploadVendorImageBlob(organizationId, blob, "hero", vendorId, extension),
+        uploadVendorImageBlob(
+          organizationId,
+          blob,
+          "hero",
+          vendorId,
+          extension,
+        ),
       logPrefix: "Vendor Mirror",
     });
     if (result.mirrored) {

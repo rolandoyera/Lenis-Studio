@@ -145,7 +145,7 @@ client-SDK writes hit the default deny. It enforces org-scoping plus a **draft-o
   allowlist is gone with the client-side `addContract`.)
 - **Update** is allowed only while the contract **stays a draft AND only draft-editable fields
   change.** It constrains the _post-image_, not just the pre-image: `request.resource.data.status ==
-  'draft'`, `get('lockedSnapshot', null) == null`, `updatedBy == request.auth.uid`, and a
+'draft'`, `get('lockedSnapshot', null) == null`, `updatedBy == request.auth.uid`, and a
   `diff(...).affectedKeys().hasOnly([...])` allowlist of `ContractDraftInput` + `updatedBy`/
   `updatedAt`.
 - **Delete** is allowed only while `status == 'draft'`. Once sent, a contract is an audit record:

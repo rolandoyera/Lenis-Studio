@@ -91,9 +91,7 @@ export async function sendContractEmail(
               headers: { "X-Mailin-custom": JSON.stringify(input.metadata) },
             }
           : {}),
-        ...(input.attachments?.length
-          ? { attachment: input.attachments }
-          : {}),
+        ...(input.attachments?.length ? { attachment: input.attachments } : {}),
       }),
     });
 

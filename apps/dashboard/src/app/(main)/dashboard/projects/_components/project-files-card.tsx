@@ -84,7 +84,8 @@ export function ProjectFilesCard({
                 {documents.map((document) => (
                   <TableRow
                     key={document.documentId}
-                    className="group hover:bg-muted/30">
+                    className="group hover:bg-muted/30"
+                  >
                     <TableCell className="py-4 font-medium font-serif text-foreground">
                       {document.title}
                     </TableCell>

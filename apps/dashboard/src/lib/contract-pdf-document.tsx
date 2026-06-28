@@ -362,7 +362,8 @@ export function ContractPdf({
                     // biome-ignore lint/suspicious/noArrayIndexKey: frozen template, stable order
                     key={`${page.page}-${i}`}
                     style={styles.heading}
-                    break={isExhibitHeading(line)}>
+                    break={isExhibitHeading(line)}
+                  >
                     {renderLine(line, resolved)}
                   </Text>
                 ) : (
@@ -400,7 +401,10 @@ export function ContractPdf({
 
         <Text style={styles.certGroupTitleSub}>Delivery</Text>
         <CertField label="Sent to:" value={contract.sentToEmail ?? "—"} />
-        <CertField label="Sent at:" value={fmtDate(contract.sentAt, timeZone)} />
+        <CertField
+          label="Sent at:"
+          value={fmtDate(contract.sentAt, timeZone)}
+        />
         <CertField label="Provider:" value="Brevo" />
         <CertField label="Status:" value={cert.brevoDeliveryStatus} />
         <CertField label="Message ID:" value={cert.brevoMessageId} />

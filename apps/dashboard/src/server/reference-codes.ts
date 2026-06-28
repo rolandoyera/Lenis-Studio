@@ -21,7 +21,10 @@ export function buildClientCode(prefix: string, clientNumber: number): string {
   return `${prefix}-CLI-${padNumber(clientNumber, 4)}`;
 }
 
-export function buildProjectCode(prefix: string, projectNumber: number): string {
+export function buildProjectCode(
+  prefix: string,
+  projectNumber: number,
+): string {
   return `${prefix}-PRO-${padNumber(projectNumber, 4)}`;
 }
 
