@@ -210,6 +210,14 @@ function mockSideEffects() {
   };
 }
 
+function expectNoSideEffects(effects: ReturnType<typeof mockSideEffects>) {
+  expect(effects.sendContractEmail).not.toHaveBeenCalled();
+  expect(effects.writeContractAuditEvent).not.toHaveBeenCalled();
+  expect(effects.createContractPortalAccess).not.toHaveBeenCalled();
+  expect(effects.generateAndStoreFinalContractPdf).not.toHaveBeenCalled();
+  expect(effects.attachExecutedContractToProject).not.toHaveBeenCalled();
+}
+
 describe("contract signing server actions", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -284,8 +292,8 @@ describe("contract signing server actions", () => {
 
   it("refuses to send non-draft contracts", async () => {
     mockRequestContext();
-    mockSideEffects();
-    mockAdminDb({
+    const effects = mockSideEffects();
+    const { txUpdate, contractUpdate } = mockAdminDb({
       contract: contract({
         status: "sent",
         lockedSnapshot: {
@@ -310,12 +318,15 @@ describe("contract signing server actions", () => {
       ok: false,
       error: "Only draft contracts can be sent.",
     });
+    expect(txUpdate).not.toHaveBeenCalled();
+    expect(contractUpdate).not.toHaveBeenCalled();
+    expectNoSideEffects(effects);
   });
 
   it("refuses to send when the server-side client phone cannot verify identity", async () => {
     mockRequestContext();
-    mockSideEffects();
-    mockAdminDb({
+    const effects = mockSideEffects();
+    const { txUpdate, contractUpdate } = mockAdminDb({
       contract: contract(),
       organization: org(),
       client: { email: "jane@example.com", phone: "12" },
@@ -334,12 +345,15 @@ describe("contract signing server actions", () => {
       error:
         "The client needs a phone number on file — it's used to verify their identity before signing.",
     });
+    expect(txUpdate).not.toHaveBeenCalled();
+    expect(contractUpdate).not.toHaveBeenCalled();
+    expectNoSideEffects(effects);
   });
 
   it("rejects signing when consent is missing or identity is unverified", async () => {
     mockRequestContext();
-    mockSideEffects();
-    mockAdminDb({
+    const effects = mockSideEffects();
+    const { txUpdate, contractUpdate } = mockAdminDb({
       contract: contract(),
       organization: org(),
       client: { email: "jane@example.com", phone: "(954) 555-1212" },
@@ -371,6 +385,10 @@ describe("contract signing server actions", () => {
       ok: false,
       error: "You must accept the consent to sign.",
     });
+    expect(txUpdate).not.toHaveBeenCalled();
+    expect(contractUpdate).not.toHaveBeenCalled();
+    expectNoSideEffects(effects);
+
     await expect(
       signContract({
         accessToken: "raw-token",
@@ -382,6 +400,9 @@ describe("contract signing server actions", () => {
       ok: false,
       error: "Please verify your identity before signing.",
     });
+    expect(txUpdate).not.toHaveBeenCalled();
+    expect(contractUpdate).not.toHaveBeenCalled();
+    expectNoSideEffects(effects);
   });
 
   it("executes a valid signature and records the artifact pipeline", async () => {
