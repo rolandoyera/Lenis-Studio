@@ -3,23 +3,56 @@ rules_version = '2';
 // Storage rules for the SDG CRM (replaces expiring test-mode rules if present).
 // Paste into Firebase console -> Storage -> Rules -> Publish.
 //
-// Uploads happen client-side from the dashboard (library + vendor images).
-// Image display uses tokened download URLs, which work regardless of rules,
-// so reads here only matter for direct SDK access.
+// Uploads happen client-side from the dashboard (library + vendor images, org
+// branding). Image display uses tokened download URLs, which work regardless of
+// rules, so reads here only matter for direct SDK access. The firebase-admin SDK
+// (server actions) bypasses these rules entirely.
+//
+// Tier 1 (current): branding is org-scoped (the orgId in the path must match the
+// uploader's profile org); every upload must be an image under the size cap;
+// deletes are allowed (request.resource is null on delete). Library/vendor paths
+// are still flat (`library/{itemId}`, `vendors/{vendorId}`) and only auth-gated +
+// upload-validated — they carry no orgId yet, so org ownership can't be enforced
+// on them. Tier 2 will move those under `library/{orgId}/...` / `vendors/{orgId}/...`
+// and add the org check; the flat rules stay until existing files are migrated.
 
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // The uploader's organization, read from their users/{uid} profile.
+    function userOrg() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.organizationId;
+    }
+
+    // request.resource is null on delete (always allowed for signed-in users);
+    // on create/update it must be an image under the size cap.
+    function validUpload() {
+      return request.resource == null
+        || (request.resource.contentType.matches('image/.*')
+            && request.resource.size < 15 * 1024 * 1024);
+    }
+
+    // Org branding assets (light/dark logos and icon marks) uploaded from the
+    // Company page. The orgId in the path must match the uploader's own org.
+    match /organizations/{orgId}/branding/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && orgId == userOrg() && validUpload();
+    }
+
+    // Legacy flat paths — no orgId in the path yet (Tier 2 will partition them).
+    // Auth-gated and upload-validated; deletes allowed for any signed-in user.
     match /library/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && validUpload();
     }
 
     match /vendors/{allPaths=**} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Org branding assets (light/dark logos and icon marks) uploaded from the Company page.
-    match /organizations/{orgId}/branding/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && validUpload();
     }
 
     // Everything else: denied by default.

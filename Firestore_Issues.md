@@ -4,18 +4,6 @@ This document captures findings from an overall review of the dashboard Firestor
 
 ## High-Risk Findings
 
-### Contract rules allow too much client-side mutation
-
-The contract rules allow any organization user to update a contract while the existing document is in `draft` status. The rule does not require the new document to remain a draft, does not explicitly freeze `lockedSnapshot`, and does not block server-owned signing/execution fields from being written by a client.
-
-This conflicts with the intended flow where sending, locking, portal access, signing, and execution should happen through server-only Admin SDK paths.
-
-Relevant files:
-
-- `apps/dashboard/firestore.rules`
-- `apps/dashboard/src/lib/db.ts`
-- `apps/dashboard/src/server/contract-signing.ts`
-
 ### Organization data rules are broad
 
 Most organization-scoped collections allow any signed-in user in the organization to create, update, and delete records. This includes clients, leads, vendors, projects, library items, proposals, trades, and contracts.
@@ -46,6 +34,14 @@ This means a signed-in user could potentially write to storage paths outside the
 Relevant file:
 
 - `apps/dashboard/storage.rules`
+
+**Status — Tier 1 done (rules-only):** `organizations/{orgId}/branding/...` now requires the path `orgId` to match the uploader's `users/{uid}.organizationId` (via a cross-service `firestore.get`), and all uploads must be an image under 15 MB with deletes still allowed. The flat `library/{p=**}` / `vendors/{p=**}` paths remain (so existing files keep displaying and stored-path deletes keep working) but are tightened to signed-in + valid-image-upload only.
+
+**Tier 2 (staged, not started):** move new uploads to `library/{orgId}/{itemId}/...` and `vendors/{orgId}/{vendorId}/...` (thread `organizationId` through the upload helpers in `db.ts` + callers), add org-checked rule blocks, and keep the flat legacy blocks until existing files are migrated/cleaned up.
+
+**Note — cross-service IAM requirement:** because the branding rule uses `firestore.get`, the Cloud Storage for Firebase service agent must be granted a Firestore read role (the Firebase console prompts for this on publish; one-time grant).
+
+**Future option — avoid the cross-service read via custom claims:** store `organizationId` in the user's Firebase Auth custom claims (set server-side with `setCustomUserClaims`) and check `request.auth.token.organizationId == orgId` in the rules instead of `firestore.get`. This removes the IAM dependency and the per-upload Firestore read cost, but requires setting the claim during user provisioning/org changes, backfilling existing users, and a token refresh for them to pick it up. Consider when convenient; not required for Tier 1/Tier 2.
 
 ## Medium-Risk Findings
 
