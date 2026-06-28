@@ -27,8 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addOrganization } from "@/lib/db";
 import type { Organization } from "@/lib/types";
+import { createTenant } from "@/server/invite-actions";
+import { useAuth } from "@/components/auth-context";
 
 import { createTenantSchema, type CreateTenantFormData } from "./tenant-schema";
 
@@ -45,6 +46,7 @@ export function CreateTenantDialog({
   orgs,
   onTenantCreated,
 }: CreateTenantDialogProps) {
+  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
   // Form setup
@@ -93,16 +95,16 @@ export function CreateTenantDialog({
 
     setSubmitting(true);
     try {
-      const newOrg = await addOrganization(
-        {
-          organizationId: slug,
-          name: data.name.trim(),
-          adminEmail: data.adminEmail.trim().toLowerCase(),
-          plan: data.plan,
-          status: "Active",
-        },
-        data.adminName.trim(),
-      );
+      if (!user) throw new Error("No authenticated user.");
+      const authToken = await user.getIdToken();
+      const newOrg = await createTenant({
+        authToken,
+        organizationId: slug,
+        name: data.name.trim(),
+        adminEmail: data.adminEmail.trim().toLowerCase(),
+        adminName: data.adminName.trim(),
+        plan: data.plan,
+      });
 
       onTenantCreated(newOrg);
       toast.success("SaaS tenant successfully provisioned!");

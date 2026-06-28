@@ -1,9 +1,11 @@
 import { type App, cert, getApps, initializeApp } from "firebase-admin/app";
+import { type Auth, getAuth } from "firebase-admin/auth";
 import { type Firestore, getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
 let adminApp: App | null = null;
 let adminDb: Firestore | null = null;
+let adminAuth: Auth | null = null;
 
 /**
  * Parses FIREBASE_SERVICE_ACCOUNT_KEY, which may be the raw service-account
@@ -69,6 +71,13 @@ export function getAdminDb(): Firestore {
     globalState[settingsFlag] = true;
   }
   return adminDb;
+}
+
+/** Server-only Firebase Auth client. Used to verify browser session identity. */
+export function getAdminAuth(): Auth {
+  if (adminAuth) return adminAuth;
+  adminAuth = getAuth(getAdminApp());
+  return adminAuth;
 }
 
 /**

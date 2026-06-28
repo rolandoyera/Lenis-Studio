@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updateProfile } from "firebase/auth";
-import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   Edit,
   Mail,
@@ -55,11 +55,9 @@ import {
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
 import { formatPhone, getInitials } from "@/lib/utils";
+import { resendInvite } from "@/server/invite-actions";
 
-import {
-  buildProfileSavePayload,
-  buildResendInviteUserPatch,
-} from "./profile-payloads";
+import { buildProfileSavePayload } from "./profile-payloads";
 import { profileSchema, type ProfileFormData } from "./profile-schema";
 
 interface FirestoreProfile {
@@ -137,35 +135,9 @@ function ProfileContent() {
     setIsResending(true);
     try {
       const emailKey = email.trim().toLowerCase();
-      // 1. Update the joinedDate in Firestore under users/{emailKey}
-      const userDocRef = doc(db, "users", emailKey);
-      await setDoc(userDocRef, buildResendInviteUserPatch(), { merge: true });
-
-      // 2. Add email trigger document to mail collection
-      await addDoc(collection(db, "mail"), {
-        to: emailKey,
-        message: {
-          subject: "You've been invited!",
-          html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${fullName}!</h2>
-              <p style="color: #334155; font-size: 16px; line-height: 1.5;">
-                You have been invited to join Sarvian Design Group CRM.
-              </p>
-              <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
-                Click the button below to sign in and activate your account:
-              </p>
-              <a href="${window.location.origin}/auth/invite?email=${emailKey}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
-                Set Up Account & Get Started
-              </a>
-              <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
-              <p style="color: #64748b; font-size: 12px; text-align: center;">
-                Sarvian Design Group CRM invitation. If you did not expect this, please ignore this email.
-              </p>
-            </div>
-          `,
-        },
-      });
+      if (!currentUser) throw new Error("No authenticated user.");
+      const authToken = await currentUser.getIdToken();
+      await resendInvite({ authToken, email: emailKey });
 
       toast.success("Invitation email resent successfully!");
     } catch (error) {

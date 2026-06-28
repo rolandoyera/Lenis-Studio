@@ -41,6 +41,9 @@ variant for light backgrounds.
   (both `trace()`-wrapped, so they show in `window.__dbStats()`). `updateOrganization` runs
   `cleanUndefined`, and the form maps blank fields to `undefined` so they're omitted, not stored as
   `""`.
+- Tenant provisioning no longer lives in `src/lib/db.ts`; it runs through the server-only
+  `createTenant` action in `src/server/invite-actions.ts`, which creates the org, creates the
+  pending admin invite, and enqueues the invite email with firebase-admin.
 - Branding images upload via `uploadOrgBrandingImage(file, type, orgId)` →
   `organizations/{orgId}/branding/{logo-light|logo-dark|icon-light|icon-dark}.{ext}`. On save the form
   diffs old vs new paths and calls `deleteReplacedStorageFiles` to clean up replaced/removed assets

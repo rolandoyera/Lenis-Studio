@@ -1,6 +1,4 @@
-import { format } from "date-fns";
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -1169,80 +1167,6 @@ export async function getOrganizations(): Promise<Organization[]> {
   }
 }
 
-export async function addOrganization(
-  org: Omit<Organization, "createdAt">,
-  adminName: string,
-): Promise<Organization> {
-  return trace(
-    "organizations",
-    "WRITE",
-    "addOrganization",
-    async () => {
-      const newOrg: Organization = {
-        ...org,
-        createdAt: Date.now(),
-      };
-
-      // 1. Create the organization document
-      await setDoc(
-        doc(db, "organizations", org.organizationId),
-        cleanUndefined(newOrg),
-      );
-
-      // 2. Create the pending Administrator profile in the users collection
-      const adminEmailKey = org.adminEmail.trim().toLowerCase();
-      await setDoc(
-        doc(db, "users", adminEmailKey),
-        cleanUndefined({
-          fullName: adminName.trim(),
-          email: adminEmailKey,
-          role: "Admin",
-          organizationId: org.organizationId,
-          status: "Pending",
-          joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
-          lastActive: 0,
-        }),
-      );
-
-      // 3. Write invite email to the mail collection for Firebase Trigger Email extension
-      try {
-        await addDoc(collection(db, "mail"), {
-          to: adminEmailKey,
-          message: {
-            subject: `Welcome to SDG CRM - Set up your studio, ${adminName}!`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${adminName}!</h2>
-                <p style="color: #334155; font-size: 16px; line-height: 1.5;">
-                  You have been invited to set up your design studio, <strong>${org.name}</strong>, on the Sarvian Design Group CRM platform.
-                </p>
-                <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
-                  Click the button below to register and set up your administrator account:
-                </p>
-                <a href="${typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"}/auth/invite?email=${adminEmailKey}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
-                  Activate Administrator Account
-                </a>
-                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
-                <p style="color: #64748b; font-size: 12px; text-align: center;">
-                  Tenant onboarding invitation. If you did not expect this, please ignore this email.
-                </p>
-              </div>
-            `,
-          },
-        });
-      } catch (emailError) {
-        console.error(
-          "Failed to write to mail collection for trigger email:",
-          emailError,
-        );
-      }
-
-      return newOrg;
-    },
-    (o) => o.organizationId,
-  );
-}
-
 export async function updateOrganization(
   orgId: string,
   org: Partial<Organization>,
@@ -1476,10 +1400,11 @@ export async function updateProjectRoomItem(
 
 /**
  * Persist a manual drag-sort order for a section's items in one batch. Each
- * entry's `sortOrder` becomes its new position (lower sorts first).
+ * entry's `sortOrder` becomes its new position (lower sorts first). Pass
+ * `roomId` for an item that was dragged in from another section to re-home it.
  */
 export async function reorderProjectRoomItems(
-  updates: { roomItemId: string; sortOrder: number }[],
+  updates: { roomItemId: string; sortOrder: number; roomId?: string }[],
 ): Promise<void> {
   return trace(
     "projectRoomItems",
@@ -1487,8 +1412,11 @@ export async function reorderProjectRoomItems(
     "reorderProjectRoomItems",
     async () => {
       const batch = writeBatch(db);
-      for (const { roomItemId, sortOrder } of updates) {
-        batch.update(doc(db, "projectRoomItems", roomItemId), { sortOrder });
+      for (const { roomItemId, sortOrder, roomId } of updates) {
+        batch.update(
+          doc(db, "projectRoomItems", roomItemId),
+          roomId ? { sortOrder, roomId } : { sortOrder },
+        );
       }
       await batch.commit();
     },

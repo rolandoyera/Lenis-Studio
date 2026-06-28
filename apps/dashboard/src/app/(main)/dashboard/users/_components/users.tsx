@@ -18,15 +18,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import {
-  addDoc,
-  collection,
-  doc,
-  onSnapshot,
-  query,
-  setDoc,
-  where,
-} from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Grid, Plus, Rows3, Search } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -68,18 +60,16 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/lib/firebase";
+import { inviteUser } from "@/server/invite-actions";
 
 import { filters, type UserRow } from "./data";
-import {
-  buildInviteMailDoc,
-  buildPendingUserInviteDoc,
-} from "./user-invite-payload";
 import { addUserSchema, type AddUserFormData } from "./user-schema";
 import { usersColumns } from "./users-columns";
 import { UsersTable } from "./users-table";
 
 export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
   const {
+    user,
     profile,
     uid,
     organizationId,
@@ -111,7 +101,7 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
   }, [isAddOpen, form.reset]);
 
   const handleAddUser = async (data: AddUserFormData) => {
-    if (isSubmitting || !profile) return;
+    if (isSubmitting || !profile || !user) return;
 
     const trimmedName = data.fullName.trim();
     const trimmedEmail = data.email.trim().toLowerCase();
@@ -126,28 +116,13 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
 
     setIsSubmitting(true);
     try {
-      const userDocRef = doc(db, "users", trimmedEmail);
-      await setDoc(
-        userDocRef,
-        buildPendingUserInviteDoc(data, profile.organizationId),
-      );
-
-      // Write a mail document to trigger an invitation email via the Firebase Trigger Email extension
-      try {
-        await addDoc(
-          collection(db, "mail"),
-          buildInviteMailDoc({
-            email: trimmedEmail,
-            fullName: trimmedName,
-            origin: window.location.origin,
-          }),
-        );
-      } catch (emailError) {
-        console.error(
-          "Failed to write to mail collection for Trigger Email:",
-          emailError,
-        );
-      }
+      const authToken = await user.getIdToken();
+      await inviteUser({
+        authToken,
+        fullName: trimmedName,
+        email: trimmedEmail,
+        role: data.role,
+      });
 
       toast.success("User added successfully!");
       form.reset();

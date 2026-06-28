@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { format } from "date-fns";
 
-import {
-  buildProfileSavePayload,
-  buildResendInviteUserPatch,
-} from "./profile-payloads";
+import { buildProfileSavePayload } from "./profile-payloads";
 import { profileSchema } from "./profile-schema";
 
 describe("profile payload helpers", () => {
@@ -49,11 +45,5 @@ describe("profile payload helpers", () => {
         location: "abc",
       }),
     ).toThrow();
-  });
-
-  it("builds an invite resend patch that only refreshes the invite timestamp", () => {
-    expect(buildResendInviteUserPatch()).toEqual({
-      joinedDate: format(now, "dd MMM yyyy, h:mm a"),
-    });
   });
 });

@@ -6,7 +6,15 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
 const PROJECT_ID = "sdg-rules-test";
@@ -464,5 +472,27 @@ describe("firestore rules", () => {
         nextNumber: 99,
       }),
     );
+  });
+
+  it("keeps the mail outbox server-only", async () => {
+    await seedUser("admin-a", "org-a", "Admin");
+    await seedUser("contributor-a", "org-a", "Contributor");
+
+    const adminDb = dbFor("admin-a");
+    const contributorDb = dbFor("contributor-a");
+    if (!testEnv) throw new Error("Rules test environment is not initialized.");
+    const anonDb = testEnv.unauthenticatedContext().firestore();
+
+    const mailDoc = {
+      to: "invitee@example.com",
+      message: {
+        subject: "Invite",
+        html: "<p>Invite</p>",
+      },
+    };
+
+    await assertFails(addDoc(collection(adminDb, "mail"), mailDoc));
+    await assertFails(addDoc(collection(contributorDb, "mail"), mailDoc));
+    await assertFails(addDoc(collection(anonDb, "mail"), mailDoc));
   });
 });

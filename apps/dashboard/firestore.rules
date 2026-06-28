@@ -312,9 +312,11 @@ service cloud.firestore {
       }
     }
 
-    // Outbox for the Trigger Email extension: write-only from the app.
+    // Outbox for the Trigger Email extension. Mail is enqueued only by trusted
+    // server actions via firebase-admin; clients must never write arbitrary
+    // recipients/subjects/HTML into the email outbox.
     match /mail/{mailId} {
-      allow create: if isSignedIn();
+      allow read, write: if false;
     }
 
     // Internal diagnostics runs (no org partition; dev tooling).
