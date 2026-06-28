@@ -89,6 +89,7 @@ export default function VendorsPage() {
       customVendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`;
     try {
       const mirrored = await mirrorVendorImagesToFirebase(
+        profile.organizationId,
         {
           logoUrl: data.logoUrl,
           logoPath: data.logoPath,

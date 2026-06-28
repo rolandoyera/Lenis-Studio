@@ -12,6 +12,7 @@ export interface VendorMirrorResult {
  * Mirrors external vendor logo and hero images into Firebase Storage.
  */
 export async function mirrorVendorImagesToFirebase(
+  organizationId: string,
   input: {
     logoUrl?: string;
     logoPath?: string;
@@ -33,7 +34,7 @@ export async function mirrorVendorImagesToFirebase(
     const result = await mirrorExternalImageUrl({
       url: logo,
       upload: (blob, extension) =>
-        uploadVendorImageBlob(blob, "logo", vendorId, extension),
+        uploadVendorImageBlob(organizationId, blob, "logo", vendorId, extension),
       logPrefix: "Vendor Mirror",
     });
     if (result.mirrored) {
@@ -47,7 +48,7 @@ export async function mirrorVendorImagesToFirebase(
     const result = await mirrorExternalImageUrl({
       url: hero,
       upload: (blob, extension) =>
-        uploadVendorImageBlob(blob, "hero", vendorId, extension),
+        uploadVendorImageBlob(organizationId, blob, "hero", vendorId, extension),
       logPrefix: "Vendor Mirror",
     });
     if (result.mirrored) {

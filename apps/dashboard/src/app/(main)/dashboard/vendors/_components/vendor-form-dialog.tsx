@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/components/auth-context";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { runAiActionWithRetry } from "@/lib/ai-retry";
 import { uploadVendorImage } from "@/lib/db";
@@ -225,6 +226,7 @@ export function VendorFormDialog({
   vendorId,
   onSave,
 }: VendorFormDialogProps) {
+  const { organizationId } = useAuth();
   const form = useForm<VendorFormData>({
     resolver: zodResolver(vendorSchema),
     defaultValues: initialData ?? EMPTY_VENDOR_FORM,
@@ -262,6 +264,11 @@ export function VendorFormDialog({
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!organizationId) {
+      toast.error("No active organization.", { duration: 8000 });
+      e.target.value = "";
+      return;
+    }
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     if (file.size > MAX_IMAGE_BYTES) {
       toast.error("Image size exceeds 5MB limit.", { duration: 8000 });
@@ -270,7 +277,12 @@ export function VendorFormDialog({
     }
     setUploadingLogo(true);
     try {
-      const { url, path } = await uploadVendorImage(file, "logo", tempVendorId);
+      const { url, path } = await uploadVendorImage(
+        organizationId,
+        file,
+        "logo",
+        tempVendorId,
+      );
       setValue("logoUrl", url);
       setValue("logoPath", path);
       toast.success("Logo uploaded successfully!");
@@ -286,6 +298,11 @@ export function VendorFormDialog({
   const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!organizationId) {
+      toast.error("No active organization.", { duration: 8000 });
+      e.target.value = "";
+      return;
+    }
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     if (file.size > MAX_IMAGE_BYTES) {
       toast.error("Image size exceeds 5MB limit.", { duration: 8000 });
@@ -294,7 +311,12 @@ export function VendorFormDialog({
     }
     setUploadingHero(true);
     try {
-      const { url, path } = await uploadVendorImage(file, "hero", tempVendorId);
+      const { url, path } = await uploadVendorImage(
+        organizationId,
+        file,
+        "hero",
+        tempVendorId,
+      );
       setValue("heroImageUrl", url);
       setValue("heroImagePath", path);
       toast.success("Showcase image uploaded successfully!");

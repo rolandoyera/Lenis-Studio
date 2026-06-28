@@ -8,13 +8,19 @@ rules_version = '2';
 // rules, so reads here only matter for direct SDK access. The firebase-admin SDK
 // (server actions) bypasses these rules entirely.
 //
-// Tier 1 (current): branding is org-scoped (the orgId in the path must match the
-// uploader's profile org); every upload must be an image under the size cap;
-// deletes are allowed (request.resource is null on delete). Library/vendor paths
-// are still flat (`library/{itemId}`, `vendors/{vendorId}`) and only auth-gated +
-// upload-validated — they carry no orgId yet, so org ownership can't be enforced
-// on them. Tier 2 will move those under `library/{orgId}/...` / `vendors/{orgId}/...`
-// and add the org check; the flat rules stay until existing files are migrated.
+// Tier 1: branding is org-scoped (the orgId in the path must match the uploader's
+// profile org); every upload must be an image under the size cap; deletes are
+// allowed (request.resource is null on delete).
+//
+// Tier 2 (current): new library/vendor uploads are written under
+// `library/{orgId}/{itemId}/...` and `vendors/{orgId}/{vendorId}/...`, enforced by
+// the org-scoped blocks below. The legacy FLAT blocks (`library/{p=**}`,
+// `vendors/{p=**}`) are intentionally kept so existing files (stored at the old
+// flat paths) still display and stored-path deletes still work. NOTE: while the
+// flat blocks exist they also match the new org-scoped paths (Storage rules grant
+// if ANY match allows), so cross-org isolation on library/vendors is only fully
+// enforced once the flat blocks are removed — do that after existing files are
+// migrated to the org-partitioned paths (or are no longer referenced).
 
 service firebase.storage {
   match /b/{bucket}/o {
@@ -43,8 +49,22 @@ service firebase.storage {
       allow write: if isSignedIn() && orgId == userOrg() && validUpload();
     }
 
-    // Legacy flat paths — no orgId in the path yet (Tier 2 will partition them).
-    // Auth-gated and upload-validated; deletes allowed for any signed-in user.
+    // Org-scoped library/vendor paths (Tier 2). New uploads write here; the orgId
+    // in the path must match the uploader's own org.
+    match /library/{orgId}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && orgId == userOrg() && validUpload();
+    }
+
+    match /vendors/{orgId}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && orgId == userOrg() && validUpload();
+    }
+
+    // Legacy flat paths — existing files predate the org partition. Kept so old
+    // images keep displaying and stored-path deletes keep working. Remove these
+    // two blocks once existing files are migrated (then org isolation above is
+    // fully enforced). Auth-gated + upload-validated; deletes allowed.
     match /library/{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && validUpload();

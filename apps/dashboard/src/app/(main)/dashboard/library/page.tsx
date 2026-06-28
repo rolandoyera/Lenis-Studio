@@ -94,6 +94,7 @@ export default function LibraryPage() {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
       const { imageUrls, coverImageUrl, coverImagePath, images } =
         await mirrorExternalImagesToFirebase(
+          profile.organizationId,
           {
             imageUrls: form.formData.imageUrls,
             coverImageUrl: form.formData.coverImageUrl,

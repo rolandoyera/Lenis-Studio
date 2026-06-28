@@ -83,6 +83,7 @@ export default function VendorDetailPage({ params }: PageProps) {
       // Mirror any external (AI-sourced) images into Firebase so the item self-hosts them.
       const { imageUrls, coverImageUrl, coverImagePath, images } =
         await mirrorExternalImagesToFirebase(
+          vendor.organizationId,
           {
             imageUrls: itemForm.formData.imageUrls,
             coverImageUrl: itemForm.formData.coverImageUrl,
@@ -142,6 +143,7 @@ export default function VendorDetailPage({ params }: PageProps) {
     if (!vendor) return;
     try {
       const mirrored = await mirrorVendorImagesToFirebase(
+        vendor.organizationId,
         {
           logoUrl: data.logoUrl,
           logoPath: data.logoPath,

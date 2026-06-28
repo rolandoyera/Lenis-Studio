@@ -951,6 +951,7 @@ export async function deleteProposal(proposalId: string): Promise<void> {
 // --- STORAGE HELPER FUNCTIONS ---
 
 export async function uploadLibraryImage(
+  organizationId: string,
   file: File,
   itemId?: string,
   imageId?: string,
@@ -959,7 +960,7 @@ export async function uploadLibraryImage(
   const id = imageId ?? `img-${Math.random().toString(36).substr(2, 9)}`;
   const resolvedItemId =
     itemId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
-  const storagePath = `library/${resolvedItemId}/images/${id}.${ext}`;
+  const storagePath = `library/${organizationId}/${resolvedItemId}/images/${id}.${ext}`;
   const storageRef = ref(storage, storagePath);
 
   // Upload raw file bytes
@@ -971,6 +972,7 @@ export async function uploadLibraryImage(
 }
 
 export async function uploadVendorImage(
+  organizationId: string,
   file: File,
   type: "logo" | "hero",
   vendorId?: string,
@@ -978,7 +980,7 @@ export async function uploadVendorImage(
   const ext = file.name.split(".").pop() ?? "jpg";
   const resolvedVendorId =
     vendorId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
-  const storagePath = `vendors/${resolvedVendorId}/${type}.${ext}`;
+  const storagePath = `vendors/${organizationId}/${resolvedVendorId}/${type}.${ext}`;
   const storageRef = ref(storage, storagePath);
   const snapshot = await uploadBytes(storageRef, file);
   const url = await getDownloadURL(snapshot.ref);
@@ -991,6 +993,7 @@ export async function uploadVendorImage(
  * Used when mirroring AI-sourced vendor images so library items self-host their images.
  */
 export async function uploadLibraryImageBlob(
+  organizationId: string,
   blob: Blob,
   itemId: string,
   type: "cover" | "gallery",
@@ -1000,8 +1003,8 @@ export async function uploadLibraryImageBlob(
   const id = imageId ?? `img-${Math.random().toString(36).substr(2, 9)}`;
   const storagePath =
     type === "cover"
-      ? `library/${itemId}/cover.${extension}`
-      : `library/${itemId}/images/${id}.${extension}`;
+      ? `library/${organizationId}/${itemId}/cover.${extension}`
+      : `library/${organizationId}/${itemId}/images/${id}.${extension}`;
   const storageRef = ref(storage, storagePath);
 
   const snapshot = await uploadBytes(storageRef, blob, {
@@ -1029,12 +1032,13 @@ export async function uploadOrgBrandingImage(
  * and returns its public download URL.
  */
 export async function uploadVendorImageBlob(
+  organizationId: string,
   blob: Blob,
   type: "logo" | "hero",
   vendorId: string,
   extension = "jpg",
 ): Promise<{ url: string; path: string }> {
-  const storagePath = `vendors/${vendorId}/${type}.${extension}`;
+  const storagePath = `vendors/${organizationId}/${vendorId}/${type}.${extension}`;
   const storageRef = ref(storage, storagePath);
 
   const snapshot = await uploadBytes(storageRef, blob, {

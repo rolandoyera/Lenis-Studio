@@ -50,8 +50,11 @@ by `vendorId`):
 - `addVendor` / `updateVendor` / `deleteVendor`.
 - `getVendorLibraryItems(orgId, vendorId)` — the linked catalog items shown on the detail page and
   used to **block deletion** when non-empty.
-- `uploadVendorImage` (browser File) / `uploadVendorImageBlob` (server-mirrored blob) — Firebase
-  Storage uploads returning `{ url, path }`.
+- `uploadVendorImage(organizationId, file, type, vendorId?)` (browser File) /
+  `uploadVendorImageBlob(organizationId, blob, type, vendorId, ext?)` (server-mirrored blob) —
+  Firebase Storage uploads returning `{ url, path }`. Both take `organizationId` first and write to
+  the org-partitioned path `vendors/{organizationId}/{vendorId}/{type}.{ext}` (Tier 2 Storage rules;
+  see `storage.rules`). Legacy flat `vendors/{vendorId}/...` files still display/delete until migrated.
 
 ## Adding library items from the detail page (reuses the Library form)
 
@@ -82,10 +85,11 @@ of `getVendor`, re-apply the same org check yourself.
 ## Images: external URLs are mirrored into our Storage
 
 AI enrichment and manual entry can produce **external** image URLs (vendor's own CDN). On every
-save, both routes call `mirrorVendorImagesToFirebase(...)` (`src/lib/vendor-image-mirror.ts`) before
-writing the doc: any non-Firebase-hosted `logoUrl`/`heroImageUrl` is downloaded and re-uploaded to
-our Storage, and the doc stores the mirrored URL + `…Path`. Don't persist a raw external image URL —
-go through the mirror so links don't rot and `DashboardImage` can serve them.
+save, both routes call `mirrorVendorImagesToFirebase(organizationId, input, vendorId)`
+(`src/lib/vendor-image-mirror.ts`) before writing the doc: any non-Firebase-hosted
+`logoUrl`/`heroImageUrl` is downloaded and re-uploaded to our Storage (org-partitioned path), and the
+doc stores the mirrored URL + `…Path`. Pass the org id first. Don't persist a raw external image
+URL — go through the mirror so links don't rot and `DashboardImage` can serve them.
 
 - On **edit**, the detail page also calls `deleteReplacedStorageFiles(prevPaths, nextPaths)` to GC
   the old logo/hero blobs, and **aborts the update if that cleanup throws** (object-not-found is

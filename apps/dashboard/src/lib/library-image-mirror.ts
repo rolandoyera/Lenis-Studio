@@ -20,6 +20,7 @@ export interface MirrorResult {
  * Firebase-hosted URLs (e.g. manual uploads) are passed through unchanged.
  */
 export async function mirrorExternalImagesToFirebase(
+  organizationId: string,
   input: {
     imageUrls?: string[];
     coverImageUrl?: string;
@@ -59,6 +60,7 @@ export async function mirrorExternalImagesToFirebase(
         url,
         upload: (blob, extension) =>
           uploadLibraryImageBlob(
+            organizationId,
             blob,
             itemId,
             url === cover ? "cover" : "gallery",

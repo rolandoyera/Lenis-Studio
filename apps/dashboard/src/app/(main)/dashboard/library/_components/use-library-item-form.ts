@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { useAuth } from "@/components/auth-context";
 import { startLunaProductAutofillToast } from "@/components/luna-progress-toast";
 import { AI_ASSISTANT_NAME } from "@/lib/ai-assistant";
 import { runAiActionWithRetry } from "@/lib/ai-retry";
@@ -22,6 +23,7 @@ import {
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export function useLibraryItemForm() {
+  const { organizationId } = useAuth();
   const rhfForm = useForm<LibraryItemFormData>({
     resolver: zodResolver(libraryItemSchema),
     defaultValues: EMPTY_LIBRARY_ITEM_FORM,
@@ -213,6 +215,12 @@ export function useLibraryItemForm() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!organizationId) {
+      toast.error("No active organization.", { duration: 8000 });
+      e.target.value = "";
+      return;
+    }
+
     if (file.size > MAX_IMAGE_BYTES) {
       toast.error("Image size exceeds 5MB limit.", { duration: 8000 });
       e.target.value = "";
@@ -221,7 +229,11 @@ export function useLibraryItemForm() {
 
     setUploadingImage(true);
     try {
-      const { url, path } = await uploadLibraryImage(file, tempItemId);
+      const { url, path } = await uploadLibraryImage(
+        organizationId,
+        file,
+        tempItemId,
+      );
       setFormData((prev) => {
         const nextUrls = [...(prev.imageUrls ?? []), url].slice(0, MAX_IMAGES);
         const nextImages = [...(prev.images ?? []), { url, path }].slice(
