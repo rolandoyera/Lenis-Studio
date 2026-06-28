@@ -16,13 +16,11 @@ export function ProjectInformationCard({
   project,
   client,
 }: ProjectInformationCardProps) {
-  let clientName = "Unnamed Client";
-  if (client) {
-    const firstName = client.firstName?.trim() || "";
-    const lastName = client.lastName?.trim() || "";
-    clientName =
-      `${firstName} ${lastName}`.trim() || client.company || "Unnamed Client";
-  }
+  // First + last name are mandatory at creation, so a simple join is enough;
+  // company is the fallback for company-type contacts.
+  const clientName = client
+    ? `${client.firstName} ${client.lastName}`.trim() || client.company || ""
+    : "";
 
   return (
     <Card variant="panel" className="col-span-4">
@@ -37,14 +35,17 @@ export function ProjectInformationCard({
           {project.projectCode}
         </DataField>
         <DataField label="Client Name" empty="Not set">
-          <Link
-            href={`/dashboard/clients/${client?.uid}`}
-            prefetch={false}
-            className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline">
-            {clientName}
-          </Link>
+          {client && (
+            <Link
+              href={`/dashboard/clients/${client.uid}`}
+              prefetch={false}
+              className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline">
+              {clientName}
+            </Link>
+          )}
         </DataField>
         <DataField label="Project Site" empty="Not set">
+          {/* biome-ignore lint/nursery/useNullishCoalescing: truthy check for address fields */}
           {(project.street || project.city || project.state || project.zip) && (
             <div className="flex flex-col">
               {project.street && <span>{project.street}</span>}
@@ -85,9 +86,9 @@ export function ProjectInformationCard({
           )}
         </DataField>
         <DataField label="Budget" empty="Not set">
-          {project.budget !== undefined && project.budget > 0 && (
-            <>{formatCurrency(project.budget, { noDecimals: true })}</>
-          )}
+          {project.budget !== undefined &&
+            project.budget > 0 &&
+            formatCurrency(project.budget, { noDecimals: true })}
         </DataField>
       </CardContent>
     </Card>
