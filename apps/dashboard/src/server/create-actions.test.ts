@@ -54,7 +54,7 @@ describe("create server actions", () => {
 
   it("creates clients in the active org with a server-allocated reference code", async () => {
     mockCookies();
-    mockReferenceCode("SDG-CLI-0001", 1);
+    const { allocateReferenceCode } = mockReferenceCode("SDG-CLI-0001", 1);
     const { tx } = mockAdminDb();
     vi.spyOn(Math, "random").mockReturnValue(0.123456789);
 
@@ -78,11 +78,17 @@ describe("create server actions", () => {
       { path: `clients/${client.uid}` },
       client,
     );
+    expect(allocateReferenceCode).toHaveBeenCalledWith(
+      tx,
+      expect.anything(),
+      "org-1",
+      "client",
+    );
   });
 
   it("creates projects with active-org ownership and copied client code", async () => {
     mockCookies();
-    mockReferenceCode("SDG-PRO-0001", 1);
+    const { allocateReferenceCode } = mockReferenceCode("SDG-PRO-0001", 1);
     const { tx } = mockAdminDb();
     vi.spyOn(Math, "random").mockReturnValue(0.123456789);
 
@@ -109,11 +115,18 @@ describe("create server actions", () => {
       { path: `projects/${project.projectId}` },
       project,
     );
+    expect(tx.get).toHaveBeenCalledWith({ path: "clients/client-1" });
+    expect(allocateReferenceCode).toHaveBeenCalledWith(
+      tx,
+      expect.anything(),
+      "org-1",
+      "project",
+    );
   });
 
   it("creates draft contracts with active-org ownership and server lifecycle fields", async () => {
     mockCookies();
-    mockReferenceCode("SDG-CN-0001", 1);
+    const { allocateReferenceCode } = mockReferenceCode("SDG-CN-0001", 1);
     const { tx } = mockAdminDb();
     const draft: ContractDraftInput = {
       title: "Contract",
@@ -144,6 +157,12 @@ describe("create server actions", () => {
         createdBy: "user-1",
         updatedBy: "user-1",
       }),
+    );
+    expect(allocateReferenceCode).toHaveBeenCalledWith(
+      tx,
+      expect.anything(),
+      "org-1",
+      "contract",
     );
   });
 
@@ -193,7 +212,7 @@ describe("create server actions", () => {
     );
   });
 
-  it("rejects create actions without an active organization", async () => {
+  it("rejects client creation without an active organization", async () => {
     mockCookies(null);
     mockReferenceCode("SDG-CLI-0001", 1);
     mockAdminDb();
@@ -208,6 +227,72 @@ describe("create server actions", () => {
         email: "jane@example.com",
         phone: "",
       }),
+    ).rejects.toThrow("No active organization.");
+  });
+
+  it("rejects project creation without an active organization", async () => {
+    mockCookies(null);
+    mockReferenceCode("SDG-PRO-0001", 1);
+    mockAdminDb();
+
+    const { createProject } = await import("./project-actions");
+
+    await expect(
+      createProject({
+        clientId: "client-1",
+        name: "Project",
+        status: "in_progress",
+        createdBy: "user-1",
+        updatedBy: "user-1",
+      }),
+    ).rejects.toThrow("No active organization.");
+  });
+
+  it("rejects draft contract creation without an active organization", async () => {
+    mockCookies(null);
+    mockReferenceCode("SDG-CN-0001", 1);
+    mockAdminDb();
+
+    const { createContract } = await import("./contract-actions");
+
+    await expect(
+      createContract("user-1", {
+        title: "Contract",
+        projectId: "project-1",
+        clientId: "client-1",
+        clientName: "Jane Client",
+        projectName: "Project",
+        templateKey: "interior-design-agreement",
+        templateVersion: 1,
+        values: {},
+        scopeItems: [],
+      }),
+    ).rejects.toThrow("No active organization.");
+  });
+
+  it("rejects lead conversion without an active organization", async () => {
+    mockCookies(null);
+    mockReferenceCode("SDG-CLI-0002", 2);
+    mockAdminDb();
+    const actor: ActivityActor = { type: "user", id: "user-1", name: "User" };
+
+    const { convertLeadToClient } = await import("./lead-actions");
+
+    await expect(
+      convertLeadToClient(
+        {
+          uid: "lead-1",
+          organizationId: "org-1",
+          isCompany: false,
+          stage: "qualified",
+          createdBy: actor,
+          updatedBy: actor,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+        "user-1",
+        actor,
+      ),
     ).rejects.toThrow("No active organization.");
   });
 });

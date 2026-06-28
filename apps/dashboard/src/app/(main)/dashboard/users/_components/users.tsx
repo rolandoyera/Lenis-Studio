@@ -70,6 +70,10 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/lib/firebase";
 
 import { filters, type UserRow } from "./data";
+import {
+  buildInviteMailDoc,
+  buildPendingUserInviteDoc,
+} from "./user-invite-payload";
 import { addUserSchema, type AddUserFormData } from "./user-schema";
 import { usersColumns } from "./users-columns";
 import { UsersTable } from "./users-table";
@@ -123,42 +127,21 @@ export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
     setIsSubmitting(true);
     try {
       const userDocRef = doc(db, "users", trimmedEmail);
-      await setDoc(userDocRef, {
-        fullName: trimmedName,
-        email: trimmedEmail,
-        role: data.role,
-        status: "Pending",
-        joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
-        lastActive: 0,
-        organizationId: profile.organizationId,
-      });
+      await setDoc(
+        userDocRef,
+        buildPendingUserInviteDoc(data, profile.organizationId),
+      );
 
       // Write a mail document to trigger an invitation email via the Firebase Trigger Email extension
       try {
-        await addDoc(collection(db, "mail"), {
-          to: trimmedEmail,
-          message: {
-            subject: "You've been invited!",
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                <h2 style="color: #0f172a; margin-bottom: 16px;">Welcome, ${trimmedName}!</h2>
-                <p style="color: #334155; font-size: 16px; line-height: 1.5;">
-                  You have been invited to join Sarvian Design Group CRM.
-                </p>
-                <p style="color: #334155; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">
-                  Click the button below to sign in and activate your account:
-                </p>
-                <a href="${window.location.origin}/auth/invite?email=${trimmedEmail}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-weight: 500;">
-                  Set Up Account & Get Started
-                </a>
-                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 32px 0 16px 0;" />
-                <p style="color: #64748b; font-size: 12px; text-align: center;">
-                  Sarvian Design Group CRM invitation. If you did not expect this, please ignore this email.
-                </p>
-              </div>
-            `,
-          },
-        });
+        await addDoc(
+          collection(db, "mail"),
+          buildInviteMailDoc({
+            email: trimmedEmail,
+            fullName: trimmedName,
+            origin: window.location.origin,
+          }),
+        );
       } catch (emailError) {
         console.error(
           "Failed to write to mail collection for Trigger Email:",

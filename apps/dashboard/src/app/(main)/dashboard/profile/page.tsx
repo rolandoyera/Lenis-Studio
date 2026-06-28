@@ -5,7 +5,6 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
 import { updateProfile } from "firebase/auth";
 import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
 import {
@@ -18,7 +17,6 @@ import {
 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
@@ -56,12 +54,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
+import { formatPhone, getInitials } from "@/lib/utils";
+
 import {
-  formatPhone,
-  getInitials,
-  isValidUsPhone,
-  isValidUsZip,
-} from "@/lib/utils";
+  buildProfileSavePayload,
+  buildResendInviteUserPatch,
+} from "./profile-payloads";
+import { profileSchema, type ProfileFormData } from "./profile-schema";
 
 interface FirestoreProfile {
   fullName: string;
@@ -72,24 +71,6 @@ interface FirestoreProfile {
   email: string;
   status?: string;
 }
-
-const profileSchema = z.object({
-  displayName: z.string().min(1, "Display name is required."),
-  fullName: z.string().min(1, "Full name is required."),
-  role: z.string().min(1, "Role is required."),
-  phone: z.union([
-    z
-      .string()
-      .refine(isValidUsPhone, "Enter a valid 10-digit US phone number."),
-    z.literal(""),
-  ]),
-  location: z.union([
-    z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
-    z.literal(""),
-  ]),
-});
-
-type ProfileFormData = z.infer<typeof profileSchema>;
 
 function ProfileContent() {
   const searchParams = useSearchParams();
@@ -158,13 +139,7 @@ function ProfileContent() {
       const emailKey = email.trim().toLowerCase();
       // 1. Update the joinedDate in Firestore under users/{emailKey}
       const userDocRef = doc(db, "users", emailKey);
-      await setDoc(
-        userDocRef,
-        {
-          joinedDate: format(new Date(), "dd MMM yyyy, h:mm a"),
-        },
-        { merge: true },
-      );
+      await setDoc(userDocRef, buildResendInviteUserPatch(), { merge: true });
 
       // 2. Add email trigger document to mail collection
       await addDoc(collection(db, "mail"), {
@@ -297,19 +272,9 @@ function ProfileContent() {
 
       // 2. Save additional metadata to Cloud Firestore users/{activeUid}
       const userDocRef = doc(db, "users", activeUid);
-      await setDoc(
-        userDocRef,
-        {
-          fullName: data.fullName,
-          displayName: data.displayName,
-          role: data.role,
-          phone: data.phone,
-          location: data.location,
-          email: email, // save the profile's loaded email address
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true },
-      );
+      await setDoc(userDocRef, buildProfileSavePayload(data, email), {
+        merge: true,
+      });
 
       // 3. Sync states
       setFullName(data.fullName);

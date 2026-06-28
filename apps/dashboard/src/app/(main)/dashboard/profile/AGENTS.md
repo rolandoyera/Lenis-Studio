@@ -21,8 +21,10 @@ A single client component ([page.tsx](./page.tsx)) that views and edits one user
 - **Other** — `?uid=<someone>`. Read-only unless the logged-in user is an Admin. Role is editable
   **only** by an Admin viewing someone else's profile.
 
-The edit form is a RHF + Zod modal (`profileSchema`), per the root form rules. The on-page fields
-are display-only mirrors of state.
+The edit form is a RHF + Zod modal (`profileSchema` from [profile-schema.ts](./profile-schema.ts)),
+per the root form rules. Save/resend Firestore payload builders live in
+[profile-payloads.ts](./profile-payloads.ts) so the client-side writes have direct unit coverage.
+The on-page fields are display-only mirrors of state.
 
 ## The two-key `users` scheme (the thing to understand first)
 
