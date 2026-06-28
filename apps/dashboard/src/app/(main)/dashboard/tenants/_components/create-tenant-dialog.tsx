@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Loader2 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,33 +30,7 @@ import {
 import { addOrganization } from "@/lib/db";
 import type { Organization } from "@/lib/types";
 
-// Schema for tenant creation form
-const createTenantSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Please enter an organization name (min 2 characters).")
-    .max(100),
-  organizationId: z
-    .string()
-    .min(3, "Organization ID must be at least 3 characters.")
-    .max(30)
-    .regex(
-      /^[a-z0-9-]+$/,
-      "ID can only contain lowercase letters, numbers, and hyphens (no spaces).",
-    ),
-  adminName: z
-    .string()
-    .min(2, "Please enter the admin's full name.")
-    .max(100)
-    .refine(
-      (val) => val.trim().split(/\s+/).length >= 2,
-      "Please enter both first and last name.",
-    ),
-  adminEmail: z.string().email("Please enter a valid email address."),
-  plan: z.enum(["Starter", "Pro", "Enterprise"]),
-});
-
-type CreateTenantFormData = z.infer<typeof createTenantSchema>;
+import { createTenantSchema, type CreateTenantFormData } from "./tenant-schema";
 
 interface CreateTenantDialogProps {
   open: boolean;

@@ -30,7 +30,6 @@ import {
 import { Grid, Plus, Rows3, Search } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
@@ -71,19 +70,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { db } from "@/lib/firebase";
 
 import { filters, type UserRow } from "./data";
+import { addUserSchema, type AddUserFormData } from "./user-schema";
 import { usersColumns } from "./users-columns";
 import { UsersTable } from "./users-table";
-
-const addUserSchema = z.object({
-  fullName: z
-    .string()
-    .min(1, "Please enter a full name.")
-    .max(100, "Name is too long."),
-  email: z.string().email("Please enter a valid email address."),
-  role: z.enum(["Admin", "Contributor"]),
-});
-
-type AddUserFormData = z.infer<typeof addUserSchema>;
 
 export function Users({ users: _fallbackUsers }: { users?: UserRow[] }) {
   const {
