@@ -33,18 +33,16 @@ export function ProjectInformationCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-x-6 gap-y-6.5 text-sm sm:grid-cols-2 md:h-62">
+        <DataField label="Project Number" empty="Not set">
+          {project.projectCode}
+        </DataField>
         <DataField label="Client Name" empty="Not set">
           <Link
             href={`/dashboard/clients/${client?.uid}`}
             prefetch={false}
-            className="flex items-center gap-1.5 text-foreground hover:text-primary hover:underline">
+            className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline">
             {clientName}
           </Link>
-        </DataField>
-        <DataField label="Budget" empty="Not set">
-          {project.budget !== undefined && project.budget > 0 && (
-            <>{formatCurrency(project.budget, { noDecimals: true })}</>
-          )}
         </DataField>
         <DataField label="Project Site" empty="Not set">
           {(project.street || project.city || project.state || project.zip) && (
@@ -84,6 +82,11 @@ export function ProjectInformationCard({
                 );
               })()}
             </div>
+          )}
+        </DataField>
+        <DataField label="Budget" empty="Not set">
+          {project.budget !== undefined && project.budget > 0 && (
+            <>{formatCurrency(project.budget, { noDecimals: true })}</>
           )}
         </DataField>
       </CardContent>

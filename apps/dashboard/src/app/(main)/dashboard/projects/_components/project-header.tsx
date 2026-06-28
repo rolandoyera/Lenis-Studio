@@ -1,14 +1,11 @@
 "use client";
 
-import Link from "next/link";
-
 import {
   Calendar,
   Edit,
   FolderKanban,
   MoreVertical,
   Trash2,
-  User,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -42,20 +39,11 @@ interface ProjectHeaderProps {
 
 export function ProjectHeader({
   project,
-  client,
   activeTab,
   onTabChange,
   onEdit,
   onRequestDelete,
 }: ProjectHeaderProps) {
-  let clientName = "Unnamed Client";
-  if (client) {
-    const firstName = client.firstName?.trim() || "";
-    const lastName = client.lastName?.trim() || "";
-    clientName =
-      `${firstName} ${lastName}`.trim() || client.company || "Unnamed Client";
-  }
-
   return (
     <>
       <HeaderBackLink href="/dashboard/projects" />
@@ -73,33 +61,10 @@ export function ProjectHeader({
                   {PROJECT_STATUS_LABELS[project.status]}
                 </Badge>
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-medium text-muted-foreground text-sm">
-                {client ? (
-                  <Link
-                    href={`/dashboard/clients/${client.uid}`}
-                    prefetch={false}
-                    className="flex items-center gap-1 hover:text-primary hover:underline"
-                  >
-                    <User className="size-3.5 text-muted-foreground/80" />
-                    Client: {clientName}
-                  </Link>
-                ) : (
-                  <span className="text-muted-foreground/60 italic">
-                    No Client Assigned
-                  </span>
-                )}
-                {project.projectCode && (
-                  <>
-                    <span className="text-muted-foreground/30">•</span>
-                    <span className="font-mono">
-                      Project Ref: {project.projectCode}
-                    </span>
-                  </>
-                )}
-                <span className="text-muted-foreground/30">•</span>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
                 <span className="flex items-center gap-1">
                   <Calendar className="size-3.5 text-muted-foreground/80" />
-                  Created{" "}
+                  Created:{" "}
                   {new Date(project.createdAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -134,8 +99,7 @@ export function ProjectHeader({
         <Tabs
           value={activeTab}
           onValueChange={onTabChange}
-          className="w-full md:w-auto"
-        >
+          className="w-full md:w-auto">
           <TabsList className="flex max-w-full flex-wrap gap-1.5">
             {PROJECT_TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>
