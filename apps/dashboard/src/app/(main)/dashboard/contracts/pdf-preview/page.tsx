@@ -24,7 +24,7 @@ const PDFViewer = dynamic(
   { ssr: false },
 );
 
-const DEFAULT_CONTRACT_ID = "aGqXglLX6nnyfdiKnmYt";
+const DEFAULT_CONTRACT_ID = "GGoDMHTgB3E0Ur4UUsiH";
 
 export default function ContractPdfPreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();
@@ -35,8 +35,7 @@ export default function ContractPdfPreviewPage() {
         <div className="flex h-screen items-center justify-center text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
-      }
-    >
+      }>
       <PreviewInner />
     </Suspense>
   );

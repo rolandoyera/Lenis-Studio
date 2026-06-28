@@ -33,7 +33,8 @@ export function buildContractEmailHtml({
   companyPhone,
   companyPhoneTel,
 }: ContractEmailParams): string {
-  const greeting = clientName ? `Hello ${clientName},` : "Hello,";
+  const firstName = clientName.trim().split(/\s+/)[0];
+  const greeting = firstName ? `Hello ${firstName},` : "Hello,";
   const year = new Date().getFullYear();
   const expiryLabel = `${expirationDays} day${expirationDays === 1 ? "" : "s"}`;
   // Only render the "please call" line when a company phone is configured.
@@ -42,7 +43,7 @@ export function buildContractEmailHtml({
     : "";
 
   const brand = logoUrl
-    ? `<img src="${logoUrl}" alt="${companyName}" height="96" style="display:block;border:0;outline:none;text-decoration:none;height:96px;width:auto;margin:0 auto;" />`
+    ? `<img src="${logoUrl}" alt="${companyName}" height="112" style="display:block;border:0;outline:none;text-decoration:none;height:112px;width:auto;margin:0 auto;" />`
     : `<span style="font-family:${FONT};font-size:22px;font-weight:bold;color:#2B2B2B;">${companyName}</span>`;
 
   return `<!doctype html>
@@ -50,16 +51,16 @@ export function buildContractEmailHtml({
   <body style="margin:0;padding:0;background-color:${PAGE_BG};">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${PAGE_BG};">
       <tr>
-        <td align="center" style="padding:24px 16px;">
+        <td align="center" style="padding:12px 16px;">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;">
             <tr>
-              <td align="center" style="padding:8px 8px 24px;">${brand}</td>
+              <td align="center" style="padding:8px 8px 8px 8px;">${brand}</td>
             </tr>
             <tr>
               <td style="background-color:#FFFFFF;border-radius:8px;padding:40px;">
-                <h1 style="margin:0 0 24px;font-family:${FONT};font-size:30px;line-height:1.2;font-weight:bold;color:#1F1B16;">${companyName} has sent you a contract to sign.</h1>
+                <h1 style="margin:0 0 24px;font-family:${FONT};font-size:30px;line-height:1.2;font-weight:bold;color:#1F1B16;">Your contract is ready to sign.</h1>
                 <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">${greeting}</p>
-                <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">${companyName} has prepared a contract for you to review and sign electronically. You can read the full agreement using the secure link below.</p>
+                <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">We have prepared a contract for you to review and sign electronically. You can read the full agreement using the secure link below.</p>
                 <p style="margin:0 0 32px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">This link is private to you.${callSentence}</p>
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>

@@ -49,7 +49,7 @@ export function ProjectFilesCard({
   }, [organizationId, projectId]);
 
   return (
-    <Card variant="panel" className="col-span-12">
+    <Card variant="panel" className="col-span-6">
       <CardHeader>
         <CardTitle>
           <FileText className="icons" />
@@ -66,52 +66,66 @@ export function ProjectFilesCard({
             <FileText className="mb-2 size-10 text-muted-foreground/30" />
             <p className="text-xs">No files yet.</p>
             <p className="mt-1 max-w-xs text-[11px] text-muted-foreground/70">
-              A signed contract copy appears here automatically once it is fully
-              executed.
+              Documents appear here automatically once they are fully executed.
             </p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="text-xs uppercase tracking-wider">
-                <TableHead>Document</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Added</TableHead>
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documents.map((document) => (
-                <TableRow
-                  key={document.documentId}
-                  className="group hover:bg-muted/30">
-                  <TableCell className="py-4 font-medium font-serif text-foreground">
-                    {document.title}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {TYPE_LABELS[document.type]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(document.createdAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    <Button asChild size="sm" variant="secondary">
-                      <a href={document.fileUrl}>
-                        <Download className="size-3" />
-                        Download
-                      </a>
-                    </Button>
-                  </TableCell>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow className="text-xs uppercase tracking-wider">
+                  <TableHead>Document</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Added</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {documents.map((document) => (
+                  <TableRow
+                    key={document.documentId}
+                    className="group hover:bg-muted/30">
+                    <TableCell className="py-4 font-medium font-serif text-foreground">
+                      {document.title}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {TYPE_LABELS[document.type]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(document.createdAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button asChild size="sm" variant="secondary">
+                        <a href={document.fileUrl}>
+                          <Download className="size-3" />
+                          Download
+                        </a>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/*
+            <div className="flex flex-col w-full h-32 justify-end">
+              <div className="w-full h-full bg-muted flex items-center justify-center rounded-lg">
+                <ReceiptText className="size-30 stroke-1" />
+              </div>
+              <div className="mt-4 self-end">
+                <Ellipsis size={16} />
+              </div>
+            </div> */}
+          </>
         )}
       </CardContent>
     </Card>

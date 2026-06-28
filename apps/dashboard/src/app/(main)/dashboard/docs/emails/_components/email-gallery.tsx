@@ -9,6 +9,10 @@ const MOCK = {
   companyName: "Sarvian Design Group",
   companyPhone: "(305) 555-0199",
   companyPhoneTel: "+13055550199",
+  // Dark logo (for the email's light/cream header). Root-relative resolves against
+  // the dashboard origin inside the preview iframe; a real send uses the org's
+  // configured absolute `logoDarkUrl`.
+  logoUrl: "/brands/app.sarviandg.com/logo-dark.svg",
 };
 
 /** One labelled email preview: the rendered HTML in an iframe + its source note. */
@@ -61,7 +65,7 @@ export function EmailGallery() {
     <div className="flex flex-col gap-10">
       <EmailPreview
         title="Contract ready to sign"
-        description="Sent when a draft is sent for signature, with the secure signing link. Falls back to the company name when no absolute logo URL is configured."
+        description="Sent when a draft is sent for signature, with the secure signing link. The header shows the org's configured dark logo, falling back to the company name when no absolute logo URL is set."
         source="buildContractEmailHtml — src/server/contract-email-template.ts"
         html={readyToSign}
       />

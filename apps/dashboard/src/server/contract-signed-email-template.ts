@@ -31,14 +31,15 @@ export function buildContractSignedEmailHtml({
   companyPhone,
   companyPhoneTel,
 }: ContractSignedEmailParams): string {
-  const greeting = clientName ? `Hello ${clientName},` : "Hello,";
+  const firstName = clientName.trim().split(/\s+/)[0];
+  const greeting = firstName ? `Hello ${firstName},` : "Hello,";
   const year = new Date().getFullYear();
   const callSentence = companyPhone
     ? ` If you have any questions, please call <a href="tel:${companyPhoneTel}" style="color:${ACCENT};text-decoration:underline;">${companyPhone}</a>.`
     : "";
 
   const brand = logoUrl
-    ? `<img src="${logoUrl}" alt="${companyName}" height="96" style="display:block;border:0;outline:none;text-decoration:none;height:96px;width:auto;margin:0 auto;" />`
+    ? `<img src="${logoUrl}" alt="${companyName}" height="112" style="display:block;border:0;outline:none;text-decoration:none;height:112px;width:auto;margin:0 auto;" />`
     : `<span style="font-family:${FONT};font-size:22px;font-weight:bold;color:#2B2B2B;">${companyName}</span>`;
 
   return `<!doctype html>
@@ -46,16 +47,16 @@ export function buildContractSignedEmailHtml({
   <body style="margin:0;padding:0;background-color:${PAGE_BG};">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${PAGE_BG};">
       <tr>
-        <td align="center" style="padding:24px 16px;">
+        <td align="center" style="padding:12px 16px;">
           <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;">
             <tr>
-              <td align="center" style="padding:8px 8px 24px;">${brand}</td>
+              <td align="center" style="padding:8px 8px 8px 8px;">${brand}</td>
             </tr>
             <tr>
               <td style="background-color:#FFFFFF;border-radius:8px;padding:40px;">
                 <h1 style="margin:0 0 24px;font-family:${FONT};font-size:30px;line-height:1.2;font-weight:bold;color:#1F1B16;">Your contract is fully signed.</h1>
                 <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">${greeting}</p>
-                <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">Thank you for signing. Your agreement with ${companyName} is now fully executed. A copy of the signed contract is attached to this email for your records.</p>
+                <p style="margin:0 0 20px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">A copy of the signed contract is attached to this email for your records. We look forward to making something beautiful together.</p>
                 <p style="margin:0 0 8px;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">Attached: <strong>${fileName}</strong></p>
                 <p style="margin:0;font-family:${FONT};font-size:16px;line-height:1.6;color:#3A352E;">Please keep this copy for your records.${callSentence}</p>
               </td>
