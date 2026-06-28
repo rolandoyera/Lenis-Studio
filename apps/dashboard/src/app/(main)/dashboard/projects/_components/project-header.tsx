@@ -48,7 +48,7 @@ export function ProjectHeader({
     <>
       <HeaderBackLink href="/dashboard/projects" />
 
-      <div className="flex flex-col justify-between gap-4 pb-4 md:flex-row md:items-center">
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div className="flex flex-col gap-16 md:flex-row md:items-start">
           <div className="flex items-center gap-4">
             <div className="flex size-10 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-xs">
@@ -99,8 +99,7 @@ export function ProjectHeader({
         <Tabs
           value={activeTab}
           onValueChange={onTabChange}
-          className="w-full md:w-auto"
-        >
+          className="w-full md:w-auto">
           <TabsList className="flex max-w-full flex-wrap gap-1.5">
             {PROJECT_TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>

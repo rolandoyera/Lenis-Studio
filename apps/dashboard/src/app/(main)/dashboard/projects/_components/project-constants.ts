@@ -33,9 +33,9 @@ export const PROJECT_STATUS_VARIANT: Record<
 
 export const PROJECT_TABS = [
   { value: "overview", label: "Overview" },
-  { value: "selections", label: "Selections" },
-  { value: "calendar", label: "Calendar" },
+  { value: "items", label: "Items" },
   { value: "files", label: "Files" },
+  { value: "invoices", label: "Invoices" },
   { value: "settings", label: "Settings" },
 ] as const;
 

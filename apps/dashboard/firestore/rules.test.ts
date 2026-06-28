@@ -46,6 +46,32 @@ async function seedUser(
   });
 }
 
+async function seedDraftContract(
+  contractId: string,
+  organizationId: string,
+  updatedBy: string,
+) {
+  await seed(`contracts/${contractId}`, {
+    contractId,
+    organizationId,
+    title: "Draft",
+    status: "draft",
+    projectId: "project-1",
+    clientId: "client-1",
+    clientName: "Client",
+    projectName: "Project",
+    templateKey: "interior-design-agreement",
+    templateVersion: 1,
+    values: {},
+    scopeItems: [],
+    lockedSnapshot: null,
+    createdBy: updatedBy,
+    createdAt: 1,
+    updatedBy,
+    updatedAt: 1,
+  });
+}
+
 describe("firestore rules", () => {
   beforeAll(async () => {
     testEnv = await initializeTestEnvironment({
@@ -87,25 +113,7 @@ describe("firestore rules", () => {
 
   it("keeps contracts draft-only for client updates and deletes", async () => {
     await seedUser("user-a", "org-a");
-    await seed("contracts/draft-1", {
-      contractId: "draft-1",
-      organizationId: "org-a",
-      title: "Draft",
-      status: "draft",
-      projectId: "project-1",
-      clientId: "client-1",
-      clientName: "Client",
-      projectName: "Project",
-      templateKey: "interior-design-agreement",
-      templateVersion: 1,
-      values: {},
-      scopeItems: [],
-      lockedSnapshot: null,
-      createdBy: "user-a",
-      createdAt: 1,
-      updatedBy: "user-a",
-      updatedAt: 1,
-    });
+    await seedDraftContract("draft-1", "org-a", "user-a");
     await seed("contracts/sent-1", {
       contractId: "sent-1",
       organizationId: "org-a",
@@ -151,6 +159,61 @@ describe("firestore rules", () => {
     );
     await assertFails(deleteDoc(doc(userDb, "contracts/sent-1")));
     await assertSucceeds(deleteDoc(doc(userDb, "contracts/draft-1")));
+  });
+
+  it("denies client updates to server-owned contract fields even while draft", async () => {
+    await seedUser("user-a", "org-a");
+    await seedDraftContract("draft-1", "org-a", "user-a");
+
+    const userDb = dbFor("user-a");
+    const draftRef = doc(userDb, "contracts/draft-1");
+
+    await assertFails(
+      updateDoc(draftRef, {
+        contractCode: "SDG-CN-9999",
+        updatedBy: "user-a",
+        updatedAt: 2,
+      }),
+    );
+    await assertFails(
+      updateDoc(draftRef, {
+        contractNumber: 9999,
+        updatedBy: "user-a",
+        updatedAt: 2,
+      }),
+    );
+    await assertFails(
+      updateDoc(draftRef, {
+        sentAt: 2,
+        sentBy: "user-a",
+        updatedBy: "user-a",
+        updatedAt: 2,
+      }),
+    );
+    await assertFails(
+      updateDoc(draftRef, {
+        contractHash: "hash",
+        contractVersionId: "version",
+        updatedBy: "user-a",
+        updatedAt: 2,
+      }),
+    );
+    await assertFails(
+      updateDoc(draftRef, {
+        clientSignature: { signerName: "Client", signedAt: 2 },
+        companySignatureAuthorization: { signerName: "Signer" },
+        updatedBy: "user-a",
+        updatedAt: 2,
+      }),
+    );
+    await assertFails(
+      updateDoc(draftRef, {
+        voidedAt: 2,
+        voidedBy: "user-a",
+        updatedBy: "user-a",
+        updatedAt: 2,
+      }),
+    );
   });
 
   it("denies client access to server-only contract and portal collections", async () => {
@@ -248,6 +311,59 @@ describe("firestore rules", () => {
     );
   });
 
+  it("prevents invite acceptance from escalating role or changing org", async () => {
+    await seed("users/invitee@example.com", {
+      fullName: "Invitee User",
+      email: "invitee@example.com",
+      role: "Contributor",
+      organizationId: "org-a",
+      status: "Pending",
+    });
+
+    const inviteeDb = dbFor("invitee-uid", "invitee@example.com");
+
+    await assertFails(
+      setDoc(doc(inviteeDb, "users/invitee-uid"), {
+        fullName: "Invitee User",
+        email: "invitee@example.com",
+        role: "Admin",
+        organizationId: "org-a",
+        status: "Active",
+      }),
+    );
+    await assertFails(
+      setDoc(doc(inviteeDb, "users/invitee-uid"), {
+        fullName: "Invitee User",
+        email: "invitee@example.com",
+        role: "Contributor",
+        organizationId: "org-b",
+        status: "Active",
+      }),
+    );
+  });
+
+  it("prevents active users from changing their own role or organization", async () => {
+    await seedUser("user-a", "org-a", "Contributor");
+
+    const userDb = dbFor("user-a");
+
+    await assertSucceeds(
+      updateDoc(doc(userDb, "users/user-a"), {
+        displayName: "Updated User",
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(userDb, "users/user-a"), {
+        role: "Admin",
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(userDb, "users/user-a"), {
+        organizationId: "org-b",
+      }),
+    );
+  });
+
   it("allows org members to read but not write portal access records", async () => {
     await seedUser("user-a", "org-a");
     await seed("portalAccess/access-1", {
@@ -266,6 +382,32 @@ describe("firestore rules", () => {
     );
   });
 
+  it("enforces project document org isolation and server-only writes", async () => {
+    await seedUser("user-a", "org-a");
+    await seedUser("user-b", "org-b");
+    await seed("projectDocuments/doc-a", {
+      documentId: "doc-a",
+      organizationId: "org-a",
+      projectId: "project-a",
+    });
+    await seed("projectDocuments/doc-b", {
+      documentId: "doc-b",
+      organizationId: "org-b",
+      projectId: "project-b",
+    });
+
+    const userDb = dbFor("user-a");
+
+    await assertSucceeds(getDoc(doc(userDb, "projectDocuments/doc-a")));
+    await assertFails(getDoc(doc(userDb, "projectDocuments/doc-b")));
+    await assertFails(
+      updateDoc(doc(userDb, "projectDocuments/doc-a"), {
+        title: "Changed",
+      }),
+    );
+    await assertFails(deleteDoc(doc(userDb, "projectDocuments/doc-a")));
+  });
+
   it("does not allow unauthenticated portal reads through Firestore client SDK", async () => {
     await seed("portalAccess/access-1", {
       portalAccessId: "access-1",
@@ -277,5 +419,50 @@ describe("firestore rules", () => {
     const anonDb = testEnv.unauthenticatedContext().firestore();
 
     await assertFails(getDoc(doc(anonDb, "portalAccess/access-1")));
+  });
+
+  it("keeps organization secrets and reference counters server-only", async () => {
+    await seedUser("admin-a", "org-a", "Admin");
+    await seed("organizations/org-a", {
+      organizationId: "org-a",
+      name: "Org A",
+      companyProfile: { legalName: "Org A LLC" },
+      settings: { contractExpirationDays: 30 },
+      config: { billingStatus: "active" },
+    });
+    await seed("organizations/org-a/secrets/meta", {
+      accessToken: "secret",
+    });
+    await seed("organizations/org-a/counters/contractCodes", {
+      nextNumber: 12,
+    });
+
+    const adminDb = dbFor("admin-a");
+
+    await assertSucceeds(getDoc(doc(adminDb, "organizations/org-a")));
+    await assertSucceeds(
+      updateDoc(doc(adminDb, "organizations/org-a"), {
+        companyProfile: { legalName: "Updated Org A LLC" },
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(adminDb, "organizations/org-a"), {
+        config: { billingStatus: "suspended" },
+      }),
+    );
+    await assertFails(getDoc(doc(adminDb, "organizations/org-a/secrets/meta")));
+    await assertFails(
+      setDoc(doc(adminDb, "organizations/org-a/secrets/meta"), {
+        accessToken: "changed",
+      }),
+    );
+    await assertFails(
+      getDoc(doc(adminDb, "organizations/org-a/counters/contractCodes")),
+    );
+    await assertFails(
+      updateDoc(doc(adminDb, "organizations/org-a/counters/contractCodes"), {
+        nextNumber: 99,
+      }),
+    );
   });
 });

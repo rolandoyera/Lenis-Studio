@@ -24,7 +24,7 @@ export function ProjectInformationCard({
     : "";
 
   return (
-    <Card variant="panel" className="col-span-4">
+    <Card variant="panel" className="col-span-3">
       <CardHeader>
         <CardTitle>
           <Building2 className="icons" />

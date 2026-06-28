@@ -34,6 +34,36 @@ the **client portal** is the read-only viewer that renders from `lockedSnapshot`
 Active-page inputs under "Fields to Populate" show `FIELD_DEFS.explainer` below each input; pinned
 global fields do not.
 
+## Testing coverage
+
+Keep this section current when changing contract behavior, payload shape, signing lifecycle, portal
+access, or Firestore rules. Current coverage is intentionally behavior/data-safety focused rather
+than visual snapshot coverage:
+
+- Template helper tests live in
+  [`_components/contract-template.test.ts`](./_components/contract-template.test.ts). They cover
+  bold/token parsing, token extraction order, date formatting, and client/company address formatting.
+- Payload tests live in
+  [`_components/build-contract-payload.test.ts`](./_components/build-contract-payload.test.ts). They
+  cover the lightweight draft payload and the frozen `lockedSnapshot` shape built from template pages,
+  resolved parties, and project snapshot data.
+- Draft creation server-action coverage lives in
+  [`src/server/create-actions.test.ts`](../../../../server/create-actions.test.ts). The contract
+  case verifies active-org ownership, server-assigned `contractCode`/`contractNumber`, draft status,
+  null `lockedSnapshot`, and server-controlled created/updated fields.
+- Delivery and signing server-action coverage lives in
+  [`src/server/contract-signing.test.ts`](../../../../server/contract-signing.test.ts). It uses
+  mocked Firebase Admin/Brevo/PDF/project-document dependencies to cover send-for-signature, server
+  signer/recipient derivation, portal access creation, audit/email calls, sign validation branches,
+  artifact pipeline writes, and failure branches that must not produce side effects.
+- Portal access coverage lives in [`src/server/portal.test.ts`](../../../../server/portal.test.ts).
+  It covers hashed token storage, salted phone-last-4 challenge data, TTL calculation, identity
+  mismatch hiding (`not_found`), and expired-token org-name messaging.
+- Firestore rule coverage lives in [`firestore/rules.test.ts`](../../../../../firestore/rules.test.ts).
+  Contract-related cases cover org isolation, denied client-side contract create, draft-only
+  client-side update/delete rules, locked/sent mutation denial, server-only audit/projectDocuments/
+  portalAccess writes, org-member portalAccess reads, and unauthenticated portal client-SDK denial.
+
 ## The template is code, not data
 
 The "document" lives in [contract-template.ts](./_components/contract-template.ts), not Firestore.

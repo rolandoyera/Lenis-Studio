@@ -923,6 +923,8 @@ export interface ProjectRoomItem {
   coverImagePath?: string;
   images?: Array<{ url: string; path: string }>;
   quantity: number;
+  /** Manual drag-sort position within a section; lower sorts first. */
+  sortOrder?: number;
   createdAt: number;
   updatedAt: number;
 }

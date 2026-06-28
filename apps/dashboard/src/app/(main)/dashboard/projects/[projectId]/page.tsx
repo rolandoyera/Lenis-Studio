@@ -33,7 +33,7 @@ import { ProjectFilesCard } from "../_components/project-files-card";
 import { ProjectInformationCard } from "../_components/project-information-card";
 import { ProjectNotesCard } from "../_components/project-notes-card";
 import { ProjectProposalsCard } from "../_components/project-proposals-card";
-import { ProjectSelections } from "../tabs/project-selections";
+import { ProjectItems } from "../tabs/project-items";
 
 interface PageProps {
   params: Promise<{ projectId: string }>;
@@ -219,12 +219,9 @@ export default function ProjectDetailPage({ params }: PageProps) {
         )}
 
         {/* Tab 2 Page Content - Project Items */}
-        {activeTab === "selections" && <ProjectSelections project={project} />}
+        {activeTab === "items" && <ProjectItems project={project} />}
 
-        {/* Tab 3 Page Content - Project Calendar */}
-        {activeTab === "calendar" && <TabPlaceholder label="Calendar" />}
-
-        {/* Tab 4 Page Content - Project Files */}
+        {/* Tab 3 Page Content - Project Files */}
         {activeTab === "files" && (
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
             <ProjectFilesCard
@@ -233,6 +230,9 @@ export default function ProjectDetailPage({ params }: PageProps) {
             />
           </div>
         )}
+
+        {/* Tab 4 Page Content - Project Invoices */}
+        {activeTab === "invoices" && <TabPlaceholder label="Invoices" />}
 
         {/* Tab 5 Page Content - Project Settings */}
         {activeTab === "settings" && <TabPlaceholder label="Settings" />}

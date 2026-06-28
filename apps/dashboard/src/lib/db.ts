@@ -896,6 +896,42 @@ export async function getProjectDocuments(
   }
 }
 
+/**
+ * Contracts belonging to one project (the "Files" tab surfaces in-progress drafts
+ * before they execute into a stored file). Queried by org so the read satisfies the
+ * org-scoped rules, then filtered to the project in memory (mirrors
+ * getProjectDocuments — no composite index needed). Newest first.
+ */
+export async function getProjectContracts(
+  organizationId: string,
+  projectId: string,
+): Promise<Contract[]> {
+  try {
+    return await trace(
+      "contracts",
+      "READ",
+      "getProjectContracts",
+      async () => {
+        const collRef = collection(db, "contracts");
+        const q = query(collRef, where("organizationId", "==", organizationId));
+        const snapshot = await getDocs(q);
+
+        const contracts: Contract[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data() as Contract;
+          if (data.projectId === projectId) contracts.push(data);
+        });
+
+        return contracts.sort((a, b) => b.updatedAt - a.updatedAt);
+      },
+      (c) => `${c.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching project contracts:", error);
+    return [];
+  }
+}
+
 export async function addProposal(
   proposal: Omit<Proposal, "proposalId" | "createdAt">,
 ): Promise<Proposal> {
@@ -1312,6 +1348,24 @@ export async function addProjectRoom(
   );
 }
 
+export async function updateProjectRoom(
+  roomId: string,
+  room: Partial<Pick<ProjectRoom, "name" | "description">>,
+): Promise<void> {
+  return trace(
+    "projectRooms",
+    "WRITE",
+    "updateProjectRoom",
+    async () => {
+      await updateDoc(
+        doc(db, "projectRooms", roomId),
+        cleanUndefined({ ...room, updatedAt: Date.now() }),
+      );
+    },
+    () => roomId,
+  );
+}
+
 export async function getProjectRooms(
   projectId: string,
 ): Promise<ProjectRoom[]> {
@@ -1355,7 +1409,9 @@ export async function getProjectRoomItems(
         snapshot.forEach((docSnap) => {
           items.push(docSnap.data() as ProjectRoomItem);
         });
-        return items.sort((a, b) => a.updatedAt - b.updatedAt);
+        return items.sort(
+          (a, b) => (a.sortOrder ?? a.createdAt) - (b.sortOrder ?? b.createdAt),
+        );
       },
       (i) => `${i.length} docs`,
     );
@@ -1380,6 +1436,8 @@ export async function addProjectRoomItem(
       const newRoomItem: ProjectRoomItem = {
         ...item,
         roomItemId,
+        // New items append to the end of their section until manually reordered.
+        sortOrder: item.sortOrder ?? Date.now(),
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -1390,6 +1448,63 @@ export async function addProjectRoomItem(
       return newRoomItem;
     },
     (i) => i.roomItemId,
+  );
+}
+
+export async function updateProjectRoomItem(
+  roomItemId: string,
+  item: Partial<
+    Omit<
+      ProjectRoomItem,
+      "roomItemId" | "projectId" | "roomId" | "organizationId" | "createdAt"
+    >
+  >,
+): Promise<void> {
+  return trace(
+    "projectRoomItems",
+    "WRITE",
+    "updateProjectRoomItem",
+    async () => {
+      await updateDoc(
+        doc(db, "projectRoomItems", roomItemId),
+        cleanUndefined({ ...item, updatedAt: Date.now() }),
+      );
+    },
+    () => roomItemId,
+  );
+}
+
+/**
+ * Persist a manual drag-sort order for a section's items in one batch. Each
+ * entry's `sortOrder` becomes its new position (lower sorts first).
+ */
+export async function reorderProjectRoomItems(
+  updates: { roomItemId: string; sortOrder: number }[],
+): Promise<void> {
+  return trace(
+    "projectRoomItems",
+    "WRITE",
+    "reorderProjectRoomItems",
+    async () => {
+      const batch = writeBatch(db);
+      for (const { roomItemId, sortOrder } of updates) {
+        batch.update(doc(db, "projectRoomItems", roomItemId), { sortOrder });
+      }
+      await batch.commit();
+    },
+    () => `${updates.length} items`,
+  );
+}
+
+export async function deleteProjectRoomItem(roomItemId: string): Promise<void> {
+  return trace(
+    "projectRoomItems",
+    "WRITE",
+    "deleteProjectRoomItem",
+    async () => {
+      await deleteDoc(doc(db, "projectRoomItems", roomItemId));
+    },
+    () => roomItemId,
   );
 }
 
