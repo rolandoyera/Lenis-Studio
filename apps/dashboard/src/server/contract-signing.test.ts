@@ -113,9 +113,12 @@ function mockAdminDb(input: {
   organization?: Record<string, unknown> | null;
   client?: Record<string, unknown> | null;
   access?: PortalAccess | null;
+  /** Docs returned by the org-scoped contracts list query (lazy-expiry sweep). */
+  contractList?: Contract[];
 }) {
   const txUpdate = vi.fn();
   const contractUpdate = vi.fn();
+  const portalAccessUpdate = vi.fn();
 
   function docRef(collectionName: string, id: string) {
     return {
@@ -132,18 +135,28 @@ function mockAdminDb(input: {
           data: () => data,
         };
       }),
-      update: collectionName === "contracts" ? contractUpdate : vi.fn(),
+      update:
+        collectionName === "contracts"
+          ? contractUpdate
+          : collectionName === "portalAccess"
+            ? portalAccessUpdate
+            : vi.fn(),
     };
   }
 
   const collection = vi.fn((name: string) => ({
     doc: vi.fn((id: string) => docRef(name, id)),
     where: vi.fn(() => ({
+      // Token lookups use `.where(...).limit(1).get()`.
       limit: vi.fn(() => ({
         get: vi.fn(async () => ({
           empty: !input.access,
           docs: input.access ? [{ data: () => input.access }] : [],
         })),
+      })),
+      // The lazy-expiry sweep uses `.where(...).get()` (no limit).
+      get: vi.fn(async () => ({
+        docs: (input.contractList ?? []).map((c) => ({ data: () => c })),
       })),
     })),
   }));
@@ -164,7 +177,7 @@ function mockAdminDb(input: {
   };
 
   vi.doMock("./firebase-admin", () => ({ getAdminDb: () => db }));
-  return { db, txUpdate, contractUpdate };
+  return { db, txUpdate, contractUpdate, portalAccessUpdate };
 }
 
 function mockSideEffects() {
@@ -173,6 +186,7 @@ function mockSideEffects() {
   const createContractPortalAccess = vi.fn(async () => ({
     portalAccessId: "portal-access-1",
     accessToken: "raw-token",
+    expiresAt: Date.now() + 14 * 24 * 60 * 60 * 1000,
   }));
   const generateAndStoreFinalContractPdf = vi.fn(async () => ({
     path: "organizations/org-1/contracts/contract-1/executed.pdf",
@@ -508,6 +522,158 @@ describe("contract signing server actions", () => {
     expect(effects.writeContractAuditEvent).toHaveBeenCalledWith(
       "contract-1",
       expect.objectContaining({ type: "contract_fully_executed" }),
+    );
+  });
+
+  it("resends a fresh link: revokes the old access, re-emails, and resets to sent", async () => {
+    mockRequestContext();
+    const effects = mockSideEffects();
+    const { contractUpdate, portalAccessUpdate } = mockAdminDb({
+      contract: contract({
+        status: "expired",
+        activeAccessTokenId: "old-access",
+        sentAt: 1,
+        viewedAt: 5,
+        contractVersionId: "version-1",
+        lockedSnapshot: { ...snapshot(), lockedAt: 1, lockedBy: "user-1" },
+      }),
+      organization: org(),
+      client: { email: "jane@example.com", phone: "(954) 555-1212" },
+    });
+
+    const { resendContractSigningLink } = await import("./contract-signing");
+    const result = await resendContractSigningLink({
+      contractId: "contract-1",
+      userId: "user-1",
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      portalAccessId: "portal-access-1",
+      portalUrl: "https://dashboard.example.com/portal/raw-token",
+      emailSent: true,
+    });
+    // Old link revoked.
+    expect(portalAccessUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "revoked",
+        revokedReason: "replaced_by_resend",
+      }),
+    );
+    expect(effects.writeContractAuditEvent).toHaveBeenCalledWith(
+      "contract-1",
+      expect.objectContaining({
+        type: "portal_access_revoked",
+        accessTokenId: "old-access",
+        reason: "replaced_by_resend",
+      }),
+    );
+    // Fresh link minted + emailed.
+    expect(effects.createContractPortalAccess).toHaveBeenCalled();
+    expect(effects.sendContractEmail).toHaveBeenCalled();
+    // Contract reset to a fresh sent cycle, pointing at the new link.
+    expect(contractUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "sent",
+        activeAccessTokenId: "portal-access-1",
+        sentAt: Date.now(),
+      }),
+    );
+    expect(effects.writeContractAuditEvent).toHaveBeenCalledWith(
+      "contract-1",
+      expect.objectContaining({
+        type: "contract_resent",
+        accessTokenId: "portal-access-1",
+        previousAccessTokenId: "old-access",
+      }),
+    );
+  });
+
+  it("refuses to resend an executed contract", async () => {
+    mockRequestContext();
+    const effects = mockSideEffects();
+    const { contractUpdate } = mockAdminDb({
+      contract: contract({
+        status: "fully_executed",
+        executedAt: 10,
+        lockedSnapshot: { ...snapshot(), lockedAt: 1, lockedBy: "user-1" },
+      }),
+      organization: org(),
+      client: { email: "jane@example.com", phone: "(954) 555-1212" },
+    });
+
+    const { resendContractSigningLink } = await import("./contract-signing");
+    const result = await resendContractSigningLink({
+      contractId: "contract-1",
+      userId: "user-1",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(contractUpdate).not.toHaveBeenCalled();
+    expectNoSideEffects(effects);
+  });
+
+  it("lazily expires only lapsed, unsigned, non-terminal contracts", async () => {
+    mockRequestContext();
+    const effects = mockSideEffects();
+    const past = Date.now() - 1000;
+    const future = Date.now() + 1000;
+    const { contractUpdate } = mockAdminDb({
+      contractList: [
+        // Lapsed + unsigned → expired.
+        contract({
+          contractId: "lapsed",
+          status: "sent",
+          sentAt: 1,
+          signingLinkExpiresAt: past,
+          activeAccessTokenId: "lapsed-access",
+        }),
+        // Still valid → untouched.
+        contract({
+          contractId: "valid",
+          status: "sent",
+          sentAt: 1,
+          signingLinkExpiresAt: future,
+        }),
+        // Already executed → untouched.
+        contract({
+          contractId: "done",
+          status: "fully_executed",
+          sentAt: 1,
+          executedAt: 5,
+          signingLinkExpiresAt: past,
+        }),
+        // Delivery failed → left for the user to resend.
+        contract({
+          contractId: "bounced",
+          status: "sent",
+          sentAt: 1,
+          signingLinkExpiresAt: past,
+          contractDisplay: {
+            stage: "delivery_failed",
+            statusText: "Sent → Delivery Failed",
+            delivered: false,
+            updatedAt: 1,
+          },
+        }),
+      ],
+    });
+
+    const { expireLapsedContractLinks } = await import("./contract-signing");
+    await expireLapsedContractLinks("org-1");
+
+    // Exactly one contract flipped to expired.
+    expect(contractUpdate).toHaveBeenCalledTimes(1);
+    expect(contractUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "expired" }),
+    );
+    expect(effects.writeContractAuditEvent).toHaveBeenCalledTimes(1);
+    expect(effects.writeContractAuditEvent).toHaveBeenCalledWith(
+      "lapsed",
+      expect.objectContaining({
+        type: "contract_link_expired",
+        accessTokenId: "lapsed-access",
+      }),
     );
   });
 });

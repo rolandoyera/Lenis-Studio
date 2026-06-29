@@ -188,6 +188,9 @@ export interface Lead {
   // Source
   source?: LeadSource;
   sourceDetail?: string;
+  // Verbatim message from the customer (e.g. website project form). Read-only —
+  // not user-editable. Distinct from `notes`, which is the team's internal notes.
+  customerComments?: string;
 
   // Project fit
   propertyType?: PropertyType;
@@ -221,6 +224,16 @@ export type ProjectStatus =
   | "completed"
   | "cancelled";
 
+/**
+ * Persisted layout for the project items list-view grid. Keyed by column id;
+ * `visibility` toggles columns, `sizing` holds user-resized pixel widths (only
+ * columns the user has dragged appear here — the rest use proportional defaults).
+ */
+export interface ItemColumnLayout {
+  visibility: Record<string, boolean>;
+  sizing: Record<string, number>;
+}
+
 export interface Project {
   projectId: string;
   organizationId: string;
@@ -252,6 +265,13 @@ export interface Project {
   originalLeadBudgetRange?: BudgetRange;
 
   notes?: string;
+
+  /**
+   * Shared layout for the items list-view grid (column visibility + widths).
+   * Lives on the project so the presentation/print intent is consistent for
+   * every viewer, not per-browser. Absent until someone customizes it.
+   */
+  itemColumnLayout?: ItemColumnLayout;
 
   // Audit — all user references store UIDs only.
   createdBy: string; // user uid
@@ -429,6 +449,36 @@ export type ContractStatus =
   | "expired"
   | "voided";
 
+/**
+ * A finer-grained lifecycle stage used only to render the status chain in the
+ * contracts list. Unlike `ContractStatus` it distinguishes email delivery
+ * (`delivered`/`delivery_failed`) which is proven by Brevo webhook events.
+ */
+export type ContractDisplayStage =
+  | "draft"
+  | "sent"
+  | "delivered"
+  | "viewed"
+  | "executed"
+  | "delivery_failed"
+  | "expired"
+  | "void";
+
+/**
+ * Denormalized display status kept on the contract doc so the list can render a
+ * realtime status chain from a single field — it never aggregates the audit
+ * subcollection. Maintained server-side (`src/server/contract-display.ts`)
+ * whenever a contract lifecycle audit event is written.
+ */
+export interface ContractDisplay {
+  stage: ContractDisplayStage;
+  /** Pre-rendered chain, e.g. "Sent → Delivered → Awaiting View". */
+  statusText: string;
+  /** Sticky milestone: email delivery was confirmed at some point. */
+  delivered: boolean;
+  updatedAt: number;
+}
+
 /** The code-based template a contract was generated from. */
 export type ContractTemplateKey = "interior-design-agreement";
 
@@ -498,6 +548,14 @@ export interface Contract {
   title: string;
   status: ContractStatus;
 
+  /**
+   * Denormalized status-chain for the contracts list (display only). Maintained
+   * server-side alongside the audit trail; the list reads `statusText` directly
+   * and never aggregates audit events. Absent on legacy contracts (the UI falls
+   * back to deriving a chain from `status`).
+   */
+  contractDisplay?: ContractDisplay;
+
   projectId: string;
   clientId: string;
 
@@ -565,6 +623,14 @@ export interface Contract {
   sentBy?: string;
   sentAt?: number;
 
+  // ── Signing link (denormalized from the active portalAccess) ───
+  // The current signing link's expiry, copied onto the contract so the list can
+  // show an "Expired" badge (and the lazy expiry sweep can find lapsed links)
+  // without reading portalAccess. Updated on send and resend.
+  signingLinkExpiresAt?: number;
+  /** portalAccess id of the current/most-recent signing link — used to revoke on resend. */
+  activeAccessTokenId?: string;
+
   viewedAt?: number;
 
   // Fully executed = client signed and the company signature was applied.
@@ -625,7 +691,10 @@ export type ContractAuditEventType =
   | "portal_opened"
   | "electronic_signature_consent_accepted"
   | "contract_signed"
-  | "contract_fully_executed";
+  | "contract_fully_executed"
+  | "contract_resent"
+  | "contract_link_expired"
+  | "portal_access_revoked";
 
 interface ContractAuditEventBase {
   /** Firestore doc id within the `audit` subcollection. */
@@ -692,6 +761,30 @@ export type ContractAuditEvent =
       contractVersionId: string;
       contractHash: string;
       finalPdfPath?: string;
+    })
+  | (ContractAuditEventBase & {
+      type: "contract_resent";
+      actorType: "company_user";
+      actorId: string;
+      recipientEmail: string;
+      /** The freshly minted access link. */
+      accessTokenId: string;
+      /** The link this one replaces (revoked in the same action), if any. */
+      previousAccessTokenId?: string;
+    })
+  | (ContractAuditEventBase & {
+      type: "contract_link_expired";
+      actorType: "system";
+      /** The lapsed access link, when known. */
+      accessTokenId?: string;
+    })
+  | (ContractAuditEventBase & {
+      type: "portal_access_revoked";
+      actorType: "company_user";
+      actorId: string;
+      accessTokenId: string;
+      /** e.g. "replaced_by_resend". */
+      reason: string;
     });
 
 // ─── Client portal access ────────────────────────────────────────────────────
@@ -729,6 +822,8 @@ export interface PortalAccess {
   completedAt?: number;
   /** Set when an authorized user revokes the link (status → `revoked`). */
   revokedAt?: number;
+  /** Why the link was revoked, e.g. "replaced_by_resend". */
+  revokedReason?: string;
   /** Email the link was sent to (audit only — never shown in the portal). */
   sentToEmail: string;
 

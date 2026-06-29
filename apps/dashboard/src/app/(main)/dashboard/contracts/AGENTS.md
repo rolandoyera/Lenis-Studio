@@ -22,8 +22,16 @@ The **client portal** now supports the full delivery + signing workflow (see "Cl
 "Contract delivery & signing" below): send-for-signature, e-sign consent, typed client signature,
 the pre-authorized company signature, a final dual-signature PDF, and an append-only audit trail.
 
-Routes: `contracts/page.tsx` is the list (reads real `getContracts`, renders them in the shared
-`TanTable`, and uses an eye-icon link per row to open the editor);
+Routes: `contracts/page.tsx` is the list (subscribes to `contracts` by org via a client-SDK
+`onSnapshot` so the Status chain updates live; sorts newest-first in memory like `getContracts` did;
+renders rows in the shared `TanTable`, and uses an eye-icon link per row to open the editor). Its
+**Status** column is display-only — it renders a chain of `Badge`s from `contract.contractDisplay`
+(the denormalized stage, see "Status display chain" below), is not sortable, and never aggregates the
+audit subcollection; the column still keeps `accessorKey: "status"` + an `equalsString` `filterFn` so
+the coarse Status filter dropdown keeps working off the `status` enum. Badge mapping
+(`contractStatusBadges` in `page.tsx`): Sent=`info`, Delivered=`success`, Viewed=`warning`,
+Draft=`ghost`, and all error/terminal states (delivery failed, expired, void)=`destructive`. Executed
+and the terminal states collapse to a single badge (the intermediate steps stop mattering).
 `new/page.tsx` renders `<ContractBuilder />` (create); `[contractId]/page.tsx` fetches one contract
 (`getContract`, with an org-match tenant guard) and renders `<ContractBuilder contract={…} key={id}/>`
 to edit it. `ContractBuilder` takes an optional `contract` prop — when present it seeds `values`,
@@ -55,7 +63,9 @@ than visual snapshot coverage:
   [`src/server/contract-signing.test.ts`](../../../../server/contract-signing.test.ts). It uses
   mocked Firebase Admin/Brevo/PDF/project-document dependencies to cover send-for-signature, server
   signer/recipient derivation, portal access creation, audit/email calls, sign validation branches,
-  artifact pipeline writes, and failure branches that must not produce side effects.
+  artifact pipeline writes, failure branches that must not produce side effects, **resend** (old-link
+  revoke + re-email + reset-to-sent, and the executed-contract refusal), and the **lazy-expiry sweep**
+  (`expireLapsedContractLinks` flips only lapsed/unsigned/non-terminal contracts).
 - Portal access coverage lives in [`src/server/portal.test.ts`](../../../../server/portal.test.ts).
   It covers hashed token storage, salted phone-last-4 challenge data, TTL calculation, identity
   mismatch hiding (`not_found`), and expired-token org-name messaging.
@@ -151,6 +161,78 @@ Hard rules that bit us / are easy to break:
 - **Save Draft skips the required-field guard** (drafts may be incomplete); it only needs org + uid
   - selected project + client. **Send runs the full `guard()`** — all non-`optional` tokens must be
     filled. `isLocked = status !== 'draft'` disables both buttons once sent.
+
+## Status display chain
+
+The list's Status column reads a **denormalized** `contractDisplay` field on the contract doc — it
+never queries/aggregates the audit subcollection (kept cheap + realtime). Shape (typed
+`ContractDisplay` in `src/lib/types.ts`): `{ stage, statusText, delivered, updatedAt }`, where `stage`
+is a finer `ContractDisplayStage` (`draft|sent|delivered|viewed|executed|delivery_failed|expired|
+void`) and `statusText` is the pre-rendered chain (e.g. `"Sent → Delivered → Awaiting View"`).
+
+- **Maintained server-side only**, in lockstep with the audit trail, via
+  [`src/server/contract-display.ts`](../../../../server/contract-display.ts). `nextContractDisplay`
+  is the pure fold: it never regresses the linear chain (`STAGE_RANK`), carries a **sticky
+  `delivered` milestone** so `viewed`/`executed` still show the "Delivered" step even if a Brevo
+  `delivered` webhook lands after the portal open, and lets `expired`/`void` win as terminal
+  off-ramps. `applyContractDisplay` is the transactional read-modify-write used where the caller
+  isn't already updating the contract doc.
+- **Write sites** (one per lifecycle event): draft create seeds `draft`
+  (`contract-actions.ts`); `sendContractForSignature` folds `sent` into its send transaction;
+  `recordPortalOpen` folds `viewed` into its status-→viewed batch update; `signContract` folds
+  `executed` into its execution transaction (all in `contract-signing.ts`). The **Brevo webhook**
+  (`api/webhooks/brevo/route.ts`) calls `applyContractDisplay` with `delivered` (on `email_delivered`)
+  or `delivery_failed` (on `email_bounced`/`email_blocked`). When you add a contract lifecycle audit
+  event, update `contractDisplay` in the same write. `expired` is written by the lazy expiry sweep
+  (see "Signing link: expiry + resend"); nothing writes `void` yet (no void server action exists), but
+  the stage is handled for when one is added.
+- Legacy contracts predating this field have no `contractDisplay`; the list falls back to a stage
+  derived from `status` (`FALLBACK_DISPLAY` in `page.tsx`).
+- **Render-time expiry overlay.** `contractStatusBadges` also shows a single **Expired** badge when
+  the link has lapsed (`signingLinkExpiresAt` set and `Date.now()` past it) and the contract isn't
+  executed/void/delivery-failed — so expiry shows **before** the lazy server sweep persists
+  `status:"expired"` (see "Signing link: expiry + resend"). This is display-only and never overrides a
+  finished contract.
+
+## Signing link: expiry + resend
+
+The signing link lives on the `portalAccess` doc (`expiresAt`, `status`). Two denormalized fields on
+the contract mirror the **current** link so the list and resend don't have to read `portalAccess`:
+`signingLinkExpiresAt` (epoch-ms) and `activeAccessTokenId`. Both are set by `sendContractForSignature`
+(after it mints the access) and reset by resend. There is **no cron** — expiry is handled two ways:
+
+- **Lazy server sweep:** `expireLapsedContractLinks(orgId)` (in `contract-signing.ts`) is fired
+  (fire-and-forget) from the contracts list `useEffect` on load. It reads org contracts, and for each
+  that is sent/viewed (not executed/voided/expired, not display-stage `delivery_failed`) with a lapsed
+  `signingLinkExpiresAt`, flips `status:"expired"` + `contractDisplay` stage `expired` and writes a
+  `contract_link_expired` audit event. Idempotent (already-`expired` is filtered out). The realtime
+  listener then reflects the flip. The render-time overlay (above) covers the gap before it runs.
+- **Resend:** `resendContractSigningLink({ contractId, userId })` (server action, admin SDK). Allowed
+  only for a locked, **unsigned, non-voided** contract (`executedAt`/`status` checks). It revokes the
+  old `portalAccess` (`status:"revoked"`, `revokedAt`, `revokedReason:"replaced_by_resend"` + a
+  `portal_access_revoked` audit event), mints + emails a fresh link via the shared
+  `mintAndEmailSigningLink` helper (**reusing `createContractPortalAccess` so the phone-last-4
+  verification gate is re-established** — don't hand-roll a token here), then resets the contract to a
+  fresh `sent` cycle: `status:"sent"`, `contractDisplay = nextContractDisplay(undefined, "sent", …)`
+  (rebuilt from scratch so a prior expired/viewed stage doesn't carry forward), new
+  `activeAccessTokenId`/`signingLinkExpiresAt`, `sentAt = now`, `viewedAt` cleared via
+  `FieldValue.delete()` (a **direct** admin `update`, which is safe — it doesn't go through
+  `cleanUndefined`), and a `contract_resent` audit event. The old link stops working immediately. UI:
+  a **"Resend signing link"** item in the builder's actions dropdown, shown when `canResend`
+  (`isLocked && status !== "fully_executed" && status !== "voided"`).
+
+`delivery_failed` stays a **display stage only** (set by the Brevo webhook), not a `ContractStatus`
+value — the resend flow is the recovery path after the user fixes the client's email. `createContractPortalAccess` now also returns `expiresAt` so send/resend can denormalize it.
+
+> **TODO — needs a cron (or equivalent) before this is fully reliable.** The lazy sweep only runs when
+> someone **loads the contracts list**, so until then a lapsed link's `status` stays `sent`/`viewed` in
+> the DB (the render-time overlay masks this in the UI, but anything reading `status` server-side —
+> reports, future portal/email logic, integrations — sees the stale value). It also re-reads every org
+> contract on each list load, which won't scale. **Revisit by adding a scheduled job** (cron / Cloud
+> Scheduler + a callable, or a Cloud Function on a timer) that calls `expireLapsedContractLinks` per
+> org on an interval, independent of anyone opening the page — then the on-load call + render-time
+> overlay become a nice-to-have fast path rather than the only mechanism. Same scheduled hook is the
+> natural home for any future "link expiring soon" reminder emails.
 
 ## Unsaved-changes guard
 

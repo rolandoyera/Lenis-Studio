@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
 import type { Contract, ContractDraftInput } from "@/lib/types";
 
+import { nextContractDisplay } from "./contract-display";
 import { getAdminDb } from "./firebase-admin";
 import { allocateReferenceCode } from "./reference-codes";
 
@@ -45,6 +46,7 @@ export async function createContract(
       contractCode: code,
       contractNumber: number,
       status: "draft",
+      contractDisplay: nextContractDisplay(undefined, "draft", now),
       lockedSnapshot: null,
       createdBy: userId,
       createdAt: now,

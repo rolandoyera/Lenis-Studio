@@ -15,6 +15,7 @@ import {
   storeRawBrevoPayload,
   writeContractAuditEvent,
 } from "@/server/contract-audit";
+import { applyContractDisplay } from "@/server/contract-display";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,19 @@ async function handleEvent(payload: RawPayload): Promise<void> {
     },
     docId,
   );
+
+  // Advance the list's status chain. Delivery is the only thing the webhook
+  // proves; an open/sign moves the chain further on its own (portal/signing).
+  const displayStage =
+    normalized.type === "email_delivered"
+      ? "delivered"
+      : normalized.type === "email_bounced" ||
+          normalized.type === "email_blocked"
+        ? "delivery_failed"
+        : undefined;
+  if (displayStage) {
+    await applyContractDisplay(contractId, displayStage, Date.now());
+  }
 }
 
 export async function POST(req: NextRequest) {

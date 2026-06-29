@@ -14,6 +14,7 @@ import {
   MoreVertical,
   Plus,
   Printer,
+  RefreshCw,
   Save,
   Send,
   Trash2,
@@ -70,7 +71,10 @@ import { createContract } from "@/server/contract-actions";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { COMPANY_SEND_AUTHORIZATION_TEXT } from "@/lib/contract-text";
 import type { Client, Contract, ContractStatus, Project } from "@/lib/types";
-import { sendContractForSignature } from "@/server/contract-signing";
+import {
+  resendContractSigningLink,
+  sendContractForSignature,
+} from "@/server/contract-signing";
 import { cn, formatCurrency, formatCurrencyInput } from "@/lib/utils";
 
 import { getClientName } from "../../clients/_components/client-name";
@@ -400,6 +404,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
   );
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [resending, setResending] = useState(false);
   const [sendConfirmOpen, setSendConfirmOpen] = useState(false);
   // Snapshot of the last-persisted editable state; current state differing from
   // it means there are unsaved changes (drives the leave-without-saving guard).
@@ -723,6 +728,34 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
     });
   };
 
+  // Resend replaces the signing link (the contract itself is untouched). Allowed
+  // for a sent/viewed/expired contract — not an executed or voided one.
+  const canResend =
+    isLocked && status !== "fully_executed" && status !== "voided";
+
+  const handleResend = async () => {
+    if (!contractId || !uid || resending) return;
+    setResending(true);
+    try {
+      const result = await resendContractSigningLink({ contractId, userId: uid });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setStatus("sent");
+      toast.success(
+        result.emailSent
+          ? "A fresh signing link was sent to the client."
+          : "New signing link created. Email delivery isn't configured — share the link manually.",
+      );
+    } catch (error) {
+      console.error("Failed to resend signing link:", error);
+      toast.error("Couldn't resend the signing link. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="flex w-full flex-col gap-6 lg:h-[calc(100svh-var(--dashboard-header-height)-3rem)]">
       {/* Header */}
@@ -750,9 +783,9 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
               <Button
                 variant="outline"
                 size="icon"
-                disabled={saving || sending}
+                disabled={saving || sending || resending}
               >
-                {saving || sending ? (
+                {saving || sending || resending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   <MoreVertical className="size-4" />
@@ -770,6 +803,17 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                   <Send className="size-4" />
                   Send
                 </DropdownMenuItem>
+                {canResend && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      void handleResend();
+                    }}
+                    disabled={resending}
+                  >
+                    <RefreshCw className="size-4" />
+                    Resend signing link
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => {
                     void handleSaveDraft();

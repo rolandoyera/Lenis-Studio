@@ -9,7 +9,9 @@ import { format } from "date-fns";
 import {
   ArrowRightLeft,
   Loader2,
+  MoreVertical,
   Pencil,
+  Trash2,
   UserPlus,
   House,
   Megaphone,
@@ -32,8 +34,21 @@ import { AddressValue } from "@/components/ui/address-value";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  TooltipDropdownMenu,
+} from "@/components/ui/dropdown-menu";
 import { H1 } from "@/components/ui/typography";
-import { getLead, getOrganizationUsers, updateLead } from "@/lib/db";
+import {
+  deleteLead,
+  getLead,
+  getOrganizationUsers,
+  updateLead,
+} from "@/lib/db";
 import { convertLeadToClient } from "@/server/lead-actions";
 import type { ActivityActor, Lead, UserProfile } from "@/lib/types";
 import { formatPhone, normalizePhone } from "@/lib/utils";
@@ -70,6 +85,8 @@ export default function LeadDetailPage({ params }: PageProps) {
   const [updating, setUpdating] = useState(false);
   const [isConvertOpen, setIsConvertOpen] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (authLoading || !organizationId) return;
@@ -183,6 +200,21 @@ export default function LeadDetailPage({ params }: PageProps) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!lead) return;
+    setDeleting(true);
+    try {
+      await deleteLead(lead.uid);
+      toast.success("Lead deleted successfully!");
+      router.push("/dashboard/leads");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete lead.");
+      setDeleting(false);
+      setIsDeleteOpen(false);
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
@@ -209,23 +241,39 @@ export default function LeadDetailPage({ params }: PageProps) {
             {LEAD_STAGE_LABELS[lead.stage]}
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setIsEditOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Pencil className="size-4" />
-            Edit
-          </Button>
-          <Button
-            onClick={() => setIsConvertOpen(true)}
-            disabled={isConverted}
-            className="flex items-center gap-2"
-          >
-            <ArrowRightLeft className="size-4" />
-            {isConverted ? "Converted" : "Convert to Client"}
-          </Button>
+        <div>
+          <TooltipDropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <MoreVertical className="size-4" />
+                <span className="sr-only">Actions Menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
+                  <Pencil className="size-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsConvertOpen(true)}
+                  disabled={isConverted}
+                >
+                  <ArrowRightLeft className="size-4" />
+                  {isConverted ? "Converted" : "Convert to Client"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setIsDeleteOpen(true)}
+                  disabled={isConverted}
+                >
+                  <Trash2 className="size-4" />
+                  Delete Lead
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </TooltipDropdownMenu>
         </div>
       </div>
 
@@ -247,24 +295,6 @@ export default function LeadDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
       )}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card className="border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-500/10">
-          <CardContent className="flex items-center justify-between gap-4 py-4 text-sm">
-            <span className="text-muted-foreground">
-              This lead was converted on{" "}
-              {lead.convertedAt
-                ? format(new Date(lead.convertedAt), "PPP")
-                : "—"}{" "}
-              by {resolveUser(lead.convertedBy)}.
-            </span>
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/dashboard/clients/${lead.convertedClientId}`}>
-                View Client
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <Card variant="panel" className="lg:col-span-4">
@@ -369,6 +399,17 @@ export default function LeadDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
+        {lead.customerComments && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Comments</CardTitle>
+            </CardHeader>
+            <CardContent className="whitespace-pre-wrap text-muted-foreground text-sm">
+              {lead.customerComments}
+            </CardContent>
+          </Card>
+        )}
+
         {lead.notes && (
           <Card>
             <CardHeader>
@@ -419,6 +460,38 @@ export default function LeadDetailPage({ params }: PageProps) {
             >
               {converting && <Loader2 className="size-4 animate-spin" />}
               Convert to Client
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl">
+              Are you absolutely sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              This action cannot be undone. This will permanently delete the
+              lead{" "}
+              <span className="font-medium text-foreground">
+                {getLeadName(lead)}
+              </span>{" "}
+              from the studio databases.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              disabled={deleting}
+              className="flex items-center gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="size-4 animate-spin" />}
+              Delete Lead
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

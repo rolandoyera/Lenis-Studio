@@ -2,10 +2,10 @@
 
 ## Feature-Level Notes
 
-Before working inside a feature folder, check for an `AGENTS.md` in that folder (and its parents) and
-follow it — these capture feature-specific context that isn't obvious from the code (e.g.
-`src/app/(main)/dashboard/{analytics,vendors,company}/AGENTS.md`). If your change makes one of those
-files wrong, update it in the same change; treat that as part of "done."
+Before working inside any folder, check for an `AGENTS.md` in that folder **and its parents**, and
+follow it — these capture feature-specific context that isn't obvious from the code. Many
+`src/app/(main)/dashboard/*` features have one; don't assume from this not listing them. If your
+change makes one of those files wrong, update it in the same change; treat that as part of "done."
 
 ## Think Before Coding
 
@@ -33,7 +33,7 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 ## Design System Rules
 
 - Do not create new visual styles unless explicitly asked.
-- Use the existing UI components first.
+- Use the existing UI components first without adding additional styles unless absolutely necessary, i.e., if the design system does not provide the component needed, layout, or style needed for a feature.
 - Use existing form, button, dialog, input, card, table, badge, and toast components.
 - Do not write custom CSS unless explicitly requested.
 - Use Tailwind utility classes from the existing theme.
@@ -47,6 +47,7 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 - Always execute `npx tsc --noEmit` inside the dashboard app directory to check for TypeScript errors before completing any code changes.
 - Use Prettier for formatting with `npm run format`.
 - Ensure all Biome lint checks pass cleanly using `npx biome check --write`; Biome formatting is disabled.
+- When you touch logic with tests (`*.test.ts`), run the relevant suite with `npm run test:run` (Vitest). Firestore rules changes must pass `npm run test:rules`; portal/contract/server-action flows have their own specs alongside the code.
 
 ### 2. Next.js Client & Server Boundaries
 
@@ -66,6 +67,9 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 - Never use uncontrolled `useState` form state for new forms — always wire through RHF.
 - For phone number fields, always use the shared helpers in `@/lib/utils` — never write a local phone formatter. Format the input `onChange` and all display with `formatPhone` (USA 10-digit `(XXX) XXX-XXXX`), build `tel:` links with `normalizePhone`, and validate in the Zod schema via `.refine(isValidUsPhone, "Enter a valid 10-digit US phone number.")`.
 
-### 5. Layout Shift Prevention
+### 5. Data Writes & Server Actions
 
-- Standardize all dynamic badges, status pills, or interactive confidence ratings to reside inside containers with a fixed vertical height (e.g., standardizing labels to `h-5 flex items-center`) to prevent vertical content shifts or input jumping when indicators hide or show.
+- Creating core entities (clients, projects, contracts) and any write that mints a reference code, needs a Firestore transaction, or must bypass client security rules goes through a `"use server"` action in `src/server/*-actions.ts` (e.g. `client-actions.ts`, `project-actions.ts`, `contract-actions.ts`) using the firebase-admin SDK — not the client `db.ts` helpers.
+- Reference codes (`clientCode`, `projectCode`, contract codes) are minted server-side via `allocateReferenceCode` inside a transaction. Never generate them on the client.
+- Server actions derive the org from the active-org cookie (`ACTIVE_ORG_COOKIE`), never from client-supplied input.
+- Routine field updates that `firestore.rules` already permits (e.g. realtime layout/state writes) may still use the client `db.ts` helpers directly.

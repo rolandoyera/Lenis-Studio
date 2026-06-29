@@ -16,8 +16,12 @@ import {
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove } from "@dnd-kit/sortable";
-import type { VisibilityState } from "@tanstack/react-table";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import type {
+  ColumnSizingState,
+  OnChangeFn,
+  VisibilityState,
+} from "@tanstack/react-table";
+import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import {
   DollarSign,
   Edit,
@@ -29,6 +33,7 @@ import {
   MoreVertical,
   Pencil,
   PlusCircle,
+  RotateCcw,
   Rows3,
   ShoppingBag,
   Trash2,
@@ -84,10 +89,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   addProjectRoom,
+  deleteProjectRoom,
   deleteProjectRoomItem,
   getLibraryItems,
   getVendors,
   reorderProjectRoomItems,
+  updateProjectItemsLayout,
   updateProjectRoom,
 } from "@/lib/db";
 import { db } from "@/lib/firebase";
@@ -119,6 +126,10 @@ const roomSchema = z.object({
 
 type RoomFormData = z.infer<typeof roomSchema>;
 
+// How long to wait after the last column toggle/resize before persisting the
+// shared layout — coalesces the rapid changes a resize-drag produces.
+const LAYOUT_SAVE_DEBOUNCE_MS = 600;
+
 // ----------------------------------------------------
 // List View — one table per section (mirrors the proposal layout)
 // ----------------------------------------------------
@@ -128,8 +139,11 @@ interface RoomListCardProps {
   items: ProjectRoomItem[];
   vendors: Vendor[];
   visibleColumns: VisibilityState;
+  columnSizing: ColumnSizingState;
+  onColumnSizingChange: OnChangeFn<ColumnSizingState>;
   onEdit: (room: ProjectRoom) => void;
   onAddItem: (room: ProjectRoom) => void;
+  onDelete: (room: ProjectRoom) => void;
   onEditItem: (item: ProjectRoomItem) => void;
   onDeleteItem: (item: ProjectRoomItem) => void;
 }
@@ -139,8 +153,11 @@ function RoomListCard({
   items,
   vendors,
   visibleColumns,
+  columnSizing,
+  onColumnSizingChange,
   onEdit,
   onAddItem,
+  onDelete,
   onEditItem,
   onDeleteItem,
 }: RoomListCardProps) {
@@ -176,13 +193,21 @@ function RoomListCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => onAddItem(room)}>
+              <PlusCircle className="size-4" />
+              Add Item
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onEdit(room)}>
               <Edit className="size-4" />
               Edit Section
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onAddItem(room)}>
-              <PlusCircle className="size-4" />
-              Add Item
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onDelete(room)}
+            >
+              <Trash2 className="size-4" />
+              Delete Section
             </DropdownMenuItem>
           </DropdownMenuContent>
         </TooltipDropdownMenu>
@@ -206,6 +231,8 @@ function RoomListCard({
             items={items}
             vendors={vendors}
             columnVisibility={visibleColumns}
+            columnSizing={columnSizing}
+            onColumnSizingChange={onColumnSizingChange}
             onEditItem={onEditItem}
             onDeleteItem={onDeleteItem}
           />
@@ -233,8 +260,11 @@ interface ProjectItemsProps {
   project: Project;
 }
 
-export function ProjectItems({ project }: ProjectItemsProps) {
+export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
   const { profile, organizationId, loading: authLoading } = useAuth();
+  // Live project doc — kept in sync so shared edits (incl. the column layout)
+  // appear for everyone viewing in real time, not just on next load.
+  const [project, setProject] = useState<Project>(initialProject);
   const [rooms, setRooms] = useState<ProjectRoom[]>([]);
   const [roomItems, setRoomItems] = useState<ProjectRoomItem[]>([]);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
@@ -243,8 +273,24 @@ export function ProjectItems({ project }: ProjectItemsProps) {
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [view, setView] = useState<"grid" | "list">("grid");
+  // Seed the grid layout from the project's shared layout (falling back to
+  // defaults) so every viewer sees the same presentation. The project listener
+  // below reconciles it live; the editing user's own changes flow through
+  // optimistic local state.
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    DEFAULT_ITEM_COLUMN_VISIBILITY,
+    () => ({
+      ...DEFAULT_ITEM_COLUMN_VISIBILITY,
+      ...(initialProject.itemColumnLayout?.visibility ?? {}),
+    }),
+  );
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(
+    () => initialProject.itemColumnLayout?.sizing ?? {},
+  );
+  // JSON of the layout we believe is persisted. Used to (a) dedupe writes and
+  // (b) break the snapshot→setState→save feedback loop: a remote-applied layout
+  // matches this ref, so the save effect skips it.
+  const persistedLayoutRef = useRef(
+    JSON.stringify(initialProject.itemColumnLayout ?? null),
   );
 
   // Dialog States
@@ -257,6 +303,7 @@ export function ProjectItems({ project }: ProjectItemsProps) {
   const [deletingItem, setDeletingItem] = useState<ProjectRoomItem | null>(
     null,
   );
+  const [deletingRoom, setDeletingRoom] = useState<ProjectRoom | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Form setups
@@ -286,6 +333,31 @@ export function ProjectItems({ project }: ProjectItemsProps) {
       }
     }
     void initData();
+
+    // Live project doc: keep shared fields current and reconcile the column
+    // layout when another viewer changes it. We only re-apply the layout when it
+    // differs from what we last persisted, so our own echoes (and the resulting
+    // setState) don't loop back into another save.
+    const unsubscribeProject = onSnapshot(
+      doc(db, "projects", project.projectId),
+      (snap) => {
+        if (unsubscribed || !snap.exists()) return;
+        const data = snap.data() as Project;
+        setProject(data);
+        const incoming = JSON.stringify(data.itemColumnLayout ?? null);
+        if (incoming !== persistedLayoutRef.current) {
+          persistedLayoutRef.current = incoming;
+          setColumnVisibility({
+            ...DEFAULT_ITEM_COLUMN_VISIBILITY,
+            ...(data.itemColumnLayout?.visibility ?? {}),
+          });
+          setColumnSizing(data.itemColumnLayout?.sizing ?? {});
+        }
+      },
+      (error) => {
+        console.error("Project snapshot error:", error);
+      },
+    );
 
     // Set up snapshot listener for rooms
     const roomsQuery = query(
@@ -337,10 +409,37 @@ export function ProjectItems({ project }: ProjectItemsProps) {
 
     return () => {
       unsubscribed = true;
+      unsubscribeProject();
       unsubscribeRooms();
       unsubscribeItems();
     };
   }, [project.projectId, organizationId, authLoading]);
+
+  // Persist the shared column layout to the project whenever the user toggles or
+  // resizes a column, debounced so a resize-drag coalesces into one write. The
+  // first invocation is skipped so simply opening the page (initial state) never
+  // writes the layout back. Layouts matching what's already persisted are no-ops,
+  // which also stops a remote change (applied via the listener) from echoing into
+  // another write. Other viewers see the change live through the listener.
+  const skipFirstPersistRef = useRef(true);
+  useEffect(() => {
+    if (skipFirstPersistRef.current) {
+      skipFirstPersistRef.current = false;
+      return;
+    }
+    const layout = { visibility: columnVisibility, sizing: columnSizing };
+    if (JSON.stringify(layout) === persistedLayoutRef.current) return;
+    const timer = setTimeout(() => {
+      persistedLayoutRef.current = JSON.stringify(layout);
+      void updateProjectItemsLayout(project.projectId, layout).catch(
+        (error) => {
+          console.error(error);
+          toast.error("Failed to save the column layout.");
+        },
+      );
+    }, LAYOUT_SAVE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [columnVisibility, columnSizing, project.projectId]);
 
   // Open the dialog in create mode (blank form).
   const openCreateRoom = () => {
@@ -537,6 +636,29 @@ export function ProjectItems({ project }: ProjectItemsProps) {
     }
   };
 
+  // Number of items left in the section pending deletion — drives whether the
+  // dialog deletes outright or blocks until the items are moved/removed.
+  const deletingRoomItemCount = deletingRoom
+    ? roomItems.filter((item) => item.roomId === deletingRoom.roomId).length
+    : 0;
+
+  // Delete an empty section. Guarded so a section with items can never be
+  // removed (the dialog only exposes the action when the section is empty).
+  const handleConfirmDeleteRoom = async () => {
+    if (!deletingRoom || deletingRoomItemCount > 0) return;
+    setIsDeleting(true);
+    try {
+      await deleteProjectRoom(deletingRoom.roomId);
+      toast.success(`"${deletingRoom.name}" deleted.`);
+      setDeletingRoom(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete section.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Calculations for total quantities and values
   const totalItemCount = roomItems.length;
   const totalSelectedValue = roomItems.reduce(
@@ -658,7 +780,12 @@ export function ProjectItems({ project }: ProjectItemsProps) {
               align="end"
               className="max-h-96 w-52 overflow-y-auto"
             >
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+              <DropdownMenuLabel>Column Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setColumnSizing({})}>
+                <RotateCcw className="size-4" />
+                Reset Widths
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {ITEM_COLUMN_OPTIONS.map((col) => (
                 <DropdownMenuCheckboxItem
@@ -695,7 +822,10 @@ export function ProjectItems({ project }: ProjectItemsProps) {
 
       {/* Grid of Rooms */}
       {view === "grid" && (
-        <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
+        <FadeIn
+          key="grid"
+          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3"
+        >
           {rooms.map((room) => {
             const itemsInRoom = roomItems.filter(
               (item) => item.roomId === room.roomId,
@@ -723,15 +853,23 @@ export function ProjectItems({ project }: ProjectItemsProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-44">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => openEditRoom(room)}>
-                        <Edit className="size-4" />
-                        Edit Section
-                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setActiveRoomForAddItems(room)}
                       >
                         <PlusCircle className="size-4" />
                         Add Item
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openEditRoom(room)}>
+                        <Edit className="size-4" />
+                        Edit Section
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => setDeletingRoom(room)}
+                      >
+                        <Trash2 className="size-4" />
+                        Delete Section
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </TooltipDropdownMenu>
@@ -855,43 +993,50 @@ export function ProjectItems({ project }: ProjectItemsProps) {
               Create Section
             </h3>
           </Card>
-        </div>
+        </FadeIn>
       )}
 
       {/* List View — one table per section, draggable within and across sections */}
       {view === "list" && (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex flex-col gap-6">
-            {rooms.map((room) => (
-              <RoomListCard
-                key={room.roomId}
-                room={room}
-                items={roomItems.filter((item) => item.roomId === room.roomId)}
-                vendors={vendors}
-                visibleColumns={columnVisibility}
-                onEdit={openEditRoom}
-                onAddItem={setActiveRoomForAddItems}
-                onEditItem={setEditingItem}
-                onDeleteItem={setDeletingItem}
-              />
-            ))}
-            <Button
-              variant="outline"
-              onClick={openCreateRoom}
-              className="w-fit gap-2 self-start"
-            >
-              <FolderPlus className="size-4" />
-              Create Section
-            </Button>
-          </div>
-        </DndContext>
+        <FadeIn key="list">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="flex flex-col gap-6">
+              {rooms.map((room) => (
+                <RoomListCard
+                  key={room.roomId}
+                  room={room}
+                  items={roomItems.filter(
+                    (item) => item.roomId === room.roomId,
+                  )}
+                  vendors={vendors}
+                  visibleColumns={columnVisibility}
+                  columnSizing={columnSizing}
+                  onColumnSizingChange={setColumnSizing}
+                  onEdit={openEditRoom}
+                  onAddItem={setActiveRoomForAddItems}
+                  onDelete={setDeletingRoom}
+                  onEditItem={setEditingItem}
+                  onDeleteItem={setDeletingItem}
+                />
+              ))}
+              <Button
+                variant="outline"
+                onClick={openCreateRoom}
+                className="w-fit gap-2 self-start"
+              >
+                <FolderPlus className="size-4" />
+                Create Section
+              </Button>
+            </div>
+          </DndContext>
+        </FadeIn>
       )}
 
       {/* ---------------------------------------------------- */}
@@ -1044,6 +1189,62 @@ export function ProjectItems({ project }: ProjectItemsProps) {
               Delete Item
             </AlertDialogAction>
           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ---------------------------------------------------- */}
+      {/* Delete Section Confirmation / Blocking Notice */}
+      {/* ---------------------------------------------------- */}
+      <AlertDialog
+        open={!!deletingRoom}
+        onOpenChange={(open) => {
+          if (!open) setDeletingRoom(null);
+        }}
+      >
+        <AlertDialogContent className="bg-popover sm:max-w-md">
+          {deletingRoomItemCount > 0 ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  "{deletingRoom?.name}" isn't empty
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This section still has {deletingRoomItemCount} item
+                  {deletingRoomItemCount === 1 ? "" : "s"}. Move them to another
+                  section or delete them first, then you can delete the section.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Got it</AlertDialogCancel>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Delete "{deletingRoom?.name}"?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently remove this empty section. This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={handleConfirmDeleteRoom}
+                  disabled={isDeleting}
+                  className="gap-2"
+                >
+                  {isDeleting && <Loader2 className="size-4 animate-spin" />}
+                  Delete Section
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </FadeIn>

@@ -28,6 +28,7 @@ import type {
   Contract,
   ContractDraftInput,
   DiagnosticRun,
+  ItemColumnLayout,
   Lead,
   LibraryItem,
   Organization,
@@ -367,6 +368,18 @@ export async function updateLead(
   );
 }
 
+export async function deleteLead(uid: string): Promise<void> {
+  return trace(
+    "leads",
+    "DELETE",
+    "deleteLead",
+    async () => {
+      await deleteDoc(doc(db, "leads", uid));
+    },
+    () => uid,
+  );
+}
+
 // Lead → Client conversion is server-side (transaction + reference code) in
 // `src/server/lead-actions.ts` (convertLeadToClient).
 
@@ -644,6 +657,27 @@ export async function updateProject(
         cleanUndefined(updatedProject),
       );
       return updatedProject;
+    },
+    () => projectId,
+  );
+}
+
+// Persists the shared items-grid column layout. Kept separate from
+// `updateProject` so a column toggle/resize doesn't bump `lastActivityAt` (it's
+// a presentation tweak, not project activity).
+export async function updateProjectItemsLayout(
+  projectId: string,
+  itemColumnLayout: ItemColumnLayout,
+): Promise<void> {
+  return trace(
+    "projects",
+    "WRITE",
+    "updateProjectItemsLayout",
+    async () => {
+      await updateDoc(
+        doc(db, "projects", projectId),
+        cleanUndefined({ itemColumnLayout, updatedAt: Date.now() }),
+      );
     },
     () => projectId,
   );
@@ -1285,6 +1319,20 @@ export async function updateProjectRoom(
         doc(db, "projectRooms", roomId),
         cleanUndefined({ ...room, updatedAt: Date.now() }),
       );
+    },
+    () => roomId,
+  );
+}
+
+// Deletes an empty section. Callers must move or delete the section's items
+// first; this only removes the room document.
+export async function deleteProjectRoom(roomId: string): Promise<void> {
+  return trace(
+    "projectRooms",
+    "DELETE",
+    "deleteProjectRoom",
+    async () => {
+      await deleteDoc(doc(db, "projectRooms", roomId));
     },
     () => roomId,
   );

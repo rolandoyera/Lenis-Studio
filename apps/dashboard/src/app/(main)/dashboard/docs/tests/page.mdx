@@ -1,0 +1,308 @@
+---
+title: Tests
+order: 8
+---
+
+# Tests
+
+This page documents the current testing setup, what has already been covered,
+what still needs coverage, and how we should decide what to test next. Treat it
+as a living plan: when behavior, rules, lifecycle steps, or tooling changes,
+update this page in the same change.
+
+The testing goal is not broad visual coverage. The priority is to catch real
+breakage in business behavior, data safety, organization isolation, lifecycle
+rules, contract logic, and reference-code generation.
+
+## Current Stack
+
+The dashboard uses a layered testing setup:
+
+- **Vitest** for fast unit and integration tests.
+- **React Testing Library** only where component behavior matters.
+- **Firebase Emulator + `@firebase/rules-unit-testing`** for Firestore security
+  rules.
+- **Playwright** for a small smoke suite around critical flows.
+
+Available scripts:
+
+```json
+{
+  "test": "vitest",
+  "test:run": "vitest run",
+  "test:rules": "vitest run --config vitest.rules.config.ts",
+  "test:rules:emulator": "firebase emulators:exec --project sdg-rules-test --only firestore \"npm run test:rules\"",
+  "test:e2e": "playwright test"
+}
+```
+
+Run commands from `apps/dashboard`:
+
+```powershell
+npm run test:run
+npm run test:rules:emulator
+npm run test:e2e
+npm run build
+```
+
+## What Is Covered
+
+### Pure Helpers
+
+Coverage exists for shared helpers that are easy to break and cheap to test:
+
+- `src/lib/utils.test.ts`
+  - currency display and editable currency input formatting
+  - US phone normalization, formatting, and validation
+  - vendor phone formatting for US/CA and international-style input
+  - ZIP formatting and validation
+  - tax ID normalization and formatting
+- `src/server/reference-codes.test.ts`
+  - reference-code formatting
+  - sequence allocation
+  - missing-counter fallback behavior
+
+### Form Schemas And Transforms
+
+Coverage exists for schema validation and data-shaping helpers:
+
+- `lead-constants.test.ts`
+- `library-constants.test.ts`
+- `project-constants.test.ts`
+- `tenant-schema.test.ts`
+- `user-schema.test.ts`
+- `vendor-constants.test.ts`
+- `profile-payloads.test.ts`
+
+These tests focus on required fields, sentinel cleanup, normalized persistence
+payloads, form defaults, and legacy data mapping.
+
+### Contract Helpers
+
+Contract helper tests cover the fixed code-based template and payload builders:
+
+- `contract-template.test.ts`
+  - bold/token parsing
+  - token extraction order
+  - date formatting
+  - client and company address formatting
+- `build-contract-payload.test.ts`
+  - lightweight draft payloads
+  - frozen `lockedSnapshot` payload shape
+  - resolved parties and project snapshot data
+
+### Server Actions With Mocked Firebase Admin
+
+Server-action behavior is covered with mocked Firebase Admin dependencies:
+
+- `create-actions.test.ts`
+  - client creation with active-org ownership and server reference codes
+  - project creation with active-org ownership and copied client code
+  - draft contract creation with server lifecycle fields
+  - lead conversion
+  - missing active-org rejection branches
+- `contract-signing.test.ts`
+  - send-for-signature
+  - server-derived signer and recipient
+  - portal access creation
+  - audit and email calls
+  - sign validation branches
+  - final artifact pipeline writes
+  - failure branches that must not produce side effects
+- `portal.test.ts`
+  - hashed token storage
+  - salted phone-last-4 challenge data
+  - TTL calculation
+  - identity mismatch hiding
+  - expired-token org-name messaging
+- `invite-actions.test.ts`
+  - admin invite flow
+  - server-built mail enqueueing
+  - contributor denial
+  - cross-org resend denial
+  - tenant creation with pending admin invite
+
+### Firestore Rules
+
+Firestore security rule coverage lives in `firestore/rules.test.ts` and runs
+against the emulator. Current coverage includes:
+
+- org isolation
+- contract draft-only client update/delete rules
+- denied client-side contract creation
+- locked/sent contract mutation denial
+- server-only contract audit access
+- server-only project document writes
+- portal access client-write denial
+- unauthenticated portal client-SDK denial
+- invite and self-profile rules
+- role and organization escalation denial
+- organization secrets denial
+- reference counter denial
+- mail outbox denial
+
+### Documentation
+
+Feature notes were updated where tests are most relevant:
+
+- Contracts notes document contract test coverage and rules coverage.
+- Profile notes document invite/mail security invariants.
+- Instagram notes document server-render failure behavior.
+
+## Important Lessons From Production
+
+The Firebase Admin SDK 14 incident showed a test gap: unit tests and local
+builds did not catch a production server bundle/runtime failure.
+
+The failure was not caused by tests. It came from the runtime dependency chain:
+
+```text
+firebase-admin@14 -> jwks-rsa@4 -> jose@6
+```
+
+In Vercel production, `firebase-admin/auth` loaded through a CommonJS `require`
+path and failed on ESM-only `jose`. The fix was to roll `firebase-admin` back to
+`13.10.0` while leaving the client Firebase SDK and test tooling upgrades in
+place.
+
+Testing implication: dependency upgrades that affect server runtime packages
+need preview-deployment smoke checks, not only local Vitest and `next build`.
+
+## Strategy
+
+Use the smallest test that protects the behavior at risk:
+
+- **Pure helper or schema behavior:** Vitest unit tests.
+- **Transform or payload logic:** Vitest integration-style tests around the
+  helper boundary.
+- **Server action behavior:** Vitest with mocked Firebase Admin, mocked
+  third-party providers, and assertions against side effects.
+- **Firestore access control:** Firebase Emulator rules tests.
+- **Storage access control:** Firebase Storage Emulator rules tests.
+- **Critical production route health:** Playwright smoke tests or preview
+  deployment checks.
+
+Prefer behavior over implementation details. A good test should explain a
+business or security rule in plain language and fail when that rule is broken.
+
+## What Remains
+
+### 1. Storage Rules
+
+This is the next highest-value area. Storage is client-written, security
+sensitive, and currently lacks emulator coverage.
+
+Add tests for:
+
+- org-scoped branding uploads
+- org-scoped library image uploads
+- org-scoped vendor image uploads
+- cross-org write denial
+- non-image upload denial
+- oversized upload denial
+- signed-in read behavior
+- default-deny paths
+
+Use the Storage Emulator and keep the test file near the existing rules tests,
+for example:
+
+```text
+apps/dashboard/storage/rules.test.ts
+```
+
+### 2. Project Room Firestore Rules
+
+The Firestore rules for project rooms and project room items inherit org access
+from the parent project instead of relying only on direct `organizationId`
+checks. That makes them worth focused emulator coverage.
+
+Add tests for:
+
+- org member can read/update/delete a room for an own-org project
+- cross-org room access is denied
+- room creation requires an own-org parent project
+- item creation requires an own-org parent project
+- item creation requires matching `organizationId`
+- default-deny for orphaned or mismatched project ids
+
+### 3. Production Route Smoke Coverage
+
+Add a small smoke suite that catches server-rendered route crashes. Keep it
+small and behavior-focused, not visual.
+
+Start with:
+
+- auth gate or dashboard redirect behavior
+- `/dashboard/instagram`
+- `/dashboard/contracts`
+- one contract detail route when fixtures exist
+- one portal route when fixtures exist
+
+For dependency updates, prefer running smoke checks against a Vercel preview
+deployment because local builds can miss production bundling issues.
+
+### 4. Firebase Admin Runtime Smoke
+
+Add a small server-side smoke check for `firebase-admin.ts` import/accessor
+behavior. This will not fully reproduce Vercel's bundle/runtime, but it can
+catch obvious import regressions before deployment.
+
+The stronger protection is still preview-deployment smoke coverage for routes
+that import server modules using Firebase Admin.
+
+### 5. Contract Post-Send Lifecycle
+
+Send/sign coverage is strong. The next contract lifecycle risks are
+administrative post-send actions.
+
+Add tests when those flows exist or change:
+
+- void sent contract
+- revoke portal access
+- ensure void/revoke are server-only
+- ensure audit entries are append-only
+- ensure completed portal links remain viewable where intended
+
+## Future Testing Work
+
+Future work should stay layered and risk-driven:
+
+- Add Storage Emulator tests before expanding UI tests.
+- Add project-room rule coverage before adding more schema tests.
+- Add a tiny Playwright smoke suite before broad component coverage.
+- Add server-action tests whenever a new server action writes multiple
+  collections or sends external effects.
+- Add rules tests whenever a rule changes or a new client-written collection is
+  introduced.
+- Add regression tests for any production incident after the root cause is
+  understood.
+
+Avoid:
+
+- broad visual snapshot suites
+- tests that assert internal React state instead of user-visible behavior
+- duplicating Firestore rule logic in unit tests instead of using the emulator
+- live third-party API calls in unit tests
+- testing every component just because it renders
+
+## SDK Upgrade Policy
+
+Runtime SDK upgrades need their own checklist because local tests may pass while
+production server bundling fails.
+
+For Firebase SDK upgrades:
+
+1. Upgrade one runtime package at a time when possible.
+2. Keep `firebase`, `firebase-admin`, and test/emulator packages conceptually
+   separate in the change description.
+3. Run unit tests.
+4. Run Firestore/Storage emulator tests when rules or SDK access patterns
+   change.
+5. Run `npm run build`.
+6. Deploy to a Vercel preview.
+7. Smoke test server-rendered routes that import Firebase Admin.
+8. Check Vercel runtime logs before merging to `main`.
+
+For `firebase-admin@14`, do not reintroduce it directly on `main`. Test it in a
+branch or preview deployment first, specifically checking routes and actions
+that import `firebase-admin/auth`.

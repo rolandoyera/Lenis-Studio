@@ -13,6 +13,8 @@
 
 import { createHash, randomUUID } from "node:crypto";
 
+import { FieldValue } from "firebase-admin/firestore";
+
 import { cookies, headers } from "next/headers";
 
 import { ELECTRONIC_SIGNATURE_CONSENT_TEXT } from "@/lib/contract-text";
@@ -32,6 +34,7 @@ import { sendContractEmail } from "./brevo";
 import { buildContractEmailHtml } from "./contract-email-template";
 import { buildContractSignedEmailHtml } from "./contract-signed-email-template";
 import { hasRecentPortalOpen, writeContractAuditEvent } from "./contract-audit";
+import { nextContractDisplay } from "./contract-display";
 import {
   type ExecutedContractPdf,
   generateAndStoreFinalContractPdf,
@@ -210,6 +213,11 @@ export async function sendContractForSignature(input: {
       }
       tx.update(contractRef, {
         status: "sent",
+        contractDisplay: nextContractDisplay(
+          current.contractDisplay,
+          "sent",
+          now,
+        ),
         lockedSnapshot,
         contractVersionId,
         contractHash,
@@ -229,11 +237,23 @@ export async function sendContractForSignature(input: {
   }
 
   // Mint the token-gated access record (separate top-level doc).
-  const { portalAccessId, accessToken } = await createContractPortalAccess({
-    contract: { ...contract, organizationId },
-    sentToEmail,
-    phoneLast4,
-    ttlDays: expirationDays,
+  // Mint the token-gated access record + email the link. Delivery events
+  // (email_sent/delivered/…) come from the Brevo webhook, not here.
+  const { portalAccessId, expiresAt, portalUrl, emailSent } =
+    await mintAndEmailSigningLink({
+      contract: { ...contract, organizationId, contractVersionId },
+      org,
+      signerEmail: signer.email,
+      sentToEmail,
+      phoneLast4,
+      expirationDays,
+    });
+
+  // Denormalize the active link onto the contract so the list can show expiry
+  // and resend can revoke it without reading portalAccess.
+  await contractRef.update({
+    activeAccessTokenId: portalAccessId,
+    signingLinkExpiresAt: expiresAt,
   });
 
   await writeContractAuditEvent(contractId, {
@@ -246,8 +266,43 @@ export async function sendContractForSignature(input: {
     contractHash,
   });
 
-  // Email the link. Delivery events (email_sent/delivered/…) come from the Brevo
-  // webhook, not here — so the trail stays precise about what's proven.
+  return {
+    ok: true,
+    portalAccessId,
+    portalUrl,
+    emailSent,
+  };
+}
+
+/**
+ * Mint a fresh portal-access token for a frozen contract and email the signing
+ * link via Brevo. Shared by send and resend; the caller owns the contract-doc
+ * lifecycle write and the audit event. Returns the new link's id + expiry.
+ */
+async function mintAndEmailSigningLink(args: {
+  contract: Contract;
+  org: Organization | undefined;
+  signerEmail: string;
+  sentToEmail: string;
+  phoneLast4: string;
+  expirationDays: number;
+}): Promise<{
+  portalAccessId: string;
+  expiresAt: number;
+  portalUrl: string;
+  emailSent: boolean;
+}> {
+  const { contract, org, signerEmail, sentToEmail, phoneLast4, expirationDays } =
+    args;
+
+  const { portalAccessId, accessToken, expiresAt } =
+    await createContractPortalAccess({
+      contract,
+      sentToEmail,
+      phoneLast4,
+      ttlDays: expirationDays,
+    });
+
   const portalUrl = `${await getRequestOrigin()}/portal/${accessToken}`;
   const companyName =
     org?.companyProfile?.legalName ||
@@ -268,7 +323,7 @@ export async function sendContractForSignature(input: {
     : undefined;
   const emailResult = await sendContractEmail({
     to: { email: sentToEmail, name: contract.clientName },
-    sender: { email: signer.email, name: companyName },
+    sender: { email: signerEmail, name: companyName },
     subject: `Your contract from ${companyName} is ready to sign`,
     htmlContent: buildContractEmailHtml({
       clientName: contract.clientName,
@@ -280,20 +335,209 @@ export async function sendContractForSignature(input: {
       companyPhoneTel,
     }),
     metadata: {
-      contractId,
-      contractVersionId,
+      contractId: contract.contractId,
+      contractVersionId: contract.contractVersionId ?? "",
       accessTokenId: portalAccessId,
-      organizationId,
+      organizationId: contract.organizationId,
       recipientEmail: sentToEmail,
     },
   });
 
-  return {
-    ok: true,
-    portalAccessId,
-    portalUrl,
-    emailSent: emailResult.ok,
-  };
+  return { portalAccessId, expiresAt, portalUrl, emailSent: emailResult.ok };
+}
+
+/**
+ * Resend the signing link for an already-sent, unsigned contract: revoke the old
+ * portal access, mint + email a fresh one (reusing the same identity-verification
+ * gate), and reset the contract's operational status to a fresh `sent` cycle. The
+ * contract itself is never recreated; only the access link is replaced, so the
+ * old link stops working immediately. The audit trail keeps the full history; the
+ * contract doc carries only the current operational state.
+ */
+export async function resendContractSigningLink(input: {
+  contractId: string;
+  userId: string;
+}): Promise<SendContractResult> {
+  const { contractId, userId } = input;
+  const db = getAdminDb();
+
+  const organizationId = await getActiveOrgId();
+  if (!organizationId) return { ok: false, error: "No active organization." };
+
+  const contractRef = db.collection(CONTRACTS_COLLECTION).doc(contractId);
+  const contractSnap = await contractRef.get();
+  if (!contractSnap.exists) return { ok: false, error: "Contract not found." };
+  const contract = contractSnap.data() as Contract;
+
+  if (contract.organizationId !== organizationId) {
+    return { ok: false, error: "Contract belongs to another organization." };
+  }
+  if (!contract.lockedSnapshot || contract.status === "draft") {
+    return { ok: false, error: "Only a sent contract can have its link resent." };
+  }
+  if (contract.executedAt || contract.status === "fully_executed") {
+    return { ok: false, error: "This contract is already executed." };
+  }
+  if (contract.status === "voided") {
+    return { ok: false, error: "This contract has been voided." };
+  }
+
+  // Same authorization + recipient resolution as send. The client record is
+  // re-read so a corrected email/phone takes effect on the resend.
+  const orgSnap = await db
+    .collection("organizations")
+    .doc(organizationId)
+    .get();
+  const org = orgSnap.data() as Organization | undefined;
+  const signer = org?.settings?.contractSigner;
+  if (!signer?.name || !signer?.title || !signer?.email) {
+    return {
+      ok: false,
+      error:
+        "Set a contract signer (name, title, email) in Company settings before resending.",
+    };
+  }
+  const configuredExpiration = org?.settings?.contractExpirationDays;
+  const expirationDays =
+    configuredExpiration && configuredExpiration > 0
+      ? configuredExpiration
+      : DEFAULT_TTL_DAYS;
+
+  const clientSnap = await db
+    .collection("clients")
+    .doc(contract.clientId)
+    .get();
+  const client = clientSnap.data() as Client | undefined;
+  const sentToEmail = client?.email?.trim();
+  if (!sentToEmail) {
+    return { ok: false, error: "The client has no email address on file." };
+  }
+  const phoneDigits = normalizePhone(client?.phone ?? "");
+  if (phoneDigits.length < 4) {
+    return {
+      ok: false,
+      error:
+        "The client needs a phone number on file — it's used to verify their identity before signing.",
+    };
+  }
+  const phoneLast4 = phoneDigits.slice(-4);
+
+  const now = Date.now();
+
+  // Revoke the old link first so it stops working immediately.
+  const previousAccessTokenId = contract.activeAccessTokenId;
+  if (previousAccessTokenId) {
+    await db
+      .collection(PORTAL_ACCESS_COLLECTION)
+      .doc(previousAccessTokenId)
+      .update({
+        status: "revoked",
+        revokedAt: now,
+        revokedReason: "replaced_by_resend",
+      });
+    await writeContractAuditEvent(contractId, {
+      type: "portal_access_revoked",
+      occurredAt: now,
+      actorType: "company_user",
+      actorId: userId,
+      accessTokenId: previousAccessTokenId,
+      reason: "replaced_by_resend",
+    });
+  }
+
+  const { portalAccessId, expiresAt, portalUrl, emailSent } =
+    await mintAndEmailSigningLink({
+      contract,
+      org,
+      signerEmail: signer.email,
+      sentToEmail,
+      phoneLast4,
+      expirationDays,
+    });
+
+  // Reset to a fresh "sent" cycle. `nextContractDisplay(undefined, …)` rebuilds
+  // the chain from scratch so a previously expired/viewed contract doesn't carry
+  // its old stage forward; `viewedAt` is cleared for the new link.
+  await contractRef.update({
+    status: "sent",
+    contractDisplay: nextContractDisplay(undefined, "sent", now),
+    activeAccessTokenId: portalAccessId,
+    signingLinkExpiresAt: expiresAt,
+    sentToEmail,
+    sentBy: userId,
+    sentAt: now,
+    viewedAt: FieldValue.delete(),
+    updatedBy: userId,
+    updatedAt: now,
+  });
+
+  await writeContractAuditEvent(contractId, {
+    type: "contract_resent",
+    occurredAt: now,
+    actorType: "company_user",
+    actorId: userId,
+    recipientEmail: sentToEmail,
+    accessTokenId: portalAccessId,
+    previousAccessTokenId,
+  });
+
+  return { ok: true, portalAccessId, portalUrl, emailSent };
+}
+
+/**
+ * Lazy expiry sweep (no cron): flip any sent/viewed contract whose signing link
+ * has lapsed to `expired` (status + display) and audit it. Call this when the
+ * dashboard loads the contracts. Idempotent — an already-`expired` contract is
+ * filtered out, so it never re-flips or re-audits. Delivery-failed contracts are
+ * left alone (the user resends them after fixing the email).
+ */
+export async function expireLapsedContractLinks(
+  organizationId: string,
+): Promise<void> {
+  const db = getAdminDb();
+  const now = Date.now();
+  try {
+    const snap = await db
+      .collection(CONTRACTS_COLLECTION)
+      .where("organizationId", "==", organizationId)
+      .get();
+
+    const lapsed = snap.docs
+      .map((d) => d.data() as Contract)
+      .filter(
+        (c) =>
+          !!c.sentAt &&
+          !c.executedAt &&
+          c.status !== "voided" &&
+          c.status !== "expired" &&
+          c.status !== "fully_executed" &&
+          c.contractDisplay?.stage !== "delivery_failed" &&
+          !!c.signingLinkExpiresAt &&
+          c.signingLinkExpiresAt < now,
+      );
+
+    await Promise.all(
+      lapsed.map(async (c) => {
+        await db.collection(CONTRACTS_COLLECTION).doc(c.contractId).update({
+          status: "expired",
+          contractDisplay: nextContractDisplay(
+            c.contractDisplay,
+            "expired",
+            now,
+          ),
+          updatedAt: now,
+        });
+        await writeContractAuditEvent(c.contractId, {
+          type: "contract_link_expired",
+          occurredAt: now,
+          actorType: "system",
+          accessTokenId: c.activeAccessTokenId,
+        });
+      }),
+    );
+  } catch (error) {
+    console.error("Failed to expire lapsed contract links:", error);
+  }
 }
 
 // ─── Portal open tracking ────────────────────────────────────────────────────
@@ -326,6 +570,11 @@ export async function recordPortalOpen(
         db.collection(CONTRACTS_COLLECTION).doc(contract.contractId),
         {
           status: "viewed",
+          contractDisplay: nextContractDisplay(
+            contract.contractDisplay,
+            "viewed",
+            now,
+          ),
           viewedAt: contract.viewedAt ?? now,
           updatedAt: now,
         },
@@ -586,6 +835,11 @@ export async function signContract(input: {
       }
       tx.update(contractRef, {
         status: "fully_executed",
+        contractDisplay: nextContractDisplay(
+          current.contractDisplay,
+          "executed",
+          now,
+        ),
         clientSignature: JSON.parse(JSON.stringify(clientSignature)),
         executedAt: now,
         updatedAt: now,

@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ComponentProps, type ReactNode, useEffect, useState } from "react";
 
 import Link from "next/link";
 
@@ -26,11 +26,13 @@ import {
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
 import PageHeader from "@/components/page-header";
 import { PageTitle } from "@/components/page-title-updater";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -42,11 +44,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { TanTable } from "@/components/ui/tan-table";
-import { getContracts, getOrganizationUsers } from "@/lib/db";
-import type { Contract, ContractStatus } from "@/lib/types";
+import { getOrganizationUsers } from "@/lib/db";
+import { db } from "@/lib/firebase";
+import { expireLapsedContractLinks } from "@/server/contract-signing";
+import type {
+  Contract,
+  ContractDisplayStage,
+  ContractStatus,
+} from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
-
-import { ContractStatusBadge } from "./_components/contract-status-badge";
 
 /** "Jun 18, 2026" from an epoch-ms timestamp. */
 function formatUpdated(ms: number): string {
@@ -70,6 +76,81 @@ function retainerLabel(contract: Contract): string {
   return Number.isFinite(amount)
     ? formatCurrency(amount, { noDecimals: true })
     : "—";
+}
+
+type StatusBadge = {
+  label: string;
+  variant: ComponentProps<typeof Badge>["variant"];
+};
+
+/** Map a legacy contract (no `contractDisplay`) onto a display stage + delivery. */
+const FALLBACK_DISPLAY: Record<
+  ContractStatus,
+  { stage: ContractDisplayStage; delivered: boolean }
+> = {
+  draft: { stage: "draft", delivered: false },
+  sent: { stage: "sent", delivered: false },
+  viewed: { stage: "viewed", delivered: true },
+  fully_executed: { stage: "executed", delivered: true },
+  expired: { stage: "expired", delivered: false },
+  voided: { stage: "void", delivered: false },
+};
+
+/**
+ * The realtime Status column, rendered as a chain of badges. Reads the
+ * denormalized `contractDisplay` (kept in sync server-side with the audit
+ * trail); falls back to deriving the stage from `status` for legacy contracts.
+ * Executed/expired/void are terminal — they collapse to a single badge since the
+ * intermediate steps are no longer relevant.
+ */
+function contractStatusBadges(contract: Contract): StatusBadge[] {
+  const { stage, delivered } = contract.contractDisplay
+    ? {
+        stage: contract.contractDisplay.stage,
+        delivered: contract.contractDisplay.delivered,
+      }
+    : FALLBACK_DISPLAY[contract.status];
+
+  // Render-time expiry backstop: a lapsed signing link reads as Expired even
+  // before the lazy server sweep flips `status`. Never overrides a finished or
+  // delivery-failed contract.
+  const lapsed =
+    !!contract.signingLinkExpiresAt &&
+    Date.now() > contract.signingLinkExpiresAt;
+  if (
+    lapsed &&
+    stage !== "executed" &&
+    stage !== "void" &&
+    stage !== "delivery_failed"
+  ) {
+    return [{ label: "Expired", variant: "destructive" }];
+  }
+
+  const sent: StatusBadge = { label: "Sent", variant: "info" };
+  const deliveredBadge: StatusBadge = { label: "Delivered", variant: "success" };
+
+  switch (stage) {
+    case "draft":
+      return [{ label: "Draft", variant: "ghost" }];
+    case "sent":
+      return [sent];
+    case "delivered":
+      return [sent, deliveredBadge];
+    case "viewed":
+      return [
+        sent,
+        ...(delivered ? [deliveredBadge] : []),
+        { label: "Viewed", variant: "warning" },
+      ];
+    case "executed":
+      return [{ label: "Executed", variant: "success" }];
+    case "delivery_failed":
+      return [sent, { label: "Delivery Failed", variant: "destructive" }];
+    case "expired":
+      return [{ label: "Expired", variant: "destructive" }];
+    case "void":
+      return [{ label: "Void", variant: "destructive" }];
+  }
 }
 
 const statusOptions = [
@@ -132,22 +213,42 @@ export default function ContractsPage() {
     if (authLoading || !organizationId) return;
     const orgId = organizationId; // stable string dep; profile identity churns
 
-    async function loadContracts() {
-      try {
-        const [list, users] = await Promise.all([
-          getContracts(orgId),
-          getOrganizationUsers(orgId),
-        ]);
-        setContracts(list);
-        setUserNames(Object.fromEntries(users.map((u) => [u.uid, u.fullName])));
-      } catch (error) {
+    // Lazy expiry sweep (no cron): flip any lapsed signing links to `expired`
+    // server-side; the realtime listener below then reflects the change. The
+    // render-time badge overlay already shows Expired before this resolves.
+    void expireLapsedContractLinks(orgId);
+
+    // Org user names rarely change within a session — fetch once.
+    void getOrganizationUsers(orgId)
+      .then((users) =>
+        setUserNames(Object.fromEntries(users.map((u) => [u.uid, u.fullName]))),
+      )
+      .catch((error) =>
+        console.error("Failed to load organization users:", error),
+      );
+
+    // Realtime contracts so the Status chain updates as delivery/view/sign
+    // events land (the server keeps `contractDisplay` in sync with the audit
+    // trail). Sort newest-first in memory to avoid a composite index, matching
+    // the one-time `getContracts` it replaces.
+    const contractsQuery = query(
+      collection(db, "contracts"),
+      where("organizationId", "==", orgId),
+    );
+    const unsubscribe = onSnapshot(
+      contractsQuery,
+      (snapshot) => {
+        const list = snapshot.docs.map((d) => d.data() as Contract);
+        setContracts(list.sort((a, b) => b.updatedAt - a.updatedAt));
+        setLoading(false);
+      },
+      (error) => {
         console.error("Failed to load contracts:", error);
         toast.error("Failed to fetch contracts from database.");
-      } finally {
         setLoading(false);
-      }
-    }
-    void loadContracts();
+      },
+    );
+    return unsubscribe;
   }, [organizationId, authLoading]);
 
   /** Resolve a contract's editor UID to a name, showing "You" for the signed-in user. */
@@ -236,11 +337,21 @@ export default function ContractsPage() {
       },
     },
     {
+      // Display-only status chain. Keeps `accessorKey: "status"` + `filterFn`
+      // so the Status filter dropdown still works off the coarse status enum,
+      // but renders the realtime chain text and is not sortable.
       accessorKey: "status",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Status</SortableHeader>
+      header: () => <span className="text-foreground text-sm">Status</span>,
+      cell: ({ row }) => (
+        <div className="flex flex-wrap items-center gap-1">
+          {contractStatusBadges(row.original).map((badge) => (
+            <Badge key={badge.label} variant={badge.variant}>
+              {badge.label}
+            </Badge>
+          ))}
+        </div>
       ),
-      cell: ({ row }) => <ContractStatusBadge status={row.original.status} />,
+      enableSorting: false,
       filterFn: "equalsString",
     },
     {

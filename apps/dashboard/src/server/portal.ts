@@ -223,7 +223,7 @@ export async function createContractPortalAccess(input: {
   /** Plain last-4 of the client's phone; hashed here, never stored or returned. */
   phoneLast4: string;
   ttlDays?: number;
-}): Promise<{ portalAccessId: string; accessToken: string }> {
+}): Promise<{ portalAccessId: string; accessToken: string; expiresAt: number }> {
   const {
     contract,
     sentToEmail,
@@ -233,6 +233,7 @@ export async function createContractPortalAccess(input: {
   const ref = getAdminDb().collection(PORTAL_ACCESS_COLLECTION).doc();
   const accessToken = randomBytes(32).toString("base64url");
   const now = Date.now();
+  const expiresAt = now + ttlDays * 24 * 60 * 60 * 1000;
 
   const access: PortalAccess = {
     portalAccessId: ref.id,
@@ -244,7 +245,7 @@ export async function createContractPortalAccess(input: {
     tokenHash: hashAccessToken(accessToken),
     status: "active",
     createdAt: now,
-    expiresAt: now + ttlDays * 24 * 60 * 60 * 1000,
+    expiresAt,
     sentToEmail,
     verificationMethod: "phone_last4",
     verificationPhoneLast4Hash: hashPhoneLast4(ref.id, phoneLast4),
@@ -252,5 +253,5 @@ export async function createContractPortalAccess(input: {
   };
 
   await ref.set(access);
-  return { portalAccessId: ref.id, accessToken };
+  return { portalAccessId: ref.id, accessToken, expiresAt };
 }
