@@ -80,8 +80,6 @@ export const companyProfileSchema = z
 
     // Settings
     timezone: z.string(),
-    // Optional; when set, 1–6 characters (blank clears it).
-    referencePrefix: z.string().max(6, "Use at most 6 characters."),
     currency: z.string(),
     measurementUnit: z.union([
       z.literal(""),
@@ -148,7 +146,6 @@ export const EMPTY_COMPANY_PROFILE_FORM: CompanyProfileFormData = {
   iconDarkUrl: "",
   iconDarkPath: "",
   timezone: "",
-  referencePrefix: "",
   currency: "USD",
   measurementUnit: "imperial",
   defaultMarkupPercent: "",
@@ -162,13 +159,6 @@ export const EMPTY_COMPANY_PROFILE_FORM: CompanyProfileFormData = {
 
 const numToStr = (n: number | undefined): string =>
   typeof n === "number" ? String(n) : "";
-
-/**
- * Default reference prefix used to label clients/projects/contracts when the org
- * hasn't set one. Pre-filled in the form so it persists on the next save, then
- * editable.
- */
-export const DEFAULT_REFERENCE_PREFIX = "ORG";
 
 /** Map a stored organization document to the flat form shape. */
 export function organizationToForm(org: Organization): CompanyProfileFormData {
@@ -205,7 +195,6 @@ export function organizationToForm(org: Organization): CompanyProfileFormData {
     iconDarkUrl: b?.iconDarkUrl ?? "",
     iconDarkPath: b?.iconDarkPath ?? "",
     timezone: s?.timezone ?? "",
-    referencePrefix: s?.referencePrefix ?? DEFAULT_REFERENCE_PREFIX,
     // Currency/measurement are hidden in the UI and injected automatically on save.
     // Defaulting here means every settings save persists them, easing future market migrations.
     currency: s?.currency ?? "USD",
@@ -273,7 +262,6 @@ export function formToOrganizationUpdate(data: CompanyProfileFormData): {
 
   const settings: OrgSettings = {
     timezone: emptyToUndef(data.timezone),
-    referencePrefix: emptyToUndef(data.referencePrefix),
     currency: emptyToUndef(data.currency),
     measurementUnit:
       data.measurementUnit === "" ? undefined : data.measurementUnit,

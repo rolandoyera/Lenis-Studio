@@ -937,8 +937,6 @@ export interface ContractSignerConfig {
 
 export interface OrgSettings {
   timezone?: string;
-  /** Short code (1–6 chars) prefixed to generated reference numbers. */
-  referencePrefix?: string;
   currency?: string;
   measurementUnit?: "imperial" | "metric";
   defaultMarkupPercent?: number;

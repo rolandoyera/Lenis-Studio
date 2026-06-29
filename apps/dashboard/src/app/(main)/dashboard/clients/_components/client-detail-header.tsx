@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Building2,
-  Calendar,
-  Edit,
-  MoreVertical,
-  Trash2,
-  User,
-} from "lucide-react";
+import { Building2, Edit, MoreVertical, Trash2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +35,7 @@ export function ClientDetailHeader({
     <>
       <HeaderBackLink href="/dashboard/clients" />
 
-      <div className="flex flex-col gap-16 pb-4 md:flex-row md:items-start">
+      <div className="flex flex-col gap-16 md:flex-row md:items-start">
         <div className="flex items-center gap-4">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-primary shadow-xs">
             {client.company ? (
@@ -62,28 +55,10 @@ export function ClientDetailHeader({
                   {firstName} {lastName}
                 </span>
               ) : (
-                <span className="text-muted-foreground/60 italic">
+                <span className="text-muted-foreground italic font-light">
                   Private Residence
                 </span>
               )}
-              {client.clientCode && (
-                <>
-                  <span className="text-muted-foreground/30">•</span>
-                  <span className="font-mono">
-                    Client Ref: {client.clientCode}
-                  </span>
-                </>
-              )}
-              <span className="text-muted-foreground/30">•</span>
-              <span className="flex items-center gap-1">
-                <Calendar className="size-3.5 text-muted-foreground/80" />
-                Joined{" "}
-                {new Date(client.createdAt).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </span>
             </div>
           </div>
         </div>
@@ -105,8 +80,7 @@ export function ClientDetailHeader({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={onRequestDelete}
-                >
+                  onClick={onRequestDelete}>
                   <Trash2 className="size-4" />
                   Delete Profile
                 </DropdownMenuItem>

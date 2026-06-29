@@ -26,8 +26,7 @@ profile form is a `"use client"` island that loads/saves its own data.
 Everything is stored **directly on the existing `organizations/{organizationId}` document**, under
 three top-level fields (typed in `src/lib/types.ts`): `companyProfile` (identity + nested `address`,
 plus `phone`/`phoneCountry`), `branding` (colors + light/dark logo + favicon URLs/paths), and
-`settings` (timezone, referencePrefix — an optional 1–6 char code prefixed to generated reference
-numbers, currency, measurementUnit, defaultMarkupPercent, defaultTaxRate,
+`settings` (timezone, currency, measurementUnit, defaultMarkupPercent, defaultTaxRate,
 proposalExpirationDays, contractExpirationDays — days a sent contract's signing link stays valid,
 defaulting to 30 when unset; consumed by the contract send flow — and `contractSigner` — a
 `{ name, title, email }` object used by the contract signing flow; the form maps it as three flat

@@ -202,25 +202,25 @@ export default function ClientProfilePage({ params }: PageProps) {
   const clientName = `${firstName} ${lastName}`.trim() || "Unnamed Client";
 
   return (
-    <div className="flex w-full flex-col gap-6 pb-10">
+    <div className="flex w-full flex-col gap-6">
       <ClientDetailHeader
         client={client}
         onEdit={() => setIsEditOpen(true)}
         onRequestDelete={() => setIsDeleteAlertOpen(true)}
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="col-span-1 lg:col-span-4">
+      <div className="grid grid-cols-1 gap-6 2xl:grid-cols-12">
+        <div className="col-span-1 2xl:col-span-5">
           <ClientContactCard client={client} />
         </div>
-        <div className="col-span-1 lg:col-span-4">
+        <div className="col-span-1 2xl:col-span-4">
           <ClientProjectsCard
             projects={projects}
             onAddProject={() => setIsAddProjectOpen(true)}
           />
         </div>
         {currentActor && (
-          <div className="col-span-1 lg:col-span-4">
+          <div className="col-span-1 2xl:col-span-3">
             <ClientNotesLogCard
               notes={notes}
               currentActor={currentActor}

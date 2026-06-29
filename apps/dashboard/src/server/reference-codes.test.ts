@@ -5,30 +5,24 @@ import {
   buildClientCode,
   buildContractCode,
   buildProjectCode,
-  FALLBACK_REFERENCE_PREFIX,
+  START_NUMBER,
 } from "./reference-codes";
 
 describe("reference code builders", () => {
-  it("pads sequence numbers and uses the expected kind marker", () => {
-    expect(buildClientCode("SDG", 7)).toBe("SDG-CLI-0007");
-    expect(buildProjectCode("SDG", 42)).toBe("SDG-PRO-0042");
-    expect(buildContractCode("SDG", 1234)).toBe("SDG-CN-1234");
+  it("uses the expected kind marker without an org prefix", () => {
+    expect(buildClientCode(10007)).toBe("CLI-10007");
+    expect(buildProjectCode(10042)).toBe("PRO-10042");
+    expect(buildContractCode(11234)).toBe("CN-11234");
   });
 });
 
 describe("allocateReferenceCode", () => {
-  it("allocates the next code with the org reference prefix", async () => {
+  it("allocates the next code from the stored counter", async () => {
     const tx = {
-      get: vi
-        .fn()
-        .mockResolvedValueOnce({
-          get: (field: string) =>
-            field === "settings.referencePrefix" ? "SDG" : undefined,
-        })
-        .mockResolvedValueOnce({
-          exists: true,
-          get: (field: string) => (field === "nextNumber" ? 12 : undefined),
-        }),
+      get: vi.fn().mockResolvedValueOnce({
+        exists: true,
+        get: (field: string) => (field === "nextNumber" ? 10012 : undefined),
+      }),
       set: vi.fn(),
     };
     const db = {
@@ -42,24 +36,21 @@ describe("allocateReferenceCode", () => {
       "project",
     );
 
-    expect(result).toEqual({ code: "SDG-PRO-0012", number: 12 });
-    expect(db.doc).toHaveBeenNthCalledWith(1, "organizations/org-1");
-    expect(db.doc).toHaveBeenNthCalledWith(
-      2,
+    expect(result).toEqual({ code: "PRO-10012", number: 10012 });
+    expect(db.doc).toHaveBeenCalledWith(
       "organizations/org-1/counters/projectCodes",
     );
     expect(tx.set).toHaveBeenCalledWith(
       { path: "organizations/org-1/counters/projectCodes" },
-      { nextNumber: 13 },
+      { nextNumber: 10013 },
       { merge: true },
     );
   });
 
-  it("falls back to ORG and starts at 1 when the counter is missing", async () => {
+  it("starts at START_NUMBER when the counter is missing", async () => {
     const tx = {
       get: vi
         .fn()
-        .mockResolvedValueOnce({ get: () => " " })
         .mockResolvedValueOnce({ exists: false, get: () => undefined }),
       set: vi.fn(),
     };
@@ -74,13 +65,40 @@ describe("allocateReferenceCode", () => {
       "contract",
     );
 
-    expect(result).toEqual({
-      code: `${FALLBACK_REFERENCE_PREFIX}-CN-0001`,
-      number: 1,
-    });
+    expect(result).toEqual({ code: `CN-${START_NUMBER}`, number: START_NUMBER });
     expect(tx.set).toHaveBeenCalledWith(
       { path: "organizations/org-2/counters/contractCodes" },
-      { nextNumber: 2 },
+      { nextNumber: START_NUMBER + 1 },
+      { merge: true },
+    );
+  });
+
+  it("floors an existing low counter up to START_NUMBER", async () => {
+    const tx = {
+      get: vi.fn().mockResolvedValueOnce({
+        exists: true,
+        get: (field: string) => (field === "nextNumber" ? 6 : undefined),
+      }),
+      set: vi.fn(),
+    };
+    const db = {
+      doc: vi.fn((path: string) => ({ path })),
+    };
+
+    const result = await allocateReferenceCode(
+      tx as never,
+      db as never,
+      "org-3",
+      "client",
+    );
+
+    expect(result).toEqual({
+      code: `CLI-${START_NUMBER}`,
+      number: START_NUMBER,
+    });
+    expect(tx.set).toHaveBeenCalledWith(
+      { path: "organizations/org-3/counters/clientCodes" },
+      { nextNumber: START_NUMBER + 1 },
       { merge: true },
     );
   });
