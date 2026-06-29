@@ -36,7 +36,11 @@ and the terminal states collapse to a single badge (the intermediate steps stop 
 (`getContract`, with an org-match tenant guard) and renders `<ContractBuilder contract={…} key={id}/>`
 to edit it. `ContractBuilder` takes an optional `contract` prop — when present it seeds `values`,
 `scopeItems`, `selectedProjectId`, `contractId`, and `status` from it (the `key` forces a remount so
-those `useState` initializers re-run per contract). Opening a non-draft contract shows it locked
+those `useState` initializers re-run per contract). For a **fresh** contract it also accepts an
+optional `initialProjectId` (ignored when `contract` is set), read from the `?projectId=` query param
+by `new/page.tsx` — this is how the project Files tab's "+ Contract" button deep-links into the builder
+with the project preselected. The preselection is baked into the unsaved-changes baseline so opening a
+prefilled builder isn't immediately flagged dirty. Opening a non-draft contract shows it locked
 (saves and project changes disabled); the dashboard editor still renders from the live fields, while
 the **client portal** is the read-only viewer that renders from `lockedSnapshot`.
 Active-page inputs under "Fields to Populate" show `FIELD_DEFS.explainer` below each input; pinned

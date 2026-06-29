@@ -53,7 +53,7 @@ export function ProjectProposalsCard({
   };
 
   return (
-    <Card variant="panel" className="col-span-8">
+    <Card variant="panel">
       <CardHeader>
         <CardTitle>
           <ReceiptText className="icons" />

@@ -205,29 +205,37 @@ export default function ProjectDetailPage({ params }: PageProps) {
         {/* Tab 1 Page Content - Project Overview */}
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-            <ProjectInformationCard project={project} client={client} />
-            <ProjectProposalsCard
-              proposals={proposals}
-              onAddProposal={handleAddProposal}
-              addingProposal={addingProposal}
-            />
-            <ProjectNotesCard
-              project={project}
-              onEdit={() => setIsEditOpen(true)}
-            />
+            <div className="col-span-4">
+              <ProjectInformationCard project={project} client={client} />
+            </div>
+            <div className="col-span-8">
+              <ProjectFilesCard
+                projectId={project.projectId}
+                organizationId={project.organizationId}
+              />
+            </div>
+            <div className="col-span-4">
+              <ProjectNotesCard
+                project={project}
+                onEdit={() => setIsEditOpen(true)}
+              />
+            </div>
           </div>
         )}
 
         {/* Tab 2 Page Content - Project Items */}
         {activeTab === "items" && <ProjectItems project={project} />}
 
-        {/* Tab 3 Page Content - Project Files */}
-        {activeTab === "files" && (
+        {/* Tab 3 Page Content - Project Proposals */}
+        {activeTab === "proposals" && (
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-            <ProjectFilesCard
-              projectId={project.projectId}
-              organizationId={project.organizationId}
-            />
+            <div className="col-span-12">
+              <ProjectProposalsCard
+                proposals={proposals}
+                onAddProposal={handleAddProposal}
+                addingProposal={addingProposal}
+              />
+            </div>
           </div>
         )}
 

@@ -19,13 +19,20 @@ import {
   FileText,
   Loader2,
   SquarePen,
+  Plus,
 } from "lucide-react";
 
 import { useAuth } from "@/components/auth-context";
 import { ContractStatusBadge } from "@/app/(main)/dashboard/contracts/_components/contract-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { TanTable } from "@/components/ui/tan-table";
 import {
   getOrganizationUsers,
@@ -294,6 +301,11 @@ export function ProjectFilesCard({
 
   const columns = buildColumns(createdByLabel);
 
+  // A "draft" row is a contract that exists but hasn't executed into a stored
+  // document yet (draft/sent/viewed all stay drafts until execution). Hide the
+  // "+ Contract" action while one is still open — finish it before starting another.
+  const hasUnexecutedContract = rows.some((row) => row.kind === "draft");
+
   const table = useReactTable({
     data: rows,
     columns,
@@ -321,11 +333,29 @@ export function ProjectFilesCard({
           <TanTable
             table={table}
             noun="files"
-            emptyMessage="No files yet. Contract drafts appear here, then become downloadable once fully executed."
+            emptyMessage="No files yet."
             borderTop={false}
           />
         )}
       </CardContent>
+      <CardFooter className="justify-end h-14 gap-4">
+        <Button size="sm" variant="secondary">
+          <Plus className="size-3" />
+          Proposal
+        </Button>
+        <Button size="sm" variant="secondary">
+          <Plus className="size-3" />
+          Invoice
+        </Button>
+        {!hasUnexecutedContract && (
+          <Button asChild size="sm" variant="secondary">
+            <Link href={`/dashboard/contracts/new?projectId=${projectId}`}>
+              <Plus className="size-3" />
+              Contract
+            </Link>
+          </Button>
+        )}
+      </CardFooter>
     </Card>
   );
 }

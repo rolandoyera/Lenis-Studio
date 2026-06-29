@@ -2,10 +2,7 @@
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
-import Link from "next/link";
-
 import {
-  ArrowLeft,
   Calendar,
   DollarSign,
   Hammer,
@@ -94,6 +91,7 @@ import {
   TEMPLATE_PAGES,
   tokenName,
 } from "./contract-template";
+import HeaderBackLink from "../../_components/HeaderBackLink";
 
 interface ScopeItem {
   id: string;
@@ -157,8 +155,7 @@ function renderSegments(text: string, resolved: Record<string, string>) {
       <span
         // biome-ignore lint/suspicious/noArrayIndexKey: static template, stable order
         key={i}
-        className="contract-placeholder rounded bg-yellow-100 px-1.5 py-0.5 font-semibold text-[13px] text-yellow-800"
-      >
+        className="contract-placeholder rounded bg-yellow-100 px-1.5 py-0.5 font-semibold text-[13px] text-yellow-800">
         {def?.label ?? name}
       </span>
     );
@@ -185,8 +182,7 @@ function DocumentBody({
         <p
           // biome-ignore lint/suspicious/noArrayIndexKey: static template, stable order
           key={i}
-          className={`whitespace-pre-wrap${isHeadingLine(line) ? " text-center" : ""}`}
-        >
+          className={`whitespace-pre-wrap${isHeadingLine(line) ? " text-center" : ""}`}>
           {line ? renderSegments(line, resolved) : " "}
         </p>
       ))}
@@ -322,8 +318,7 @@ function ScopeListField({
               variant="ghost"
               size="icon"
               className="shrink-0 text-muted-foreground hover:text-destructive"
-              onClick={() => onRemove(item.id)}
-            >
+              onClick={() => onRemove(item.id)}>
               <Trash2 className="size-4" />
               <span className="sr-only">Remove item</span>
             </Button>
@@ -335,8 +330,7 @@ function ScopeListField({
         variant="outline"
         size="sm"
         className="self-start"
-        onClick={onAdd}
-      >
+        onClick={onAdd}>
         <Plus className="size-4" />
         Add item
       </Button>
@@ -378,8 +372,12 @@ const DEFAULT_VALUES: Record<string, string> = {
 };
 
 /** When `contract` is passed the builder edits that existing draft; otherwise it
- * creates a new one. */
-export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
+ * creates a new one. `initialProjectId` preselects a project for a fresh
+ * contract (e.g. opened from a project's Files tab); ignored when editing. */
+export function ContractBuilder({
+  contract,
+  initialProjectId,
+}: { contract?: Contract; initialProjectId?: string } = {}) {
   const { organizationId, uid } = useAuth();
   const [values, setValues] = useState<Record<string, string>>(() =>
     contract ? { ...contract.values } : { ...DEFAULT_VALUES },
@@ -388,7 +386,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
   // Projects (and their client) are read from the CRM — no inline creation here.
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState(
-    contract?.projectId ?? "",
+    contract?.projectId ?? initialProjectId ?? "",
   );
   const [pendingProject, setPendingProject] = useState<Project | null>(null);
   const [client, setClient] = useState<Client | null>(null);
@@ -412,7 +410,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
     draftKey(
       contract ? contract.values : DEFAULT_VALUES,
       contract?.scopeItems.length ? contract.scopeItems : [],
-      contract?.projectId ?? "",
+      contract?.projectId ?? initialProjectId ?? "",
     ),
   );
   // Firm-side values read from the org's company profile (legal name + address +
@@ -737,7 +735,10 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
     if (!contractId || !uid || resending) return;
     setResending(true);
     try {
-      const result = await resendContractSigningLink({ contractId, userId: uid });
+      const result = await resendContractSigningLink({
+        contractId,
+        userId: uid,
+      });
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -761,13 +762,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between lg:shrink-0">
         <div className="flex flex-col gap-1">
-          <Link
-            href="/dashboard/contracts"
-            className="flex w-fit items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-3.5" />
-            Back to Contracts
-          </Link>
+          <HeaderBackLink href="/dashboard/contracts" />
           <h1 className="font-heading font-semibold text-2xl">
             {contract ? "Edit Contract" : "New Contract"}
           </h1>
@@ -783,8 +778,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
               <Button
                 variant="outline"
                 size="icon"
-                disabled={saving || sending || resending}
-              >
+                disabled={saving || sending || resending}>
                 {saving || sending || resending ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
@@ -798,8 +792,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
                   onClick={handleSendContract}
-                  disabled={isLocked || sending}
-                >
+                  disabled={isLocked || sending}>
                   <Send className="size-4" />
                   Send
                 </DropdownMenuItem>
@@ -808,8 +801,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                     onClick={() => {
                       void handleResend();
                     }}
-                    disabled={resending}
-                  >
+                    disabled={resending}>
                     <RefreshCw className="size-4" />
                     Resend signing link
                   </DropdownMenuItem>
@@ -818,14 +810,12 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                   onClick={() => {
                     void handleSaveDraft();
                   }}
-                  disabled={isLocked || saving}
-                >
+                  disabled={isLocked || saving}>
                   <Save className="size-4" />
                   Save Draft
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => guard("print", () => window.print())}
-                >
+                  onClick={() => guard("print", () => window.print())}>
                   <Printer className="size-4" />
                   Print / PDF
                 </DropdownMenuItem>
@@ -865,8 +855,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                           item.name
                             .toLowerCase()
                             .includes(inputValue.toLowerCase())
-                        }
-                      >
+                        }>
                         <ComboboxTrigger
                           render={
                             <button
@@ -879,8 +868,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                                   "cursor-not-allowed bg-muted/40 text-muted-foreground opacity-70",
                                 !selectedProject && "text-muted-foreground",
                               )}
-                              disabled={isLocked}
-                            >
+                              disabled={isLocked}>
                               {selectedProject
                                 ? selectedProject.name
                                 : projects.length
@@ -979,8 +967,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                                 def.type === "textarea"
                                   ? "basis-full"
                                   : "min-w-40 basis-[calc(50%-0.5rem)]"
-                              }
-                            >
+                              }>
                               <Field label={def.label}>
                                 <PageFieldInput
                                   def={def}
@@ -1019,8 +1006,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                 page.page === activePage
                   ? "border-primary/40 shadow-lg ring-1 ring-primary/20"
                   : "border-border"
-              }`}
-            >
+              }`}>
               {/* Editing-only page marker — hidden when printing. */}
               <span className="contract-page-meta absolute top-3 right-4 text-muted-foreground/70 text-xs">
                 {page.page} / {totalPages}
@@ -1046,8 +1032,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
         open={!!pendingProject}
         onOpenChange={(open) => {
           if (!open) setPendingProject(null);
-        }}
-      >
+        }}>
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Change this contract's project?</AlertDialogTitle>
@@ -1084,8 +1069,7 @@ export function ContractBuilder({ contract }: { contract?: Contract } = {}) {
                 e.preventDefault();
                 void runSend();
               }}
-              disabled={sending}
-            >
+              disabled={sending}>
               {sending ? "Sending…" : "Send Contract"}
             </AlertDialogAction>
           </AlertDialogFooter>

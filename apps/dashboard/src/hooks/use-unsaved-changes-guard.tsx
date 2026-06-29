@@ -51,8 +51,19 @@ export function useUnsavedChangesGuard({
   stayLabel = "Stay",
 }: UseUnsavedChangesGuardOptions): { dialog: ReactNode } {
   const router = useRouter();
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  // The intercepted destination. `back` mirrors a HeaderBackLink click — navigate
+  // via history rather than pushing `href` — so "Go Back" returns to the page the
+  // user actually came from instead of the link's static fallback target.
+  const [pendingNav, setPendingNav] = useState<{
+    href: string;
+    back: boolean;
+  } | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  const navigate = (nav: { href: string; back: boolean }) => {
+    if (nav.back) router.back();
+    else router.push(nav.href);
+  };
 
   // Browser-level exits (tab close, refresh, typed URL, hard nav).
   useEffect(() => {
@@ -104,16 +115,23 @@ export function useUnsavedChangesGuard({
       }
       e.preventDefault();
       e.stopImmediatePropagation();
-      setPendingHref(`${dest.pathname}${dest.search}${dest.hash}`);
+      // A back link prefers history.back() — but only when there's history to
+      // return to, matching HeaderBackLink's own guard; otherwise fall to href.
+      const back =
+        anchor.hasAttribute("data-back-link") && window.history.length > 1;
+      setPendingNav({
+        href: `${dest.pathname}${dest.search}${dest.hash}`,
+        back,
+      });
     };
     document.addEventListener("click", onCaptureClick, true);
     return () => document.removeEventListener("click", onCaptureClick, true);
   }, [when]);
 
   const leaveWithoutSaving = () => {
-    const href = pendingHref;
-    setPendingHref(null);
-    if (href) router.push(href);
+    const nav = pendingNav;
+    setPendingNav(null);
+    if (nav) navigate(nav);
   };
 
   const saveAndLeave = async () => {
@@ -122,9 +140,9 @@ export function useUnsavedChangesGuard({
     try {
       const ok = await onSave();
       if (!ok) return; // keep the dialog open; caller surfaced why
-      const href = pendingHref;
-      setPendingHref(null);
-      if (href) router.push(href);
+      const nav = pendingNav;
+      setPendingNav(null);
+      if (nav) navigate(nav);
     } finally {
       setLeaving(false);
     }
@@ -132,9 +150,9 @@ export function useUnsavedChangesGuard({
 
   const dialog = (
     <AlertDialog
-      open={pendingHref !== null}
+      open={pendingNav !== null}
       onOpenChange={(open) => {
-        if (!open && !leaving) setPendingHref(null);
+        if (!open && !leaving) setPendingNav(null);
       }}
     >
       <AlertDialogContent>

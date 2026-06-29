@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { DollarSign, FolderKanban, MapPin, Plus } from "lucide-react";
+import { FolderKanban, MapPin, Plus, ArrowRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,10 +49,9 @@ export function ClientProjectsCard({
             {projects.map((project) => (
               <div
                 key={project.projectId}
-                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4"
-              >
+                className="flex flex-col gap-3 rounded-lg border border-border/50 bg-background/50 p-4">
                 <div className="mt-1 flex items-center justify-between">
-                  <H3 className="text-muted-foreground">{project.name}</H3>
+                  <H3 className="text-base">{project.name}</H3>
                   <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
                     {PROJECT_STATUS_LABELS[project.status]}
                   </Badge>
@@ -61,7 +60,6 @@ export function ClientProjectsCard({
                 <div className="flex flex-col gap-1.5 rounded-md border border-muted/30 bg-muted/20 p-2.5 text-muted-foreground text-xs">
                   {project.budget !== undefined && project.budget > 0 && (
                     <div className="flex items-center gap-1.5 font-medium text-foreground/80">
-                      <DollarSign className="size-3.5 shrink-0 text-emerald-500" />
                       Budget:{" "}
                       <span className="font-semibold text-foreground/90">
                         {formatCurrency(project.budget, { noDecimals: true })}
@@ -76,20 +74,20 @@ export function ClientProjectsCard({
                   )}
                 </div>
 
-                {project.notes && (
-                  <p className="line-clamp-2 text-[11px] text-muted-foreground/80 italic leading-relaxed">
-                    "{project.notes}"
-                  </p>
-                )}
-
-                <div className="mt-1 flex items-center justify-end border-border/40 border-t pt-2.5">
-                  <Link
-                    href={`/dashboard/projects/${project.projectId}`}
-                    prefetch={false}
-                    className="flex items-center gap-0.5 font-bold text-[11px] text-primary hover:underline"
-                  >
-                    View Project
-                  </Link>
+                <div className="mt-1 flex items-center justify-end">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    asChild
+                    className="ml-auto p-0 detail-link">
+                    <Link
+                      href={`/dashboard/projects/${project.projectId}`}
+                      prefetch={false}
+                      className="group/btn flex items-center gap-0.5">
+                      View Project
+                      <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
+                    </Link>
+                  </Button>
                 </div>
               </div>
             ))}
