@@ -10,6 +10,8 @@ import type { Metadata } from "next";
 import { getRequestAppBrand } from "@/server/app-brand";
 import { getPortalBranding, resolvePortalAccess } from "@/server/portal";
 
+import { PortalShell } from "../_components/portal-shell";
+
 export const metadata: Metadata = {
   title: "Contract Portal",
   robots: { index: false, follow: false },
@@ -33,65 +35,8 @@ export default async function PortalLayout({
     : null;
 
   return (
-    <div
-      className="flex min-h-svh flex-col bg-neutral-100 text-neutral-900"
-      style={
-        branding?.tertiaryColor
-          ? { backgroundColor: branding.tertiaryColor }
-          : undefined
-      }
-    >
-      <header
-        className="border-neutral-200 border-b"
-        style={
-          branding
-            ? {
-                backgroundColor: branding.primaryColor,
-                color: branding.tertiaryColor,
-              }
-            : undefined
-        }
-      >
-        <div className="mx-auto flex h-30 w-full max-w-[1600px] flex-col items-center justify-center">
-          {/* biome-ignore lint/performance/noImgElement: branding logo from a dynamic host-resolved URL. */}
-          <img
-            src={brand.image.iconDarkSrc}
-            alt={brand.name}
-            className="h-20 w-auto"
-          />
-          <p
-            className="text-white font-medium"
-            style={
-              branding
-                ? {
-                    color: branding.tertiaryColor,
-                  }
-                : undefined
-            }
-          >
-            Sarvian Studio
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:py-12">
-        {children}
-      </main>
-
-      <footer
-        className="border-neutral-200 border-t bg-white px-4 py-6 text-center text-neutral-400 text-xs"
-        style={
-          branding
-            ? {
-                backgroundColor: branding.primaryColor,
-                color: branding.tertiaryColor,
-              }
-            : undefined
-        }
-      >
-        © {new Date().getFullYear()} {brand.name}. This document is
-        confidential.
-      </footer>
-    </div>
+    <PortalShell brand={brand} branding={branding ?? undefined}>
+      {children}
+    </PortalShell>
   );
 }

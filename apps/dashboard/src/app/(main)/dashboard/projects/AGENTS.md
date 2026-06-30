@@ -104,11 +104,16 @@ A TanStack-Table **state layer rendered as a CSS grid, not a `<table>`** — wid
 `grid-template-columns` string (a `--items-cols` CSS var), which makes columns trivially resizable
 without the table layout fighting back.
 
-- **`ITEM_FIELDS` is the single source of truth.** Each entry becomes a TanStack column, a
-  column-picker option (`ITEM_COLUMN_OPTIONS`), and a default-visibility flag
-  (`DEFAULT_ITEM_COLUMN_VISIBILITY`). **To add/remove/relabel a column, edit `ITEM_FIELDS` only** —
-  the picker and defaults derive from it. `thumbnail`/`actions` are structural (fixed px, never
-  hidden/resized).
+- **`ITEM_FIELDS` is the single source of truth**, and it lives in **`items-fields.tsx`** (a
+  TanStack/dnd-free module) — `items-table.tsx` imports it and re-exports `ITEM_COLUMN_OPTIONS` /
+  `DEFAULT_ITEM_COLUMN_VISIBILITY` for back-compat. The registry is split out so read-only consumers
+  can mirror the same columns **without** pulling in the interactive table: the proposal preview
+  (`portal/preview/proposal/[projectId]`) renders a static `ProposalItemsTable` from `ITEM_FIELDS` +
+  the project's saved `itemColumnLayout` (same `cellClass`/track logic, no grip/actions/resize). Each
+  entry becomes a TanStack column, a column-picker option (`ITEM_COLUMN_OPTIONS`), and a
+  default-visibility flag (`DEFAULT_ITEM_COLUMN_VISIBILITY`). **To add/remove/relabel a column, edit
+  `ITEM_FIELDS` only** — the picker, defaults, and the proposal table all derive from it.
+  `thumbnail`/`actions` are structural (fixed px, never hidden/resized).
 - **Default widths are proportional (`fr`)** so the grid fills the container on load at any screen
   size — no per-screen pixel guessing. A column the user resizes switches to a fixed `px` width
   (stored in `columnSizing`); the remaining `fr` columns absorb the slack.

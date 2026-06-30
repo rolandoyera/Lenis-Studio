@@ -1,0 +1,26 @@
+/*
+ * Portal theme scope. The client-facing portal is always a light "paper" surface,
+ * independent of the dashboard's theme. Rather than hardcoding neutral-* colors in
+ * every portal component, we redefine the design-system tokens on `.portal-theme`
+ * (applied to the PortalShell root) so semantic utilities like `text-foreground`
+ * and `text-muted-foreground` resolve to the same light values everywhere here.
+ *
+ * Intentionally fixed/light — there is no `.dark` variant. Tokens are added a few
+ * at a time as components migrate off hardcoded colors. Currently: text + muted text
+ * + card (the white "paper" surface) + border.
+ */
+.portal-theme {
+  --foreground: oklch(0 0.0269 95.7226);
+  --muted-foreground: oklch(0.6059 0.0075 97.4233);
+  --card: oklch(1 0 0); /* white */
+  --border: oklch(0.922 0 0); /* neutral-200 */
+  --secondary: oklch(0.9702 0 0); /* neutral-100 (page background) */
+
+  /* Fallbacks; PortalShell overrides these inline with the firm's Company
+   * Settings branding when set: --primary ← accent, --secondary ← tertiary. */
+  --primary: oklch(0.6 0.1375 39.0427);
+
+  /* Type scale overrides — the app shrinks --text-xs to 10px globally; the
+   * portal uses a more readable 12px. */
+  --text-xs: 12px;
+}

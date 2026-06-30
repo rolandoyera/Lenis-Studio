@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 
+import Link from "next/link";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   closestCenter,
@@ -25,6 +27,7 @@ import { collection, doc, onSnapshot, query, where } from "firebase/firestore";
 import {
   DollarSign,
   Edit,
+  Eye,
   FolderPlus,
   Home,
   LayoutGrid,
@@ -204,8 +207,7 @@ function RoomListCard({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
-              onClick={() => onDelete(room)}
-            >
+              onClick={() => onDelete(room)}>
               <Trash2 className="size-4" />
               Delete Section
             </DropdownMenuItem>
@@ -215,8 +217,7 @@ function RoomListCard({
 
       <CardContent
         ref={setNodeRef}
-        className={cn("p-0", isOver && "bg-primary/5 ring-1 ring-primary/30")}
-      >
+        className={cn("p-0", isOver && "bg-primary/5 ring-1 ring-primary/30")}>
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-12 text-center text-muted-foreground">
             <ShoppingBag className="mb-2 size-8 text-muted-foreground/30" />
@@ -239,7 +240,7 @@ function RoomListCard({
         )}
       </CardContent>
 
-      <CardFooter className="flex shrink-0 items-center justify-end gap-12 border-t p-4">
+      <CardFooter className="flex shrink-0 items-center justify-end gap-12 h-16">
         <div className="flex flex-col items-center gap-1 text-xl">
           <Label>Items</Label>
           {items.length}
@@ -768,6 +769,16 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
         </Card>
       </div>
       <div className="flex items-center justify-end gap-2">
+        <Button asChild variant="outline">
+          <Link
+            href={`/portal/preview/proposal/${project.projectId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Eye className="size-4" />
+            Preview Proposal
+          </Link>
+        </Button>
         {view === "list" && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -778,8 +789,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="max-h-96 w-52 overflow-y-auto"
-            >
+              className="max-h-96 w-52 overflow-y-auto">
               <DropdownMenuLabel>Column Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setColumnSizing({})}>
@@ -797,8 +807,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                       [col.id]: !!checked,
                     }))
                   }
-                  onSelect={(event) => event.preventDefault()}
-                >
+                  onSelect={(event) => event.preventDefault()}>
                   {col.label}
                 </DropdownMenuCheckboxItem>
               ))}
@@ -807,8 +816,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
         )}
         <Tabs
           value={view}
-          onValueChange={(value) => setView(value as "grid" | "list")}
-        >
+          onValueChange={(value) => setView(value as "grid" | "list")}>
           <TabsList>
             <TabsTrigger value="grid" aria-label="Grid view">
               <Grid />
@@ -824,8 +832,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
       {view === "grid" && (
         <FadeIn
           key="grid"
-          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3"
-        >
+          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-3">
           {rooms.map((room) => {
             const itemsInRoom = roomItems.filter(
               (item) => item.roomId === room.roomId,
@@ -854,8 +861,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                     <DropdownMenuContent align="end" className="w-44">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem
-                        onClick={() => setActiveRoomForAddItems(room)}
-                      >
+                        onClick={() => setActiveRoomForAddItems(room)}>
                         <PlusCircle className="size-4" />
                         Add Item
                       </DropdownMenuItem>
@@ -866,8 +872,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         variant="destructive"
-                        onClick={() => setDeletingRoom(room)}
-                      >
+                        onClick={() => setDeletingRoom(room)}>
                         <Trash2 className="size-4" />
                         Delete Section
                       </DropdownMenuItem>
@@ -893,8 +898,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                         return (
                           <div
                             key={item.roomItemId}
-                            className="group flex items-center gap-3 p-4 transition-colors hover:bg-muted/20"
-                          >
+                            className="group flex items-center gap-3 p-4 transition-colors hover:bg-muted/20">
                             <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
                               {item.coverImageUrl ? (
                                 <DashboardImage
@@ -938,8 +942,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                                 variant="ghost"
                                 size="icon"
                                 className="size-8"
-                                onClick={() => setEditingItem(item)}
-                              >
+                                onClick={() => setEditingItem(item)}>
                                 <Pencil className="size-4" />
                                 <span className="sr-only">Edit item</span>
                               </Button>
@@ -947,8 +950,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                                 variant="ghost"
                                 size="icon"
                                 className="size-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => setDeletingItem(item)}
-                              >
+                                onClick={() => setDeletingItem(item)}>
                                 <Trash2 className="size-4" />
                                 <span className="sr-only">Delete item</span>
                               </Button>
@@ -961,7 +963,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                 </CardContent>
 
                 {/* Actions Footer */}
-                <CardFooter className="flex shrink-0 items-center justify-around border-t p-4">
+                <CardFooter className="flex shrink-0 items-center justify-around h-16">
                   <div className="flex flex-col items-center gap-2 text-xl">
                     <Label>Items</Label>
                     {itemsInRoom.length}
@@ -984,8 +986,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
           {/* Create Room Box trigger */}
           <Card
             onClick={openCreateRoom}
-            className="group flex min-h-[300px] cursor-pointer flex-col items-center justify-center border-dashed p-8 text-center transition-all hover:border-primary/40 hover:bg-primary/5"
-          >
+            className="group flex min-h-[300px] cursor-pointer flex-col items-center justify-center border-dashed p-8 text-center transition-all hover:border-primary/40 hover:bg-primary/5">
             <div className="mb-3 flex size-12 items-center justify-center rounded-full border border-dashed text-muted-foreground transition-colors group-hover:border-primary/50 group-hover:text-primary">
               <FolderPlus className="size-6" />
             </div>
@@ -1005,8 +1006,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
             modifiers={[restrictToVerticalAxis]}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-          >
+            onDragEnd={handleDragEnd}>
             <div className="flex flex-col gap-6">
               {rooms.map((room) => (
                 <RoomListCard
@@ -1029,8 +1029,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
               <Button
                 variant="outline"
                 onClick={openCreateRoom}
-                className="w-fit gap-2 self-start"
-              >
+                className="w-fit gap-2 self-start">
                 <FolderPlus className="size-4" />
                 Create Section
               </Button>
@@ -1047,8 +1046,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
         onOpenChange={(open) => {
           setIsRoomDialogOpen(open);
           if (!open) setEditingRoom(null);
-        }}
-      >
+        }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-serif">
@@ -1060,16 +1058,14 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
           </DialogHeader>
           <form
             onSubmit={roomForm.handleSubmit(onSubmitRoom)}
-            className="space-y-4"
-          >
+            className="space-y-4">
             <Controller
               control={roomForm.control}
               name="name"
               render={({ field, fieldState }) => (
                 <Field
                   className="flex flex-col gap-1.5"
-                  data-invalid={fieldState.invalid}
-                >
+                  data-invalid={fieldState.invalid}>
                   <Label htmlFor="room-name">
                     Section Name <span className="text-destructive">*</span>
                   </Label>
@@ -1090,8 +1086,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
               render={({ field, fieldState }) => (
                 <Field
                   className="flex flex-col gap-1.5"
-                  data-invalid={fieldState.invalid}
-                >
+                  data-invalid={fieldState.invalid}>
                   <Label htmlFor="room-description">
                     Description (Optional)
                   </Label>
@@ -1114,8 +1109,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                 onClick={() => {
                   setIsRoomDialogOpen(false);
                   setEditingRoom(null);
-                }}
-              >
+                }}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending}>
@@ -1167,8 +1161,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
         open={!!deletingItem}
         onOpenChange={(open) => {
           if (!open) setDeletingItem(null);
-        }}
-      >
+        }}>
         <AlertDialogContent className="bg-popover sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{deletingItem?.name}"?</AlertDialogTitle>
@@ -1183,8 +1176,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
               variant="destructive"
               onClick={handleConfirmDeleteItem}
               disabled={isDeleting}
-              className="gap-2"
-            >
+              className="gap-2">
               {isDeleting && <Loader2 className="size-4 animate-spin" />}
               Delete Item
             </AlertDialogAction>
@@ -1199,8 +1191,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
         open={!!deletingRoom}
         onOpenChange={(open) => {
           if (!open) setDeletingRoom(null);
-        }}
-      >
+        }}>
         <AlertDialogContent className="bg-popover sm:max-w-md">
           {deletingRoomItemCount > 0 ? (
             <>
@@ -1237,8 +1228,7 @@ export function ProjectItems({ project: initialProject }: ProjectItemsProps) {
                   variant="destructive"
                   onClick={handleConfirmDeleteRoom}
                   disabled={isDeleting}
-                  className="gap-2"
-                >
+                  className="gap-2">
                   {isDeleting && <Loader2 className="size-4 animate-spin" />}
                   Delete Section
                 </AlertDialogAction>

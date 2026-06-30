@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties } from "react";
 
 import {
   SortableContext,
@@ -26,235 +26,30 @@ import { GripVertical, Pencil, ShoppingBag, Trash2 } from "lucide-react";
 import { DashboardImage } from "@/components/dashboard-image";
 import { Button } from "@/components/ui/button";
 import type { ProjectRoomItem, Vendor } from "@/lib/types";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
-// ----------------------------------------------------
-// Field registry — the single source of truth for the items grid. Each entry
-// becomes a TanStack column, a column-picker option, and a default-visibility
-// flag, so the three never drift apart. Rendering is a CSS grid (not a <table>)
-// so column widths are one declarative `grid-template-columns` string and become
-// trivially resizable.
-// ----------------------------------------------------
+import {
+  cellClass,
+  FIELD_BY_ID,
+  ITEM_FIELDS,
+  MIN_FLEX_TRACK,
+  THUMBNAIL_SIZE,
+} from "./items-fields";
 
-interface ItemFieldDef {
-  id: string;
-  label: string;
-  defaultVisible: boolean;
-  /** Default column width in px (user-resizable, persisted by the parent). */
-  size: number;
-  /** Sort/accessor value; also used as the fallback display value. */
-  value: (item: ProjectRoomItem) => string | number;
-  /** Custom cell renderer; defaults to `value` (or "—" when empty). */
-  render?: (item: ProjectRoomItem, vendor?: Vendor) => ReactNode;
-  /** Right-align the header + cells (numeric columns). */
-  align?: "right";
-  /** Allow the cell text to wrap instead of truncating. */
-  wrap?: boolean;
-  /** Render the cell value in a monospace face. */
-  mono?: boolean;
-  /** Extra cell classes (e.g. emphasis on Total). */
-  cellClassName?: string;
-}
-
-const ITEM_FIELDS: ItemFieldDef[] = [
-  {
-    id: "item",
-    label: "Item",
-    defaultVisible: true,
-    size: 200,
-    value: (item) => item.name,
-    render: (item, vendor) => (
-      <>
-        <div className="truncate font-semibold text-foreground text-sm">
-          {item.name}
-        </div>
-        {vendor && (
-          <div className="truncate text-muted-foreground text-xs">
-            {vendor.name}
-          </div>
-        )}
-      </>
-    ),
-  },
-  {
-    id: "sku",
-    label: "SKU",
-    defaultVisible: false,
-    size: 120,
-    mono: true,
-    value: (item) => item.sku ?? "",
-  },
-  {
-    id: "category",
-    label: "Category",
-    defaultVisible: false,
-    size: 130,
-    value: (item) => item.category ?? "",
-  },
-  {
-    id: "subcategory",
-    label: "Subcategory",
-    defaultVisible: false,
-    size: 140,
-    value: (item) => item.subcategory ?? "",
-  },
-  {
-    id: "materials",
-    label: "Materials",
-    defaultVisible: true,
-    size: 190,
-    wrap: true,
-    value: (item) => item.materials ?? "",
-  },
-  {
-    id: "finishColor",
-    label: "Color",
-    defaultVisible: true,
-    size: 140,
-    value: (item) => item.finishColor ?? "",
-  },
-  {
-    id: "manufacturer",
-    label: "Manufacturer",
-    defaultVisible: false,
-    size: 140,
-    value: (item) => item.manufacturer ?? "",
-  },
-  {
-    id: "description",
-    label: "Description",
-    defaultVisible: true,
-    size: 320,
-    wrap: true,
-    value: (item) => item.description ?? "",
-  },
-  {
-    id: "poDescription",
-    label: "PO Description",
-    defaultVisible: false,
-    size: 200,
-    wrap: true,
-    value: (item) => item.poDescription ?? "",
-  },
-  {
-    id: "internalNote",
-    label: "Internal Note",
-    defaultVisible: false,
-    size: 200,
-    wrap: true,
-    value: (item) => item.internalNote ?? "",
-  },
-  {
-    id: "dimensions",
-    label: "Dimensions",
-    defaultVisible: true,
-    size: 180,
-    value: (item) => item.dimensions ?? "",
-  },
-  {
-    id: "unitType",
-    label: "Unit",
-    defaultVisible: true,
-    size: 90,
-    value: (item) => item.unitType,
-  },
-  {
-    id: "costType",
-    label: "Cost Type",
-    defaultVisible: false,
-    size: 110,
-    value: (item) => item.costType,
-  },
-  {
-    id: "tags",
-    label: "Tags",
-    defaultVisible: false,
-    size: 140,
-    wrap: true,
-    value: (item) => (item.tags?.length ? item.tags.join(", ") : ""),
-  },
-  {
-    id: "taxable",
-    label: "Taxable",
-    defaultVisible: false,
-    size: 90,
-    value: (item) => (item.taxable ? "Yes" : "No"),
-  },
-  {
-    id: "unitCost",
-    label: "Unit Cost",
-    defaultVisible: false,
-    size: 110,
-    align: "right",
-    value: (item) => item.unitCost,
-    render: (item) => formatCurrency(item.unitCost),
-  },
-  {
-    id: "markup",
-    label: "Markup %",
-    defaultVisible: false,
-    size: 100,
-    align: "right",
-    value: (item) => item.markup,
-    render: (item) => `${item.markup}%`,
-  },
-  {
-    id: "msrp",
-    label: "MSRP",
-    defaultVisible: false,
-    size: 110,
-    align: "right",
-    value: (item) => item.msrp ?? 0,
-    render: (item) => (item.msrp ? formatCurrency(item.msrp) : "—"),
-  },
-  {
-    id: "quantity",
-    label: "Qty",
-    defaultVisible: true,
-    size: 70,
-    align: "right",
-    value: (item) => item.quantity,
-  },
-  {
-    id: "sellingPrice",
-    label: "Price",
-    defaultVisible: true,
-    size: 110,
-    align: "right",
-    value: (item) => item.sellingPrice,
-    render: (item) => formatCurrency(item.sellingPrice),
-  },
-  {
-    id: "total",
-    label: "Total",
-    defaultVisible: true,
-    size: 120,
-    align: "right",
-    cellClassName: "font-semibold text-primary",
-    value: (item) => item.sellingPrice * item.quantity,
-    render: (item) => formatCurrency(item.sellingPrice * item.quantity),
-  },
-];
-
-/** Column-picker options (toggleable fields only — thumbnail/actions excluded). */
-export const ITEM_COLUMN_OPTIONS = ITEM_FIELDS.map((f) => ({
-  id: f.id,
-  label: f.label,
-}));
-
-/** Default visibility map, derived from each field's `defaultVisible`. */
-export const DEFAULT_ITEM_COLUMN_VISIBILITY: VisibilityState =
-  Object.fromEntries(ITEM_FIELDS.map((f) => [f.id, f.defaultVisible]));
+// The column registry lives in items-fields.tsx (shared, TanStack/dnd-free) so
+// read-only consumers can mirror the same columns. Re-export the layout consts
+// so existing importers of this module keep working.
+export {
+  DEFAULT_ITEM_COLUMN_VISIBILITY,
+  ITEM_COLUMN_OPTIONS,
+} from "./items-fields";
 
 // Structural (non-field) column widths.
-const THUMBNAIL_SIZE = 56;
 const ACTIONS_SIZE = 96;
 /** Width of the leading drag-handle track. */
 const GRIP_TRACK = "2rem";
 /** Columns that are always a fixed pixel width (never flex). */
 const FIXED_TRACK_IDS = new Set(["thumbnail", "actions"]);
-/** Floor a flexible column may shrink to before the grid scrolls horizontally. */
-const MIN_FLEX_TRACK = 60;
 
 // A single grid track. Defaults are proportional (`fr`) so the grid fills the
 // container width on load and adapts to any screen — no per-screen pixel
@@ -356,24 +151,6 @@ function buildColumns(
   };
 
   return [thumbnail, ...fieldColumns, actions];
-}
-
-// Per-cell classes keyed by column id, built from the field registry.
-const FIELD_BY_ID = new Map(ITEM_FIELDS.map((f) => [f.id, f]));
-
-/** Body-cell class for a given column. */
-function cellClass(columnId: string): string {
-  if (columnId === "thumbnail" || columnId === "actions") {
-    return "flex items-center px-3 py-3";
-  }
-  const field = FIELD_BY_ID.get(columnId);
-  return cn(
-    "min-w-0 px-3 py-3 text-muted-foreground text-xs",
-    field?.wrap ? "whitespace-normal" : "truncate",
-    field?.align === "right" && "text-right",
-    field?.mono && "font-mono",
-    field?.cellClassName,
-  );
 }
 
 // ----------------------------------------------------
