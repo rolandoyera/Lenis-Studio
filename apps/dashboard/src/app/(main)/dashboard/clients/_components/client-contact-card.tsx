@@ -39,11 +39,13 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
         <DataField
           label="Email Address"
           empty="Not provided"
-          className="order-2 md:order-2">
+          className="order-2 md:order-2"
+        >
           {client.email && (
             <a
               href={`mailto:${client.email}`}
-              className="group flex items-center gap-1.5 transition-colors hover:text-primary">
+              className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+            >
               <p className="truncate group-hover:underline">{client.email}</p>
             </a>
           )}
@@ -51,17 +53,20 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
         <DataField
           label="Client #"
           empty="Not provided"
-          className="order-4 md:order-3">
+          className="order-4 md:order-3"
+        >
           {client.clientCode}
         </DataField>
         <DataField
           label="Phone Number"
           empty="Not provided"
-          className="order-3 md:order-4">
+          className="order-3 md:order-4"
+        >
           {client.phone && (
             <a
               href={`tel:${normalizePhone(client.phone)}`}
-              className="group flex items-center gap-1.5 transition-colors hover:text-primary">
+              className="group flex items-center gap-1.5 transition-colors hover:text-primary"
+            >
               <span className="group-hover:underline">
                 {formatPhone(client.phone)}
               </span>
@@ -71,7 +76,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
         <DataField
           label="Tax ID"
           empty="Not provided"
-          className="order-5 md:order-5">
+          className="order-5 md:order-5"
+        >
           {client.taxId ? (
             <p>{formatTaxId(client.taxId)}</p>
           ) : !client.taxable ? (
@@ -95,7 +101,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
         <DataField
           label="Added"
           empty="Not provided"
-          className="order-8 md:order-6">
+          className="order-8 md:order-6"
+        >
           {new Date(client.createdAt).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
@@ -105,7 +112,8 @@ export function ClientContactCard({ client }: ClientContactCardProps) {
         <DataField
           label="Primary Address"
           empty="Not provided"
-          className="h-21 order-7 md:order-7">
+          className="h-21 order-7 md:order-7"
+        >
           <AddressValue address={client} />
         </DataField>
         <DataField label="Tax Status" className="order-6 md:order-8">

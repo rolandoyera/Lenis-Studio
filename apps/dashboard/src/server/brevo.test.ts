@@ -84,9 +84,9 @@ describe("normalizeBrevoWebhookEvent — field extraction", () => {
         "X-Mailin-custom": JSON.stringify(metadata),
       })?.recipientEmail,
     ).toBe("fallback@example.com");
-    expect(normalizeBrevoWebhookEvent({ event: "bounce" })?.recipientEmail).toBe(
-      "",
-    );
+    expect(
+      normalizeBrevoWebhookEvent({ event: "bounce" })?.recipientEmail,
+    ).toBe("");
   });
 
   it("resolves provider message id and brevo event id from either key form", () => {

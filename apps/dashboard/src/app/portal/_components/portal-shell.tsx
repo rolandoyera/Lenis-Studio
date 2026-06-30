@@ -31,7 +31,8 @@ export function PortalShell({ brand, branding, children }: PortalShellProps) {
     (rootStyle as Record<string, string>)["--primary"] = branding.accentColor;
   }
   if (branding?.tertiaryColor) {
-    (rootStyle as Record<string, string>)["--secondary"] = branding.tertiaryColor;
+    (rootStyle as Record<string, string>)["--secondary"] =
+      branding.tertiaryColor;
   }
 
   return (

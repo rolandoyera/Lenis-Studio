@@ -4,12 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // network. We capture what the upload helpers hand to `uploadBytes`/`ref`.
 vi.mock("@/lib/firebase", () => ({ db: {}, storage: {} }));
 vi.mock("@/lib/db-trace", () => ({
-  trace: (
-    _collection: string,
-    _op: string,
-    _name: string,
-    fn: () => unknown,
-  ) => fn(),
+  trace: (_collection: string, _op: string, _name: string, fn: () => unknown) =>
+    fn(),
 }));
 vi.mock("firebase/storage", () => ({
   ref: vi.fn((_storage: unknown, path: string) => ({ _path: path })),
@@ -50,7 +46,8 @@ function uploadedPath(): string {
 
 const file = () =>
   new File([new Uint8Array([1, 2, 3])], "photo.jpg", { type: "image/jpeg" });
-const blob = () => new Blob([new Uint8Array([1, 2, 3])], { type: "image/jpeg" });
+const blob = () =>
+  new Blob([new Uint8Array([1, 2, 3])], { type: "image/jpeg" });
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -34,7 +34,8 @@ export function ProjectBriefCard({ project, onEdit }: ProjectBriefCardProps) {
               variant="link"
               size="sm"
               onClick={onEdit}
-              className="mt-1 h-auto p-0 font-medium">
+              className="mt-1 h-auto p-0 font-medium"
+            >
               Add Project Brief
             </Button>
           </div>

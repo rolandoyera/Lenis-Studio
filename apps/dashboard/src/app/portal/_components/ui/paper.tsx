@@ -17,7 +17,8 @@ export function Paper({
       className={cn(
         "mx-auto w-full rounded bg-card text-foreground shadow-sm",
         className,
-      )}>
+      )}
+    >
       {children}
     </section>
   );

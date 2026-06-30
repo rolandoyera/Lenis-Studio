@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { canResendContract, contractResendEligibility } from "@/lib/contract-resend";
+import {
+  canResendContract,
+  contractResendEligibility,
+} from "@/lib/contract-resend";
 import type { Contract } from "@/lib/types";
 
 type ResendInput = Pick<Contract, "lockedSnapshot" | "status" | "executedAt">;

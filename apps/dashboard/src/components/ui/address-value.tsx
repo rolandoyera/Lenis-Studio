@@ -42,9 +42,9 @@ export function AddressValue({
     .filter(Boolean)
     .join(", ");
 
-  const displayLines = (
-    lines ?? [address?.street, cityStateZip]
-  ).filter((line): line is string => Boolean(line));
+  const displayLines = (lines ?? [address?.street, cityStateZip]).filter(
+    (line): line is string => Boolean(line),
+  );
 
   if (displayLines.length === 0) {
     return null;

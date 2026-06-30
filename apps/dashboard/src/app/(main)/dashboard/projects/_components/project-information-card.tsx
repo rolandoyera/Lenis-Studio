@@ -47,7 +47,8 @@ export function ProjectInformationCard({
             <Link
               href={`/dashboard/clients/${client.uid}`}
               prefetch={false}
-              className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline">
+              className="flex items-center gap-1.5 text-primary hover:text-primary hover:underline"
+            >
               {clientName}
             </Link>
           )}

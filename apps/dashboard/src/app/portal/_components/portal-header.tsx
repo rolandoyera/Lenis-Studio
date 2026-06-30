@@ -28,7 +28,11 @@ export function PortalHeader({ brand, branding }: PortalHeaderProps) {
     <header className="border-neutral-200 border-b" style={barStyle}>
       <div className="mx-auto flex h-30 w-full max-w-[1600px] flex-col items-center justify-center">
         {/* biome-ignore lint/performance/noImgElement: branding logo from a dynamic host-resolved URL. */}
-        <img src={brand.image.iconDarkSrc} alt={brand.name} className="h-20 w-auto" />
+        <img
+          src={brand.image.iconDarkSrc}
+          alt={brand.name}
+          className="h-20 w-auto"
+        />
         <p className="font-medium text-white" style={subtitleStyle}>
           {brand.shortName}
         </p>

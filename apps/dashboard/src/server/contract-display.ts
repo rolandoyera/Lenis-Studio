@@ -78,7 +78,8 @@ export function nextContractDisplay(
       STAGE_RANK[prevStage] > STAGE_RANK.sent ? prevStage : "delivery_failed";
   } else {
     // Linear stage: keep the furthest-along of the two.
-    stage = STAGE_RANK[incoming] >= STAGE_RANK[prevStage] ? incoming : prevStage;
+    stage =
+      STAGE_RANK[incoming] >= STAGE_RANK[prevStage] ? incoming : prevStage;
   }
 
   return {

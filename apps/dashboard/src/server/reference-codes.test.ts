@@ -65,7 +65,10 @@ describe("allocateReferenceCode", () => {
       "contract",
     );
 
-    expect(result).toEqual({ code: `CN-${START_NUMBER}`, number: START_NUMBER });
+    expect(result).toEqual({
+      code: `CN-${START_NUMBER}`,
+      number: START_NUMBER,
+    });
     expect(tx.set).toHaveBeenCalledWith(
       { path: "organizations/org-2/counters/contractCodes" },
       { nextNumber: START_NUMBER + 1 },

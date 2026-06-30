@@ -50,14 +50,19 @@ export default function ProposalPreviewPage({ params }: PageProps) {
     let active = true;
     async function load() {
       try {
-        const [projectData, organizationData, roomsData, itemsData, vendorsData] =
-          await Promise.all([
-            getProject(projectId),
-            getOrganization(orgId),
-            getProjectRooms(projectId),
-            getProjectRoomItems(projectId),
-            getVendors(orgId),
-          ]);
+        const [
+          projectData,
+          organizationData,
+          roomsData,
+          itemsData,
+          vendorsData,
+        ] = await Promise.all([
+          getProject(projectId),
+          getOrganization(orgId),
+          getProjectRooms(projectId),
+          getProjectRoomItems(projectId),
+          getVendors(orgId),
+        ]);
         if (!active) return;
 
         if (!projectData || projectData.organizationId !== orgId) {

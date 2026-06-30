@@ -223,7 +223,11 @@ export async function createContractPortalAccess(input: {
   /** Plain last-4 of the client's phone; hashed here, never stored or returned. */
   phoneLast4: string;
   ttlDays?: number;
-}): Promise<{ portalAccessId: string; accessToken: string; expiresAt: number }> {
+}): Promise<{
+  portalAccessId: string;
+  accessToken: string;
+  expiresAt: number;
+}> {
   const {
     contract,
     sentToEmail,

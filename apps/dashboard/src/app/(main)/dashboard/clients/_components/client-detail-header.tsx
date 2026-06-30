@@ -80,7 +80,8 @@ export function ClientDetailHeader({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onClick={onRequestDelete}>
+                  onClick={onRequestDelete}
+                >
                   <Trash2 className="size-4" />
                   Delete Profile
                 </DropdownMenuItem>

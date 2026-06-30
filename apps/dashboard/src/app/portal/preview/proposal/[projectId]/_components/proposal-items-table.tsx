@@ -35,7 +35,10 @@ export function ProposalItemsTable({
   vendors,
   layout,
 }: ProposalItemsTableProps) {
-  const visibility = { ...DEFAULT_ITEM_COLUMN_VISIBILITY, ...layout?.visibility };
+  const visibility = {
+    ...DEFAULT_ITEM_COLUMN_VISIBILITY,
+    ...layout?.visibility,
+  };
   const sizing = layout?.sizing ?? {};
   const visibleFields = ITEM_FIELDS.filter((field) => visibility[field.id]);
 
@@ -48,7 +51,9 @@ export function ProposalItemsTable({
     ),
   ].join(" ");
 
-  const gridStyle: CSSProperties = { gridTemplateColumns: "var(--proposal-cols)" };
+  const gridStyle: CSSProperties = {
+    gridTemplateColumns: "var(--proposal-cols)",
+  };
 
   return (
     <div

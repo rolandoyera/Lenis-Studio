@@ -52,7 +52,8 @@ export function ProjectHeader({
               <H1>{project.name}</H1>
               <Badge
                 variant={PROJECT_STATUS_VARIANT[project.status]}
-                className="px-0">
+                className="px-0"
+              >
                 {PROJECT_STATUS_LABELS[project.status]}
               </Badge>
             </div>
@@ -82,7 +83,8 @@ export function ProjectHeader({
         <Tabs
           value={activeTab}
           onValueChange={onTabChange}
-          className="w-full md:w-auto">
+          className="w-full md:w-auto"
+        >
           <TabsList className="flex max-w-full flex-wrap gap-1.5">
             {PROJECT_TABS.map((tab) => (
               <TabsTrigger key={tab.value} value={tab.value}>
