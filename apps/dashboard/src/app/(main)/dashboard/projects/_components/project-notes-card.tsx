@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { formatDistanceToNow } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 import { Loader2, MessageSquarePlus, Pencil, Trash2 } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -41,12 +41,32 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { ActivityActor, ProjectNote } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const noteSchema = z.object({
   body: z.string().trim().min(1, "Write something first."),
 });
 
 type NoteFormData = z.infer<typeof noteSchema>;
+
+/** Two-letter initials from a display name (single word → first two letters). */
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** "9:51 AM · today" style timestamp. */
+function timeLabel(ts: number): string {
+  const time = format(ts, "h:mm a");
+  const day = isToday(ts)
+    ? "today"
+    : isYesterday(ts)
+      ? "yesterday"
+      : format(ts, "MMM d, yyyy");
+  return `${time} · ${day}`;
+}
 
 interface ProjectNotesCardProps {
   notes: ProjectNote[];
@@ -58,7 +78,8 @@ interface ProjectNotesCardProps {
 }
 
 /**
- * Editable notes log for a project. Entries are timestamped working content: the
+ * Editable notes log for a project, rendered as a threaded conversation
+ * (avatar + author/timestamp header + body). Entries are working content: the
  * author can edit or hard-delete their own. Backed by the
  * `projects/{projectId}/notes` subcollection.
  */
@@ -107,18 +128,19 @@ export function ProjectNotesCard({
           Notes
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col gap-5 h-62 overflow-y-auto">
+      <CardContent className="h-62 overflow-y-auto">
         {notes.length === 0 ? (
           <p className="py-4 text-center text-muted-foreground text-xs italic">
             No notes logged yet for this project.
           </p>
         ) : (
-          <ul className="flex flex-col gap-5">
-            {notes.map((note) => (
+          <ul className="flex flex-col">
+            {notes.map((note, i) => (
               <NoteItem
                 key={note.id}
                 note={note}
                 isOwn={note.createdBy.id === currentActor.id}
+                isLast={i === notes.length - 1}
                 onEdit={() => setComposer({ note })}
                 onDelete={onDeleteNote}
               />
@@ -201,11 +223,13 @@ interface NoteItemProps {
   note: ProjectNote;
   /** Whether the signed-in user authored this note (drives "You" + edit/delete rights). */
   isOwn: boolean;
+  /** Last row hides its connector line. */
+  isLast: boolean;
   onEdit: () => void;
   onDelete: (noteId: string) => Promise<void>;
 }
 
-function NoteItem({ note, isOwn, onEdit, onDelete }: NoteItemProps) {
+function NoteItem({ note, isOwn, isLast, onEdit, onDelete }: NoteItemProps) {
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -219,83 +243,106 @@ function NoteItem({ note, isOwn, onEdit, onDelete }: NoteItemProps) {
     }
   };
 
+  const displayName = isOwn ? "You" : note.createdBy.name;
+  const stamp = note.updatedAt
+    ? `${timeLabel(note.updatedAt)} · edited`
+    : timeLabel(note.createdAt);
+
   return (
-    <li className="group/note relative rounded-lg border border-border/40 bg-muted p-3 shadow-inner">
-      <div className="mb-1.5 text-muted-foreground text-xs">
-        Added by:{" "}
-        <span className="font-medium text-foreground">
-          {isOwn ? "You" : note.createdBy.name}
-        </span>
-      </div>
-      <p className="whitespace-pre-wrap text-card-foreground text-sm leading-relaxed font-light px-4">
-        {note.body}
-      </p>
-      <div className="mt-2 text-right text-muted-foreground text-xs">
-        {note.updatedAt ? "edited " : ""}
-        {formatDistanceToNow(note.updatedAt ?? note.createdAt, {
-          addSuffix: true,
-        })}
-      </div>
-      {isOwn && (
-        <div className="absolute top-2 right-2 flex gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/note:opacity-100">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={onEdit}
-                aria-label="Edit Note"
-                className="size-7 rounded-full text-muted-foreground hover:text-foreground"
-              >
-                <Pencil className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Edit Note</TooltipContent>
-          </Tooltip>
-          <AlertDialog open={open} onOpenChange={setOpen}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => setOpen(true)}
-                  aria-label="Delete Note"
-                  className="size-7 rounded-full text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Delete Note</TooltipContent>
-            </Tooltip>
-            <AlertDialogContent className="sm:max-w-md">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this note?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This permanently deletes the note and can't be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="mt-2">
-                <AlertDialogCancel disabled={deleting}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={(e) => {
-                    e.preventDefault();
-                    void handleConfirm();
-                  }}
-                  disabled={deleting}
-                  className="flex items-center gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {deleting && <Loader2 className="size-4 animate-spin" />}
-                  Delete Note
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+    <li className="group/note relative flex gap-3 pb-6 last:pb-0">
+      {/* Threaded connector line down to the next avatar. */}
+      {!isLast && (
+        <span
+          aria-hidden
+          className="absolute top-11 bottom-1 left-5 w-px -translate-x-1/2 bg-border"
+        />
       )}
+      <div
+        className={cn(
+          "z-10 flex size-10 shrink-0 items-center justify-center rounded-full font-semibold text-xs",
+          isOwn
+            ? "bg-primary text-primary-foreground"
+            : "bg-foreground text-background",
+        )}
+      >
+        {isOwn ? "You" : initials(note.createdBy.name)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "font-semibold text-sm",
+              isOwn ? "text-primary" : "text-card-foreground",
+            )}
+          >
+            {displayName}
+          </span>
+          <span className="text-muted-foreground text-xs">{stamp}</span>
+          {isOwn && (
+            <div className="ml-auto flex gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/note:opacity-100">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={onEdit}
+                    aria-label="Edit Note"
+                    className="size-7 rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    <Pencil className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Edit Note</TooltipContent>
+              </Tooltip>
+              <AlertDialog open={open} onOpenChange={setOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => setOpen(true)}
+                      aria-label="Delete Note"
+                      className="size-7 rounded-full text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Delete Note</TooltipContent>
+                </Tooltip>
+                <AlertDialogContent className="sm:max-w-md">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this note?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently deletes the note and can't be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="mt-2">
+                    <AlertDialogCancel disabled={deleting}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={(e) => {
+                        e.preventDefault();
+                        void handleConfirm();
+                      }}
+                      disabled={deleting}
+                      className="flex items-center gap-1.5 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deleting && <Loader2 className="size-4 animate-spin" />}
+                      Delete Note
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+        </div>
+        <p className="mt-1 whitespace-pre-wrap text-card-foreground text-sm leading-relaxed">
+          {note.body}
+        </p>
+      </div>
     </li>
   );
 }
