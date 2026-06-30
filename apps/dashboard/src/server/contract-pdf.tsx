@@ -41,13 +41,14 @@ export interface ExecutedContractPdf {
   buffer: Buffer;
 }
 
-/** A safe, readable file name for the executed contract PDF. */
+/** A safe, readable file name for the executed contract PDF: client + code. */
 function executedFileName(contract: Contract): string {
-  const base = (contract.projectName || contract.title || "Contract")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, " ");
-  return `Signed Contract - ${base || "Contract"}.pdf`;
+  const clean = (value: string) =>
+    value
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, " ");
+  return `${clean(contract.clientName)} - ${clean(contract.contractCode ?? "")}.pdf`;
 }
 
 /**

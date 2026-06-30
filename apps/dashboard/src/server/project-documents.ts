@@ -31,6 +31,8 @@ export async function attachExecutedContractToProject(input: {
   projectId: string;
   clientId: string;
   contractId: string;
+  /** Human reference code of the contract, denormalized for display. */
+  contractCode?: string;
   title: string;
   fileName: string;
   filePath: string;
@@ -45,6 +47,7 @@ export async function attachExecutedContractToProject(input: {
     clientId: input.clientId,
     type: "contract",
     contractId: input.contractId,
+    ...(input.contractCode ? { contractCode: input.contractCode } : {}),
     title: input.title,
     fileName: input.fileName,
     fileUrl,

@@ -318,6 +318,8 @@ export interface ProjectDocument {
   type: ProjectDocumentType;
   /** The contract this document was produced from (when type === "contract"). */
   contractId?: string;
+  /** Human reference code of the source contract (denormalized for display). */
+  contractCode?: string;
   title: string;
   /** Human-friendly file name (also the download filename). */
   fileName: string;

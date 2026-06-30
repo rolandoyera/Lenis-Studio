@@ -388,7 +388,9 @@ company's signature authorization — there is no separate approval step. Server
   `lockedSnapshot` + server-side signature/execution data (never live draft fields, never browser DOM).
   `generateAndStoreFinalContractPdf` returns `{ path, fileName, buffer }` and stores it once at the
   **stable** path `organizations/{orgId}/contracts/{contractId}/executed/{contractId}-executed.pdf`
-  (a contract executes exactly once, so no version suffix). This is the **canonical permanent record
+  (a contract executes exactly once, so no version suffix). The download `fileName` is
+  `{clientName} - {contractCode}.pdf` — the name used by the Storage download, the email attachment,
+  and the Files-tab row. This is the **canonical permanent record
   copy — do not regenerate it for normal use.** On signing, `signContract` records it on the contract
   (`executedFileUrl`, `executedFilePath`, `executedFileName`, `executedFileGeneratedAt`; the legacy
   `finalPdfPath`/`finalPdfGeneratedAt` are kept in sync to the same path for the portal route) and
@@ -413,8 +415,8 @@ company's signature authorization — there is no separate approval step. Server
   the project's **Files** tab without duplicating bytes. `attachExecutedContractToProject` upserts a
   `projectDocuments/{contract-<contractId>}` record (deterministic id → idempotent on re-run) pointing
   at the same Storage `filePath`, with `fileUrl` = the org-gated dashboard download route. The record
-  is typed `ProjectDocument` (`type: "contract"`, `contractId`, `projectId`, `title`, `fileName`,
-  `fileUrl`, `filePath`, `createdBy: "system"`). Firestore rule: `projectDocuments` is org-scoped
+  is typed `ProjectDocument` (`type: "contract"`, `contractId`, `contractCode` (denormalized from the
+  contract for display), `projectId`, `title`, `fileName`, `fileUrl`, `filePath`, `createdBy: "system"`). Firestore rule: `projectDocuments` is org-scoped
   read, **client writes denied** (server-only, like `portalAccess`/audit) — keep this rule and the
   `Contract`/`ProjectDocument` write shapes in sync. The Files tab (`ProjectFilesCard`, read via
   `getProjectDocuments(orgId, projectId)` — queried by org, filtered to the project in memory) lists

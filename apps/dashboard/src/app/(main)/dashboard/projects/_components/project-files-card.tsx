@@ -114,7 +114,7 @@ function buildRows(
       kind: "file",
       key: d.documentId,
       title: d.title,
-      code: contract?.contractCode,
+      code: d.contractCode,
       typeLabel: TYPE_LABELS[d.type],
       status: contract?.status,
       contract,

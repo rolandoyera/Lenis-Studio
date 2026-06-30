@@ -916,6 +916,7 @@ export async function signContract(input: {
       projectId: contract.projectId,
       clientId: contract.clientId,
       contractId,
+      contractCode: contract.contractCode,
       title: contract.title,
       fileName: executedPdf.fileName,
       filePath: executedPdf.path,

@@ -69,6 +69,7 @@ function contract(overrides: Partial<Contract> = {}): Contract {
   return {
     contractId: "contract-1",
     organizationId: "org-1",
+    contractCode: "ORG-CN-0001",
     title: "Contract",
     status: "draft",
     projectId: "project-1",
@@ -510,6 +511,7 @@ describe("contract signing server actions", () => {
         projectId: "project-1",
         clientId: "client-1",
         contractId: "contract-1",
+        contractCode: "ORG-CN-0001",
       }),
     );
     expect(contractUpdate).toHaveBeenCalledWith(
