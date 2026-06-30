@@ -31,9 +31,21 @@ A project workspace. Two routes, both **client components**:
 - `_components/project-form-dialog.tsx` — the add/edit dialog (RHF + `zodResolver`), incl. the
   "same as main client address" toggle.
 - `_components/project-header.tsx` — detail title + status, tab bar, edit/delete actions.
-- `_components/project-information-card.tsx`, `project-notes-card.tsx`, `project-proposals-card.tsx`,
+- `_components/project-information-card.tsx`, `project-brief-card.tsx`, `project-proposals-card.tsx`,
   `project-files-card.tsx` — Overview-tab cards (proposals card spawns a Draft proposal and routes to
-  it; files card lists project documents).
+  it; files card lists project documents + contracts). The **files card is realtime**: two
+  `onSnapshot` listeners (`projectDocuments` and `contracts`, both queried by org and filtered to this
+  project in memory) replace the old one-time fetch, and its Status column renders the **shared
+  `ContractStatusChain`** (`contracts/_components/contract-status-chain.tsx`) so the live
+  delivery/view/sign status — including **Delivery Failed** — matches the contracts list exactly. Org
+  user names are still a one-time fetch (they rarely change in a session). The row **Actions** column
+  is a `TooltipDropdownMenu` (for a stored file: **View signed PDF** — opens it inline via
+  `${fileUrl}?inline=1` in a new tab — plus **Download**; for a draft contract: open it in the builder;
+  and **resend signing link** — the recovery path for a delivery failure). Eligibility is the shared `canResendContract`
+  (`@/lib/contract-resend`); the resend itself uses the shared `useResendSigningLink` hook
+  (`contracts/_components/use-resend-signing-link.ts`) for the call + toast + per-row spinner, and the
+  realtime listener reflects the fresh `sent` cycle. Both are shared with the contracts list so the
+  rule + UX can't drift (see contracts AGENTS "Signing link: expiry + resend").
 - `_components/delete-project-dialog.tsx` — confirm-delete for the whole project.
 - `tabs/project-items.tsx` — the **Items tab** (the heavy one — see its own section below).
 - `tabs/_tab_components/items-table.tsx` — the list-view items grid renderer.

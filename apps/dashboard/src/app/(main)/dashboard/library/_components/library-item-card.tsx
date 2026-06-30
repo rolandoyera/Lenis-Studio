@@ -30,15 +30,15 @@ export function LibraryItemCard({
       {/* Visual Thumbnail Area */}
       <Link
         href={`/dashboard/library/${item.itemId}`}
-        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40"
-      >
+        className="detail-link relative flex aspect-square w-full cursor-pointer items-center justify-center overflow-hidden border-border/40 border-b bg-muted/40">
         {item.coverImageUrl ? (
           <DashboardImage
             priority
+            fit="height"
             src={item.coverImageUrl}
             alt={item.name}
             sizes="(min-width: 1536px) 14vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-200"
+            className="transition-transform duration-200"
           />
         ) : (
           <div className="flex size-full items-center justify-center bg-muted">
@@ -61,8 +61,7 @@ export function LibraryItemCard({
           <H3 className="transition-colors group-has-[.detail-link:hover]:text-primary">
             <Link
               href={`/dashboard/library/${item.itemId}`}
-              className="detail-link block"
-            >
+              className="detail-link block">
               {item.name}
             </Link>
           </H3>
@@ -79,16 +78,14 @@ export function LibraryItemCard({
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                   {vendorName}
                   <ExternalLink className="ml-1 size-2.5 shrink-0" />
                 </a>
               ) : (
                 <Link
                   href={`/dashboard/vendors/${item.vendorId}`}
-                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline"
-                >
+                  className="flex items-center gap-0.5 truncate font-medium text-foreground/80 hover:text-primary hover:underline">
                   {vendorName}
                   <ExternalLink className="size-2.5 shrink-0" />
                 </Link>

@@ -1,9 +1,9 @@
 // Brevo transactional-email webhook. Maps delivery events back to the originating
 // contract using the metadata we attached when sending (echoed in the
 // `X-Mailin-custom` header), then appends a precise, normalized email audit event
-// to the contract's trail. The raw payload is stored privately in Storage (path
-// only is referenced) so the main contract doc stays clean and no raw provider
-// data is ever exposed to the client.
+// to the contract's trail. The raw payload is stringified and inlined on that
+// event so the whole audit trail lives in one place (the audit subcollection
+// denies all client reads, so it's never exposed to the client either way).
 //
 // Labels stay precise: delivered/bounced/blocked/sent — Brevo proves the email
 // reached an address, NOT that the client received or read it.
@@ -11,10 +11,7 @@
 import type { NextRequest } from "next/server";
 
 import { normalizeBrevoWebhookEvent } from "@/server/brevo";
-import {
-  storeRawBrevoPayload,
-  writeContractAuditEvent,
-} from "@/server/contract-audit";
+import { writeContractAuditEvent } from "@/server/contract-audit";
 import { applyContractDisplay } from "@/server/contract-display";
 
 export const dynamic = "force-dynamic";
@@ -34,14 +31,6 @@ async function handleEvent(payload: RawPayload): Promise<void> {
     return;
   }
 
-  const rawProviderPayloadPath = await storeRawBrevoPayload({
-    organizationId,
-    contractId,
-    eventType: normalized.type,
-    eventId: normalized.brevoEventId ?? String(Date.now()),
-    payload,
-  });
-
   // Deterministic id keeps retried webhook deliveries idempotent.
   const docId = normalized.brevoEventId
     ? `brevo-${normalized.type}-${normalized.brevoEventId}`
@@ -57,7 +46,7 @@ async function handleEvent(payload: RawPayload): Promise<void> {
       recipientEmail: normalized.recipientEmail,
       providerMessageId: normalized.providerMessageId,
       brevoEventId: normalized.brevoEventId,
-      rawProviderPayloadPath,
+      rawProviderPayload: JSON.stringify(payload),
     },
     docId,
   );
@@ -108,8 +97,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     console.error("[brevo webhook] processing failed:", error);
-    // 200 anyway so Brevo doesn't hammer retries on a transient write error;
-    // the raw payload (if stored) preserves the event for reconciliation.
+    // 200 anyway so Brevo doesn't hammer retries on a transient write error.
   }
 
   return new Response("ok", { status: 200 });

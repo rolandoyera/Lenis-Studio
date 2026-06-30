@@ -31,7 +31,6 @@ import { ProjectFormDialog } from "../_components/project-form-dialog";
 import { ProjectHeader } from "../_components/project-header";
 import { ProjectFilesCard } from "../_components/project-files-card";
 import { ProjectInformationCard } from "../_components/project-information-card";
-import { ProjectNotesCard } from "../_components/project-notes-card";
 import { ProjectProposalsCard } from "../_components/project-proposals-card";
 import { ProjectItems } from "../tabs/project-items";
 
@@ -212,12 +211,6 @@ export default function ProjectDetailPage({ params }: PageProps) {
               <ProjectFilesCard
                 projectId={project.projectId}
                 organizationId={project.organizationId}
-              />
-            </div>
-            <div className="col-span-4">
-              <ProjectNotesCard
-                project={project}
-                onEdit={() => setIsEditOpen(true)}
               />
             </div>
           </div>

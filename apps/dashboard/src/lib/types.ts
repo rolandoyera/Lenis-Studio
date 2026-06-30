@@ -264,7 +264,8 @@ export interface Project {
   /** Snapshot of the lead's budget range at conversion time (the qualifier, not the budget). */
   originalLeadBudgetRange?: BudgetRange;
 
-  notes?: string;
+  /** The project brief — free-form direction/goals shown on the Overview tab. */
+  brief?: string;
 
   /**
    * Shared layout for the items list-view grid (column visibility + widths).
@@ -723,8 +724,13 @@ export type ContractAuditEvent =
       recipientEmail: string;
       providerMessageId?: string;
       brevoEventId?: string;
-      /** Storage path to the trimmed raw provider payload — never the client. */
-      rawProviderPayloadPath?: string;
+      /**
+       * The raw provider (Brevo) webhook payload, stringified, inlined on the
+       * event so the whole audit trail lives in one place. Stored as a JSON
+       * string (not a nested object) so an untrusted third-party shape can't
+       * violate Firestore's structural rules and drop the normalized event.
+       */
+      rawProviderPayload?: string;
     })
   | (ContractAuditEventBase & {
       type: "portal_opened";

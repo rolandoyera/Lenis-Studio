@@ -59,6 +59,14 @@ by `itemId`):
 - `uploadLibraryImage(organizationId, file, itemId?, imageId?)` — Firebase Storage upload returning
   `{ url, path }`, written to the org-partitioned path `library/{organizationId}/{itemId}/images/
 {imageId}.{ext}` (Tier 2 Storage rules; see `storage.rules`). 5MB client cap.
+- **All library images (manual `uploadLibraryImage` and AI-mirrored `uploadLibraryImageBlob`) live
+  under the same `images/{imageId}.{ext}` path with a random `imageId` — there is no separate
+  `cover.{ext}` file.** The cover is simply whichever image `coverImageUrl`/`coverImagePath` points at
+  (normally the first). Every upload gets a unique path, and uploads set
+  `Cache-Control: public, max-age=31536000, immutable` (`IMMUTABLE_MEDIA_CACHE` in `db.ts`). Because a
+  changed image always yields a new download URL (new path, or a fresh token on overwrite), the
+  bytes can be cached forever without going stale — this, not `next.config` `minimumCacheTTL`, is what
+  keeps covers fresh. (`minimumCacheTTL` only floors sources that lack a long header, e.g. Instagram.)
 
 Items are created directly via `addLibraryItem` (no reference code / server action — unlike
 clients/projects/contracts). Keep it that way unless library items gain a reference code.

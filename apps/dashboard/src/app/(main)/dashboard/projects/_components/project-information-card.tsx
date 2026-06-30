@@ -31,7 +31,14 @@ export function ProjectInformationCard({
           Project Information
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-1 gap-x-6 gap-y-6.5 text-sm sm:grid-cols-2 md:h-62">
+      <CardContent className="grid grid-cols-1 gap-6 text-sm sm:grid-cols-2 md:h-62">
+        <DataField label="Created" empty="Not set">
+          {new Date(project.createdAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </DataField>
         <DataField label="Project #" empty="Not set">
           {project.projectCode}
         </DataField>
@@ -45,13 +52,17 @@ export function ProjectInformationCard({
             </Link>
           )}
         </DataField>
-        <DataField label="Project Site" empty="Not set">
-          <AddressValue address={project} />
-        </DataField>
         <DataField label="Budget" empty="Not set">
           {project.budget !== undefined &&
             project.budget > 0 &&
             formatCurrency(project.budget, { noDecimals: true })}
+        </DataField>
+
+        <DataField label="Project Site" empty="Not set">
+          <AddressValue address={project} />
+        </DataField>
+        <DataField label="Project Brief" empty="Not set">
+          {project.brief}
         </DataField>
       </CardContent>
     </Card>

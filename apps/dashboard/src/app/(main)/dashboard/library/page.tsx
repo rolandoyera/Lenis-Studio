@@ -160,8 +160,7 @@ export default function LibraryPage() {
         />
         <Button
           onClick={handleOpenAdd}
-          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start"
-        >
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/95 sm:self-start">
           <Plus className="size-4" />
           Add Item
         </Button>
@@ -176,8 +175,7 @@ export default function LibraryPage() {
               setActiveCategory(val);
               setActiveSubcategory("All");
             }}
-            className="w-full"
-          >
+            className="w-full">
             <TabsList className="flex max-w-full flex-wrap gap-0.5">
               <TabsTrigger value="All">All Categories</TabsTrigger>
               {CATEGORIES.map((cat) => (
@@ -194,14 +192,12 @@ export default function LibraryPage() {
               gridTemplateRows: isSubcategoryVisible ? "1fr" : "0fr",
               opacity: isSubcategoryVisible ? 1 : 0,
               marginTop: isSubcategoryVisible ? "1rem" : "0rem",
-            }}
-          >
+            }}>
             <div className="overflow-hidden">
               <Tabs
                 value={activeSubcategory}
                 onValueChange={setActiveSubcategory}
-                className="w-full"
-              >
+                className="w-full">
                 <TabsList className="flex max-w-full flex-wrap gap-0.5">
                   <TabsTrigger value="All">All {activeCategory}</TabsTrigger>
                   {isSubcategoryVisible &&
@@ -222,8 +218,7 @@ export default function LibraryPage() {
             onValueChange={(val) => {
               setActiveCategory(val);
               setActiveSubcategory("All");
-            }}
-          >
+            }}>
             <SelectTrigger className="w-full md:w-[220px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -240,8 +235,7 @@ export default function LibraryPage() {
           {activeCategory !== "All" && SUBCATEGORIES[activeCategory] && (
             <Select
               value={activeSubcategory}
-              onValueChange={setActiveSubcategory}
-            >
+              onValueChange={setActiveSubcategory}>
               <SelectTrigger className="fade-in w-full animate-in duration-200 md:w-[220px]">
                 <SelectValue placeholder="Subcategory" />
               </SelectTrigger>
@@ -289,10 +283,9 @@ export default function LibraryPage() {
           {!searchQuery && (
             <Button
               onClick={handleOpenAdd}
-              className="mt-4 flex items-center gap-2"
-            >
+              className="mt-4 flex items-center gap-2">
               <Plus className="size-4" />
-              Add First Library Item
+              Add An Item
             </Button>
           )}
         </Card>
@@ -311,7 +304,7 @@ export default function LibraryPage() {
       <LibraryItemFormDialog
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        title="Add Item Specifications"
+        title="Add Item"
         submitLabel="Add Catalog Item"
         submitting={submitting}
         onSubmit={handleSubmit}

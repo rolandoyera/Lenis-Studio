@@ -33,7 +33,6 @@ import type {
   LibraryItem,
   Organization,
   Project,
-  ProjectDocument,
   ProjectRoom,
   ProjectRoomItem,
   Proposal,
@@ -893,77 +892,6 @@ export async function getProposals(
   }
 }
 
-/**
- * Project document references (the "Files" tab) for one project. Queried by org so
- * the read satisfies the org-scoped rules, then filtered to the project in memory
- * (mirrors getProposals — no composite index needed). Newest first.
- */
-export async function getProjectDocuments(
-  organizationId: string,
-  projectId: string,
-): Promise<ProjectDocument[]> {
-  try {
-    return await trace(
-      "projectDocuments",
-      "READ",
-      "getProjectDocuments",
-      async () => {
-        const collRef = collection(db, "projectDocuments");
-        const q = query(collRef, where("organizationId", "==", organizationId));
-        const snapshot = await getDocs(q);
-
-        const documents: ProjectDocument[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as ProjectDocument;
-          if (data.projectId === projectId) documents.push(data);
-        });
-
-        return documents.sort((a, b) => b.createdAt - a.createdAt);
-      },
-      (d) => `${d.length} docs`,
-    );
-  } catch (error) {
-    console.error("Error fetching project documents:", error);
-    return [];
-  }
-}
-
-/**
- * Contracts belonging to one project (the "Files" tab surfaces in-progress drafts
- * before they execute into a stored file). Queried by org so the read satisfies the
- * org-scoped rules, then filtered to the project in memory (mirrors
- * getProjectDocuments — no composite index needed). Newest first.
- */
-export async function getProjectContracts(
-  organizationId: string,
-  projectId: string,
-): Promise<Contract[]> {
-  try {
-    return await trace(
-      "contracts",
-      "READ",
-      "getProjectContracts",
-      async () => {
-        const collRef = collection(db, "contracts");
-        const q = query(collRef, where("organizationId", "==", organizationId));
-        const snapshot = await getDocs(q);
-
-        const contracts: Contract[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as Contract;
-          if (data.projectId === projectId) contracts.push(data);
-        });
-
-        return contracts.sort((a, b) => b.updatedAt - a.updatedAt);
-      },
-      (c) => `${c.length} docs`,
-    );
-  } catch (error) {
-    console.error("Error fetching project contracts:", error);
-    return [];
-  }
-}
-
 export async function addProposal(
   proposal: Omit<Proposal, "proposalId" | "createdAt">,
 ): Promise<Proposal> {
@@ -1018,6 +946,15 @@ export async function deleteProposal(proposalId: string): Promise<void> {
 
 // --- STORAGE HELPER FUNCTIONS ---
 
+/**
+ * Cache header for uploaded media. Safe to cache "forever" because every upload
+ * (a new random-id path, or an overwrite — which mints a fresh download token)
+ * produces a NEW download URL. A changed image is therefore always a new cache
+ * key, so browsers, next/image's optimizer, and any CDN never serve a stale image
+ * and never need to revalidate. This is the fix for image freshness — not a TTL.
+ */
+const IMMUTABLE_MEDIA_CACHE = "public, max-age=31536000, immutable";
+
 export async function uploadLibraryImage(
   organizationId: string,
   file: File,
@@ -1032,7 +969,9 @@ export async function uploadLibraryImage(
   const storageRef = ref(storage, storagePath);
 
   // Upload raw file bytes
-  const snapshot = await uploadBytes(storageRef, file);
+  const snapshot = await uploadBytes(storageRef, file, {
+    cacheControl: IMMUTABLE_MEDIA_CACHE,
+  });
 
   // Get public CDN download URL
   const url = await getDownloadURL(snapshot.ref);
@@ -1050,7 +989,9 @@ export async function uploadVendorImage(
     vendorId ?? `temp-${Math.random().toString(36).substr(2, 9)}`;
   const storagePath = `vendors/${organizationId}/${resolvedVendorId}/${type}.${ext}`;
   const storageRef = ref(storage, storagePath);
-  const snapshot = await uploadBytes(storageRef, file);
+  const snapshot = await uploadBytes(storageRef, file, {
+    cacheControl: IMMUTABLE_MEDIA_CACHE,
+  });
   const url = await getDownloadURL(snapshot.ref);
   return { url, path: storagePath };
 }
@@ -1064,19 +1005,16 @@ export async function uploadLibraryImageBlob(
   organizationId: string,
   blob: Blob,
   itemId: string,
-  type: "cover" | "gallery",
   imageId?: string,
   extension = "jpg",
 ): Promise<{ url: string; path: string }> {
   const id = imageId ?? `img-${Math.random().toString(36).substr(2, 9)}`;
-  const storagePath =
-    type === "cover"
-      ? `library/${organizationId}/${itemId}/cover.${extension}`
-      : `library/${organizationId}/${itemId}/images/${id}.${extension}`;
+  const storagePath = `library/${organizationId}/${itemId}/images/${id}.${extension}`;
   const storageRef = ref(storage, storagePath);
 
   const snapshot = await uploadBytes(storageRef, blob, {
     contentType: blob.type || `image/${extension}`,
+    cacheControl: IMMUTABLE_MEDIA_CACHE,
   });
   const url = await getDownloadURL(snapshot.ref);
   return { url, path: storagePath };
@@ -1090,7 +1028,9 @@ export async function uploadOrgBrandingImage(
   const ext = file.name.split(".").pop() ?? "png";
   const storagePath = `organizations/${organizationId}/branding/${type}.${ext}`;
   const storageRef = ref(storage, storagePath);
-  const snapshot = await uploadBytes(storageRef, file);
+  const snapshot = await uploadBytes(storageRef, file, {
+    cacheControl: IMMUTABLE_MEDIA_CACHE,
+  });
   const url = await getDownloadURL(snapshot.ref);
   return { url, path: storagePath };
 }
@@ -1111,6 +1051,7 @@ export async function uploadVendorImageBlob(
 
   const snapshot = await uploadBytes(storageRef, blob, {
     contentType: blob.type || `image/${extension}`,
+    cacheControl: IMMUTABLE_MEDIA_CACHE,
   });
   const url = await getDownloadURL(snapshot.ref);
   return { url, path: storagePath };

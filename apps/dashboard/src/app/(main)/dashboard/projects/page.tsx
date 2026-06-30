@@ -146,7 +146,7 @@ export default function ProjectsPage() {
       clientName.toLowerCase().includes(term) ||
       address.toLowerCase().includes(term) ||
       (project.projectCode ?? "").toLowerCase().includes(term) ||
-      project.notes?.toLowerCase().includes(term)
+      project.brief?.toLowerCase().includes(term)
     );
   });
 

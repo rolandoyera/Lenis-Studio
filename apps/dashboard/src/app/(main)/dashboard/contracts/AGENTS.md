@@ -24,14 +24,22 @@ the pre-authorized company signature, a final dual-signature PDF, and an append-
 
 Routes: `contracts/page.tsx` is the list (subscribes to `contracts` by org via a client-SDK
 `onSnapshot` so the Status chain updates live; sorts newest-first in memory like `getContracts` did;
-renders rows in the shared `TanTable`, and uses an eye-icon link per row to open the editor). Its
+renders rows in the shared `TanTable`, and ends each row with an **Actions** `TooltipDropdownMenu`
+(View contract → opens the editor; once `fully_executed` it becomes **View signed PDF** → opens the
+executed PDF inline via `${executedFileUrl}?inline=1` in a new tab; **Resend signing link** when
+eligible — same menu as the project Files tab)). Its
 **Status** column is display-only — it renders a chain of `Badge`s from `contract.contractDisplay`
 (the denormalized stage, see "Status display chain" below), is not sortable, and never aggregates the
 audit subcollection; the column still keeps `accessorKey: "status"` + an `equalsString` `filterFn` so
 the coarse Status filter dropdown keeps working off the `status` enum. Badge mapping
-(`contractStatusBadges` in `page.tsx`): Sent=`info`, Delivered=`success`, Viewed=`warning`,
-Draft=`ghost`, and all error/terminal states (delivery failed, expired, void)=`destructive`. Executed
-and the terminal states collapse to a single badge (the intermediate steps stop mattering).
+(`resolveContractStatus` / `ContractStatusChain` in `_components/contract-status-chain.tsx`, a
+**shared** component the project **Files tab** also renders so both emit the identical live status):
+Sent=`info`, Delivered=`success`, Viewed=`warning`, Draft=`ghost`, and the terminal error states
+(expired, void)=`destructive`. Executed and the terminal states collapse to a single badge (the
+intermediate steps stop mattering). **Delivery failure** is the exception: it renders **no badge** —
+`resolveContractStatus` returns `deliveryFailed: true` (keeping the preceding `Sent` badge) and the
+chain shows a pinging destructive `CircleAlert` with a tooltip naming the likely cause (bounced/blocked
+email), the entry point for the upcoming resend flow.
 `new/page.tsx` renders `<ContractBuilder />` (create); `[contractId]/page.tsx` fetches one contract
 (`getContract`, with an org-match tenant guard) and renders `<ContractBuilder contract={…} key={id}/>`
 to edit it. `ContractBuilder` takes an optional `contract` prop — when present it seeds `values`,
@@ -191,7 +199,7 @@ void`) and `statusText` is the pre-rendered chain (e.g. `"Sent → Delivered →
   (see "Signing link: expiry + resend"); nothing writes `void` yet (no void server action exists), but
   the stage is handled for when one is added.
 - Legacy contracts predating this field have no `contractDisplay`; the list falls back to a stage
-  derived from `status` (`FALLBACK_DISPLAY` in `page.tsx`).
+  derived from `status` (`FALLBACK_DISPLAY` in `_components/contract-status-chain.tsx`).
 - **Render-time expiry overlay.** `contractStatusBadges` also shows a single **Expired** badge when
   the link has lapsed (`signingLinkExpiresAt` set and `Date.now()` past it) and the contract isn't
   executed/void/delivery-failed — so expiry shows **before** the lazy server sweep persists
@@ -211,8 +219,12 @@ the contract mirror the **current** link so the list and resend don't have to re
   `signingLinkExpiresAt`, flips `status:"expired"` + `contractDisplay` stage `expired` and writes a
   `contract_link_expired` audit event. Idempotent (already-`expired` is filtered out). The realtime
   listener then reflects the flip. The render-time overlay (above) covers the gap before it runs.
+- **Resend eligibility is single-sourced.** `contractResendEligibility` / `canResendContract` in
+  `@/lib/contract-resend` is the one definition of "can this contract's link be resent?" — imported by
+  the server guard below (for its reject message) **and** every UI affordance, so they can't drift.
+  Org ownership stays a server-only check (needs the active-org cookie).
 - **Resend:** `resendContractSigningLink({ contractId, userId })` (server action, admin SDK). Allowed
-  only for a locked, **unsigned, non-voided** contract (`executedAt`/`status` checks). It revokes the
+  only for a locked, **unsigned, non-voided** contract — gated by `contractResendEligibility`. It revokes the
   old `portalAccess` (`status:"revoked"`, `revokedAt`, `revokedReason:"replaced_by_resend"` + a
   `portal_access_revoked` audit event), mints + emails a fresh link via the shared
   `mintAndEmailSigningLink` helper (**reusing `createContractPortalAccess` so the phone-last-4
@@ -222,8 +234,10 @@ the contract mirror the **current** link so the list and resend don't have to re
   `activeAccessTokenId`/`signingLinkExpiresAt`, `sentAt = now`, `viewedAt` cleared via
   `FieldValue.delete()` (a **direct** admin `update`, which is safe — it doesn't go through
   `cleanUndefined`), and a `contract_resent` audit event. The old link stops working immediately. UI:
-  a **"Resend signing link"** item in the builder's actions dropdown, shown when `canResend`
-  (`isLocked && status !== "fully_executed" && status !== "voided"`).
+  a **"Resend signing link"** item appears (gated by `canResendContract(contract)`) in **three** places
+  — the contract builder's actions dropdown, the contracts list row **Actions** menu, and the project
+  **Files tab** row menu. The list + Files tab share the `useResendSigningLink` hook
+  (`contracts/_components/use-resend-signing-link.ts`) for the call + toast + per-row spinner.
 
 `delivery_failed` stays a **display stage only** (set by the Brevo webhook), not a `ContractStatus`
 value — the resend flow is the recovery path after the user fixes the client's email. `createContractPortalAccess` now also returns `expiresAt` so send/resend can denormalize it.
@@ -355,8 +369,10 @@ company's signature authorization — there is no separate approval step. Server
 - **Audit trail** (`src/server/contract-audit.ts`) — append-only `contracts/{id}/audit/{eventId}`
   subcollection, typed `ContractAuditEvent`. Evidence chain: contract*sent → email*\* (Brevo) →
   portal_opened → consent → signed → fully_executed. Use the distributive `ContractAuditEventInput`
-  type when writing. Raw Brevo payloads go to **private Storage** (`storeRawBrevoPayload`), never the
-  contract doc; only the path is referenced on the normalized event.
+  type when writing. The raw Brevo webhook payload is **stringified and inlined** on the email event
+  (`rawProviderPayload`, a JSON string) so the whole trail lives in one place — no Storage offload. It's
+  a string (not a nested object) so an untrusted third-party shape can't violate Firestore's structural
+  rules and drop the normalized event; the audit subcollection denies all client reads regardless.
 - **Brevo** (`src/server/brevo.ts`) — `sendContractEmail` attaches contract metadata as an
   `X-Mailin-custom` header so the webhook (`src/app/api/webhooks/brevo/route.ts`) can attribute
   delivery events back to the contract. `metadata` is **optional**: the post-sign confirmation email
@@ -382,7 +398,9 @@ company's signature authorization — there is no separate approval step. Server
     `executedFilePath ?? finalPdfPath`; regenerates on demand only if missing — for legacy contracts),
     and the dashboard's **org-gated** `api/project-documents/[documentId]/download` (resolves the
     `projectDocuments` record, checks the `ACTIVE_ORG_COOKIE` org matches, streams; **never**
-    regenerates).
+    regenerates). That route defaults to `Content-Disposition: attachment` (the Files tab "Download");
+    pass **`?inline=1`** to stream it inline instead — the contracts list's "View signed PDF" action
+    opens executed contracts that way in a new tab.
   - **Timestamps**: all contract times are stored as epoch-ms (UTC instants). The certificate/
     signature-block formatter (`fmtDate` in `src/lib/contract-pdf-document.tsx`) renders **UTC always,
     plus the org's configured timezone** when set — each labeled with its zone abbreviation, so the

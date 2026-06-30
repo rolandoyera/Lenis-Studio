@@ -17,6 +17,7 @@ import { FieldValue } from "firebase-admin/firestore";
 
 import { cookies, headers } from "next/headers";
 
+import { contractResendEligibility } from "@/lib/contract-resend";
 import { ELECTRONIC_SIGNATURE_CONSENT_TEXT } from "@/lib/contract-text";
 import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
 import { formatVendorPhone, normalizePhone, vendorPhoneTel } from "@/lib/utils";
@@ -292,8 +293,14 @@ async function mintAndEmailSigningLink(args: {
   portalUrl: string;
   emailSent: boolean;
 }> {
-  const { contract, org, signerEmail, sentToEmail, phoneLast4, expirationDays } =
-    args;
+  const {
+    contract,
+    org,
+    signerEmail,
+    sentToEmail,
+    phoneLast4,
+    expirationDays,
+  } = args;
 
   const { portalAccessId, accessToken, expiresAt } =
     await createContractPortalAccess({
@@ -372,14 +379,9 @@ export async function resendContractSigningLink(input: {
   if (contract.organizationId !== organizationId) {
     return { ok: false, error: "Contract belongs to another organization." };
   }
-  if (!contract.lockedSnapshot || contract.status === "draft") {
-    return { ok: false, error: "Only a sent contract can have its link resent." };
-  }
-  if (contract.executedAt || contract.status === "fully_executed") {
-    return { ok: false, error: "This contract is already executed." };
-  }
-  if (contract.status === "voided") {
-    return { ok: false, error: "This contract has been voided." };
+  const eligibility = contractResendEligibility(contract);
+  if (!eligibility.ok) {
+    return { ok: false, error: eligibility.reason };
   }
 
   // Same authorization + recipient resolution as send. The client record is
@@ -518,15 +520,18 @@ export async function expireLapsedContractLinks(
 
     await Promise.all(
       lapsed.map(async (c) => {
-        await db.collection(CONTRACTS_COLLECTION).doc(c.contractId).update({
-          status: "expired",
-          contractDisplay: nextContractDisplay(
-            c.contractDisplay,
-            "expired",
-            now,
-          ),
-          updatedAt: now,
-        });
+        await db
+          .collection(CONTRACTS_COLLECTION)
+          .doc(c.contractId)
+          .update({
+            status: "expired",
+            contractDisplay: nextContractDisplay(
+              c.contractDisplay,
+              "expired",
+              now,
+            ),
+            updatedAt: now,
+          });
         await writeContractAuditEvent(c.contractId, {
           type: "contract_link_expired",
           occurredAt: now,

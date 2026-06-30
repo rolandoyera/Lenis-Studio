@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import { type ComponentProps, type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import Link from "next/link";
 
@@ -12,9 +12,12 @@ import {
   ArrowUpDown,
   ChevronDownIcon,
   Eye,
+  FileText,
   ListFilter,
   Loader2,
+  MoreVertical,
   Plus,
+  Send,
 } from "lucide-react";
 import {
   type ColumnFiltersState,
@@ -30,28 +33,29 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
+import { ContractStatusChain } from "@/app/(main)/dashboard/contracts/_components/contract-status-chain";
+import { useResendSigningLink } from "@/app/(main)/dashboard/contracts/_components/use-resend-signing-link";
 import PageHeader from "@/components/page-header";
 import { PageTitle } from "@/components/page-title-updater";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
+  TooltipDropdownMenu,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { TanTable } from "@/components/ui/tan-table";
+import { canResendContract } from "@/lib/contract-resend";
 import { getOrganizationUsers } from "@/lib/db";
 import { db } from "@/lib/firebase";
 import { expireLapsedContractLinks } from "@/server/contract-signing";
-import type {
-  Contract,
-  ContractDisplayStage,
-  ContractStatus,
-} from "@/lib/types";
+import type { Contract, ContractStatus } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
 /** "Jun 18, 2026" from an epoch-ms timestamp. */
@@ -76,81 +80,6 @@ function retainerLabel(contract: Contract): string {
   return Number.isFinite(amount)
     ? formatCurrency(amount, { noDecimals: true })
     : "—";
-}
-
-type StatusBadge = {
-  label: string;
-  variant: ComponentProps<typeof Badge>["variant"];
-};
-
-/** Map a legacy contract (no `contractDisplay`) onto a display stage + delivery. */
-const FALLBACK_DISPLAY: Record<
-  ContractStatus,
-  { stage: ContractDisplayStage; delivered: boolean }
-> = {
-  draft: { stage: "draft", delivered: false },
-  sent: { stage: "sent", delivered: false },
-  viewed: { stage: "viewed", delivered: true },
-  fully_executed: { stage: "executed", delivered: true },
-  expired: { stage: "expired", delivered: false },
-  voided: { stage: "void", delivered: false },
-};
-
-/**
- * The realtime Status column, rendered as a chain of badges. Reads the
- * denormalized `contractDisplay` (kept in sync server-side with the audit
- * trail); falls back to deriving the stage from `status` for legacy contracts.
- * Executed/expired/void are terminal — they collapse to a single badge since the
- * intermediate steps are no longer relevant.
- */
-function contractStatusBadges(contract: Contract): StatusBadge[] {
-  const { stage, delivered } = contract.contractDisplay
-    ? {
-        stage: contract.contractDisplay.stage,
-        delivered: contract.contractDisplay.delivered,
-      }
-    : FALLBACK_DISPLAY[contract.status];
-
-  // Render-time expiry backstop: a lapsed signing link reads as Expired even
-  // before the lazy server sweep flips `status`. Never overrides a finished or
-  // delivery-failed contract.
-  const lapsed =
-    !!contract.signingLinkExpiresAt &&
-    Date.now() > contract.signingLinkExpiresAt;
-  if (
-    lapsed &&
-    stage !== "executed" &&
-    stage !== "void" &&
-    stage !== "delivery_failed"
-  ) {
-    return [{ label: "Expired", variant: "destructive" }];
-  }
-
-  const sent: StatusBadge = { label: "Sent", variant: "info" };
-  const deliveredBadge: StatusBadge = { label: "Delivered", variant: "success" };
-
-  switch (stage) {
-    case "draft":
-      return [{ label: "Draft", variant: "ghost" }];
-    case "sent":
-      return [sent];
-    case "delivered":
-      return [sent, deliveredBadge];
-    case "viewed":
-      return [
-        sent,
-        ...(delivered ? [deliveredBadge] : []),
-        { label: "Viewed", variant: "warning" },
-      ];
-    case "executed":
-      return [{ label: "Executed", variant: "success" }];
-    case "delivery_failed":
-      return [sent, { label: "Delivery Failed", variant: "destructive" }];
-    case "expired":
-      return [{ label: "Expired", variant: "destructive" }];
-    case "void":
-      return [{ label: "Void", variant: "destructive" }];
-  }
 }
 
 const statusOptions = [
@@ -257,6 +186,8 @@ export default function ContractsPage() {
     return userNames[contract.updatedBy] ?? "—";
   };
 
+  const { resendingId, resend } = useResendSigningLink(uid);
+
   const columns: ColumnDef<Contract>[] = [
     {
       accessorKey: "title",
@@ -342,15 +273,7 @@ export default function ContractsPage() {
       // but renders the realtime chain text and is not sortable.
       accessorKey: "status",
       header: () => <span className="text-foreground text-sm">Status</span>,
-      cell: ({ row }) => (
-        <div className="flex flex-wrap items-center gap-1">
-          {contractStatusBadges(row.original).map((badge) => (
-            <Badge key={badge.label} variant={badge.variant}>
-              {badge.label}
-            </Badge>
-          ))}
-        </div>
-      ),
+      cell: ({ row }) => <ContractStatusChain contract={row.original} />,
       enableSorting: false,
       filterFn: "equalsString",
     },
@@ -380,18 +303,59 @@ export default function ContractsPage() {
       ),
     },
     {
-      id: "view",
-      header: () => <div className="text-right">View</div>,
-      cell: ({ row }) => (
-        <div className="flex justify-end">
-          <Button asChild variant="ghost" size="icon" className="size-8">
-            <Link href={`/dashboard/contracts/${row.original.contractId}`}>
-              <Eye />
-              <span className="sr-only">View contract</span>
-            </Link>
-          </Button>
-        </div>
-      ),
+      id: "actions",
+      header: () => <div className="text-right">Actions</div>,
+      cell: ({ row }) => {
+        const contract = row.original;
+        const resending = resendingId === contract.contractId;
+        return (
+          <div className="flex justify-end">
+            <TooltipDropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <MoreVertical className="size-4" />
+                  <span className="sr-only">Contract actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                {contract.status === "fully_executed" ? (
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={`${contract.executedFileUrl}?inline=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <FileText className="size-4" />
+                      View signed PDF
+                    </a>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <Link href={`/dashboard/contracts/${contract.contractId}`}>
+                      <Eye className="size-4" />
+                      View contract
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {canResendContract(contract) && (
+                  <DropdownMenuItem
+                    disabled={resending}
+                    onSelect={() => void resend(contract.contractId)}
+                  >
+                    {resending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Send className="size-4" />
+                    )}
+                    Resend signing link
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </TooltipDropdownMenu>
+          </div>
+        );
+      },
       enableSorting: false,
       enableHiding: false,
     },

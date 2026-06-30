@@ -1,7 +1,7 @@
 "use client";
 "use no memo";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import Link from "next/link";
 
@@ -18,12 +18,17 @@ import {
   Download,
   FileText,
   Loader2,
+  MoreVertical,
+  Send,
   SquarePen,
   Plus,
 } from "lucide-react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { toast } from "sonner";
 
 import { useAuth } from "@/components/auth-context";
-import { ContractStatusBadge } from "@/app/(main)/dashboard/contracts/_components/contract-status-badge";
+import { ContractStatusChain } from "@/app/(main)/dashboard/contracts/_components/contract-status-chain";
+import { useResendSigningLink } from "@/app/(main)/dashboard/contracts/_components/use-resend-signing-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,13 +38,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TanTable } from "@/components/ui/tan-table";
 import {
-  getOrganizationUsers,
-  getProjectContracts,
-  getProjectDocuments,
-} from "@/lib/db";
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  TooltipDropdownMenu,
+} from "@/components/ui/dropdown-menu";
+import { TanTable } from "@/components/ui/tan-table";
+import { getOrganizationUsers } from "@/lib/db";
+import { db } from "@/lib/firebase";
 import type { Contract, ContractStatus, ProjectDocument } from "@/lib/types";
+import { canResendContract } from "@/lib/contract-resend";
 import { cn } from "@/lib/utils";
 
 interface ProjectFilesCardProps {
@@ -65,6 +75,8 @@ type FileRow =
       code?: string;
       typeLabel: string;
       status?: ContractStatus;
+      /** The contract this file was produced from, if any — drives the status chain. */
+      contract?: Contract;
       createdAt: number;
       createdBy: string;
       fileUrl: string;
@@ -76,6 +88,8 @@ type FileRow =
       code?: string;
       typeLabel: string;
       status: ContractStatus;
+      /** The in-progress contract — drives the realtime status chain. */
+      contract: Contract;
       createdAt: number;
       createdBy: string;
       contractId: string;
@@ -103,6 +117,7 @@ function buildRows(
       code: contract?.contractCode,
       typeLabel: TYPE_LABELS[d.type],
       status: contract?.status,
+      contract,
       createdAt: d.createdAt,
       createdBy: d.createdBy,
       fileUrl: d.fileUrl,
@@ -118,6 +133,7 @@ function buildRows(
       code: c.contractCode,
       typeLabel: "Contract",
       status: c.status,
+      contract: c,
       createdAt: c.createdAt,
       createdBy: c.createdBy,
       contractId: c.contractId,
@@ -155,7 +171,8 @@ function SortableHeader({
       className={cn(
         "-mx-3 h-8 gap-1.5 px-3 font-medium text-foreground text-sm hover:bg-transparent",
         align === "right" && "flex-row-reverse",
-      )}>
+      )}
+    >
       {children}
       <Icon
         className={cn(
@@ -167,8 +184,82 @@ function SortableHeader({
   );
 }
 
+/** Per-row actions menu (download a file, open a draft, resend a signing link). */
+function FileRowActions({
+  row,
+  onResend,
+  resendingId,
+}: {
+  row: FileRow;
+  onResend: (contractId: string) => void;
+  resendingId: string | null;
+}) {
+  // Resend is only offered for in-progress contracts; eligibility is the shared
+  // rule (see `canResendContract`) that the server guard also enforces.
+  const canResend = row.kind === "draft" && canResendContract(row.contract);
+  const resending = row.kind === "draft" && resendingId === row.contractId;
+
+  return (
+    <TooltipDropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreVertical className="size-4" />
+          <span className="sr-only">File actions</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        {row.kind === "file" ? (
+          <>
+            <DropdownMenuItem asChild>
+              <a
+                href={`${row.fileUrl}?inline=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FileText className="size-4" />
+                View signed PDF
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={row.fileUrl}>
+                <Download className="size-4" />
+                Download
+              </a>
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/contracts/${row.contractId}`}>
+                <SquarePen className="size-4" />
+                Open
+              </Link>
+            </DropdownMenuItem>
+            {canResend && (
+              <DropdownMenuItem
+                disabled={resending}
+                onSelect={() => onResend(row.contractId)}
+              >
+                {resending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Send className="size-4" />
+                )}
+                Resend signing link
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
+      </DropdownMenuContent>
+    </TooltipDropdownMenu>
+  );
+}
+
 function buildColumns(
   createdByLabel: (row: FileRow) => string,
+  onResend: (contractId: string) => void,
+  resendingId: string | null,
 ): ColumnDef<FileRow>[] {
   return [
     {
@@ -206,9 +297,9 @@ function buildColumns(
         <SortableHeader column={column}>Status</SortableHeader>
       ),
       cell: ({ row }) => (
-        <div className="flex h-5 items-center">
-          {row.original.status ? (
-            <ContractStatusBadge status={row.original.status} />
+        <div className="flex min-h-5 items-center">
+          {row.original.contract ? (
+            <ContractStatusChain contract={row.original.contract} />
           ) : null}
         </div>
       ),
@@ -239,22 +330,13 @@ function buildColumns(
     {
       id: "action",
       header: () => "Actions",
-      cell: ({ row }) =>
-        row.original.kind === "file" ? (
-          <Button asChild size="sm" variant="secondary">
-            <a href={row.original.fileUrl}>
-              <Download className="size-3" />
-              Download
-            </a>
-          </Button>
-        ) : (
-          <Button asChild size="sm" variant="secondary">
-            <Link href={`/dashboard/contracts/${row.original.contractId}`}>
-              <SquarePen className="size-3" />
-              Open
-            </Link>
-          </Button>
-        ),
+      cell: ({ row }) => (
+        <FileRowActions
+          row={row.original}
+          onResend={onResend}
+          resendingId={resendingId}
+        />
+      ),
       enableSorting: false,
     },
   ];
@@ -265,31 +347,81 @@ export function ProjectFilesCard({
   organizationId,
 }: ProjectFilesCardProps) {
   const { uid } = useAuth();
-  const [rows, setRows] = useState<FileRow[]>([]);
+  const [documents, setDocuments] = useState<ProjectDocument[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
+  const { resendingId, resend } = useResendSigningLink(uid);
 
+  // Org user names rarely change within a session — fetch once.
   useEffect(() => {
-    let active = true;
-    setLoading(true);
-    void (async () => {
-      const [docs, contracts, users] = await Promise.all([
-        getProjectDocuments(organizationId, projectId),
-        getProjectContracts(organizationId, projectId),
-        getOrganizationUsers(organizationId),
-      ]);
-      if (!active) return;
-      setRows(buildRows(docs, contracts));
-      setUserNames(Object.fromEntries(users.map((u) => [u.uid, u.fullName])));
-      setLoading(false);
-    })();
+    void getOrganizationUsers(organizationId)
+      .then((users) =>
+        setUserNames(Object.fromEntries(users.map((u) => [u.uid, u.fullName]))),
+      )
+      .catch((error) =>
+        console.error("Failed to load organization users:", error),
+      );
+  }, [organizationId]);
+
+  // Realtime project documents + contracts so the Files list — and especially the
+  // contract Status chain (delivery/view/sign, incl. Delivery Failed) — updates
+  // live, mirroring the contracts list. Both collections are queried by org (no
+  // composite index) and filtered to this project in memory.
+  useEffect(() => {
+    const docsUnsub = onSnapshot(
+      query(
+        collection(db, "projectDocuments"),
+        where("organizationId", "==", organizationId),
+      ),
+      (snapshot) => {
+        setDocuments(
+          snapshot.docs
+            .map((d) => d.data() as ProjectDocument)
+            .filter((d) => d.projectId === projectId),
+        );
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Failed to load project files:", error);
+        toast.error("Failed to fetch project files from database.");
+        setLoading(false);
+      },
+    );
+
+    const contractsUnsub = onSnapshot(
+      query(
+        collection(db, "contracts"),
+        where("organizationId", "==", organizationId),
+      ),
+      (snapshot) => {
+        setContracts(
+          snapshot.docs
+            .map((d) => d.data() as Contract)
+            .filter((c) => c.projectId === projectId),
+        );
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Failed to load project contracts:", error);
+        toast.error("Failed to fetch project contracts from database.");
+        setLoading(false);
+      },
+    );
+
     return () => {
-      active = false;
+      docsUnsub();
+      contractsUnsub();
     };
   }, [organizationId, projectId]);
+
+  const rows = useMemo(
+    () => buildRows(documents, contracts),
+    [documents, contracts],
+  );
 
   // Auto-generated docs are stamped "system"; otherwise resolve the UID to a
   // name, showing "You" for the signed-in user.
@@ -299,7 +431,11 @@ export function ProjectFilesCard({
     return userNames[row.createdBy] ?? "—";
   };
 
-  const columns = buildColumns(createdByLabel);
+  const columns = buildColumns(
+    createdByLabel,
+    (contractId) => void resend(contractId),
+    resendingId,
+  );
 
   // A "draft" row is a contract that exists but hasn't executed into a stored
   // document yet (draft/sent/viewed all stay drafts until execution). Hide the

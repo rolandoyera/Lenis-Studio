@@ -56,7 +56,7 @@ export const projectSchema = z.object({
   state: z.string(),
   zip: z.string().refine(isValidUsZip, "Enter a valid 5-digit ZIP code."),
   country: z.string(),
-  notes: z.string(),
+  brief: z.string(),
 });
 
 export type ProjectFormData = z.infer<typeof projectSchema>;
@@ -72,7 +72,7 @@ export const EMPTY_PROJECT_FORM: ProjectFormData = {
   state: "",
   zip: "",
   country: "US",
-  notes: "",
+  brief: "",
 };
 
 /** Map an existing project onto the editable form shape. */
@@ -94,6 +94,6 @@ export function projectToForm(project: Project): ProjectFormData {
     state: project.state ?? "",
     zip: formatZip(project.zip ?? ""),
     country: project.country ?? "US",
-    notes: project.notes ?? "",
+    brief: project.brief ?? "",
   };
 }

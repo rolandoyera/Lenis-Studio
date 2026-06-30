@@ -6,7 +6,7 @@
 // signed the exact frozen version → fully executed. All writes go through the
 // firebase-admin SDK (bypasses rules); audit data is never written by the client.
 
-import { getAdminBucket, getAdminDb } from "./firebase-admin";
+import { getAdminDb } from "./firebase-admin";
 
 import type { ContractAuditEvent } from "@/lib/types";
 
@@ -85,31 +85,4 @@ export async function hasRecentPortalOpen(
     const e = d.data() as ContractAuditEvent;
     return e.type === "portal_opened" && e.accessTokenId === accessTokenId;
   });
-}
-
-/**
- * Persist a raw provider (Brevo) webhook payload to private Storage and return
- * its path. Kept OUT of the main contract doc so that doc stays clean/readable
- * and the raw payload is never exposed to the client (only the path is recorded
- * on the normalized audit event).
- */
-export async function storeRawBrevoPayload(input: {
-  organizationId: string;
-  contractId: string;
-  eventType: string;
-  eventId: string;
-  payload: unknown;
-}): Promise<string | undefined> {
-  const { organizationId, contractId, eventType, eventId, payload } = input;
-  const path = `organizations/${organizationId}/contracts/${contractId}/audit/brevo-${eventType}-${eventId}.json`;
-  try {
-    await getAdminBucket()
-      .file(path)
-      .save(JSON.stringify(payload), { contentType: "application/json" });
-    return path;
-  } catch (error) {
-    // Storage being unconfigured must not drop the normalized event.
-    console.error("Failed to store raw Brevo payload:", error);
-    return undefined;
-  }
 }

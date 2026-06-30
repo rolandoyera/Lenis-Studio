@@ -16,10 +16,13 @@ import { getAdminBucket, getAdminDb } from "@/server/firebase-admin";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ documentId: string }> },
 ) {
   const { documentId } = await params;
+  // `?inline=1` renders the PDF in the browser (e.g. "View signed PDF"); the
+  // default forces a download (the Files tab's "Download" action).
+  const inline = req.nextUrl.searchParams.get("inline") === "1";
 
   const activeOrgId = (await cookies()).get(ACTIVE_ORG_COOKIE)?.value;
   if (!activeOrgId) return new Response("Unauthorized", { status: 401 });
@@ -41,7 +44,7 @@ export async function GET(
     return new Response(new Uint8Array(buffer), {
       headers: {
         "content-type": "application/pdf",
-        "content-disposition": `attachment; filename="${document.fileName}"`,
+        "content-disposition": `${inline ? "inline" : "attachment"}; filename="${document.fileName}"`,
         "cache-control": "private, no-store",
       },
     });

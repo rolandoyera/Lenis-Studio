@@ -27,7 +27,7 @@ describe("project schema and helpers", () => {
       state: "",
       zip: "33101",
       country: "US",
-      notes: "",
+      brief: "",
     };
 
     expect(projectSchema.safeParse(valid).success).toBe(true);

@@ -63,7 +63,6 @@ export async function mirrorExternalImagesToFirebase(
             organizationId,
             blob,
             itemId,
-            url === cover ? "cover" : "gallery",
             undefined,
             extension,
           ),

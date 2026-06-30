@@ -90,6 +90,18 @@ Contract helper tests cover the fixed code-based template and payload builders:
   - lightweight draft payloads
   - frozen `lockedSnapshot` payload shape
   - resolved parties and project snapshot data
+- `contract-resend.test.ts`
+  - `contractResendEligibility` / `canResendContract` — the **single source of truth** for "can this
+    contract's signing link be resent?" shared by the server guard and every UI affordance (builder,
+    contracts list, project Files tab). Covers the eligible states (sent/viewed/expired + locked) and
+    every rejection branch (never-sent/no-lock, executed by timestamp or status, voided). Locking this
+    matters because the rule gates a security-sensitive action in four places and must not drift.
+- `brevo.test.ts`
+  - `normalizeBrevoWebhookEvent` — the raw-event → audit-type mapping that produces the delivery
+    signal. Covers bounce → `email_bounced` and blocked/invalid/spam/error → `email_blocked` (the two
+    that the webhook route turns into the contract's **Delivery Failed** status), sent/delivered, the
+    null cases (opens/clicks/deferred/unsubscribed and missing event), and metadata/recipient/id
+    extraction from the `X-Mailin-custom` header (incl. the `tags` fallback and bad-JSON handling).
 
 ### Server Actions With Mocked Firebase Admin
 
@@ -121,6 +133,24 @@ Server-action behavior is covered with mocked Firebase Admin dependencies:
   - contributor denial
   - cross-org resend denial
   - tenant creation with pending admin invite
+
+### Storage Upload Helpers
+
+Coverage exists for the client-side upload helpers in `src/lib/db.ts`:
+
+- `db.image-cache.test.ts`
+  - every upload helper (`uploadLibraryImage`, `uploadLibraryImageBlob`,
+    `uploadVendorImage`, `uploadVendorImageBlob`, `uploadOrgBrandingImage`) sets
+    the immutable `Cache-Control` header (`public, max-age=31536000, immutable`)
+    on `uploadBytes`
+  - library blob uploads use the unified `images/{id}` path with no separate
+    `cover.{ext}` file, and honor an explicit image id/extension
+
+This guards image freshness: because a changed image always gets a new download
+URL, the bytes are safe to cache immutably and never go stale. It tests the
+header/path contract with a mocked `firebase/storage`, not access control — it
+does **not** replace the Storage emulator rules coverage still listed under
+"What Remains".
 
 ### Firestore Rules
 

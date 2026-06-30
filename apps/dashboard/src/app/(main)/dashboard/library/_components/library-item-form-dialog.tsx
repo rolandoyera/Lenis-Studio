@@ -25,7 +25,7 @@ import {
   Loader2 as LoaderIcon,
   MoreHorizontal,
   Plus,
-  Sparkles,
+  ShoppingBag,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -228,8 +228,7 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
         index === 0
           ? "scale-102 border-primary ring-2 ring-primary/20"
           : "border-border hover:border-primary/50"
-      }`}
-    >
+      }`}>
       {/* biome-ignore lint/performance/noImgElement: sortable preview uses dynamic local/external image URLs. */}
       <img
         src={url}
@@ -244,8 +243,7 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
         {...attributes}
         {...listeners}
         className="absolute top-1.5 left-1.5 z-20 flex size-6 cursor-all-scroll items-center justify-center rounded bg-black/60 text-white opacity-0 transition-opacity hover:bg-black group-hover/thumb:opacity-100"
-        title="Drag to sort"
-      >
+        title="Drag to sort">
         <GripVertical className="size-4" />
       </div>
 
@@ -258,23 +256,20 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
               className="flex size-6 cursor-pointer items-center justify-center rounded bg-black/60 text-white transition-colors hover:bg-black"
               aria-label="Image actions"
               onClick={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
+              onPointerDown={(e) => e.stopPropagation()}>
               <MoreHorizontal className="size-4" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-[120px]">
             <DropdownMenuItem
               onClick={handleCopyImage}
-              className="flex items-center gap-2"
-            >
+              className="flex items-center gap-2">
               <Copy className="size-3.5 text-muted-foreground" />
-              <span>Copy Image</span>
+              <span>Copy</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => downloadImage(url)}
-              className="flex items-center gap-2"
-            >
+              className="flex items-center gap-2">
               <Download className="size-3.5 text-muted-foreground" />
               <span>Download</span>
             </DropdownMenuItem>
@@ -282,8 +277,7 @@ function SortableImageCard({ url, index, onRemove }: SortableImageCardProps) {
             <DropdownMenuItem
               onClick={() => onRemove(url)}
               variant="destructive"
-              className="flex items-center gap-2 text-destructive"
-            >
+              className="flex items-center gap-2 text-destructive">
               <Trash2 className="size-3.5" />
               <span>Remove</span>
             </DropdownMenuItem>
@@ -448,19 +442,18 @@ export function LibraryItemFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[90vh] max-h-[90vh] flex-col overflow-hidden bg-popover/97 p-0 backdrop-blur-lg sm:max-w-6xl">
+      <DialogContent className="flex h-[90vh] max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-6xl">
         <div ref={setComboboxContainer} />
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="flex h-full w-full flex-col overflow-hidden"
-        >
-          <DialogHeader className="shrink-0 border-b p-6">
+          className="flex h-full w-full flex-col overflow-hidden">
+          <DialogHeader className="border-b px-6 pb-4">
             <DialogTitle className="flex items-center gap-2 font-heading font-medium text-2xl">
-              <Sparkles className="size-5 text-primary" />
+              <ShoppingBag className="size-5 text-primary" />
               {title}
             </DialogTitle>
             <DialogDescription>
-              Input sourcing attributes, materials, dimensions, dynamic vendor
+              Add and edit attributes, materials, dimensions, dynamic vendor
               links, and more.
             </DialogDescription>
           </DialogHeader>
@@ -480,8 +473,7 @@ export function LibraryItemFormDialog({
                   render={({ field, fieldState }) => (
                     <Field
                       className="flex flex-col gap-1.5"
-                      data-invalid={fieldState.invalid}
-                    >
+                      data-invalid={fieldState.invalid}>
                       <Label className={`${LABEL_CLASS} flex items-center`}>
                         Category{" "}
                         <span className="ml-0.5 text-destructive">*</span>{" "}
@@ -510,15 +502,13 @@ export function LibraryItemFormDialog({
                                 }
                               : undefined,
                           });
-                        }}
-                      >
+                        }}>
                         <SelectTrigger
                           className={cn(
                             "h-9 w-full",
                             getFieldStyle("category"),
                           )}
-                          aria-invalid={fieldState.invalid}
-                        >
+                          aria-invalid={fieldState.invalid}>
                           <SelectValue placeholder="Choose Category" />
                         </SelectTrigger>
                         <SelectContent position="popper">
@@ -546,8 +536,7 @@ export function LibraryItemFormDialog({
                     return (
                       <Field
                         className="flex flex-col gap-1.5"
-                        data-invalid={fieldState.invalid}
-                      >
+                        data-invalid={fieldState.invalid}>
                         <Label className={`${LABEL_CLASS} flex items-center`}>
                           Subcategory {renderConfidenceBadge("subcategory")}
                         </Label>
@@ -571,15 +560,13 @@ export function LibraryItemFormDialog({
                                   }
                                 : undefined,
                             });
-                          }}
-                        >
+                          }}>
                           <SelectTrigger
                             className={cn(
                               "h-9 w-full",
                               getFieldStyle("subcategory"),
                             )}
-                            aria-invalid={fieldState.invalid}
-                          >
+                            aria-invalid={fieldState.invalid}>
                             <SelectValue
                               placeholder={
                                 activeCategory
@@ -611,8 +598,7 @@ export function LibraryItemFormDialog({
                 render={({ field, fieldState }) => (
                   <Field
                     className="flex flex-col gap-1.5"
-                    data-invalid={fieldState.invalid}
-                  >
+                    data-invalid={fieldState.invalid}>
                     <Label className={`${LABEL_CLASS} flex items-center`}>
                       Item Name{" "}
                       <span className="ml-0.5 text-destructive">*</span>{" "}
@@ -661,8 +647,7 @@ export function LibraryItemFormDialog({
                         return (
                           <Field className="flex flex-col gap-1.5">
                             <Label
-                              className={`${LABEL_CLASS} flex items-center`}
-                            >
+                              className={`${LABEL_CLASS} flex items-center`}>
                               Vendor{" "}
                               <span className="ml-0.5 text-destructive">*</span>
                             </Label>
@@ -675,19 +660,16 @@ export function LibraryItemFormDialog({
                       return (
                         <Field
                           className="flex flex-col gap-1.5"
-                          data-invalid={fieldState.invalid}
-                        >
+                          data-invalid={fieldState.invalid}>
                           <Label
-                            className={`${LABEL_CLASS} flex items-center justify-between`}
-                          >
+                            className={`${LABEL_CLASS} flex items-center justify-between`}>
                             <span>
                               Vendor <span className="text-destructive">*</span>
                             </span>
                             <button
                               type="button"
                               onClick={onQuickAddVendor}
-                              className="flex items-center gap-0.5 font-medium text-primary text-xs hover:cursor-pointer hover:underline"
-                            >
+                              className="flex items-center gap-0.5 font-medium text-primary text-xs hover:cursor-pointer hover:underline">
                               <Plus className="size-3" /> Quick Add
                             </button>
                           </Label>
@@ -706,8 +688,7 @@ export function LibraryItemFormDialog({
                               item.name
                                 .toLowerCase()
                                 .includes(inputValue.toLowerCase())
-                            }
-                          >
+                            }>
                             <ComboboxTrigger
                               render={
                                 <button
@@ -719,8 +700,7 @@ export function LibraryItemFormDialog({
                                     "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
                                     "dark:bg-input/30",
                                     !selected && "text-muted-foreground",
-                                  )}
-                                >
+                                  )}>
                                   {selected ? selected.name : "Choose Vendor"}
                                 </button>
                               }
@@ -735,8 +715,7 @@ export function LibraryItemFormDialog({
                                 {(item) => (
                                   <ComboboxItem
                                     key={item.vendorId}
-                                    value={item}
-                                  >
+                                    value={item}>
                                     {item.name}
                                   </ComboboxItem>
                                 )}
@@ -781,7 +760,7 @@ export function LibraryItemFormDialog({
 
               <div className="flex flex-col gap-1.5">
                 <Label className={`${LABEL_CLASS} flex items-center`}>
-                  Public Sourcing Notes {renderConfidenceBadge("description")}
+                  Public Description {renderConfidenceBadge("description")}
                 </Label>
                 <Textarea
                   placeholder="Item details, descriptions, or other specifics. Clients will see this."
@@ -819,19 +798,16 @@ export function LibraryItemFormDialog({
                     render={({ field, fieldState }) => (
                       <Field
                         className="flex flex-col gap-1.5"
-                        data-invalid={fieldState.invalid}
-                      >
+                        data-invalid={fieldState.invalid}>
                         <Label className={LABEL_CLASS}>
                           Unit Type <span className="text-destructive">*</span>
                         </Label>
                         <Select
                           value={field.value}
-                          onValueChange={field.onChange}
-                        >
+                          onValueChange={field.onChange}>
                           <SelectTrigger
                             className="h-9 w-full"
-                            aria-invalid={fieldState.invalid}
-                          >
+                            aria-invalid={fieldState.invalid}>
                             <SelectValue placeholder="Choose Unit Type" />
                           </SelectTrigger>
                           <SelectContent position="popper">
@@ -991,8 +967,7 @@ export function LibraryItemFormDialog({
                     type="button"
                     onClick={form.autofillWithAi}
                     disabled={form.aiLoading || !formData.sourcingLink}
-                    className="group relative shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-white shadow-md shadow-violet-500/20 transition-all duration-300 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100"
-                  >
+                    className="group relative shrink-0 cursor-pointer overflow-hidden border-0 bg-linear-to-r from-violet-600 to-indigo-500 px-3 font-medium text-white shadow-md shadow-violet-500/20 transition-all duration-300 hover:scale-[1.03] hover:from-violet-500 hover:to-indigo-400 hover:shadow-lg hover:shadow-violet-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:hover:scale-100">
                     {/* Shimmer overlay — animates only while loading */}
                     {form.aiLoading && (
                       <span className="absolute inset-0 -translate-x-full animate-shimmer bg-linear-to-r from-transparent via-white/20 to-transparent" />
@@ -1031,7 +1006,7 @@ export function LibraryItemFormDialog({
               {/* FINANCIAL MATRIX SECTION */}
               <div>
                 <h3 className="mb-4 border-b pb-1.5 font-medium text-muted-foreground/80 text-xs uppercase tracking-wider">
-                  Financials & Margin Matrix
+                  Margin Matrix
                 </h3>
 
                 <div className="flex flex-col gap-4">
@@ -1158,8 +1133,7 @@ export function LibraryItemFormDialog({
                     ) : (
                       <Label
                         htmlFor={uploaderId}
-                        className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground"
-                      >
+                        className="flex size-full cursor-pointer flex-col items-center justify-center gap-1.5 p-4 text-center text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-muted-foreground">
                         <Upload className="size-8 text-muted-foreground/40" />
                         <p className="text-xs">Click to upload image</p>
                         <p className="text-muted-foreground/50 text-xs">
@@ -1175,16 +1149,14 @@ export function LibraryItemFormDialog({
                     collisionDetection={closestCenter}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
-                    onDragCancel={handleDragCancel}
-                  >
+                    onDragCancel={handleDragCancel}>
                     {/* Force a consistent drag cursor everywhere until release. */}
                     {activeId && (
                       <style>{"*{cursor:all-scroll !important}"}</style>
                     )}
                     <SortableContext
                       items={imageUrls}
-                      strategy={rectSortingStrategy}
-                    >
+                      strategy={rectSortingStrategy}>
                       <div className="grid grid-cols-3 gap-3">
                         {imageUrls.map((url, i) => (
                           <SortableImageCard
@@ -1205,8 +1177,7 @@ export function LibraryItemFormDialog({
                               <DroppablePlaceholderWrapper
                                 key={placeholderId}
                                 id={placeholderId}
-                                className="aspect-square"
-                              >
+                                className="aspect-square">
                                 <div className="flex size-full items-center justify-center rounded-md border border-primary/50 border-dashed bg-primary/5 text-primary">
                                   <LoaderIcon className="size-4 animate-spin" />
                                 </div>
@@ -1217,12 +1188,10 @@ export function LibraryItemFormDialog({
                             <DroppablePlaceholderWrapper
                               key={placeholderId}
                               id={placeholderId}
-                              className="aspect-square"
-                            >
+                              className="aspect-square">
                               <Label
                                 htmlFor={uploaderId}
-                                className="flex size-full cursor-pointer items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground/40 hover:border-primary/50 hover:bg-primary/5"
-                              >
+                                className="flex size-full cursor-pointer items-center justify-center rounded-md border border-muted-foreground/30 border-dashed text-muted-foreground/40 hover:border-primary/50 hover:bg-primary/5">
                                 <Plus className="size-4" />
                               </Label>
                             </DroppablePlaceholderWrapper>
@@ -1268,15 +1237,13 @@ export function LibraryItemFormDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={submitting}
-            >
+              disabled={submitting}>
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2"
-            >
+              className="flex items-center gap-2">
               {submitting && <LoaderIcon className="size-4 animate-spin" />}
               {submitLabel}
             </Button>

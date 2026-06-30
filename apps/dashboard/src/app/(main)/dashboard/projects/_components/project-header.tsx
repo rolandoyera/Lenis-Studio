@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Calendar,
-  Edit,
-  FolderKanban,
-  MoreVertical,
-  Trash2,
-} from "lucide-react";
+import { Edit, FolderKanban, MoreVertical, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,23 +49,12 @@ export function ProjectHeader({
               <FolderKanban className="size-6" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <H1>{project.name}</H1>
-                <Badge variant={PROJECT_STATUS_VARIANT[project.status]}>
-                  {PROJECT_STATUS_LABELS[project.status]}
-                </Badge>
-              </div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
-                <span className="flex items-center gap-1">
-                  <Calendar className="size-3.5 text-muted-foreground/80" />
-                  Created:{" "}
-                  {new Date(project.createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </span>
-              </div>
+              <H1>{project.name}</H1>
+              <Badge
+                variant={PROJECT_STATUS_VARIANT[project.status]}
+                className="px-0">
+                {PROJECT_STATUS_LABELS[project.status]}
+              </Badge>
             </div>
           </div>
 
