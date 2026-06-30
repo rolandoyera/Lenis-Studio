@@ -460,7 +460,7 @@ export function ProjectFilesCard({
           Project Files
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 text-sm">
+      <CardContent className="p-0 text-sm min-h-190">
         {loading ? (
           <div className="flex items-center justify-center px-4 py-10 text-muted-foreground">
             <Loader2 className="size-5 animate-spin" />

@@ -2,6 +2,8 @@
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 
+import { useRouter } from "next/navigation";
+
 import {
   Calendar,
   DollarSign,
@@ -399,6 +401,7 @@ export function ContractBuilder({
   // editing) so subsequent Save Draft calls update the same document. Once
   // `status` leaves "draft" the contract is locked (its snapshot is frozen) and
   // editable saves are blocked.
+  const router = useRouter();
   const [contractId, setContractId] = useState<string | null>(
     contract?.contractId ?? null,
   );
@@ -715,6 +718,8 @@ export function ContractBuilder({
           ? "Contract sent to the client for signature."
           : "Contract sent. Email delivery is not configured — share the link manually.",
       );
+      // The contract is now locked; land the user back on the contracts list.
+      router.push("/dashboard/contracts");
     } catch (error) {
       console.error("Failed to send contract:", error);
       toast.error("Couldn't send the contract. Please try again.");
