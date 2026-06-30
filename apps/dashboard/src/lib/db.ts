@@ -33,6 +33,7 @@ import type {
   LibraryItem,
   Organization,
   Project,
+  ProjectNote,
   ProjectRoom,
   ProjectRoomItem,
   Proposal,
@@ -263,6 +264,130 @@ export async function softDeleteClientNote(input: {
       await batch.commit();
     },
     () => input.noteId,
+  );
+}
+
+// --- PROJECT NOTES ---
+// Editable working notes living at `projects/{projectId}/notes`. Unlike client
+// notes these are mutable (the author can edit the body) and hard-deleted. A
+// `note_added` activity is written on create only — edits and deletes are silent.
+
+/** Reads a project's notes (`projects/{projectId}/notes`), newest first. */
+export async function getProjectNotes(
+  projectId: string,
+): Promise<ProjectNote[]> {
+  try {
+    return await trace(
+      "projectNotes",
+      "READ",
+      "getProjectNotes",
+      async () => {
+        const snapshot = await getDocs(
+          collection(db, "projects", projectId, "notes"),
+        );
+        const notes: ProjectNote[] = [];
+        snapshot.forEach((docSnap) => {
+          notes.push(docSnap.data() as ProjectNote);
+        });
+        return notes.sort((a, b) => b.createdAt - a.createdAt);
+      },
+      (n) => `${n.length} docs`,
+    );
+  } catch (error) {
+    console.error("Error fetching project notes:", error);
+    return [];
+  }
+}
+
+/**
+ * Creates a project note and writes a matching `note_added` activity in the same
+ * atomic batch (add is the only note action that emits an activity).
+ */
+export async function addProjectNote(input: {
+  organizationId: string;
+  projectId: string;
+  body: string;
+  author: ActivityActor;
+  /** Project name, denormalized onto the activity's source for the feed. */
+  sourceLabel?: string;
+}): Promise<ProjectNote> {
+  return trace(
+    "projectNotes",
+    "WRITE",
+    "addProjectNote",
+    async () => {
+      const { organizationId, projectId, body, author, sourceLabel } = input;
+      const now = Date.now();
+
+      const note: ProjectNote = {
+        id: `note-${Math.random().toString(36).substr(2, 9)}`,
+        organizationId,
+        projectId,
+        body,
+        createdBy: author,
+        createdAt: now,
+      };
+      const activity: Activity = {
+        id: `act-${Math.random().toString(36).substr(2, 9)}`,
+        organizationId,
+        type: "note_added",
+        actor: author,
+        source: { type: "project", id: projectId, label: sourceLabel },
+        entity: { type: "note", id: note.id },
+        visibility: "internal",
+        createdAt: now,
+      };
+
+      const batch = writeBatch(db);
+      batch.set(
+        doc(db, "projects", projectId, "notes", note.id),
+        cleanUndefined(note),
+      );
+      batch.set(doc(db, "activities", activity.id), cleanUndefined(activity));
+      await batch.commit();
+      return note;
+    },
+    (n) => n.id,
+  );
+}
+
+/** Edits a project note's body in place, stamping `updatedAt`/`updatedBy`. */
+export async function updateProjectNote(input: {
+  projectId: string;
+  noteId: string;
+  body: string;
+  editor: ActivityActor;
+}): Promise<{ updatedAt: number; updatedBy: ActivityActor }> {
+  return trace(
+    "projectNotes",
+    "WRITE",
+    "updateProjectNote",
+    async () => {
+      const { projectId, noteId, body, editor } = input;
+      const now = Date.now();
+      await updateDoc(
+        doc(db, "projects", projectId, "notes", noteId),
+        cleanUndefined({ body, updatedAt: now, updatedBy: editor }),
+      );
+      return { updatedAt: now, updatedBy: editor };
+    },
+    () => input.noteId,
+  );
+}
+
+/** Hard-deletes a project note — the document is physically removed. */
+export async function deleteProjectNote(
+  projectId: string,
+  noteId: string,
+): Promise<void> {
+  return trace(
+    "projectNotes",
+    "DELETE",
+    "deleteProjectNote",
+    async () => {
+      await deleteDoc(doc(db, "projects", projectId, "notes", noteId));
+    },
+    () => noteId,
   );
 }
 

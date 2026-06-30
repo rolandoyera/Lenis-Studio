@@ -122,6 +122,27 @@ service cloud.firestore {
       allow update: if updatesInOwnOrg();
     }
 
+    // Editable project notes (working content, NOT an audit surface like client
+    // notes). Each note carries organizationId and a createdBy actor; access is
+    // inherited from the parent project's org so unfiltered list queries are
+    // allowed. The author may edit the body (body/updatedAt/updatedBy only) and
+    // hard-delete their own note. Org is the parent project's, not the doc's own.
+    match /projects/{projectId}/notes/{noteId} {
+      allow read: if isSignedIn() && projectOrg(projectId) == userOrg();
+      allow create: if isSignedIn()
+        && projectOrg(projectId) == userOrg()
+        && request.resource.data.organizationId == userOrg()
+        && request.resource.data.createdBy.id == request.auth.uid;
+      allow update: if isSignedIn()
+        && projectOrg(projectId) == userOrg()
+        && resource.data.createdBy.id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['body', 'updatedAt', 'updatedBy']);
+      allow delete: if isSignedIn()
+        && projectOrg(projectId) == userOrg()
+        && resource.data.createdBy.id == request.auth.uid;
+    }
+
     match /library/{id} {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg();

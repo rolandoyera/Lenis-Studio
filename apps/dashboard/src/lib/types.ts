@@ -46,7 +46,7 @@ export interface ActivityActor {
 }
 
 /** Record types an activity can belong to or point at. */
-export type ActivityEntityType = "client" | "note";
+export type ActivityEntityType = "client" | "project" | "note";
 
 /**
  * The record whose timeline this activity belongs to — the per-entity query
@@ -108,6 +108,25 @@ export interface ClientNote {
   createdAt: number;
   deletedAt?: number;
   deletedBy?: ActivityActor;
+}
+
+/**
+ * An editable project note. Unlike {@link ClientNote} (append-only, soft-delete),
+ * project notes are working content: the author can edit the body (stamps
+ * `updatedAt`/`updatedBy`) and a hard delete removes the document outright. A
+ * `note_added` activity is written on create only (not on edit/delete). Stored
+ * as a parent subcollection at `projects/{projectId}/notes/{id}`.
+ */
+export interface ProjectNote {
+  id: string;
+  organizationId: string;
+  projectId: string;
+  body: string;
+  createdBy: ActivityActor;
+  /** Epoch milliseconds — the app-wide timestamp convention. */
+  createdAt: number;
+  updatedBy?: ActivityActor;
+  updatedAt?: number;
 }
 
 // --- LEADS ---

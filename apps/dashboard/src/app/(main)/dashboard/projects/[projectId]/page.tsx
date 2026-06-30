@@ -11,14 +11,24 @@ import { useAuth } from "@/components/auth-context";
 import { PageTitle } from "@/components/page-title-updater";
 import { Card } from "@/components/ui/card";
 import {
+  addProjectNote,
   addProposal,
   deleteProject,
+  deleteProjectNote,
   getClients,
   getProject,
+  getProjectNotes,
   getProposals,
   updateProject,
+  updateProjectNote,
 } from "@/lib/db";
-import type { Client, Project, Proposal } from "@/lib/types";
+import type {
+  ActivityActor,
+  Client,
+  Project,
+  ProjectNote,
+  Proposal,
+} from "@/lib/types";
 
 import { DeleteProjectDialog } from "../_components/delete-project-dialog";
 import {
@@ -31,6 +41,7 @@ import { ProjectFormDialog } from "../_components/project-form-dialog";
 import { ProjectHeader } from "../_components/project-header";
 import { ProjectFilesCard } from "../_components/project-files-card";
 import { ProjectInformationCard } from "../_components/project-information-card";
+import { ProjectNotesCard } from "../_components/project-notes-card";
 import { ProjectProposalsCard } from "../_components/project-proposals-card";
 import { ProjectItems } from "../tabs/project-items";
 
@@ -48,6 +59,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
   const [client, setClient] = useState<Client | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [notes, setNotes] = useState<ProjectNote[]>([]);
   const [loading, setLoading] = useState(true);
   const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<ProjectTab>(
@@ -67,11 +79,13 @@ export default function ProjectDetailPage({ params }: PageProps) {
 
     async function loadProjectData() {
       try {
-        const [projectData, clientsData, proposalsData] = await Promise.all([
-          getProject(projectId),
-          getClients(orgId),
-          getProposals(orgId),
-        ]);
+        const [projectData, clientsData, proposalsData, notesData] =
+          await Promise.all([
+            getProject(projectId),
+            getClients(orgId),
+            getProposals(orgId),
+            getProjectNotes(projectId),
+          ]);
 
         if (!projectData || projectData.organizationId !== orgId) {
           toast.error("Project not found.");
@@ -88,6 +102,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
 
         // Filter proposals for this project
         setProposals(proposalsData.filter((p) => p.projectId === projectId));
+        setNotes(notesData);
       } catch (error) {
         console.error("Failed to load project details:", error);
         toast.error("Failed to retrieve project info.");
@@ -130,6 +145,61 @@ export default function ProjectDetailPage({ params }: PageProps) {
       toast.error("Failed to update project details.");
     } finally {
       setUpdatingProject(false);
+    }
+  };
+
+  const currentActor: ActivityActor | null = profile
+    ? { type: "user", id: profile.uid, name: profile.fullName }
+    : null;
+
+  const handleAddNote = async (body: string) => {
+    if (!project || !currentActor) return;
+    try {
+      const created = await addProjectNote({
+        organizationId: project.organizationId,
+        projectId: project.projectId,
+        body,
+        author: currentActor,
+        sourceLabel: project.name,
+      });
+      setNotes((prev) => [created, ...prev]);
+      toast.success("Note added.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to add note.");
+      throw error; // keep the composer text so the user can retry
+    }
+  };
+
+  const handleEditNote = async (noteId: string, body: string) => {
+    if (!project || !currentActor) return;
+    try {
+      const stamps = await updateProjectNote({
+        projectId: project.projectId,
+        noteId,
+        body,
+        editor: currentActor,
+      });
+      setNotes((prev) =>
+        prev.map((n) => (n.id === noteId ? { ...n, body, ...stamps } : n)),
+      );
+      toast.success("Note updated.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update note.");
+      throw error; // keep the editor open so the user can retry
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!project) return;
+    try {
+      await deleteProjectNote(project.projectId, noteId);
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      toast.success("Note deleted.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to delete note.");
     }
   };
 
@@ -204,8 +274,17 @@ export default function ProjectDetailPage({ params }: PageProps) {
         {/* Tab 1 Page Content - Project Overview */}
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-            <div className="col-span-4">
+            <div className="col-span-4 flex flex-col gap-6">
               <ProjectInformationCard project={project} client={client} />
+              {currentActor && (
+                <ProjectNotesCard
+                  notes={notes}
+                  currentActor={currentActor}
+                  onAddNote={handleAddNote}
+                  onEditNote={handleEditNote}
+                  onDeleteNote={handleDeleteNote}
+                />
+              )}
             </div>
             <div className="col-span-8">
               <ProjectFilesCard

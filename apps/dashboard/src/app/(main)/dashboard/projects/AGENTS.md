@@ -31,9 +31,18 @@ A project workspace. Two routes, both **client components**:
 - `_components/project-form-dialog.tsx` — the add/edit dialog (RHF + `zodResolver`), incl. the
   "same as main client address" toggle.
 - `_components/project-header.tsx` — detail title + status, tab bar, edit/delete actions.
-- `_components/project-information-card.tsx`, `project-brief-card.tsx`, `project-proposals-card.tsx`,
+- `_components/project-information-card.tsx`, `project-notes-card.tsx`, `project-proposals-card.tsx`,
   `project-files-card.tsx` — Overview-tab cards (proposals card spawns a Draft proposal and routes to
-  it; files card lists project documents + contracts). The **files card is realtime**: two
+  it; files card lists project documents + contracts). `project-brief-card.tsx` also exists (renders
+  the single free-form `Project.brief` field, edited via the form dialog) but is **not currently
+  mounted** in the Overview layout — keep or wire it back per design.
+- `_components/project-notes-card.tsx` — the Overview **Notes** card: an editable log backed by the
+  `projects/{projectId}/notes` subcollection (see "Project notes" below). Reuses the client-notes card
+  shape but, unlike client notes, notes here are **editable** (author-only, stamps `updatedAt`/
+  `updatedBy`, shows an "edited" marker) and **hard-deleted** (author-only, a real `deleteDoc`, not a
+  soft-delete). One composer dialog serves both add and edit. The page does optimistic state updates
+  on add/edit/delete (one-time fetch, like proposals — not realtime).
+  The **files card is realtime**: two
   `onSnapshot` listeners (`projectDocuments` and `contracts`, both queried by org and filtered to this
   project in memory) replace the old one-time fetch, and its Status column renders the **shared
   `ContractStatusChain`** (`contracts/_components/contract-status-chain.tsx`) so the live
@@ -72,6 +81,24 @@ Three **top-level** Firestore collections, all addressed by their own id and que
 `src/server/project-actions.ts` mints the `projectCode`/`projectNumber` reference code in a
 transaction and copies the selected client's `clientCode` (root AGENTS.md rule #5). The list page
 calls it; only updates/deletes go through `db.ts`. There is no `addProject` helper anymore.
+
+## Project notes (`projects/{projectId}/notes` subcollection)
+
+Editable working notes — a **parent subcollection**, not a flat collection (mirrors `ClientNote`'s
+storage choice; the per-project read needs no `where`/index). `db.ts` helpers (client-SDK writes,
+governed by the rule below — these are not server actions): `getProjectNotes(projectId)` (newest
+first), `addProjectNote(...)`, `updateProjectNote(...)`, `deleteProjectNote(projectId, noteId)`. Ids
+are `note-<random>`. Note the **deliberate divergence from client notes**: project notes are mutable
+and **hard-deleted** — there is no `deletedAt`/soft-delete here. Only **add** writes an activity
+(`note_added` into the flat `activities` collection, batched with the note, `source.type: "project"`);
+edits and deletes are silent. `ProjectNote` is typed in `@/lib/types`; `ActivityEntityType` now
+includes `"project"` so the activity's `source` can point at a project.
+
+Firestore rule (`firestore.rules`, `projects/{projectId}/notes/{noteId}`): org is the **parent
+project's** (so unfiltered list queries are allowed); create must self-attribute (`createdBy.id ==
+auth.uid`) and match org; update is **author-only** and constrained to `['body','updatedAt',
+'updatedBy']`; delete is **author-only** (a real delete). Covered by a case in
+[`firestore/rules.test.ts`](../../../../../firestore/rules.test.ts).
 
 ## Tenant isolation — read this before touching the detail route
 

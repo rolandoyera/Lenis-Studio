@@ -119,6 +119,97 @@ describe("firestore rules", () => {
     await assertFails(getDoc(doc(userDb, "clients/client-b")));
   });
 
+  it("scopes editable project notes to the author within the parent project's org", async () => {
+    await seedUser("user-a", "org-a");
+    await seedUser("user-b", "org-a"); // same org, different user
+    await seedUser("user-c", "org-b"); // other org
+    await seed("projects/project-a", {
+      projectId: "project-a",
+      organizationId: "org-a",
+      createdAt: 1,
+    });
+    await seed("projects/project-a/notes/note-1", {
+      id: "note-1",
+      organizationId: "org-a",
+      projectId: "project-a",
+      body: "Original",
+      createdBy: { type: "user", id: "user-a", name: "user-a" },
+      createdAt: 1,
+    });
+
+    const aDb = dbFor("user-a");
+    const bDb = dbFor("user-b");
+    const cDb = dbFor("user-c");
+
+    // Read: same-org members can read; another org cannot.
+    await assertSucceeds(getDoc(doc(aDb, "projects/project-a/notes/note-1")));
+    await assertSucceeds(getDoc(doc(bDb, "projects/project-a/notes/note-1")));
+    await assertFails(getDoc(doc(cDb, "projects/project-a/notes/note-1")));
+
+    // Create: must self-attribute and match the parent project's org.
+    await assertSucceeds(
+      setDoc(doc(aDb, "projects/project-a/notes/note-2"), {
+        id: "note-2",
+        organizationId: "org-a",
+        projectId: "project-a",
+        body: "New",
+        createdBy: { type: "user", id: "user-a", name: "user-a" },
+        createdAt: 2,
+      }),
+    );
+    // Forging another user's authorship is denied.
+    await assertFails(
+      setDoc(doc(bDb, "projects/project-a/notes/note-3"), {
+        id: "note-3",
+        organizationId: "org-a",
+        projectId: "project-a",
+        body: "Spoof",
+        createdBy: { type: "user", id: "user-a", name: "user-a" },
+        createdAt: 2,
+      }),
+    );
+    // An other-org user can't create under this project at all.
+    await assertFails(
+      setDoc(doc(cDb, "projects/project-a/notes/note-4"), {
+        id: "note-4",
+        organizationId: "org-b",
+        projectId: "project-a",
+        body: "Cross",
+        createdBy: { type: "user", id: "user-c", name: "user-c" },
+        createdAt: 2,
+      }),
+    );
+
+    // Update: the author may edit the body (+ stamps); non-authors can't, and
+    // fields outside the allowlist are rejected.
+    await assertSucceeds(
+      updateDoc(doc(aDb, "projects/project-a/notes/note-1"), {
+        body: "Edited",
+        updatedAt: 3,
+        updatedBy: { type: "user", id: "user-a", name: "user-a" },
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(bDb, "projects/project-a/notes/note-1"), {
+        body: "Hijack",
+        updatedAt: 3,
+        updatedBy: { type: "user", id: "user-b", name: "user-b" },
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(aDb, "projects/project-a/notes/note-1"), {
+        createdBy: { type: "user", id: "user-b", name: "user-b" },
+        updatedAt: 3,
+      }),
+    );
+
+    // Delete: the author hard-deletes their own; a non-author can't.
+    await assertFails(deleteDoc(doc(bDb, "projects/project-a/notes/note-1")));
+    await assertSucceeds(
+      deleteDoc(doc(aDb, "projects/project-a/notes/note-1")),
+    );
+  });
+
   it("keeps contracts draft-only for client updates and deletes", async () => {
     await seedUser("user-a", "org-a");
     await seedDraftContract("draft-1", "org-a", "user-a");
