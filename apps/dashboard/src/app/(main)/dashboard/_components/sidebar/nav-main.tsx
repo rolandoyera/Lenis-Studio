@@ -290,6 +290,9 @@ export function NavMain({ items }: NavMainProps) {
                 if (item.title === "Tenants" && userRole !== "SuperAdmin") {
                   return null;
                 }
+                if (item.title === "Usage" && userRole !== "SuperAdmin") {
+                  return null;
+                }
                 if (
                   item.title === "AI Diagnostics" &&
                   userRole !== "SuperAdmin"

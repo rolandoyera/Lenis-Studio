@@ -2,6 +2,7 @@ import {
   Activity,
   Building2,
   ChartBar,
+  ChartLine,
   Cog,
   FileSignature,
   FileText,
@@ -149,6 +150,11 @@ export const sidebarItems: NavGroup[] = [
         title: "Company",
         url: "/dashboard/company",
         icon: Cog,
+      },
+      {
+        title: "Usage",
+        url: "/dashboard/usage",
+        icon: ChartLine,
       },
       {
         title: "Docs",
