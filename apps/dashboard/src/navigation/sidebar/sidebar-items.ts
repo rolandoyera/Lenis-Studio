@@ -84,16 +84,6 @@ export const sidebarItems: NavGroup[] = [
     label: "Design Studio",
     items: [
       {
-        title: "Projects",
-        url: "/dashboard/projects",
-        icon: FolderKanban,
-      },
-      {
-        title: "Library",
-        url: "/dashboard/library",
-        icon: ShoppingBag,
-      },
-      {
         title: "Leads",
         url: "/dashboard/leads",
         icon: UserPlus,
@@ -102,6 +92,16 @@ export const sidebarItems: NavGroup[] = [
         title: "Clients",
         url: "/dashboard/clients",
         icon: Users,
+      },
+      {
+        title: "Projects",
+        url: "/dashboard/projects",
+        icon: FolderKanban,
+      },
+      {
+        title: "Library",
+        url: "/dashboard/library",
+        icon: ShoppingBag,
       },
       {
         title: "Vendors",

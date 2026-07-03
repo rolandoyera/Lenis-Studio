@@ -47,7 +47,9 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 - Always execute `npx tsc --noEmit` inside the dashboard app directory to check for TypeScript errors before completing any code changes.
 - Use Prettier for formatting with `npm run format`.
 - Ensure all Biome lint checks pass cleanly using `npx biome check --write`; Biome formatting is disabled.
-- When you touch logic with tests (`*.test.ts`), run the relevant suite with `npm run test:run` (Vitest). Firestore rules changes must pass `npm run test:rules`; portal/contract/server-action flows have their own specs alongside the code.
+- When you touch logic with tests (`*.test.ts`, `*.test.tsx`), run the relevant suite with `npm run test:run` (Vitest). Firestore or Storage rules changes must pass `npm run test:rules:emulator` (runs both rules suites under the Firestore + Storage emulators); portal/contract/server-action flows have their own specs alongside the code.
+- Firestore query shape is test-enforced: `src/lib/db.query-shape.test.ts` asserts every list getter in `db.ts` issues exactly one `getDocs` query and zero per-doc reads (the N+1 guardrail — it asserts calls issued, not docs read). Add new list getters to its table; if a getter legitimately needs a second query, change its table entry deliberately.
+- Effect dependencies are test-enforced at the component level: data effects must key on stable primitives from `useAuth` (`organizationId`, `authLoading`), never the `profile` object (its identity churns on every profile heartbeat). `clients/page.test.tsx` is the template — it renders the page with a mocked `useAuth`, rerenders with a new-but-equal `profile`, and asserts no refetch. When writing one for another page, mock that feature's `src/server/*-actions.ts` module too (server actions import firebase-admin, which cannot load in jsdom).
 
 ### 2. Next.js Client & Server Boundaries
 

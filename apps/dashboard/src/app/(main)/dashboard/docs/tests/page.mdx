@@ -31,7 +31,7 @@ Available scripts:
   "test": "vitest",
   "test:run": "vitest run",
   "test:rules": "vitest run --config vitest.rules.config.ts",
-  "test:rules:emulator": "firebase emulators:exec --project sdg-rules-test --only firestore \"npm run test:rules\"",
+  "test:rules:emulator": "firebase emulators:exec --project sdg-rules-test --only firestore,storage \"npm run test:rules\"",
   "test:e2e": "playwright test"
 }
 ```
@@ -148,9 +148,65 @@ Coverage exists for the client-side upload helpers in `src/lib/db.ts`:
 
 This guards image freshness: because a changed image always gets a new download
 URL, the bytes are safe to cache immutably and never go stale. It tests the
-header/path contract with a mocked `firebase/storage`, not access control — it
-does **not** replace the Storage emulator rules coverage still listed under
-"What Remains".
+header/path contract with a mocked `firebase/storage`, not access control —
+access control is the Storage rules suite's job (see below).
+
+### Firestore Query Shape (N+1 Guardrail)
+
+Coverage exists for the read-efficiency contract of the list getters in
+`src/lib/db.ts`:
+
+- `db.query-shape.test.ts`
+  - every list getter (`getClients`, `getLeads`, `getVendors`, `getProjects`,
+    `getLibraryItems`, `getVendorLibraryItems`, `getProposals`, `getContracts`,
+    `getTrades`, `getOrganizationUsers`, `getProjectRooms`,
+    `getProjectRoomItems`, `getClientNotes`, `getProjectNotes`) issues exactly
+    one `getDocs` query, zero per-document `getDoc` calls, and queries exactly
+    one collection (with the expected path, including notes subcollections)
+
+Two deliberate design choices make this a real guardrail:
+
+- It asserts **calls issued, not documents read**. Document counts scale with
+  data, so they are not a stable contract; the number of Firestore calls scales
+  with code, and that is what an N+1 regression changes.
+- The mocked query result is **non-empty** (three docs). A regression that
+  fetches a document per result row is invisible against an empty result set.
+
+When adding a new list getter to `db.ts`, add it to the test's table. If a
+getter legitimately needs a second query, change its expectations deliberately —
+the point is that query count is a reviewed contract, not an accident.
+
+Page-level read volume (many getters composed on one page) is intentionally not
+tested here; that remains the job of the dev-only `window.__dbStats()` tracing
+from `src/lib/db-trace.ts`.
+
+### Component Effect Behavior
+
+The first React Testing Library component test guards the effect-dependency
+rule that lint cannot: data effects must key on stable primitives from
+`useAuth` (`organizationId`, `authLoading`), never the `profile` object, whose
+identity churns on every profile `onSnapshot` heartbeat. Biome's
+`useExhaustiveDependencies` passes profile-keyed deps (they are "exhaustive",
+just unstable), so this class of bug needs a behavioral test.
+
+- `clients/page.test.tsx` (next to the clients directory page; the template for
+  future component tests)
+  - fetches once per `organizationId`, and a rerender with a new-but-equal
+    `profile` object (the simulated heartbeat) must **not** refetch
+  - a genuine `organizationId` change **must** refetch
+  - no fetch while auth is still loading
+
+The suite was mutation-verified: rekeying the page effect on `profile` fails
+both directions (spurious refetch on heartbeat, missed refetch on org change).
+
+Template notes for covering another page:
+
+- `useAuth` is mocked via a mutable module-level `authState` so rerenders can
+  simulate context churn.
+- The feature's `src/server/*-actions.ts` module must be mocked — server
+  actions import Firebase Admin, which cannot load in jsdom.
+- Wrap the page in the real `PageTitleProvider` (with `next/navigation`'s
+  `usePathname` mocked); `<PageTitle>` throws without it.
 
 ### Firestore Rules
 
@@ -171,6 +227,30 @@ against the emulator. Current coverage includes:
 - reference counter denial
 - mail outbox denial
 
+### Storage Rules
+
+Storage security rule coverage lives in `storage/rules.test.ts` and runs
+against the emulators via `npm run test:rules:emulator`. The suite needs
+**both** the Storage and Firestore emulators because `storage.rules` resolves
+the uploader's org through a cross-service `firestore.get` of
+`users/{uid}.organizationId` — each test seeds the user profile into the
+Firestore emulator first. Current coverage includes:
+
+- org-scoped branding, library, and vendor image uploads succeed for the
+  uploader's own org
+- cross-org write denial on all three roots
+- unauthenticated write denial
+- non-image upload denial (contentType must match `image/*`)
+- size cap: exactly 15 MiB denied, just under allowed
+- signed-in read behavior (reads only require sign-in; org isolation is
+  enforced on writes) and unauthenticated read denial
+- deletes allowed in the uploader's own org, denied cross-org
+- default-deny for paths outside the three known roots
+
+Both rules suites share the emulator project and clear it between tests, so
+`vitest.rules.config.ts` sets `fileParallelism: false` to run the files
+sequentially.
+
 ### Documentation
 
 Feature notes were updated where tests are most relevant:
@@ -178,6 +258,10 @@ Feature notes were updated where tests are most relevant:
 - Contracts notes document contract test coverage and rules coverage.
 - Profile notes document invite/mail security invariants.
 - Instagram notes document server-render failure behavior.
+- Clients notes document the effect-churn component test and mark the
+  `organizationId`-dependency convention as test-enforced.
+- The root `AGENTS.md` verification rules reference the query-shape and
+  effect-dependency guardrails.
 
 ## Important Lessons From Production
 
@@ -207,6 +291,11 @@ Use the smallest test that protects the behavior at risk:
   helper boundary.
 - **Server action behavior:** Vitest with mocked Firebase Admin, mocked
   third-party providers, and assertions against side effects.
+- **Firestore call shape (N+1 risk):** Vitest with mocked `firebase/firestore`,
+  asserting the number of calls issued — never the number of documents read.
+- **Effect dependency churn:** React Testing Library component test with a
+  mocked `useAuth`, rerendering with new-but-equal objects and asserting fetch
+  counts.
 - **Firestore access control:** Firebase Emulator rules tests.
 - **Storage access control:** Firebase Storage Emulator rules tests.
 - **Critical production route health:** Playwright smoke tests or preview
@@ -217,30 +306,7 @@ business or security rule in plain language and fail when that rule is broken.
 
 ## What Remains
 
-### 1. Storage Rules
-
-This is the next highest-value area. Storage is client-written, security
-sensitive, and currently lacks emulator coverage.
-
-Add tests for:
-
-- org-scoped branding uploads
-- org-scoped library image uploads
-- org-scoped vendor image uploads
-- cross-org write denial
-- non-image upload denial
-- oversized upload denial
-- signed-in read behavior
-- default-deny paths
-
-Use the Storage Emulator and keep the test file near the existing rules tests,
-for example:
-
-```text
-apps/dashboard/storage/rules.test.ts
-```
-
-### 2. Project Room Firestore Rules
+### 1. Project Room Firestore Rules
 
 The Firestore rules for project rooms and project room items inherit org access
 from the parent project instead of relying only on direct `organizationId`
@@ -255,7 +321,7 @@ Add tests for:
 - item creation requires matching `organizationId`
 - default-deny for orphaned or mismatched project ids
 
-### 3. Production Route Smoke Coverage
+### 2. Production Route Smoke Coverage
 
 Add a small smoke suite that catches server-rendered route crashes. Keep it
 small and behavior-focused, not visual.
@@ -271,7 +337,7 @@ Start with:
 For dependency updates, prefer running smoke checks against a Vercel preview
 deployment because local builds can miss production bundling issues.
 
-### 4. Firebase Admin Runtime Smoke
+### 3. Firebase Admin Runtime Smoke
 
 Add a small server-side smoke check for `firebase-admin.ts` import/accessor
 behavior. This will not fully reproduce Vercel's bundle/runtime, but it can
@@ -280,7 +346,7 @@ catch obvious import regressions before deployment.
 The stronger protection is still preview-deployment smoke coverage for routes
 that import server modules using Firebase Admin.
 
-### 5. Contract Post-Send Lifecycle
+### 4. Contract Post-Send Lifecycle
 
 Send/sign coverage is strong. The next contract lifecycle risks are
 administrative post-send actions.
@@ -297,8 +363,8 @@ Add tests when those flows exist or change:
 
 Future work should stay layered and risk-driven:
 
-- Add Storage Emulator tests before expanding UI tests.
-- Add project-room rule coverage before adding more schema tests.
+- Add project-room rule coverage before adding more schema tests. (Storage
+  Emulator tests are done — see "Storage Rules" under What Is Covered.)
 - Add a tiny Playwright smoke suite before broad component coverage.
 - Add server-action tests whenever a new server action writes multiple
   collections or sends external effects.

@@ -37,6 +37,11 @@ The client id is `Client.uid` (legacy field name — it is **not** an auth uid),
 - `_components/client-detail-header.tsx`, `client-contact-card.tsx`, `client-projects-card.tsx`,
   `client-notes-log-card.tsx` — detail-page pieces.
 - `_components/delete-client-dialog.tsx` — confirm-delete for a client.
+- `page.test.tsx` — effect-churn guardrail for the directory page (and the repo's template for
+  component tests): asserts the data effect fetches once per `organizationId`, does **not** refetch
+  when the `profile` object identity churns, and refetches on a real org change. Mocks `useAuth` via a
+  mutable module-level `authState`, plus `@/lib/db`, `@/server/client-actions` (firebase-admin can't
+  load in jsdom), and `next/navigation`; wraps the page in the real `PageTitleProvider`.
 
 ## Where the data comes from
 
@@ -98,6 +103,7 @@ pre-linked to this client (`lockedClientId` + `clientName`, `clients={[client]}`
   (`isCompany` inferred from `company`/`taxId`) for records that predate the flag.
 - **`organizationId` is the effect dependency, not `profile`.** Both routes depend on the stable
   `organizationId` string from `useAuth` (the `profile` object identity churns each heartbeat). Keep
-  it that way.
+  it that way — `page.test.tsx` enforces this for the directory page and fails if the effect refires
+  on profile churn.
 - **Use `getClientName`** instead of reading `firstName`/`lastName` directly, so trimming/fallbacks
   stay consistent across the directory and profile.

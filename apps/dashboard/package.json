@@ -12,7 +12,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:rules": "vitest run --config vitest.rules.config.ts",
-    "test:rules:emulator": "firebase emulators:exec --project sdg-rules-test --only firestore \"npm run test:rules\"",
+    "test:rules:emulator": "firebase emulators:exec --project sdg-rules-test --only firestore,storage \"npm run test:rules\"",
     "test:e2e": "playwright test",
     "lint": "biome lint",
     "format": "prettier --write .",
