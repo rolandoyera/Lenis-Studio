@@ -29,7 +29,10 @@ A project workspace. Two routes, both **client components**:
   pills on shared Badge variants so they can't drift), and the tab registry (`PROJECT_TABS`,
   `ProjectTab`, `isProjectTab`). The `Project` Firestore type lives in `@/lib/types`.
 - `_components/project-form-dialog.tsx` — the add/edit dialog (RHF + `zodResolver`), incl. the
-  "same as main client address" toggle.
+  "same as main client address" toggle. **Reused outside this folder:** the Clients detail page
+  (`../clients/[clientId]/page.tsx`) hosts this dialog directly (with `lockedClientId`) to add a
+  project pre-linked to a client, and `clients/_components/client-projects-card.tsx` imports the
+  status registries from `project-constants`. Changes here ripple into `clients/` — don't fork.
 - `_components/project-header.tsx` — detail title + status, tab bar, edit/delete actions.
 - `_components/project-information-card.tsx`, `project-notes-card.tsx`, `project-proposals-card.tsx`,
   `project-files-card.tsx` — Overview-tab cards (proposals card spawns a Draft proposal and routes to
@@ -63,7 +66,9 @@ A project workspace. Two routes, both **client components**:
   Global Library). Catalog add spreads the library item minus `itemId`/`updatedAt` and stamps
   `libraryItemId`. Category/subcategory/unit/cost constants are imported from
   `../../../library/_components/library-constants` — don't fork them.
-- `tabs/_tab_components/edit-item-dialog.tsx` — edit a single `ProjectRoomItem` in place.
+- `tabs/_tab_components/edit-item-dialog.tsx` — edit a single `ProjectRoomItem` in place. Also
+  imports the category/subcategory/unit/cost constants from
+  `../../../library/_components/library-constants` — don't fork them.
 
 ## Where the data comes from
 
