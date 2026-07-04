@@ -92,6 +92,46 @@ export interface Activity {
   createdAt: number;
 }
 
+// --- NOTIFICATIONS ---
+
+export type NotificationType =
+  | "lead_created"
+  | "contract_portal_opened"
+  | "contract_executed";
+
+/**
+ * In-app notification in the top-level `notifications` collection. One doc per
+ * event, fan-out on read: org-wide docs are visible to every org member, and
+ * each member tracks their own read/dismiss state via `readBy`/`dismissedBy`
+ * (client-SDK `arrayUnion` of their own uid — the only update rules allow).
+ * Created server-side only (admin SDK); the oshrat marketing repo writes
+ * `lead_created` docs mirroring this shape, synced manually.
+ */
+export interface AppNotification {
+  /** = doc id, minted server-side. */
+  notificationId: string;
+  organizationId: string;
+  type: NotificationType;
+  /** "org" = every org member; otherwise a single recipient uid (future tasks). */
+  audience: "org" | (string & {});
+  title: string;
+  body?: string;
+  /** Dashboard-relative View Link target, e.g. "/dashboard/leads/lead-123". */
+  href?: string;
+  actor: ActivityActor;
+  /** Uids who marked it read. */
+  readBy: string[];
+  /** Uids who deleted it from their bell (soft delete; doc stays for others). */
+  dismissedBy: string[];
+  createdAt: number;
+  /**
+   * Firestore TTL field (~60 days) — the only non-epoch-ms timestamp in the
+   * app, because TTL requires a real Timestamp. Attached after cleanUndefined
+   * (the JSON round-trip would destroy it). Never read by the app.
+   */
+  expireAt: unknown;
+}
+
 /**
  * Append-only note. Immutable after creation: never edited, never physically
  * deleted. Removal is a creator-only soft-delete that stamps
@@ -843,6 +883,8 @@ export interface PortalAccess {
   expiresAt: number;
   /** First time the client opened the linked contract. */
   viewedAt?: number;
+  /** Last `contract_portal_opened` notification emit (1-hour dedupe; distinct from the 30-min audit dedupe). */
+  portalViewNotifiedAt?: number;
   /** When the client accepted the e-signature/records consent. */
   consentAcceptedAt?: number;
   /** Set when the client completes signing — the link is then `completed`. */

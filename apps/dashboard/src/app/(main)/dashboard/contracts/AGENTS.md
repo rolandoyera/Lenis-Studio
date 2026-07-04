@@ -109,7 +109,9 @@ Keep it that way for now.
 
 - **Project + client** are read from the CRM: pick a project (`getProjects`), its `clientId`
   fetches the `Client` (`getClient`). `PROJECT_ADDRESS` and `CLIENT_*` are `auto`/project-derived —
-  there is **no inline client creation** here; clients are added in the CRM.
+  there is **no inline client creation** here; clients are added in the CRM. The client display name
+  comes from `getClientName`, imported from the Clients feature
+  (`../../clients/_components/client-name`) — don't reassemble `firstName`/`lastName` inline.
 - Draft contracts may change project. Saved drafts require a confirmation dialog first because the
   preview's client, project address, and project name will update while manual values and scope
   items stay put. Non-draft contracts must keep the project selector read-only, and project changes
@@ -339,6 +341,9 @@ projectId/contractId` it grants access to.
 - **Open tracking** (`recordPortalOpen`, in `contract-signing.ts`): stamps `portalAccess.viewedAt`
   once, advances a still-`sent` contract to `viewed`, and writes a `portal_opened` audit event,
   **deduped within 30 min** per access token (`hasRecentPortalOpen`). Best-effort; never blocks render.
+  It also writes an org-wide `contract_portal_opened` bell notification (`src/server/notifications.ts`)
+  with its **own, separate 1-hour dedupe** via the `portalAccess.portalViewNotifiedAt` stamp (checked
+  against the already-loaded access doc — no extra reads).
 - Portal routes are `noindex/nofollow` (robots metadata in the portal layout).
 
 ## Contract delivery & signing
@@ -365,7 +370,8 @@ company's signature authorization — there is no separate approval step. Server
   `contract_signed`, then runs the **post-execution artifact pipeline** (order matters, all
   best-effort — a failure is logged but never unwinds the already-executed contract): generate the
   executed PDF → store it → reference it on the contract → reference it in the project's documents →
-  email the client a copy → write `contract_fully_executed`. See "Executed PDF artifact" below.
+  email the client a copy → write `contract_fully_executed` → write an org-wide `contract_executed`
+  bell notification (`src/server/notifications.ts`, own try/catch). See "Executed PDF artifact" below.
 - **Audit trail** (`src/server/contract-audit.ts`) — append-only `contracts/{id}/audit/{eventId}`
   subcollection, typed `ContractAuditEvent`. Evidence chain: contract*sent → email*\* (Brevo) →
   portal_opened → consent → signed → fully_executed. Use the distributive `ContractAuditEventInput`

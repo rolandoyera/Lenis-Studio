@@ -198,8 +198,10 @@ function mockSideEffects() {
     documentId: "contract-contract-1",
     fileUrl: "/api/project-documents/contract-contract-1/download",
   }));
+  const writeNotification = vi.fn(async () => "notification-1");
 
   vi.doMock("./brevo", () => ({ sendContractEmail }));
+  vi.doMock("./notifications", () => ({ writeNotification }));
   vi.doMock("./contract-audit", () => ({
     hasRecentPortalOpen: vi.fn(async () => false),
     writeContractAuditEvent,
@@ -222,6 +224,7 @@ function mockSideEffects() {
     createContractPortalAccess,
     generateAndStoreFinalContractPdf,
     attachExecutedContractToProject,
+    writeNotification,
   };
 }
 
@@ -231,6 +234,7 @@ function expectNoSideEffects(effects: ReturnType<typeof mockSideEffects>) {
   expect(effects.createContractPortalAccess).not.toHaveBeenCalled();
   expect(effects.generateAndStoreFinalContractPdf).not.toHaveBeenCalled();
   expect(effects.attachExecutedContractToProject).not.toHaveBeenCalled();
+  expect(effects.writeNotification).not.toHaveBeenCalled();
 }
 
 describe("contract signing server actions", () => {
@@ -524,6 +528,15 @@ describe("contract signing server actions", () => {
     expect(effects.writeContractAuditEvent).toHaveBeenCalledWith(
       "contract-1",
       expect.objectContaining({ type: "contract_fully_executed" }),
+    );
+    expect(effects.writeNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: "org-1",
+        type: "contract_executed",
+        audience: "org",
+        href: "/dashboard/contracts/contract-1",
+        body: "Signed by Jane Client",
+      }),
     );
   });
 

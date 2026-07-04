@@ -102,6 +102,33 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // In-app notifications: server-produced (admin SDK bypasses rules), fan-out
+    // on read. `audience` is 'org' (every org member) or one recipient uid.
+    // Members may ONLY append their own uid to readBy/dismissedBy — never
+    // create, never delete, never remove entries or touch other fields.
+    // Cleanup is a Firestore TTL policy on `expireAt`.
+    // NOTE: list queries must constrain audience (in ['org', uid]) or the read
+    // is rejected — rules OR on audience, and lists must be provably in-scope.
+    match /notifications/{notificationId} {
+      allow read: if readsOwnOrg()
+        && (resource.data.audience == 'org'
+            || resource.data.audience == request.auth.uid);
+      allow create, delete: if false;
+      allow update: if readsOwnOrg()
+        && (resource.data.audience == 'org'
+            || resource.data.audience == request.auth.uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['readBy', 'dismissedBy'])
+        // Append-only: nothing removed from either array…
+        && request.resource.data.readBy.hasAll(resource.data.readBy)
+        && request.resource.data.dismissedBy.hasAll(resource.data.dismissedBy)
+        // …and anything added is exactly the requester's own uid.
+        && request.resource.data.readBy.removeAll(resource.data.readBy)
+             .hasOnly([request.auth.uid])
+        && request.resource.data.dismissedBy.removeAll(resource.data.dismissedBy)
+             .hasOnly([request.auth.uid]);
+    }
+
     match /leads/{id} {
       allow read, delete: if readsOwnOrg();
       allow create: if createsInOwnOrg();

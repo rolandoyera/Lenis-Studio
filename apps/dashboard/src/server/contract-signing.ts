@@ -41,6 +41,7 @@ import {
   generateAndStoreFinalContractPdf,
 } from "./contract-pdf";
 import { getAdminDb } from "./firebase-admin";
+import { writeNotification } from "./notifications";
 import { attachExecutedContractToProject } from "./project-documents";
 import {
   createContractPortalAccess,
@@ -52,6 +53,9 @@ import {
 
 const CONTRACTS_COLLECTION = "contracts";
 const PORTAL_ACCESS_COLLECTION = "portalAccess";
+
+/** Bell-notification dedupe for portal opens — deliberately wider than the 30-min audit dedupe. */
+const PORTAL_VIEW_NOTIFY_DEDUPE_MS = 60 * 60 * 1000;
 
 // ─── Hashing ─────────────────────────────────────────────────────────────────
 
@@ -560,13 +564,22 @@ export async function recordPortalOpen(
   const now = Date.now();
   const db = getAdminDb();
 
+  // Bell notification per visit, deduped against the stamp on the access doc
+  // (already loaded — no extra reads).
+  const shouldNotify =
+    !access.portalViewNotifiedAt ||
+    now - access.portalViewNotifiedAt >= PORTAL_VIEW_NOTIFY_DEDUPE_MS;
+
   try {
     const batch = db.batch();
     let dirty = false;
-    if (!access.viewedAt) {
+    const accessUpdates: Record<string, number> = {};
+    if (!access.viewedAt) accessUpdates.viewedAt = now;
+    if (shouldNotify) accessUpdates.portalViewNotifiedAt = now;
+    if (Object.keys(accessUpdates).length > 0) {
       batch.update(
         db.collection(PORTAL_ACCESS_COLLECTION).doc(access.portalAccessId),
-        { viewedAt: now },
+        accessUpdates,
       );
       dirty = true;
     }
@@ -604,6 +617,23 @@ export async function recordPortalOpen(
         accessTokenId: access.portalAccessId,
         ipAddress,
         userAgent,
+      });
+    }
+
+    if (shouldNotify) {
+      await writeNotification({
+        organizationId: contract.organizationId,
+        type: "contract_portal_opened",
+        audience: "org",
+        title: `${contract.clientName} opened the signing portal`,
+        body: contract.title,
+        href: `/dashboard/contracts/${contract.contractId}`,
+        actor: {
+          type: "client",
+          id: contract.clientId,
+          name: contract.clientName,
+        },
+        createdAt: now,
       });
     }
   } catch (error) {
@@ -956,6 +986,22 @@ export async function signContract(input: {
     contractHash: contract.contractHash,
     finalPdfPath: executedFilePath,
   });
+
+  // Bell notification for the org — best-effort like the artifacts above.
+  try {
+    await writeNotification({
+      organizationId: contract.organizationId,
+      type: "contract_executed",
+      audience: "org",
+      title: `Contract fully executed: ${contract.title}`,
+      body: `Signed by ${typedName}`,
+      href: `/dashboard/contracts/${contractId}`,
+      actor: { type: "client", id: contract.clientId, name: typedName },
+      createdAt: now,
+    });
+  } catch (error) {
+    console.error("Failed to write contract-executed notification:", error);
+  }
 
   return { ok: true };
 }

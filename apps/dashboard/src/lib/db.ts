@@ -1,4 +1,5 @@
 import {
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -126,6 +127,46 @@ export async function deleteClient(uid: string): Promise<void> {
       await deleteDoc(doc(db, "clients", uid));
     },
     () => uid,
+  );
+}
+
+// --- NOTIFICATIONS ---
+// Notifications are created server-only (see src/server/notifications.ts and
+// the oshrat lead intake). The only client-SDK mutation rules allow is
+// appending your own uid to readBy/dismissedBy — per-user read/dismiss state
+// on a shared doc. The bell subscribes with onSnapshot directly (no getter).
+
+export async function markNotificationRead(
+  notificationId: string,
+  uid: string,
+): Promise<void> {
+  return trace(
+    "notifications",
+    "WRITE",
+    "markNotificationRead",
+    async () => {
+      await updateDoc(doc(db, "notifications", notificationId), {
+        readBy: arrayUnion(uid),
+      });
+    },
+    () => notificationId,
+  );
+}
+
+export async function dismissNotification(
+  notificationId: string,
+  uid: string,
+): Promise<void> {
+  return trace(
+    "notifications",
+    "WRITE",
+    "dismissNotification",
+    async () => {
+      await updateDoc(doc(db, "notifications", notificationId), {
+        dismissedBy: arrayUnion(uid),
+      });
+    },
+    () => notificationId,
   );
 }
 

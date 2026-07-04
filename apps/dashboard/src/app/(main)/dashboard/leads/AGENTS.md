@@ -102,3 +102,8 @@ and redirects to the pipeline if it doesn't match. **Keep that guard.** If you a
   form field). The detail page renders it as a separate "Customer Comments" card. Since it isn't a
   form field, it's exempt from the three-touch mapper rule above — don't add it to `leadSchema`/the
   mappers/`lead-form-dialog`.
+- **Website intake also writes a bell notification.** The originating site's `createWebsiteLead`
+  (oshrat repo, `web/src/lib/server/create-website-lead.ts`) writes an org-wide `lead_created` doc to
+  the top-level `notifications` collection alongside the lead (best-effort). Its shape mirrors
+  `AppNotification` in `@/lib/types` and is **synced manually across repos** — if you change that
+  type, update the oshrat writer in the same change.

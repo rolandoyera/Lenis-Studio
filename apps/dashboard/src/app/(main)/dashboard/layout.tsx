@@ -14,6 +14,7 @@ import { getRequestAppBrand } from "@/server/app-brand";
 
 import { DbStatsProbe } from "./_components/db-stats-probe";
 import { LayoutControls } from "./_components/sidebar/layout-controls";
+import { NotificationBell } from "./_components/sidebar/notification-bell";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
 import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { UserProfile } from "./_components/sidebar/user-profile";
@@ -58,6 +59,7 @@ export default async function Layout({
               <SearchDialog />
             </div>
             <div className="flex items-center gap-2">
+              <NotificationBell />
               <LayoutControls />
               <ThemeSwitcher />
               <UserProfile />

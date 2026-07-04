@@ -8,12 +8,16 @@ import {
 } from "@firebase/rules-unit-testing";
 import {
   addDoc,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
@@ -561,6 +565,114 @@ describe("firestore rules", () => {
     await assertFails(
       updateDoc(doc(adminDb, "organizations/org-a/counters/contractCodes"), {
         nextNumber: 99,
+      }),
+    );
+  });
+
+  it("scopes notifications to org + audience and allows only own-uid read/dismiss appends", async () => {
+    await seedUser("user-a", "org-a");
+    await seedUser("user-b", "org-a");
+    await seedUser("user-c", "org-b");
+    await seed("notifications/n-org", {
+      notificationId: "n-org",
+      organizationId: "org-a",
+      type: "lead_created",
+      audience: "org",
+      title: "New website lead",
+      actor: { type: "system", id: "website", name: "website" },
+      readBy: [],
+      dismissedBy: [],
+      createdAt: 1,
+    });
+    await seed("notifications/n-b", {
+      notificationId: "n-b",
+      organizationId: "org-a",
+      type: "lead_created",
+      audience: "user-b",
+      title: "Targeted",
+      actor: { type: "user", id: "user-a", name: "user-a" },
+      readBy: [],
+      dismissedBy: [],
+      createdAt: 2,
+    });
+
+    const aDb = dbFor("user-a");
+    const bDb = dbFor("user-b");
+    const cDb = dbFor("user-c");
+
+    // Read: org-wide docs for org members only; targeted docs only for the recipient.
+    await assertSucceeds(getDoc(doc(aDb, "notifications/n-org")));
+    await assertFails(getDoc(doc(cDb, "notifications/n-org")));
+    await assertFails(getDoc(doc(aDb, "notifications/n-b")));
+    await assertSucceeds(getDoc(doc(bDb, "notifications/n-b")));
+
+    // The bell's list query must constrain audience or the list is rejected.
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(aDb, "notifications"),
+          where("organizationId", "==", "org-a"),
+          where("audience", "in", ["org", "user-a"]),
+        ),
+      ),
+    );
+    await assertFails(
+      getDocs(
+        query(
+          collection(aDb, "notifications"),
+          where("organizationId", "==", "org-a"),
+        ),
+      ),
+    );
+
+    // Create and delete are server-only.
+    await assertFails(
+      setDoc(doc(aDb, "notifications/n-new"), {
+        notificationId: "n-new",
+        organizationId: "org-a",
+        type: "lead_created",
+        audience: "org",
+        title: "Forged",
+        actor: { type: "user", id: "user-a", name: "user-a" },
+        readBy: [],
+        dismissedBy: [],
+        createdAt: 3,
+      }),
+    );
+    await assertFails(deleteDoc(doc(aDb, "notifications/n-org")));
+
+    // Update: appending your own uid to readBy/dismissedBy is the only mutation.
+    await assertSucceeds(
+      updateDoc(doc(aDb, "notifications/n-org"), {
+        readBy: arrayUnion("user-a"),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(aDb, "notifications/n-org"), {
+        dismissedBy: arrayUnion("user-a"),
+      }),
+    );
+    // Appending someone else's uid is denied.
+    await assertFails(
+      updateDoc(doc(aDb, "notifications/n-org"), {
+        readBy: arrayUnion("user-b"),
+      }),
+    );
+    // Removing an existing entry is denied (user-a is in readBy after the append).
+    await assertFails(
+      updateDoc(doc(bDb, "notifications/n-org"), { readBy: [] }),
+    );
+    // Touching any other field is denied, even alongside a valid append.
+    await assertFails(
+      updateDoc(doc(aDb, "notifications/n-org"), {
+        title: "Changed",
+        readBy: arrayUnion("user-a"),
+      }),
+    );
+    // A non-recipient can't mark someone else's targeted notification.
+    await assertFails(
+      updateDoc(doc(aDb, "notifications/n-b"), {
+        readBy: arrayUnion("user-a"),
       }),
     );
   });
