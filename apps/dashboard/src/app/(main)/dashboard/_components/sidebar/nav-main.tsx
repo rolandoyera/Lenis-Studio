@@ -201,7 +201,8 @@ export function NavMain({ items }: NavMainProps) {
     if (subItems?.length) {
       return subItems.some((sub) => path.startsWith(sub.url));
     }
-    return path === url;
+    // Keep the link active on detail pages under it (e.g. /dashboard/vendors/vendor-123).
+    return path === url || path.startsWith(`${url}/`);
   };
 
   const isSubmenuOpen = (subItems?: NavMainItem["subItems"]) => {
