@@ -39,6 +39,14 @@ A vendor directory (trade vendors / procurement reps). Two routes, both **client
 - `_components/vendor-hero.tsx`, `vendor-header.tsx`, `vendor-items.tsx` — detail-page pieces
   (banner card, title + actions menu, linked-library-items list).
 
+## `vendor-constants.ts` is consumed outside this folder
+
+Company Settings reuses the international-address helpers from `vendor-constants.ts`:
+`../../company/_components/company-info-section.tsx` and `company-constants.ts` import
+`COUNTRIES`, `countryName`, `regionLabelFor`, and `formatVendorAddress`. **Changing those
+signatures ripples into `company/`** — update that feature (and its AGENTS.md) in the same change,
+don't treat these helpers as vendor-private.
+
 ## Where the data comes from
 
 All persistence is in `src/lib/db.ts` (Firestore client SDK, top-level `vendors` collection keyed
@@ -101,12 +109,15 @@ URL — go through the mirror so links don't rot and `DashboardImage` can serve 
 The website field's button calls `autofillVendorFromUrl(url)` (`src/server/ai-actions.ts`, a
 `"use server"` action; Gemini + Jina scrape, keys server-only). It returns scalar fields (name,
 category, the international address fields incl. `country` as an ISO alpha-2 code and a
-`formattedAddress` fallback, rep, socials) plus `logoCandidates`/`imageCandidates` arrays. The
-prompt is explicitly told **not to assume the US** and to always return a `formattedAddress` even
-when it can't split the address into discrete fields. When multiple image
-candidates come back (`showImagePicker`), `ImagePickerDialog` opens so the user picks logo + hero;
-the candidate buttons remain available afterward via the "Select … Candidate" buttons. Enrichment
-only fills form state — nothing is saved until the user submits.
+`formattedAddress` fallback, rep, socials) plus an `imageCandidates` array (hero/cover candidates
+only). The prompt is explicitly told **not to assume the US** and to always return a
+`formattedAddress` even when it can't split the address into discrete fields. **The model can't
+see images, so it never blind-picks the cover:** whenever more than one hero candidate exists the
+action returns `heroImageUrl: ""` + `showImagePicker: true`, and `ImagePickerDialog` (cover image
+only) auto-opens on top of the form as soon as enrichment finishes — the user makes the final
+choice. The logo is always the model's own pick (identifiable from URL/context); there is no logo
+picker. A "Choose Cover Image" button under the hero field reopens the picker after skipping.
+Enrichment only fills form state — nothing is saved until the user submits.
 
 ## Conventions easy to break
 

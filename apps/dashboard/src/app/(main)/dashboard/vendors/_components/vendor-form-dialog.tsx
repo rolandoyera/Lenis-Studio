@@ -70,24 +70,20 @@ const LABEL_CLASS = "h-5 flex items-center";
 interface ImagePickerDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  logoCandidates: string[];
-  imageCandidates: string[];
-  onApply: (logo: string | null, hero: string | null) => void;
+  candidates: string[];
+  onApply: (hero: string | null) => void;
 }
 
 function ImagePickerDialog({
   open,
   onOpenChange,
-  logoCandidates,
-  imageCandidates,
+  candidates,
   onApply,
 }: ImagePickerDialogProps) {
-  const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
-      setSelectedLogo(null);
       setSelectedHero(null);
     }
   }, [open]);
@@ -96,92 +92,47 @@ function ImagePickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-lg">Select Brand Images</DialogTitle>
+          <DialogTitle className="text-lg">Select Cover Image</DialogTitle>
           <DialogDescription>
-            {AI_ASSISTANT_NAME} has found more than one image candidate for this
-            vendor. Please review and select the best Logo and Main Showcase
-            Image from the options below.
+            {AI_ASSISTANT_NAME} found more than one cover image candidate for
+            this vendor. Pick the one to use as the hero banner.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex max-h-[60vh] flex-col gap-6 overflow-y-auto px-0.5 py-1">
-          {logoCandidates.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <p className={LABEL_CLASS}>Logo</p>
-              <div className="grid grid-cols-4 gap-2">
-                {logoCandidates.map((url) => (
-                  <button
-                    key={url}
-                    type="button"
-                    onClick={() =>
-                      setSelectedLogo(url === selectedLogo ? null : url)
-                    }
-                    className={`relative aspect-square overflow-hidden rounded-lg border-2 bg-muted/30 transition-all ${
-                      selectedLogo === url
-                        ? "border-primary shadow-md"
-                        : "border-border hover:border-muted-foreground/40"
-                    }`}
-                  >
-                    {/* biome-ignore lint/performance/noImgElement: selectable preview uses dynamic scraped logo URLs. */}
-                    <img
-                      src={url}
-                      alt=""
-                      className="h-full w-full object-contain p-2"
-                      onError={(e) => {
-                        (
-                          e.currentTarget.parentElement as HTMLElement
-                        ).style.display = "none";
-                      }}
-                    />
-                    {selectedLogo === url && (
-                      <div className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-primary">
-                        <Check className="size-3 text-primary-foreground" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {imageCandidates.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <p className={LABEL_CLASS}>Main Image</p>
-              <div className="grid grid-cols-3 gap-2">
-                {imageCandidates.map((url) => (
-                  <button
-                    key={url}
-                    type="button"
-                    onClick={() =>
-                      setSelectedHero(url === selectedHero ? null : url)
-                    }
-                    className={`relative aspect-video overflow-hidden rounded-lg border-2 bg-muted/30 transition-all ${
-                      selectedHero === url
-                        ? "border-primary shadow-md"
-                        : "border-border hover:border-muted-foreground/40"
-                    }`}
-                  >
-                    {/* biome-ignore lint/performance/noImgElement: selectable preview uses dynamic scraped hero image URLs. */}
-                    <img
-                      src={url}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (
-                          e.currentTarget.parentElement as HTMLElement
-                        ).style.display = "none";
-                      }}
-                    />
-                    {selectedHero === url && (
-                      <div className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-primary">
-                        <Check className="size-3 text-primary-foreground" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+        <div className="max-h-[60vh] overflow-y-auto px-0.5 py-1">
+          <div className="grid grid-cols-3 gap-2">
+            {candidates.map((url) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() =>
+                  setSelectedHero(url === selectedHero ? null : url)
+                }
+                className={`relative aspect-video overflow-hidden rounded-lg border-2 bg-muted/30 transition-all ${
+                  selectedHero === url
+                    ? "border-primary shadow-md"
+                    : "border-border hover:border-muted-foreground/40"
+                }`}
+              >
+                {/* biome-ignore lint/performance/noImgElement: selectable preview uses dynamic scraped hero image URLs. */}
+                <img
+                  src={url}
+                  alt=""
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    (
+                      e.currentTarget.parentElement as HTMLElement
+                    ).style.display = "none";
+                  }}
+                />
+                {selectedHero === url && (
+                  <div className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-primary">
+                    <Check className="size-3 text-primary-foreground" />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         <DialogFooter className="mt-2">
@@ -194,8 +145,9 @@ function ImagePickerDialog({
           </Button>
           <Button
             type="button"
+            disabled={!selectedHero}
             onClick={() => {
-              onApply(selectedLogo, selectedHero);
+              onApply(selectedHero);
               onOpenChange(false);
             }}
           >
@@ -244,10 +196,7 @@ export function VendorFormDialog({
 
   const [aiLoading, setAiLoading] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerData, setPickerData] = useState<{
-    logoCandidates: string[];
-    imageCandidates: string[];
-  }>({ logoCandidates: [], imageCandidates: [] });
+  const [heroCandidates, setHeroCandidates] = useState<string[]>([]);
 
   const logoUrlValue = watch("logoUrl");
   const heroImageUrlValue = watch("heroImageUrl");
@@ -336,6 +285,7 @@ export function VendorFormDialog({
         vendorId ?? `vendor-${Math.random().toString(36).substr(2, 9)}`,
       );
       setPhoneCountryTouched(false);
+      setHeroCandidates([]);
     }
   }, [open, initialData, reset, vendorId]);
 
@@ -395,11 +345,10 @@ export function VendorFormDialog({
         if (d.youtube) setValue("youtube", d.youtube);
         if (d.xTwitter) setValue("xTwitter", d.xTwitter);
 
-        if (d.logoCandidates?.length || d.imageCandidates?.length) {
-          setPickerData({
-            logoCandidates: d.logoCandidates ?? [],
-            imageCandidates: d.imageCandidates ?? [],
-          });
+        if (d.imageCandidates?.length) {
+          setHeroCandidates(d.imageCandidates);
+          // Open the cover-image picker right away when the AI couldn't decide
+          // (multiple candidates it can't see) — the user makes the final call.
           if (d.showImagePicker) {
             setPickerOpen(true);
           }
@@ -635,18 +584,6 @@ export function VendorFormDialog({
                         </Label>
                       )}
                     </div>
-                    {/* Manual trigger for candidate selection */}
-                    {pickerData.logoCandidates.length > 0 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPickerOpen(true)}
-                        className="mt-1 h-7 w-full gap-1 text-[10px]"
-                      >
-                        <Image className="size-3" /> Select Logo Candidate
-                      </Button>
-                    )}
                   </div>
 
                   {/* HERO BANNER CARD (Aspect ratio 16:9, takes 8 columns on desktop) */}
@@ -700,8 +637,8 @@ export function VendorFormDialog({
                         </Label>
                       )}
                     </div>
-                    {/* Manual trigger for candidate selection */}
-                    {pickerData.imageCandidates.length > 0 && (
+                    {/* Reopen the cover-image picker after skipping or to change the pick */}
+                    {heroCandidates.length > 0 && (
                       <Button
                         type="button"
                         variant="outline"
@@ -709,7 +646,7 @@ export function VendorFormDialog({
                         onClick={() => setPickerOpen(true)}
                         className="mt-1 h-7 w-full gap-1 text-[10px]"
                       >
-                        <Image className="size-3" /> Select Hero Candidate
+                        <Image className="size-3" /> Choose Cover Image
                       </Button>
                     )}
                   </div>
@@ -1259,10 +1196,8 @@ export function VendorFormDialog({
       <ImagePickerDialog
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        logoCandidates={pickerData.logoCandidates}
-        imageCandidates={pickerData.imageCandidates}
-        onApply={(logo, hero) => {
-          if (logo) setValue("logoUrl", logo);
+        candidates={heroCandidates}
+        onApply={(hero) => {
           if (hero) setValue("heroImageUrl", hero);
         }}
       />

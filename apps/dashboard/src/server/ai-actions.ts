@@ -923,7 +923,6 @@ export interface VendorAutofillResult {
     repEmail?: string;
     logoUrl?: string;
     heroImageUrl?: string;
-    logoCandidates?: string[];
     imageCandidates?: string[];
     showImagePicker?: boolean;
     confidence?: Record<string, number>;
@@ -1346,35 +1345,21 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
     const extracted = parseGeminiJson(parsedText) as Record<string, unknown>;
     const conf = (extracted.confidence ?? {}) as Record<string, number>;
 
-    const logoConfident = (conf.logoUrl ?? 0) >= 0.75;
-    const heroConfident = (conf.heroImageUrl ?? 0) >= 0.75;
-    const needLogoPicker = !logoConfident && logoCandidates.length > 1;
-    const needHeroPicker = !heroConfident && imageCandidates.length > 1;
-    const showImagePicker = needLogoPicker || needHeroPicker;
+    // The model can't see the images, so it never picks the hero blindly:
+    // whenever more than one candidate exists, leave heroImageUrl empty and
+    // tell the client to open the picker so the user makes the final choice.
+    // The logo stays the model's pick (logos are identifiable from URL/context).
+    const pickerImageCandidates = [
+      ...new Set(
+        [extracted.heroImageUrl as string, ...imageCandidates].filter(Boolean),
+      ),
+    ];
+    const showImagePicker = pickerImageCandidates.length > 1;
 
-    const logoUrl = needLogoPicker ? "" : (extracted.logoUrl as string) || "";
-    const heroImageUrl = needHeroPicker
+    const logoUrl = (extracted.logoUrl as string) || "";
+    const heroImageUrl = showImagePicker
       ? ""
       : (extracted.heroImageUrl as string) || "";
-
-    const pickerLogoCandidates =
-      logoCandidates.length > 0
-        ? [
-            ...new Set(
-              [extracted.logoUrl as string, ...logoCandidates].filter(Boolean),
-            ),
-          ]
-        : undefined;
-    const pickerImageCandidates =
-      imageCandidates.length > 0
-        ? [
-            ...new Set(
-              [extracted.heroImageUrl as string, ...imageCandidates].filter(
-                Boolean,
-              ),
-            ),
-          ]
-        : undefined;
 
     const rawReturnedData = {
       name: (extracted.name as string) || undefined,
@@ -1391,8 +1376,8 @@ CRITICAL: Return 100% valid JSON only. Never return base64 data: URLs. Use empty
       repEmail: (extracted.repEmail as string) || undefined,
       logoUrl: logoUrl || undefined,
       heroImageUrl: heroImageUrl || undefined,
-      logoCandidates: pickerLogoCandidates,
-      imageCandidates: pickerImageCandidates,
+      imageCandidates:
+        pickerImageCandidates.length > 0 ? pickerImageCandidates : undefined,
       showImagePicker,
       confidence: conf,
       instagram: (extracted.instagram as string) || undefined,
