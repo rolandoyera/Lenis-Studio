@@ -8,11 +8,14 @@
 import type { NextRequest } from "next/server";
 
 import { cookies } from "next/headers";
+import sharp from "sharp";
 
 import { ACTIVE_ORG_COOKIE } from "@/lib/org-cookie";
 import type { Project } from "@/lib/types";
 import {
+  ALPHA_CAPABLE,
   type DropboxThumbnailSize,
+  fetchDropboxOriginal,
   fetchDropboxThumbnail,
   getValidDropboxAccessToken,
 } from "@/server/dropbox";
@@ -53,14 +56,29 @@ export async function GET(
     const accessToken = await getValidDropboxAccessToken(activeOrgId);
     if (!accessToken) return new Response("Not found", { status: 404 });
 
-    const { bytes, contentType } = await fetchDropboxThumbnail(
-      accessToken,
-      path,
-      size,
-    );
+    // Alpha-capable sources: Dropbox's thumbnailer flattens transparency onto
+    // white even with format=png, so build the thumbnail ourselves — download
+    // the original and resize with sharp, serving WebP (keeps alpha, small).
+    const ext = path.split(".").pop()?.toLowerCase() ?? "";
+    if (ALPHA_CAPABLE.has(ext)) {
+      const original = await fetchDropboxOriginal(accessToken, path);
+      const [width, height] = size === "w2048h1536" ? [2048, 1536] : [640, 480];
+      const bytes = await sharp(Buffer.from(original))
+        .resize(width, height, { fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer();
+      return new Response(new Uint8Array(bytes), {
+        headers: {
+          "content-type": "image/webp",
+          "cache-control": "private, max-age=3600",
+        },
+      });
+    }
+
+    const bytes = await fetchDropboxThumbnail(accessToken, path, size);
     return new Response(new Uint8Array(bytes), {
       headers: {
-        "content-type": contentType,
+        "content-type": "image/jpeg",
         // Org-scoped, so private; cached by the browser so revisits don't re-hit Dropbox.
         "cache-control": "private, max-age=3600",
       },

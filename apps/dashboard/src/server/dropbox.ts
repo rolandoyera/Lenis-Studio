@@ -262,21 +262,23 @@ export async function listDropboxImages(
 /** Dropbox `get_thumbnail_v2` sizes we serve: a grid tile and a lightbox view. */
 export type DropboxThumbnailSize = "w640h480" | "w2048h1536";
 
-/** Extensions that can carry transparency — thumbnail as PNG so alpha survives. */
-const ALPHA_CAPABLE = new Set(["png", "gif", "webp"]);
+/**
+ * Extensions that can carry transparency. Dropbox's `get_thumbnail_v2` flattens
+ * alpha onto white even with `format: "png"` (verified against the API), so
+ * these are thumbnailed by us instead: download the original, resize with sharp.
+ */
+export const ALPHA_CAPABLE = new Set(["png", "gif", "webp"]);
 
 /**
- * Fetches a thumbnail for a file at `path` from Dropbox's content host. Photos
- * come back as JPEG (small); alpha-capable formats as PNG so transparency isn't
- * flattened to a white background. Throws on a non-2xx response.
+ * Fetches a JPEG thumbnail for a file at `path` from Dropbox's content host.
+ * Only for non-alpha sources (photos) — see {@link ALPHA_CAPABLE}. Returns the
+ * raw bytes; throws on a non-2xx response.
  */
 export async function fetchDropboxThumbnail(
   accessToken: string,
   path: string,
   size: DropboxThumbnailSize,
-): Promise<{ bytes: ArrayBuffer; contentType: string }> {
-  const ext = path.split(".").pop()?.toLowerCase() ?? "";
-  const format = ALPHA_CAPABLE.has(ext) ? "png" : "jpeg";
+): Promise<ArrayBuffer> {
   const res = await fetch(
     "https://content.dropboxapi.com/2/files/get_thumbnail_v2",
     {
@@ -285,7 +287,7 @@ export async function fetchDropboxThumbnail(
         Authorization: `Bearer ${accessToken}`,
         "Dropbox-API-Arg": JSON.stringify({
           resource: { ".tag": "path", path },
-          format,
+          format: "jpeg",
           mode: "bestfit",
           size,
         }),
@@ -296,5 +298,27 @@ export async function fetchDropboxThumbnail(
   if (!res.ok) {
     throw new Error(`Dropbox get_thumbnail_v2 failed: ${res.status}`);
   }
-  return { bytes: await res.arrayBuffer(), contentType: `image/${format}` };
+  return res.arrayBuffer();
+}
+
+/**
+ * Downloads the original file bytes at `path` (used to build alpha-preserving
+ * thumbnails ourselves). Throws on a non-2xx response.
+ */
+export async function fetchDropboxOriginal(
+  accessToken: string,
+  path: string,
+): Promise<ArrayBuffer> {
+  const res = await fetch("https://content.dropboxapi.com/2/files/download", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Dropbox-API-Arg": JSON.stringify({ path }),
+    },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Dropbox files/download failed: ${res.status}`);
+  }
+  return res.arrayBuffer();
 }

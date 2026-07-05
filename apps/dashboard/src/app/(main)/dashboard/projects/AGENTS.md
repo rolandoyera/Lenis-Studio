@@ -164,8 +164,10 @@ Gallery (designer-facing view of the linked folder's images):
   model as `api/project-documents/.../download`): org from cookie, org-scoped, and the `?path=` is
   **scope-guarded to the linked folder** (never serves bytes outside it). Streams Dropbox
   `get_thumbnail_v2` bytes (`fetchDropboxThumbnail`) with `cache-control: private, max-age=3600`.
-  `?size=full` (2048px) backs the lightbox; default (640px) backs the grid. Photos are served as JPEG;
-  alpha-capable sources (png/gif/webp) as PNG so transparency isn't flattened to white. The gallery
+  `?size=full` (2048px) backs the lightbox; default (640px) backs the grid. Photos are served as Dropbox
+  JPEG thumbnails; alpha-capable sources (png/gif/webp) can't use Dropbox's thumbnailer — it flattens
+  transparency onto white even with `format=png` (verified against the API) — so the route downloads the
+  original and resizes with sharp to WebP (alpha preserved, ~40KB from a 38MB render). The gallery
   renders these with a plain `<img loading="lazy">` (not `DashboardImage`/next/image): the proxy already
   returns a sized, cache-controlled image, and Next 16 rejects same-origin `next/image` srcs that carry a query
   string unless `images.localPatterns` is configured — the plain tag consumes the proxy's cache headers

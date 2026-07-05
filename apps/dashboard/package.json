@@ -66,6 +66,7 @@
     "rehype-pretty-code": "^0.14.3",
     "remark-frontmatter": "^5.0.0",
     "shadcn": "^4.8.0",
+    "sharp": "^0.35.3",
     "shiki": "^4.2.0",
     "simple-icons": "^16.20.0",
     "sonner": "^2.0.7",
