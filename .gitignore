@@ -18,3 +18,5 @@ ga4-key.json
 client_secret_*.json
 **/ga4-key.json
 **/client_secret_*.json
+.vercel
+.env*
