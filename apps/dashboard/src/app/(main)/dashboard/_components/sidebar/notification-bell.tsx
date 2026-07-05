@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
 import { formatDistanceToNow } from "date-fns";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Bell, Check, ExternalLink, Trash2 } from "lucide-react";
 
 import { useAuth } from "@/components/auth-context";
@@ -17,49 +16,10 @@ import {
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { dismissNotification, markNotificationRead } from "@/lib/db";
-import { db } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/lib/types";
 
-/** How many notifications the bell keeps in memory / renders. */
-const BELL_LIMIT = 30;
-
-/**
- * Live notifications for the signed-in user: the org-wide feed plus anything
- * targeted at them. Keyed on the stable organizationId/uid primitives from
- * useAuth — never the profile object (its identity churns each heartbeat).
- */
-function useNotifications(
-  organizationId: string | null,
-  uid: string | null,
-  authLoading: boolean,
-) {
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-
-  useEffect(() => {
-    if (authLoading || !organizationId || !uid) return;
-    // The audience clause is required by firestore.rules (list queries must be
-    // provably in scope), not just a filter. Sort in memory — no composite index.
-    const notificationsQuery = query(
-      collection(db, "notifications"),
-      where("organizationId", "==", organizationId),
-      where("audience", "in", ["org", uid]),
-    );
-    const unsubscribe = onSnapshot(
-      notificationsQuery,
-      (snapshot) => {
-        const list = snapshot.docs.map((d) => d.data() as AppNotification);
-        setNotifications(
-          list.sort((a, b) => b.createdAt - a.createdAt).slice(0, BELL_LIMIT),
-        );
-      },
-      (error) => console.error("Failed to load notifications:", error),
-    );
-    return unsubscribe;
-  }, [organizationId, uid, authLoading]);
-
-  return notifications;
-}
+import { useNotifications } from "../use-notifications";
 
 export function NotificationBell() {
   const { organizationId, uid, loading: authLoading } = useAuth();

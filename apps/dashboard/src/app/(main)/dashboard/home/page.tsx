@@ -1,12 +1,12 @@
 import { PageTitle } from "@/components/page-title-updater";
+import { H1, P } from "@/components/ui/typography";
 
 import { UserGreeting } from "../_components/user-greeting";
 import { WeatherWidget } from "../_components/weather-widget";
 import { MetricCards } from "./_components/metric-cards";
+import { NotificationsCard } from "./_components/notifications-card";
 import { PerformanceOverview } from "./_components/performance-overview";
 import { SubscriberOverview } from "./_components/subscriber-overview";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { H1, P } from "@/components/ui/typography";
 
 export default function Page() {
   return (
@@ -25,16 +25,7 @@ export default function Page() {
         <MetricCards />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="lg:col-span-3">
-            <Card variant="panel" className="h-full">
-              <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-2 rounded-lg bg-muted p-4 text-sm">
-                  <p>Notifications content</p>
-                </div>
-              </CardContent>
-            </Card>
+            <NotificationsCard />
           </div>
           <div className="lg:col-span-9">
             <PerformanceOverview />
