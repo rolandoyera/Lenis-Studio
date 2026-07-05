@@ -1,3 +1,4 @@
+import type { DropboxIntegrationConfig } from "@/types/dropbox";
 import type { MetaIntegrationConfig } from "@/types/meta";
 
 export interface Client {
@@ -337,12 +338,29 @@ export interface Project {
    */
   itemColumnLayout?: ItemColumnLayout;
 
+  /**
+   * The Dropbox folder linked to the project's imagery (Settings tab), stored
+   * under the fixed key "imagery". Absent until a folder is linked.
+   */
+  imagerySets?: Record<string, ProjectImagerySet>;
+
   // Audit — all user references store UIDs only.
   createdBy: string; // user uid
   updatedBy: string; // user uid
   createdAt: number;
   updatedAt: number;
   lastActivityAt?: number;
+}
+
+/** A Dropbox folder linked to one of a project's image sets (Settings tab). */
+export interface ProjectImagerySet {
+  /** Dropbox `path_lower` — the stable id used for API calls. */
+  path: string;
+  /** Display name of the folder (Dropbox `path_display` / folder name). */
+  name: string;
+  linkedAt: number;
+  /** UID of the user who linked it. */
+  linkedBy: string;
 }
 
 /** Kind of file a project document reference points at. */
@@ -958,6 +976,7 @@ export interface OrganizationConfig {
   aiMonthlyLimit?: number;
   aiUsedCount?: number;
   metaIntegration?: MetaIntegrationConfig;
+  dropboxIntegration?: DropboxIntegrationConfig;
 }
 
 export interface CompanyAddress {

@@ -18,8 +18,9 @@ A project workspace. Two routes, both **client components**:
   dialog. Requires at least one client to exist first (the button routes to `/dashboard/clients`
   otherwise).
 - [[projectId]/page.tsx]([projectId]/page.tsx) — a single project, **tabbed**: Overview, Items,
-  Files, Invoices (placeholder), Settings (placeholder). The active tab is mirrored into the URL as
-  `?tab=` via `window.history.replaceState` so refresh/copied links land on the same tab.
+  Files, Invoices (placeholder), Settings (Timelines placeholder + Dropbox connect — see below). The
+  active tab is mirrored into the URL as `?tab=` via `window.history.replaceState` so refresh/copied
+  links land on the same tab.
 
 ## Files in this folder
 
@@ -59,6 +60,16 @@ A project workspace. Two routes, both **client components**:
   realtime listener reflects the fresh `sent` cycle. Both are shared with the contracts list so the
   rule + UX can't drift (see contracts AGENTS "Signing link: expiry + resend").
 - `_components/delete-project-dialog.tsx` — confirm-delete for the whole project.
+- `tabs/project-settings.tsx` — the **Settings tab**. Two sections: **Timelines** (placeholder only)
+  and **Project Imagery**, which hosts the **Dropbox** integration. The Dropbox account connects
+  **org-wide** (connect once per organization, mirroring the Meta/Instagram integration), then each
+  project links **one folder** via the folder picker (stored in the generic `imagerySets` map under a
+  single fixed key, `"imagery"`). Its images render as a thumbnail gallery + lightbox. See "Dropbox
+  integration" below.
+- `tabs/_tab_components/dropbox-folder-picker.tsx` — the folder-picker dialog. Browses the connected
+  Dropbox folder-by-folder (files dropped server-side) via the `browseDropboxFolders` action: click a
+  row to select, click its chevron to drill in, breadcrumb to jump back. `onLink(folder)` hands the
+  choice back to `project-settings.tsx`, which persists it; the dialog owns no persistence.
 - `tabs/project-items.tsx` — the **Items tab** (the heavy one — see its own section below).
 - `tabs/_tab_components/items-table.tsx` — the list-view items grid renderer.
 - `tabs/_tab_components/add-items-dialog.tsx` — add items to a section: "Library Items" (multi-select
@@ -104,6 +115,71 @@ project's** (so unfiltered list queries are allowed); create must self-attribute
 auth.uid`) and match org; update is **author-only** and constrained to `['body','updatedAt',
 'updatedBy']`; delete is **author-only** (a real delete). Covered by a case in
 [`firestore/rules.test.ts`](../../../../../firestore/rules.test.ts).
+
+## Dropbox integration (Settings tab)
+
+Org-wide Dropbox OAuth, following the **Meta integration** pattern exactly (`server/meta-graph.ts`,
+`server/meta-actions.ts`, `app/api/integrations/meta/*`). Split by sensitivity:
+
+- **Secret tokens** → `organizations/{orgId}/secrets/dropbox` (`DropboxSecrets` in `src/types/dropbox.ts`):
+  `accessToken` (~4h), `refreshToken` (long-lived, from `token_access_type=offline`), `expiresAt`,
+  `accountId`. Server-only — `firestore.rules` denies all client reads of `secrets/*`. Written by the
+  firebase-admin SDK in `src/server/dropbox.ts` (`storeDropboxConnection`); read by
+  `getStoredDropboxSecrets`.
+- **Display flag** → org doc `config.dropboxIntegration` (`DropboxIntegrationConfig`): `connected`,
+  `accountName`, `accountEmail`, `accountId`, timestamps. Read by client components via the
+  `getDropboxConnection()` server action (`src/server/dropbox-actions.ts`); `disconnectDropbox()`
+  clears both the config (`FieldValue.delete()`) and the secret doc.
+
+OAuth flow (`src/app/api/integrations/dropbox/`):
+- `login/route.ts` — org from `ACTIVE_ORG_COOKIE`; a `?returnTo=` query (guarded to `/dashboard/...`)
+  rides in `state` (base64url `{organizationId, nonce, returnTo}`) so the user lands back on the same
+  project's Settings tab. Sets an httpOnly `dropbox_oauth_state` nonce cookie (CSRF), redirects to
+  `https://www.dropbox.com/oauth2/authorize` with `token_access_type=offline`.
+- `callback/route.ts` — verifies nonce vs cookie, exchanges the code at
+  `https://api.dropboxapi.com/oauth2/token`, fetches the account, stores the connection, and redirects
+  to `returnTo` with a `?dropbox=<status>` result param. `project-settings.tsx` toasts that status and
+  scrubs the param via `replaceState`.
+
+Folder linking (one folder per project):
+- **Data model** → `Project.imagerySets?: Record<string, ProjectImagerySet>` (`@/lib/types`). The map is
+  **generic** but the UI links only **one** folder, under the fixed key `"imagery"` (`IMAGERY_SET_ID` in
+  `project-settings.tsx`); linking replaces the whole map, unlinking writes `{}`. Each value is
+  `{ path (Dropbox path_lower), name, linkedAt, linkedBy }`. Written client-side via
+  **`updateProjectImagerySets`** (`src/lib/db.ts`) — mirrors `updateProjectItemsLayout`: a settings
+  write that **does not bump `lastActivityAt`**. (Project update is `updatesInOwnOrg()` with no field
+  allowlist, so this needs no server action.)
+- **Browsing** → the `browseDropboxFolders(path)` server action (`dropbox-actions.ts`; root path is
+  `""`, not `/`) calls `getValidDropboxAccessToken` + `listDropboxFolders` (`src/server/dropbox.ts`).
+  `getValidDropboxAccessToken` **refreshes on expiry** using the stored `refreshToken` and persists the
+  new access token back to `secrets/dropbox`. `listDropboxFolders` returns folders only (files dropped),
+  following Dropbox pagination.
+- **UI** → `tabs/_tab_components/dropbox-folder-picker.tsx` (browse/select).
+
+Gallery (designer-facing view of the linked folder's images):
+- **Listing** → `listProjectSetImages(projectId, setId)` action (org from cookie, tenant-guards the
+  project, resolves `imagerySets[setId].path`) → `listDropboxImages` (top-level image files only,
+  keyed by Dropbox file `id` — stable across rename/move, for future portal curation).
+- **Thumbnails** → the proxy route `api/projects/[projectId]/imagery/[setId]/thumb/route.ts` (same trust
+  model as `api/project-documents/.../download`): org from cookie, org-scoped, and the `?path=` is
+  **scope-guarded to the linked folder** (never serves bytes outside it). Streams Dropbox
+  `get_thumbnail_v2` bytes (`fetchDropboxThumbnail`) with `cache-control: private, max-age=3600`.
+  `?size=full` (2048px) backs the lightbox; default (640px) backs the grid. Photos are served as JPEG;
+  alpha-capable sources (png/gif/webp) as PNG so transparency isn't flattened to white. The gallery
+  renders these with a plain `<img loading="lazy">` (not `DashboardImage`/next/image): the proxy already
+  returns a sized, cache-controlled image, and Next 16 rejects same-origin `next/image` srcs that carry a query
+  string unless `images.localPatterns` is configured — the plain tag consumes the proxy's cache headers
+  directly and needs no config.
+- **Component** → `tabs/_tab_components/dropbox-image-gallery.tsx` (grid + lightweight lightbox: the
+  image fills the viewport via `object-contain` without overflowing; backdrop/X/Esc to close, ←/→ to
+  navigate; grid-thumb placeholder + spinner and neighbor preload keep it feeling instant). Rendered by
+  `ImagerySetCard` when a set is linked.
+
+Env: `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REDIRECT_URI` (must match the redirect URI
+registered in the Dropbox App Console). **TODO (Phase 4):** portal curation — the designer selects a
+subset of these images + a layout for the client portal; curated images will likely be **snapshotted to
+Storage** (so the portal deliverable doesn't depend on Dropbox), meaning the portal needs no Dropbox
+proxy of its own.
 
 ## Tenant isolation — read this before touching the detail route
 

@@ -44,6 +44,7 @@ import { ProjectInformationCard } from "../_components/project-information-card"
 import { ProjectNotesCard } from "../_components/project-notes-card";
 import { ProjectProposalsCard } from "../_components/project-proposals-card";
 import { ProjectItems } from "../tabs/project-items";
+import { ProjectSettings } from "../tabs/project-settings";
 
 interface PageProps {
   params: Promise<{ projectId: string }>;
@@ -315,7 +316,7 @@ export default function ProjectDetailPage({ params }: PageProps) {
         {activeTab === "invoices" && <TabPlaceholder label="Invoices" />}
 
         {/* Tab 5 Page Content - Project Settings */}
-        {activeTab === "settings" && <TabPlaceholder label="Settings" />}
+        {activeTab === "settings" && <ProjectSettings project={project} />}
 
         <ProjectFormDialog
           open={isEditOpen}

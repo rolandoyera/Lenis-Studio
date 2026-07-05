@@ -34,6 +34,7 @@ import type {
   LibraryItem,
   Organization,
   Project,
+  ProjectImagerySet,
   ProjectNote,
   ProjectRoom,
   ProjectRoomItem,
@@ -859,6 +860,27 @@ export async function updateProjectItemsLayout(
       await updateDoc(
         doc(db, "projects", projectId),
         cleanUndefined({ itemColumnLayout, updatedAt: Date.now() }),
+      );
+    },
+    () => projectId,
+  );
+}
+
+// Persists the Dropbox folders linked to a project's image sets (Settings tab).
+// Kept separate from `updateProject` so linking a folder doesn't bump
+// `lastActivityAt` (it's a settings tweak, not project activity).
+export async function updateProjectImagerySets(
+  projectId: string,
+  imagerySets: Record<string, ProjectImagerySet>,
+): Promise<void> {
+  return trace(
+    "projects",
+    "WRITE",
+    "updateProjectImagerySets",
+    async () => {
+      await updateDoc(
+        doc(db, "projects", projectId),
+        cleanUndefined({ imagerySets, updatedAt: Date.now() }),
       );
     },
     () => projectId,
