@@ -19,20 +19,48 @@ import {
 import { H1 } from "@/components/ui/typography";
 import {
   type FirestoreUsage,
+  type UsagePeriod,
   type UsageRange,
+  type UsageTotals,
   getFirestoreUsage,
+  getFirestoreUsageTotals,
 } from "@/server/monitoring-actions";
 
 import { UsageChartCard } from "./_components/usage-chart-card";
+import { UsageTotalsCard } from "./_components/usage-totals-card";
 
-const RANGE_OPTIONS: { value: UsageRange; label: string; ms: number }[] = [
+type RangeValue = UsageRange | UsagePeriod;
+
+const RANGE_OPTIONS: { value: RangeValue; label: string; ms: number }[] = [
   { value: "60m", label: "Last 60 minutes", ms: 60 * 60_000 },
   { value: "24h", label: "Last 24 hours", ms: 24 * 3_600_000 },
   { value: "7d", label: "Last 7 days", ms: 7 * 86_400_000 },
   { value: "30d", label: "Last 30 days", ms: 30 * 86_400_000 },
+  { value: "quota", label: "Current quota period", ms: 0 },
+  { value: "billing", label: "Current billing period", ms: 0 },
+];
+
+// Series definitions shared by the rolling charts and the period totals.
+const OPS_SERIES = [
+  { key: "reads", label: "Reads", color: "var(--chart-1)" },
+  { key: "writes", label: "Writes", color: "var(--chart-2)" },
+  { key: "deletes", label: "Deletes", color: "var(--chart-3)" },
+];
+const SUBS_SERIES = [
+  { key: "listeners", label: "Snapshot listeners", color: "var(--chart-1)" },
+  { key: "connections", label: "Active connections", color: "var(--chart-2)" },
+];
+const RULES_SERIES = [
+  { key: "allows", label: "Allows", color: "var(--chart-1)" },
+  { key: "denies", label: "Denies", color: "var(--chart-2)" },
+  { key: "errors", label: "Errors", color: "var(--chart-3)" },
 ];
 
 const REFRESH_MS = 60_000;
+
+function isPeriod(value: RangeValue): value is UsagePeriod {
+  return value === "quota" || value === "billing";
+}
 
 function bucketLabel(bucketSeconds: number): string {
   if (bucketSeconds === 60) return "per minute";
@@ -40,12 +68,30 @@ function bucketLabel(bucketSeconds: number): string {
   return `per ${bucketSeconds / 3_600} hours`;
 }
 
+// Pacific-time wall-clock date for the period start, so the "midnight PT" note
+// stays accurate regardless of the viewer's own timezone.
+function pacificDate(ms: number): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    month: "short",
+    day: "numeric",
+  }).format(ms);
+}
+
+function periodCaption(totals: UsageTotals): string {
+  const start = pacificDate(totals.periodStartMs);
+  return totals.period === "quota"
+    ? `Today so far — since ${start}, midnight PT (resets daily)`
+    : `This month — since ${start}, midnight PT`;
+}
+
 export default function UsagePage() {
   const { uid, role, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [range, setRange] = useState<UsageRange>("60m");
+  const [range, setRange] = useState<RangeValue>("60m");
   const [usage, setUsage] = useState<FirestoreUsage | null>(null);
+  const [totals, setTotals] = useState<UsageTotals | null>(null);
 
   // Access check & redirect
   useEffect(() => {
@@ -68,8 +114,13 @@ export default function UsagePage() {
     let cancelled = false;
     const load = async () => {
       try {
-        const data = await getFirestoreUsage(range);
-        if (!cancelled) setUsage(data);
+        if (isPeriod(range)) {
+          const data = await getFirestoreUsageTotals(range);
+          if (!cancelled) setTotals(data);
+        } else {
+          const data = await getFirestoreUsage(range);
+          if (!cancelled) setUsage(data);
+        }
       } catch (error) {
         console.error("Failed to load usage metrics:", error);
         if (!cancelled) toast.error("Failed to load usage metrics.");
@@ -108,10 +159,14 @@ export default function UsagePage() {
     );
   }
 
-  // Stale data from the previous range renders as loading, not as mislabeled charts.
-  const loading = !usage || usage.range !== range;
+  const periodMode = isPeriod(range);
+  // Stale data from the previous selection renders as loading, not as
+  // mislabeled charts/totals.
+  const chartLoading = !usage || usage.range !== range;
+  const totalsLoading = !totals || totals.period !== range;
   const rangeMs = RANGE_OPTIONS.find((o) => o.value === range)?.ms ?? 0;
   const opsCaption = usage ? bucketLabel(usage.bucketSeconds) : "";
+  const periodNote = totals && !totalsLoading ? periodCaption(totals) : "";
 
   return (
     <>
@@ -127,10 +182,13 @@ export default function UsagePage() {
               Firestore activity across the whole project (all tenants). Metrics
               arrive with a ~4 minute delay.
             </p>
+            {periodMode && periodNote ? (
+              <p className="text-muted-foreground text-sm">{periodNote}</p>
+            ) : null}
           </div>
           <Select
             value={range}
-            onValueChange={(value) => setRange(value as UsageRange)}
+            onValueChange={(value) => setRange(value as RangeValue)}
           >
             <SelectTrigger className="w-44">
               <SelectValue />
@@ -145,52 +203,87 @@ export default function UsagePage() {
           </Select>
         </div>
 
-        <UsageChartCard
-          title="Billable metrics"
-          caption={`Operations (${opsCaption})`}
-          totalMode="sum"
-          rangeMs={rangeMs}
-          loading={loading}
-          data={usage?.operations ?? []}
-          series={[
-            { key: "reads", label: "Reads", color: "var(--chart-1)" },
-            { key: "writes", label: "Writes", color: "var(--chart-2)" },
-            { key: "deletes", label: "Deletes", color: "var(--chart-3)" },
-          ]}
-        />
-        <UsageChartCard
-          title="Subscription metrics"
-          caption={`Peak subscriptions (${opsCaption})`}
-          totalMode="peak"
-          rangeMs={rangeMs}
-          loading={loading}
-          data={usage?.subscriptions ?? []}
-          series={[
-            {
-              key: "listeners",
-              label: "Snapshot listeners",
-              color: "var(--chart-1)",
-            },
-            {
-              key: "connections",
-              label: "Active connections",
-              color: "var(--chart-2)",
-            },
-          ]}
-        />
-        <UsageChartCard
-          title="Rules metrics"
-          caption={`Rules evaluations (${opsCaption})`}
-          totalMode="sum"
-          rangeMs={rangeMs}
-          loading={loading}
-          data={usage?.rules ?? []}
-          series={[
-            { key: "allows", label: "Allows", color: "var(--chart-1)" },
-            { key: "denies", label: "Denies", color: "var(--chart-2)" },
-            { key: "errors", label: "Errors", color: "var(--chart-3)" },
-          ]}
-        />
+        {periodMode ? (
+          <>
+            <UsageTotalsCard
+              title="Billable metrics"
+              caption="Operations"
+              mode="sum"
+              loading={totalsLoading}
+              series={OPS_SERIES}
+              values={
+                totals
+                  ? {
+                      reads: totals.reads,
+                      writes: totals.writes,
+                      deletes: totals.deletes,
+                    }
+                  : {}
+              }
+            />
+            <UsageTotalsCard
+              title="Subscription metrics"
+              caption="Peak subscriptions"
+              mode="peak"
+              loading={totalsLoading}
+              series={SUBS_SERIES}
+              values={
+                totals
+                  ? {
+                      listeners: totals.listeners,
+                      connections: totals.connections,
+                    }
+                  : {}
+              }
+            />
+            <UsageTotalsCard
+              title="Rules metrics"
+              caption="Rules evaluations"
+              mode="sum"
+              loading={totalsLoading}
+              series={RULES_SERIES}
+              values={
+                totals
+                  ? {
+                      allows: totals.allows,
+                      denies: totals.denies,
+                      errors: totals.errors,
+                    }
+                  : {}
+              }
+            />
+          </>
+        ) : (
+          <>
+            <UsageChartCard
+              title="Billable metrics"
+              caption={`Operations (${opsCaption})`}
+              totalMode="sum"
+              rangeMs={rangeMs}
+              loading={chartLoading}
+              data={usage?.operations ?? []}
+              series={OPS_SERIES}
+            />
+            <UsageChartCard
+              title="Subscription metrics"
+              caption={`Peak subscriptions (${opsCaption})`}
+              totalMode="peak"
+              rangeMs={rangeMs}
+              loading={chartLoading}
+              data={usage?.subscriptions ?? []}
+              series={SUBS_SERIES}
+            />
+            <UsageChartCard
+              title="Rules metrics"
+              caption={`Rules evaluations (${opsCaption})`}
+              totalMode="sum"
+              rangeMs={rangeMs}
+              loading={chartLoading}
+              data={usage?.rules ?? []}
+              series={RULES_SERIES}
+            />
+          </>
+        )}
       </div>
     </>
   );

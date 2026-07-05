@@ -33,6 +33,25 @@ export interface FirestoreUsage {
   rules: RulesPoint[];
 }
 
+// The console's two cumulative windows: "quota" resets daily at midnight
+// Pacific (the free-tier daily quota), "billing" covers the current calendar
+// month (also Pacific). Both are shown as running totals, not charts.
+export type UsagePeriod = "quota" | "billing";
+
+export interface UsageTotals {
+  period: UsagePeriod;
+  /** Absolute ms of the period's Pacific-time start (midnight PT). */
+  periodStartMs: number;
+  reads: number;
+  writes: number;
+  deletes: number;
+  listeners: number;
+  connections: number;
+  allows: number;
+  denies: number;
+  errors: number;
+}
+
 // Bucket widths keep every range at ~60 chart points, mirroring the console.
 const RANGE_SPECS: Record<
   UsageRange,
@@ -173,19 +192,17 @@ async function fetchUsage(range: UsageRange): Promise<FirestoreUsage> {
   // are rejected), so each metric is its own call: 6 per refresh, shared by
   // all viewers via the cache below.
   const window = { startMs, endMs, alignmentSeconds };
-  const countCalls = Object.entries(COUNT_METRICS).map(
-    async ([type, key]) => ({
-      key,
-      series: await listTimeSeries({
-        ...window,
-        filter: `metric.type = "${type}"`,
-        // REDUCE_SUM collapses label splits (e.g. read type LOOKUP vs QUERY).
-        perSeriesAligner: "ALIGN_SUM" as const,
-        crossSeriesReducer: "REDUCE_SUM" as const,
-        groupByFields: [],
-      }),
+  const countCalls = Object.entries(COUNT_METRICS).map(async ([type, key]) => ({
+    key,
+    series: await listTimeSeries({
+      ...window,
+      filter: `metric.type = "${type}"`,
+      // REDUCE_SUM collapses label splits (e.g. read type LOOKUP vs QUERY).
+      perSeriesAligner: "ALIGN_SUM" as const,
+      crossSeriesReducer: "REDUCE_SUM" as const,
+      groupByFields: [],
     }),
-  );
+  }));
   const rulesCall = listTimeSeries({
     ...window,
     filter: `metric.type = "${RULES_METRIC}"`,
@@ -193,18 +210,16 @@ async function fetchUsage(range: UsageRange): Promise<FirestoreUsage> {
     crossSeriesReducer: "REDUCE_SUM",
     groupByFields: ["metric.labels.result"],
   });
-  const gaugeCalls = Object.entries(GAUGE_METRICS).map(
-    async ([type, key]) => ({
-      key,
-      series: await listTimeSeries({
-        ...window,
-        filter: `metric.type = "${type}"`,
-        perSeriesAligner: "ALIGN_MAX" as const,
-        crossSeriesReducer: "REDUCE_MAX" as const,
-        groupByFields: [],
-      }),
+  const gaugeCalls = Object.entries(GAUGE_METRICS).map(async ([type, key]) => ({
+    key,
+    series: await listTimeSeries({
+      ...window,
+      filter: `metric.type = "${type}"`,
+      perSeriesAligner: "ALIGN_MAX" as const,
+      crossSeriesReducer: "REDUCE_MAX" as const,
+      groupByFields: [],
     }),
-  );
+  }));
 
   const [countResults, rulesSeries, gaugeResults] = await Promise.all([
     Promise.all(countCalls),
@@ -270,9 +285,163 @@ async function fetchUsage(range: UsageRange): Promise<FirestoreUsage> {
   };
 }
 
-// One upstream fetch per range per minute, shared by every viewer. Caching the
+const PACIFIC_TZ = "America/Los_Angeles";
+
+// Offset (ms) between UTC and Pacific at a given instant, derived by formatting
+// the instant as Pacific wall-clock and diffing. DST-safe.
+function pacificOffsetMs(utcMs: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: PACIFIC_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(utcMs));
+  const at = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  const asUtc = Date.UTC(
+    at("year"),
+    at("month") - 1,
+    at("day"),
+    at("hour") % 24, // Intl emits "24" for midnight; fold to 0.
+    at("minute"),
+    at("second"),
+  );
+  return asUtc - utcMs;
+}
+
+// Midnight Pacific that opens the current quota (today) or billing (1st of
+// month) period. DST transitions happen at 2am, so midnight is unambiguous and
+// a single offset correction is exact.
+function pacificPeriodStart(period: UsagePeriod): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: PACIFIC_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const at = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  const day = period === "billing" ? 1 : at("day");
+  const midnightGuess = Date.UTC(at("year"), at("month") - 1, day);
+  return midnightGuess - pacificOffsetMs(midnightGuess);
+}
+
+function totalOf(series: TimeSeries[]): number {
+  let sum = 0;
+  for (const s of series) for (const p of s.points ?? []) sum += pointValue(p);
+  return sum;
+}
+
+function peakOf(series: TimeSeries[]): number {
+  let max = 0;
+  for (const s of series)
+    for (const p of s.points ?? []) max = Math.max(max, pointValue(p));
+  return max;
+}
+
+async function fetchTotals(period: UsagePeriod): Promise<UsageTotals> {
+  const startMs = pacificPeriodStart(period);
+  const endMs = Math.floor((Date.now() - INGEST_DELAY_MS) / 60_000) * 60_000;
+  // Hourly buckets summed client-side give the period total while keeping the
+  // point count small (<= ~744 for a full month). Same one-metric-per-request
+  // constraint as the charts, so each metric is its own call.
+  const window = { startMs, endMs, alignmentSeconds: 3_600 };
+
+  const countCalls = Object.entries(COUNT_METRICS).map(async ([type, key]) => ({
+    key,
+    total: totalOf(
+      await listTimeSeries({
+        ...window,
+        filter: `metric.type = "${type}"`,
+        perSeriesAligner: "ALIGN_SUM" as const,
+        crossSeriesReducer: "REDUCE_SUM" as const,
+        groupByFields: [],
+      }),
+    ),
+  }));
+  const rulesCall = listTimeSeries({
+    ...window,
+    filter: `metric.type = "${RULES_METRIC}"`,
+    perSeriesAligner: "ALIGN_SUM",
+    crossSeriesReducer: "REDUCE_SUM",
+    groupByFields: ["metric.labels.result"],
+  });
+  const gaugeCalls = Object.entries(GAUGE_METRICS).map(async ([type, key]) => ({
+    key,
+    peak: peakOf(
+      await listTimeSeries({
+        ...window,
+        filter: `metric.type = "${type}"`,
+        perSeriesAligner: "ALIGN_MAX" as const,
+        crossSeriesReducer: "REDUCE_MAX" as const,
+        groupByFields: [],
+      }),
+    ),
+  }));
+
+  const [countResults, rulesSeries, gaugeResults] = await Promise.all([
+    Promise.all(countCalls),
+    rulesCall,
+    Promise.all(gaugeCalls),
+  ]);
+
+  const counts = Object.fromEntries(
+    countResults.map(({ key, total }) => [key, total]),
+  );
+  const gauges = Object.fromEntries(
+    gaugeResults.map(({ key, peak }) => [key, peak]),
+  );
+  const rulesTotals: Record<string, number> = {};
+  for (const s of rulesSeries) {
+    const result = s.metric.labels?.result as
+      | keyof typeof RULES_RESULTS
+      | undefined;
+    if (!result) continue;
+    let sum = 0;
+    for (const p of s.points ?? []) sum += pointValue(p);
+    rulesTotals[RULES_RESULTS[result]] =
+      (rulesTotals[RULES_RESULTS[result]] ?? 0) + sum;
+  }
+
+  return {
+    period,
+    periodStartMs: startMs,
+    reads: counts.reads ?? 0,
+    writes: counts.writes ?? 0,
+    deletes: counts.deletes ?? 0,
+    listeners: gauges.listeners ?? 0,
+    connections: gauges.connections ?? 0,
+    allows: rulesTotals.allows ?? 0,
+    denies: rulesTotals.denies ?? 0,
+    errors: rulesTotals.errors ?? 0,
+  };
+}
+
+// One upstream fetch per key per minute, shared by every viewer. Caching the
 // promise also dedupes concurrent requests; failures evict so the next call retries.
 const CACHE_TTL_MS = 60_000;
+
+function memoizePerMinute<K, V>(
+  cache: Map<K, { at: number; promise: Promise<V> }>,
+  key: K,
+  make: () => Promise<V>,
+): Promise<V> {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
+    return cached.promise;
+  }
+  const promise = make();
+  cache.set(key, { at: Date.now(), promise });
+  promise.catch(() => {
+    if (cache.get(key)?.promise === promise) {
+      cache.delete(key);
+    }
+  });
+  return promise;
+}
+
 const usageCache = new Map<
   UsageRange,
   { at: number; promise: Promise<FirestoreUsage> }
@@ -281,17 +450,16 @@ const usageCache = new Map<
 export async function getFirestoreUsage(
   range: UsageRange,
 ): Promise<FirestoreUsage> {
-  const cached = usageCache.get(range);
-  if (cached && Date.now() - cached.at < CACHE_TTL_MS) {
-    return cached.promise;
-  }
+  return memoizePerMinute(usageCache, range, () => fetchUsage(range));
+}
 
-  const promise = fetchUsage(range);
-  usageCache.set(range, { at: Date.now(), promise });
-  promise.catch(() => {
-    if (usageCache.get(range)?.promise === promise) {
-      usageCache.delete(range);
-    }
-  });
-  return promise;
+const totalsCache = new Map<
+  UsagePeriod,
+  { at: number; promise: Promise<UsageTotals> }
+>();
+
+export async function getFirestoreUsageTotals(
+  period: UsagePeriod,
+): Promise<UsageTotals> {
+  return memoizePerMinute(totalsCache, period, () => fetchTotals(period));
 }
