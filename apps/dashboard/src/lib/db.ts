@@ -533,6 +533,23 @@ export async function updateLead(
   );
 }
 
+/**
+ * Stamps the first time anyone in the org opened the lead's detail page.
+ * Deliberately a bare write — not `updateLead` — so viewing a lead doesn't
+ * bump `updatedAt`/`lastActivityAt` and reorder the pipeline.
+ */
+export async function markLeadViewed(uid: string): Promise<void> {
+  return trace(
+    "leads",
+    "WRITE",
+    "markLeadViewed",
+    async () => {
+      await updateDoc(doc(db, "leads", uid), { firstViewedAt: Date.now() });
+    },
+    () => uid,
+  );
+}
+
 export async function deleteLead(uid: string): Promise<void> {
   return trace(
     "leads",

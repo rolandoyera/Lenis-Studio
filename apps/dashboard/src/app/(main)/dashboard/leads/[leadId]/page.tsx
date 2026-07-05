@@ -47,6 +47,7 @@ import {
   deleteLead,
   getLead,
   getOrganizationUsers,
+  markLeadViewed,
   updateLead,
 } from "@/lib/db";
 import { convertLeadToClient } from "@/server/lead-actions";
@@ -102,6 +103,11 @@ export default function LeadDetailPage({ params }: PageProps) {
           toast.error("Lead not found.");
           router.push("/dashboard/leads");
           return;
+        }
+        if (!leadData.firstViewedAt) {
+          // Best-effort; the page renders regardless of whether the stamp lands.
+          void markLeadViewed(leadData.uid);
+          leadData.firstViewedAt = Date.now();
         }
         setLead(leadData);
         setUsers(usersData);

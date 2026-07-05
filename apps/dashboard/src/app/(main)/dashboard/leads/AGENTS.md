@@ -44,6 +44,12 @@ by `uid`):
 - `getLead(uid)` — single doc; **does not filter by org** (see tenant isolation below).
 - `addLead(...)` / `updateLead(uid, partial)` — `updateLead` bumps `updatedAt`/`lastActivityAt` and
   returns the written partial (the page merges it into local state).
+- `markLeadViewed(uid)` — stamps `firstViewedAt` the first time **anyone in the org** opens the
+  detail page (org-wide "seen", not per-user). Deliberately a bare write, **not `updateLead`**, so
+  viewing a lead doesn't bump `updatedAt`/`lastActivityAt` and reorder the pipeline. The detail page
+  fires it best-effort after the org guard passes. The home page "New Leads" metric
+  (`home/_components/metric-cards.tsx`) counts leads with no `firstViewedAt`. Like
+  `customerComments`, `firstViewedAt` is not a form field — exempt from the three-touch mapper rule.
 
 Unlike clients/projects/contracts, **lead creation is a plain `db.ts` write (`addLead`), not a server
 action** — leads carry no reference code. The **conversion** is the server action (next section).

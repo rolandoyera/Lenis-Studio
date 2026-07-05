@@ -275,6 +275,10 @@ export interface Lead {
   createdAt: number;
   updatedAt: number;
   lastActivityAt?: number;
+
+  // Stamped the first time anyone in the org opens the lead's detail page.
+  // Unset ⇒ the lead is "new" (home-page New Leads metric). Not a form field.
+  firstViewedAt?: number;
 }
 
 export type ProjectStatus =

@@ -7,6 +7,7 @@ import { MetricCards } from "./_components/metric-cards";
 import { NotificationsCard } from "./_components/notifications-card";
 import { PerformanceOverview } from "./_components/performance-overview";
 import { SubscriberOverview } from "./_components/subscriber-overview";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Page() {
   return (
@@ -27,7 +28,15 @@ export default function Page() {
           <div className="lg:col-span-3">
             <NotificationsCard />
           </div>
-          <div className="lg:col-span-9">
+          <div className="lg:col-span-3">
+            <Card variant="panel" className="h-full">
+              <CardHeader>
+                <CardTitle>Tasks</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0"></CardContent>
+            </Card>
+          </div>
+          <div className="lg:col-span-6">
             <PerformanceOverview />
           </div>
           <div className="lg:col-span-12">

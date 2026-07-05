@@ -32,8 +32,8 @@ import {
   DisplayTitle,
 } from "@/components/ui/display";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getProjects } from "@/lib/db";
-import type { Project } from "@/lib/types";
+import { getLeads, getProjects } from "@/lib/db";
+import type { Lead, Project } from "@/lib/types";
 import { InstagramIcon } from "@/components/icons/icons";
 import { Label } from "@/components/ui/label";
 import { fetchInstagramFollowers, type KpiMetric } from "@/server/meta-actions";
@@ -43,6 +43,9 @@ export function MetricCards() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectsError, setProjectsError] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(true);
+  const [leadsError, setLeadsError] = useState(false);
   const [igFollowers, setIgFollowers] = useState<{
     followers: number;
     comparison: KpiMetric | null;
@@ -53,6 +56,7 @@ export function MetricCards() {
     if (authLoading) return;
     if (!organizationId) {
       setLoadingProjects(false);
+      setLoadingLeads(false);
       return;
     }
 
@@ -80,7 +84,29 @@ export function MetricCards() {
       }
     }
 
+    async function loadLeads() {
+      setLoadingLeads(true);
+      setLeadsError(false);
+
+      try {
+        const data = await getLeads(orgId);
+        if (isMounted) {
+          setLeads(data);
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard leads:", error);
+        if (isMounted) {
+          setLeadsError(true);
+        }
+      } finally {
+        if (isMounted) {
+          setLoadingLeads(false);
+        }
+      }
+    }
+
     void loadProjects();
+    void loadLeads();
 
     return () => {
       isMounted = false;
@@ -126,6 +152,10 @@ export function MetricCards() {
       ? "error"
       : "ready";
 
+  // "New" = no one has opened the lead's detail page yet (firstViewedAt unset).
+  const newLeadCount = leads.filter((lead) => !lead.firstViewedAt).length;
+  const leadStatus = loadingLeads ? "loading" : leadsError ? "error" : "ready";
+
   return (
     <div className="grid grid-cols-1 gap-6 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs xl:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card>
@@ -140,7 +170,7 @@ export function MetricCards() {
         <CardContent className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
-              $100,250
+              $000,000
             </div>
           </div>
           <p className="text-muted-foreground text-sm">Last 90 days</p>
@@ -157,12 +187,11 @@ export function MetricCards() {
 
         <DisplayContent>
           <div className="flex flex-wrap items-center gap-6 pl-11">
-            {projectStatus === "loading" ? (
+            {leadStatus === "loading" ? (
               <>
-                <Skeleton className="h-9 w-16" />
-                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-7.5 w-16" />
               </>
-            ) : projectStatus === "error" ? (
+            ) : leadStatus === "error" ? (
               <div className="flex h-5 items-center justify-between gap-3">
                 <p className="text-muted-foreground text-sm">
                   Unable to load leads
@@ -171,7 +200,7 @@ export function MetricCards() {
             ) : (
               <div className="flex items-center gap-2">
                 <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
-                  {activeProjectCount.toLocaleString()}
+                  {newLeadCount.toLocaleString()}
                 </div>
               </div>
             )}
@@ -185,7 +214,7 @@ export function MetricCards() {
             asChild
             className="ml-auto p-0 detail-link">
             <Link
-              href="/dashboard/instagram"
+              href="/dashboard/leads"
               prefetch={false}
               className="group/btn flex items-center gap-0.5">
               View Leads
@@ -207,8 +236,7 @@ export function MetricCards() {
           <div className="flex flex-wrap items-center gap-6 pl-11">
             {projectStatus === "loading" ? (
               <>
-                <Skeleton className="h-9 w-16" />
-                <Skeleton className="h-5 w-28" />
+                <Skeleton className="h-7.5 w-16" />
               </>
             ) : projectStatus === "error" ? (
               <div className="flex h-5 items-center justify-between gap-3">
@@ -233,7 +261,7 @@ export function MetricCards() {
             asChild
             className="ml-auto p-0 detail-link">
             <Link
-              href="/dashboard/instagram"
+              href="/dashboard/projects"
               prefetch={false}
               className="group/btn flex items-center gap-0.5">
               View Projects
@@ -255,7 +283,7 @@ export function MetricCards() {
           <DisplayContent>
             <div className="flex flex-wrap items-center gap-6 pl-11">
               {igLoading || !igFollowers ? (
-                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-7.5 w-20" />
               ) : (
                 <div className="font-medium text-3xl tabular-nums leading-none tracking-tight">
                   {igFollowers.followers.toLocaleString()}
