@@ -183,13 +183,11 @@ export function MetricCards() {
             variant="link"
             size="sm"
             asChild
-            className="ml-auto p-0 detail-link"
-          >
+            className="ml-auto p-0 detail-link">
             <Link
               href="/dashboard/instagram"
               prefetch={false}
-              className="group/btn flex items-center gap-0.5"
-            >
+              className="group/btn flex items-center gap-0.5">
               View Leads
               <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
             </Link>
@@ -233,13 +231,11 @@ export function MetricCards() {
             variant="link"
             size="sm"
             asChild
-            className="ml-auto p-0 detail-link"
-          >
+            className="ml-auto p-0 detail-link">
             <Link
               href="/dashboard/instagram"
               prefetch={false}
-              className="group/btn flex items-center gap-0.5"
-            >
+              className="group/btn flex items-center gap-0.5">
               View Projects
               <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
             </Link>
@@ -276,8 +272,7 @@ export function MetricCards() {
                       igFollowers.comparison.isPositive
                         ? "trendingUp"
                         : "trendingDown"
-                    }
-                  >
+                    }>
                     {igFollowers.comparison.isPositive ? (
                       <TrendingUp className="size-3" />
                     ) : (
@@ -308,13 +303,11 @@ export function MetricCards() {
               variant="link"
               size="sm"
               asChild
-              className="ml-auto p-0 detail-link"
-            >
+              className="ml-auto p-0 detail-link">
               <Link
                 href="/dashboard/instagram"
                 prefetch={false}
-                className="group/btn flex items-center gap-0.5"
-              >
+                className="group/btn flex items-center gap-0.5">
                 View More
                 <ArrowRight className="size-3 transition-transform group-hover/btn:translate-x-1" />
               </Link>

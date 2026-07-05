@@ -760,7 +760,7 @@ export type SignContractResult = { ok: true } | { ok: false; error: string };
 /**
  * Apply the client's typed signature and execute the contract. Validates the
  * token, the frozen version, and the document hash; records the e-sign consent;
- * applies the pre-authorized company signature; marks the contract fully executed;
+ * applies the pre-authorized company signature; marks the contract executed;
  * writes the consent/signed/executed audit events; completes the access token; and
  * generates the final dual-signature PDF.
  */
@@ -993,7 +993,7 @@ export async function signContract(input: {
       organizationId: contract.organizationId,
       type: "contract_executed",
       audience: "org",
-      title: `Contract fully executed: ${contract.title}`,
+      title: `Contract executed: ${contract.title}`,
       body: `Signed by ${typedName}`,
       href: `/dashboard/contracts/${contractId}`,
       actor: { type: "client", id: contract.clientId, name: typedName },

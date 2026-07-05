@@ -6,7 +6,6 @@ import { Area, CartesianGrid, ComposedChart, Line, XAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -238,16 +237,15 @@ const chartConfig = {
 
 export function PerformanceOverview() {
   return (
-    <Card className="@container/card">
+    <Card variant="panel" className="@container/card">
       <CardHeader>
-        <CardTitle className="leading-none">Customer Activity</CardTitle>
-        <CardDescription>
-          <span className="@[540px]/card:block hidden">
+        <div>
+          <CardTitle className="leading-none">Customer Activity</CardTitle>
+          <CardDescription className="text-xs mt-0.5">
             Customer activity for the last 3 months
-          </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
-        </CardDescription>
-        <CardAction className="flex items-center gap-2">
+          </CardDescription>
+        </div>
+        <div className="flex items-center gap-2">
           <Select defaultValue="quarter">
             <SelectTrigger size="sm" className="w-28">
               <SelectValue placeholder="3 months" />
@@ -277,14 +275,13 @@ export function PerformanceOverview() {
           <Button variant="outline" size="sm">
             View report
           </Button>
-        </CardAction>
+        </div>
       </CardHeader>
 
       <CardContent>
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-80 w-full"
-        >
+          className="aspect-auto h-80 w-full">
           <ComposedChart data={chartData} margin={{ top: 0 }}>
             <defs>
               <linearGradient id="fillNewCustomers" x1="0" y1="0" x2="0" y2="1">

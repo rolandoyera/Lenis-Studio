@@ -1,0 +1,143 @@
+---
+title: Notifications
+order: 8
+---
+
+# Notifications
+
+The in-app **bell** feed — the small notification popover in the dashboard
+header. Each event is one document in the top-level `notifications` collection
+(`AppNotification` in `lib/types.ts`), fanned out on read: an org-wide doc is
+visible to every member of the org, and each member tracks their own
+read/dismiss state on the shared doc. Notifications are **produced server-side
+only** (admin SDK, bypassing security rules) and auto-expire after ~60 days via
+a Firestore TTL. This is distinct from **Emails** (transactional mail via Brevo)
+and the **audit trail** (the tamper-evident contract signing log) — the bell is
+lightweight, best-effort, and never a source of truth.
+
+## Available notifications
+
+Three event types exist today (`NotificationType`). All are `audience: "org"`
+(every member sees them); per-recipient targeting is supported by the shape but
+not yet emitted.
+
+### `lead_created`
+
+A new lead was captured. **Produced outside this app** — the oshrat marketing
+site writes this doc inline when its public lead form submits, mirroring the
+`AppNotification` shape (no shared package; the shape is kept in sync manually).
+The dashboard does not currently emit it itself.
+
+- **Title** — the new lead's name.
+- **Body** — short context (e.g. the source form).
+- **Href** — the new lead, e.g. `/dashboard/leads/lead-123`.
+- **Actor** — the lead / originating site.
+
+### `contract_portal_opened`
+
+A client opened the signing portal for a sent contract. Emitted by
+`recordPortalOpen` (`server/contract-signing.ts`), **deduped to one per hour**
+per access token — deliberately wider than the 30-minute audit-trail dedupe, so
+the bell doesn't spam on repeat visits.
+
+- **Title** — `` `${clientName} opened the signing portal` ``.
+- **Body** — the contract title.
+- **Href** — `` `/dashboard/contracts/${contractId}` ``.
+- **Actor** — `{ type: "client", id: clientId, name: clientName }`.
+
+### `contract_executed`
+
+A contract was fully executed (the client signed). Emitted by `signContract`
+(`server/contract-signing.ts`) as part of the post-execution artifact pipeline,
+best-effort — a failure here is logged and never unwinds the signed contract.
+
+- **Title** — `` `Contract executed: ${title}` ``.
+- **Body** — `` `Signed by ${typedName}` ``.
+- **Href** — `` `/dashboard/contracts/${contractId}` ``.
+- **Actor** — `{ type: "client", id: clientId, name: typedName }`.
+
+## What a notification exposes
+
+Every doc carries the same fields. The producer supplies everything except the
+server-managed ones (`notificationId`, `readBy`, `dismissedBy`, `expireAt`).
+
+```ts
+interface AppNotification {
+  /** = doc id, minted server-side. */
+  notificationId: string;
+  organizationId: string;
+  type: NotificationType;
+  /** "org" = every org member; otherwise a single recipient uid. */
+  audience: "org" | string;
+  title: string;
+  body?: string;
+  /** Dashboard-relative View-link target, e.g. "/dashboard/leads/lead-123". */
+  href?: string;
+  actor: ActivityActor;
+  /** Uids who marked it read. */
+  readBy: string[];
+  /** Uids who deleted it from their bell (soft delete; doc stays for others). */
+  dismissedBy: string[];
+  createdAt: number;
+  /** Firestore TTL (~60 days). The only non-epoch-ms timestamp; never read. */
+  expireAt: unknown;
+}
+```
+
+- **`title`** — the one-line headline shown in bold when unread.
+- **`body`** — optional secondary line (truncated in the bell).
+- **`href`** — optional deep link; when present the row gets a **View** action
+  that marks it read and navigates there.
+- **`actor`** — who/what caused the event (`ActivityActor`: a user, a client, or
+  an external site).
+- **`readBy` / `dismissedBy`** — per-user state on the shared doc. Read controls
+  the unread dot + count; dismiss hides the row for that user only.
+- **`createdAt`** — epoch ms, used for sort order and the relative timestamp.
+
+## How they surface
+
+The header **bell** (`NotificationBell`, `_components/sidebar/notification-bell.tsx`)
+subscribes live via `onSnapshot`:
+
+- Query: `organizationId == <org>` **and** `audience in ["org", <uid>]` — the
+  audience clause is required by `firestore.rules` (a list query must be
+  provably in scope), not just a filter. Results are sorted newest-first in
+  memory and capped at **30** (`BELL_LIMIT`).
+- The badge counts rows the current user hasn't read; an unread row shows a dot
+  and bold title. Rows the user dismissed are filtered out client-side.
+- Per-row actions: **Mark as read** (unread only), **View** (`href` only —
+  marks read, then navigates), and **Delete** (dismiss).
+
+## Producing a notification
+
+Call the single server-only writer; never create these from the client.
+
+```ts
+import { writeNotification } from "@/server/notifications";
+
+// Best-effort: wrap in try/catch so a notification failure never breaks the
+// flow that produced it (lead intake, contract signing, …).
+try {
+  await writeNotification({
+    organizationId,
+    type: "contract_executed",
+    audience: "org",
+    title: `Contract executed: ${contract.title}`,
+    body: `Signed by ${typedName}`,
+    href: `/dashboard/contracts/${contract.contractId}`,
+    actor: { type: "client", id: contract.clientId, name: typedName },
+    createdAt: Date.now(),
+  });
+} catch (error) {
+  console.error("Failed to write notification:", error);
+}
+```
+
+The only mutations the client SDK is allowed are appending **your own** uid to
+`readBy` / `dismissedBy` (`markNotificationRead` / `dismissNotification` in
+`lib/db.ts`, via `arrayUnion`) — the per-user read/dismiss state on an otherwise
+server-owned doc.
+
+To add a new notification type: extend `NotificationType` in `lib/types.ts`,
+call `writeNotification` from the server flow that triggers it, and give it an
+`href` so the bell can offer a **View** action.

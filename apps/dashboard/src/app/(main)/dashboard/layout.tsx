@@ -16,7 +16,6 @@ import { DbStatsProbe } from "./_components/db-stats-probe";
 import { LayoutControls } from "./_components/sidebar/layout-controls";
 import { NotificationBell } from "./_components/sidebar/notification-bell";
 import { SearchDialog } from "./_components/sidebar/search-dialog";
-import { ThemeSwitcher } from "./_components/sidebar/theme-switcher";
 import { UserProfile } from "./_components/sidebar/user-profile";
 
 export default async function Layout({
@@ -33,22 +32,19 @@ export default async function Layout({
         {
           "--sidebar-width": "calc(var(--spacing) * 68)",
         } as React.CSSProperties
-      }
-    >
+      }>
       <DbStatsProbe />
       <AppSidebar brand={brand} variant="inset" collapsible="icon" />
       <SidebarInset
         className={cn(
           "peer-data-[variant=inset]:border",
           "[--dashboard-header-height:--spacing(12)]",
-        )}
-      >
+        )}>
         <header
           className={cn(
             "flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12",
             "sticky top-0 z-50 overflow-hidden rounded-t-[inherit] bg-background/50 backdrop-blur-md",
-          )}
-        >
+          )}>
           <div className="flex w-full items-center justify-between px-4 lg:px-6">
             <div className="flex items-center gap-1 lg:gap-2">
               <SidebarTrigger className="-ml-1" />
@@ -58,10 +54,9 @@ export default async function Layout({
               />
               <SearchDialog />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <NotificationBell />
               <LayoutControls />
-              <ThemeSwitcher />
               <UserProfile />
             </div>
           </div>

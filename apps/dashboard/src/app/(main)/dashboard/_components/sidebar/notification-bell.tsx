@@ -90,10 +90,15 @@ export function NotificationBell() {
         >
           <Bell />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex size-2 rounded-full bg-primary" />
-            </span>
+            <>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-0 animate-ping-soft rounded-lg border-2 border-primary/60"
+              />
+              <span className="-top-1.5 -right-1.5 absolute flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-medium text-[10px] text-primary-foreground tabular-nums">
+                {unreadCount}
+              </span>
+            </>
           )}
         </Button>
       </PopoverTrigger>

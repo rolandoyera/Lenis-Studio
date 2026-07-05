@@ -32,7 +32,7 @@ export function PortalSignedState({
       </div>
       <div className="flex flex-col gap-1">
         <h2 className="font-heading font-semibold text-lg text-neutral-900">
-          Contract fully executed
+          Contract executed
         </h2>
         <p className="text-neutral-500 text-sm leading-6">
           {signerName ? `Signed by ${signerName}` : "Signed"}
@@ -41,8 +41,7 @@ export function PortalSignedState({
       </div>
       <a
         href={`/portal/${accessToken}/contract/${contractId}/download`}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800"
-      >
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-neutral-900 px-6 font-medium text-sm text-white transition-colors hover:bg-neutral-800">
         <Download className="size-4" />
         Download signed PDF
       </a>
