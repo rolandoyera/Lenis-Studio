@@ -35,12 +35,12 @@ The dashboard does not currently emit it itself.
 
 ### `contract_portal_opened`
 
-A client opened the signing portal for a sent contract. Emitted by
+A client entered the contract portal for a sent contract. Emitted by
 `recordPortalOpen` (`server/contract-signing.ts`), **deduped to one per hour**
 per access token — deliberately wider than the 30-minute audit-trail dedupe, so
 the bell doesn't spam on repeat visits.
 
-- **Title** — `` `${clientName} opened the signing portal` ``.
+- **Title** — `` `${clientName} entered the contract portal` ``.
 - **Body** — the contract title.
 - **Href** — `` `/dashboard/contracts/${contractId}` ``.
 - **Actor** — `{ type: "client", id: clientId, name: clientName }`.

@@ -625,7 +625,7 @@ export async function recordPortalOpen(
         organizationId: contract.organizationId,
         type: "contract_portal_opened",
         audience: "org",
-        title: `${contract.clientName} opened the signing portal`,
+        title: `${contract.clientName} entered the contract portal`,
         body: contract.title,
         href: `/dashboard/contracts/${contract.contractId}`,
         actor: {
