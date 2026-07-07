@@ -39,13 +39,21 @@ export async function GET(req: NextRequest) {
   // trim() strips whitespace and the BOM a hand-created .env file can bleed
   // into the value — Dropbox rejects a client_id with any stray character.
   const appKey = process.env.DROPBOX_APP_KEY?.trim();
-  const redirectUri = process.env.DROPBOX_REDIRECT_URI?.trim();
 
-  if (!appKey || !redirectUri) {
+  if (!appKey) {
     return NextResponse.redirect(
       returnUrl(returnTo, "not_configured", req.url),
     );
   }
+
+  // Derive the callback from the requesting domain so each tenant domain
+  // round-trips back to itself (the CSRF cookie below is domain-scoped, so a
+  // fixed callback domain would break every other tenant). Every dashboard
+  // domain must be registered as a redirect URI in the Dropbox App Console.
+  const redirectUri = new URL(
+    "/api/integrations/dropbox/callback",
+    req.nextUrl.origin,
+  ).toString();
 
   // Random nonce ties this redirect to its callback (CSRF protection); the org
   // id + return path ride along in `state` so the callback knows which tenant to

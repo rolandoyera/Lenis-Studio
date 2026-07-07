@@ -74,8 +74,14 @@ export async function GET(req: NextRequest) {
     body: new URLSearchParams({
       code,
       grant_type: "authorization_code",
+      // Must byte-match the redirect_uri the login route sent to authorize —
+      // both derive it from the requesting domain, and login redirected
+      // Dropbox back to this same domain.
+      redirect_uri: new URL(
+        "/api/integrations/dropbox/callback",
+        req.nextUrl.origin,
+      ).toString(),
       // trim() guards against whitespace/BOM bled into hand-created .env values.
-      redirect_uri: process.env.DROPBOX_REDIRECT_URI?.trim() ?? "",
       client_id: process.env.DROPBOX_APP_KEY?.trim() ?? "",
       client_secret: process.env.DROPBOX_APP_SECRET?.trim() ?? "",
     }),

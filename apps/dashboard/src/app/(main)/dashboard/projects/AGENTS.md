@@ -177,8 +177,10 @@ Gallery (designer-facing view of the linked folder's images):
   navigate; grid-thumb placeholder + spinner and neighbor preload keep it feeling instant). Rendered by
   `ImagerySetCard` when a set is linked.
 
-Env: `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REDIRECT_URI` (must match the redirect URI
-registered in the Dropbox App Console). **TODO (Phase 4):** portal curation — the designer selects a
+Env: `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`. The OAuth redirect URI is derived from the requesting
+domain (`/api/integrations/dropbox/callback` on the current origin) so tenant domains round-trip to
+themselves — every dashboard domain (and `http://localhost:3000` for dev) must be registered as a
+redirect URI in the Dropbox App Console. `DROPBOX_REDIRECT_URI` is no longer read. **TODO (Phase 4):** portal curation — the designer selects a
 subset of these images + a layout for the client portal; curated images will likely be **snapshotted to
 Storage** (so the portal deliverable doesn't depend on Dropbox), meaning the portal needs no Dropbox
 proxy of its own.
