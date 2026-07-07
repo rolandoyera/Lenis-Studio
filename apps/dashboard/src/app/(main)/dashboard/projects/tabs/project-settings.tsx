@@ -98,33 +98,44 @@ export function ProjectSettings({ project }: { project: Project }) {
     `/dashboard/projects/${project.projectId}?tab=settings`,
   )}`;
 
-  const persist = (next: Record<string, ProjectImagerySet>) => {
-    setImagerySets(next); // optimistic
-    void updateProjectImagerySets(project.projectId, next).catch((error) => {
-      console.error("Failed to save linked folder:", error);
-      toast.error("Failed to save the linked folder.");
-    });
+  // Write-through, not optimistic: the gallery's first fetch resolves the linked
+  // folder from the project doc server-side, so local state may only flip after
+  // Firestore acknowledges the write — flipping early races that read and the
+  // gallery errors with "No folder linked" until a refresh.
+  const persist = async (next: Record<string, ProjectImagerySet>) => {
+    await updateProjectImagerySets(project.projectId, next);
+    setImagerySets(next);
   };
 
   const linked = imagerySets[IMAGERY_SET_ID];
 
-  const handleLink = (folder: DropboxFolder) => {
+  const handleLink = async (folder: DropboxFolder) => {
     if (!uid) return;
-    // Only one folder is allowed, so replace the whole map rather than merge.
-    persist({
-      [IMAGERY_SET_ID]: {
-        path: folder.path,
-        name: folder.name,
-        linkedAt: Date.now(),
-        linkedBy: uid,
-      },
-    });
-    toast.success("Folder linked.");
+    try {
+      // Only one folder is allowed, so replace the whole map rather than merge.
+      await persist({
+        [IMAGERY_SET_ID]: {
+          path: folder.path,
+          name: folder.name,
+          linkedAt: Date.now(),
+          linkedBy: uid,
+        },
+      });
+      toast.success("Folder linked.");
+    } catch (error) {
+      console.error("Failed to save linked folder:", error);
+      toast.error("Failed to save the linked folder.");
+    }
   };
 
-  const handleUnlink = () => {
-    persist({});
-    toast.success("Folder unlinked.");
+  const handleUnlink = async () => {
+    try {
+      await persist({});
+      toast.success("Folder unlinked.");
+    } catch (error) {
+      console.error("Failed to unlink folder:", error);
+      toast.error("Failed to unlink the folder.");
+    }
   };
 
   return (
@@ -158,7 +169,8 @@ export function ProjectSettings({ project }: { project: Project }) {
         <SectionHeader label="Timelines" />
         <Card
           variant="panel"
-          className="flex min-h-[160px] items-center justify-center border-dashed">
+          className="flex min-h-[160px] items-center justify-center border-dashed"
+        >
           <p className="text-muted-foreground text-sm">
             Timeline configuration coming soon.
           </p>
@@ -228,7 +240,8 @@ function DropboxAccount({
               toast.error("Failed to disconnect Dropbox.");
             }
           })
-        }>
+        }
+      >
         {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
         Disconnect
       </Button>

@@ -32,13 +32,16 @@ export function DropboxFolderPicker({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   setLabel: string;
-  onLink: (folder: DropboxFolder) => void;
+  onLink: (folder: DropboxFolder) => Promise<void>;
 }) {
   const [pathStack, setPathStack] = useState<DropboxFolder[]>([]);
   const [folders, setFolders] = useState<DropboxFolder[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<DropboxFolder | null>(null);
+  // The parent persists the link before resolving (the gallery's server fetch
+  // must see it) — hold the dialog open with a spinner until that settles.
+  const [linking, setLinking] = useState(false);
 
   // Root path is "" (not "/"); a drilled-in folder uses its path_lower.
   const currentPath = pathStack.length
@@ -178,13 +181,19 @@ export function DropboxFolderPicker({
             )}
           </p>
           <Button
-            disabled={!selected}
-            onClick={() => {
+            disabled={!selected || linking}
+            onClick={async () => {
               if (!selected) return;
-              onLink(selected);
+              setLinking(true);
+              try {
+                await onLink(selected);
+              } finally {
+                setLinking(false);
+              }
               onOpenChange(false);
             }}
           >
+            {linking ? <Loader2 className="size-3.5 animate-spin" /> : null}
             Link folder
           </Button>
         </DialogFooter>

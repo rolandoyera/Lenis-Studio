@@ -69,7 +69,10 @@ A project workspace. Two routes, both **client components**:
 - `tabs/_tab_components/dropbox-folder-picker.tsx` — the folder-picker dialog. Browses the connected
   Dropbox folder-by-folder (files dropped server-side) via the `browseDropboxFolders` action: click a
   row to select, click its chevron to drill in, breadcrumb to jump back. `onLink(folder)` hands the
-  choice back to `project-settings.tsx`, which persists it; the dialog owns no persistence.
+  choice back to `project-settings.tsx`, which persists it; the dialog owns no persistence but stays
+  open (button spinner) until the awaited write commits — the gallery's first fetch resolves the
+  linked folder from the project doc **server-side**, so rendering it before the write lands races
+  that read and errors with "No folder linked".
 - `tabs/project-items.tsx` — the **Items tab** (the heavy one — see its own section below).
 - `tabs/_tab_components/items-table.tsx` — the list-view items grid renderer.
 - `tabs/_tab_components/add-items-dialog.tsx` — add items to a section: "Library Items" (multi-select
