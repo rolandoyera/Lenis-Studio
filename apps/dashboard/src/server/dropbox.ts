@@ -132,8 +132,9 @@ export async function getValidDropboxAccessToken(
     body: new URLSearchParams({
       grant_type: "refresh_token",
       refresh_token: secrets.refreshToken,
-      client_id: process.env.DROPBOX_APP_KEY ?? "",
-      client_secret: process.env.DROPBOX_APP_SECRET ?? "",
+      // trim() guards against whitespace/BOM bled into hand-created .env values.
+      client_id: process.env.DROPBOX_APP_KEY?.trim() ?? "",
+      client_secret: process.env.DROPBOX_APP_SECRET?.trim() ?? "",
     }),
     cache: "no-store",
   });

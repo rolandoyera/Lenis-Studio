@@ -74,9 +74,10 @@ export async function GET(req: NextRequest) {
     body: new URLSearchParams({
       code,
       grant_type: "authorization_code",
-      redirect_uri: process.env.DROPBOX_REDIRECT_URI ?? "",
-      client_id: process.env.DROPBOX_APP_KEY ?? "",
-      client_secret: process.env.DROPBOX_APP_SECRET ?? "",
+      // trim() guards against whitespace/BOM bled into hand-created .env values.
+      redirect_uri: process.env.DROPBOX_REDIRECT_URI?.trim() ?? "",
+      client_id: process.env.DROPBOX_APP_KEY?.trim() ?? "",
+      client_secret: process.env.DROPBOX_APP_SECRET?.trim() ?? "",
     }),
     cache: "no-store",
   });

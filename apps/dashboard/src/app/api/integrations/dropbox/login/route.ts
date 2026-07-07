@@ -36,8 +36,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(returnUrl(returnTo, "no_org", req.url));
   }
 
-  const appKey = process.env.DROPBOX_APP_KEY;
-  const redirectUri = process.env.DROPBOX_REDIRECT_URI;
+  // trim() strips whitespace and the BOM a hand-created .env file can bleed
+  // into the value — Dropbox rejects a client_id with any stray character.
+  const appKey = process.env.DROPBOX_APP_KEY?.trim();
+  const redirectUri = process.env.DROPBOX_REDIRECT_URI?.trim();
 
   if (!appKey || !redirectUri) {
     return NextResponse.redirect(
